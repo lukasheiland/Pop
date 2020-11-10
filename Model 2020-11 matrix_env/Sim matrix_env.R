@@ -101,7 +101,7 @@ layoutMatrix <- function(n_species, includespeciescolumn = T){
               i_j = i_j,
               i_a = i_a,
               isjuvenile = isjuvenile
-  )
+    )
   )
 }
 
@@ -118,16 +118,16 @@ simulateEnv <- function(n_env, n_locs){
 simulateParametersInEnv <- function(Env, Beta_r, Beta_s, Beta_g, returndf = F) {
   n_species <- ncol(Beta_r)
   M <- model.matrix(~ poly(Env, 2))
-  r_hat <- M %*% Beta_r
-  s_hat <- M %*% Beta_s
-  g_hat <- M %*% Beta_g
-  pars <- list(r_hat = r_hat, s_hat = s_hat, g_hat = g_hat)
+  r_log <- M %*% Beta_r
+  s_log <- M %*% Beta_s
+  g_log <- M %*% Beta_g
+  pars <- list(r_log = r_log, s_log = s_log, g_log = g_log)
 
   if (returndf) {
     pars <- lapply(pars, as.data.frame)
     pars <- do.call(cbind, pars)
     pars <- pivot_longer(cbind(pars, Env),
-                         cols = starts_with(c("r_hat", "s_hat", "g_hat")),
+                         cols = starts_with(c("r_log", "s_log", "g_log")),
                          names_sep = "\\.",
                          names_to = c("parameter", "species"),
                          values_to = c("q")) %>%
@@ -140,17 +140,18 @@ simulateParametersInEnv <- function(Env, Beta_r, Beta_s, Beta_g, returndf = F) {
 
 #### Set parameters for the population model
 ## three parameters dependent on environment: r, s, g.
-getParameters <- function(r_hat, s_hat, g_hat, returndf = F) {
-  n_species <- length(r_hat)
+getParameters <- function(r_log, s_log, g_log, returndf = F) {
+  n_species <- length(r_log)
   n_pops <- n_species * 2
   I <- layoutMatrix(n_species, includespeciescolumn = T)
 
   ## 1. regneration rate r
-  r <- rlnorm(r_hat, r_hat, 0.0001) # exp(log(m)), log link!
+  r <- rlnorm(r_log, r_log, 0.0001) # exp(log(m)), log link!
 
-  f <- rlnorm(n_pops, r, 0.0001) # Vector of intrinsic growth rates.
+  # Vector of intrinsic growth rates. Linear scale!
+  f <- rep(NA, n_pops)
   f[I$isjuvenile] <- r # Vector of intrinsic growth rates.
-  f[!I$isjuvenile] <- - f[!I$isjuvenile]/10 # output rates
+  f[!I$isjuvenile] <- - rlnorm(n_species, log(r/20), 0.1) # output rates
 
   A <- matrix(NA, n_pops, n_pops)
 
@@ -159,12 +160,12 @@ getParameters <- function(r_hat, s_hat, g_hat, returndf = F) {
 
   ## (-) Competition of A on J: s[n_species]
   ## 2. juveniles experience same shading s from all species
-  s <- -rlnorm(s_hat, s_hat, 0.0001)
+  s <- -rlnorm(s_log, s_log, 0.0001)
   A[I$I_s[,2:3]] <- rep(s, each = n_species) # -> s[n_species^2]
 
   ## (+) Transition rate from J to A: g[n_species]
   ## 3. g
-  g <- rlnorm(g_hat, g_hat, 0.0001)
+  g <- rlnorm(g_log, g_log, 0.0001)
   A[I$I_g[,2:3]] <- g
 
   ## (-) Competition matrix of adults: a_A
@@ -183,9 +184,9 @@ getParameters <- function(r_hat, s_hat, g_hat, returndf = F) {
 
   if(returndf) {
     par <- data.frame(
-      r = t(r_hat),
-      s = t(s_hat),
-      g = t(g_hat),
+      r = t(r_log),
+      s = t(s_log),
+      g = t(g_log),
       species = 1:n_species
     )
   }
@@ -196,23 +197,23 @@ getParameters <- function(r_hat, s_hat, g_hat, returndf = F) {
 
 #### Simulate vector of initial states
 simulateInitialState <- function(n_pops) {
-  runif(n_pops, log(10), 3) * c(2, 1) # Initial state matrix.
+  runif(n_pops, 15, 15) * c(2, 1) # Initial state matrix.
 }
 
 #### Integrate model to simulate states
 simulateSeries <- function(state_init, times, par, sigma) {
 
   m0 <- state_init
-
-  sim0 <- c(time = 0, pop = m0)
+  n_pops <- length(state_init)
+  
+  ## ODE solving
+  ## Different in ode interfaces in deSolve and stan! deSolve::ode() returns state at t0, stan only at the solution times.
   Sim <- ode(m0, times, calcModel, par)
-
-  sim0[2:(n_pops+1)] <- rlnorm(sim0, log(sim0), sigma)[2:(n_pops+1)]
   Sim[, 2:(n_pops+1)] <- matrix(rlnorm(Sim, log(Sim), sigma), nrow = nrow(Sim))[, 2:(n_pops+1)]
 
   Sim[is.nan(Sim) | Sim < 0] <- 0
 
-  return(rbind(sim0, Sim))
+  return(Sim)
 }
 
 
@@ -233,8 +234,8 @@ simulateSeriesInEnv <- function(n_species,
 
   parsinenv <- simulateParametersInEnv(Env, Beta_r, Beta_s, Beta_g)
 
-  simulateSeriesAtLoc <- function(r_hat, s_hat, g_hat) {
-    par <- getParameters(r_hat, s_hat, g_hat)
+  simulateSeriesAtLoc <- function(r_log, s_log, g_log) {
+    par <- getParameters(r_log, s_log, g_log)
     m0 <- simulateInitialState(n_pops = n_pops)
     seriesatloc <- replicate(n_seriesperloc, simulateSeries(m0, times, par, sigma), simplify = F)
     names(seriesatloc) <- 1:n_seriesperloc
@@ -243,24 +244,24 @@ simulateSeriesInEnv <- function(n_species,
 
   # Sims is a: list[n_loc] <- list[n_seriesperloc] <- matrix[n_times, n_pops]
   Sims <- mapply(simulateSeriesAtLoc,
-                 as.data.frame(t(parsinenv$r_hat)),
-                 as.data.frame(t(parsinenv$s_hat)),
-                 as.data.frame(t(parsinenv$g_hat)),
+                 as.data.frame(t(parsinenv$r_log)),
+                 as.data.frame(t(parsinenv$s_log)),
+                 as.data.frame(t(parsinenv$g_log)),
                  SIMPLIFY = F)
 
   if (match.arg(format) %in% c("wide", "long")) {
     Sims <- lapply(Sims, function(l) do.call(rbind, l)) # bind the series within a location into one table
-    Sims <- lapply(Sims, function(m) cbind(m, seriesid = rep(1:n_seriesperloc, each = n_times+1))) # attach an id to series per location
+    Sims <- lapply(Sims, function(m) cbind(m, seriesid = rep(1:n_seriesperloc, each = n_times))) # attach an id to series per location
 
     Sims <- do.call(rbind, Sims) # bind all lists of locations into one table
-    Sims <- cbind(Sims, locid = rep(1:n_locs, each = n_seriesperloc * (n_times+1))) # attach an id to series per location
+    Sims <- cbind(Sims, locid = rep(1:n_locs, each = n_seriesperloc * (n_times))) # attach an id to series per location
 
     Sims <- cbind(Sims, Env[Sims[,"locid"],])
   }
 
   if (match.arg(format) == "long") {
     Sims <- tidyr::pivot_longer(as.data.frame(Sims),
-                                cols = all_of(paste0("pop", 1:n_pops)),
+                                cols = all_of(paste(1:n_pops)),
                                 names_to = "pop",
                                 values_to = "abundance") %>%
       mutate(pop = as.integer(as.factor(pop))) %>%
@@ -273,33 +274,33 @@ simulateSeriesInEnv <- function(n_species,
 
 
 
-# Simulate! ---------------------------------------------------------------
+# Simulate for plotting! ---------------------------------------------------------------
 n_species <- 4
-n_locs <- 500
+n_locs <- 100
 n_seriesperloc = 3
 n_times <- 4
 
 ## Beta_* are effect of environment on species' parameters matrix[n_env, n_species]
 ## These are on the log scale!
 n_env <- 3
-n_beta <- 1 + ncol(poly(Env, 2)) # + intercept
-Beta_r <- matrix(rlnorm(n_beta*n_species, log(0.05), 0.01), n_beta, n_species)
-Beta_r[1,] <- log(2)
-Beta_s <- matrix(runif(n_beta*n_species, log(0.05), 0.01), n_beta, n_species)
-Beta_s[1,] <- log(0.1)
-Beta_g <- matrix(runif(n_beta*n_species, log(0.05), 0.01), n_beta, n_species)
-Beta_g[1,] <- log(0.2)
+E <- simulateEnv(n_env, n_locs)
+n_beta <- 1 + ncol(poly(E, 2)) # + intercept
+Beta_r <- matrix(rnorm(n_beta*n_species, 0, 0.01), n_beta, n_species)
+Beta_r[1,] <- rnorm(n_species, 3, 0.01)
+Beta_s <- matrix(rnorm(n_beta*n_species, 0, 0.01), n_beta, n_species)
+Beta_s[1,] <- rnorm(n_species, -2, 0.01)
+Beta_g <- matrix(rnorm(n_beta*n_species, 0, 0.01), n_beta, n_species)
+Beta_g[1,] <- rnorm(n_species, -2, 0.01)
 
 sigma <- 0.1
 
 ## Simulate one time series
 initialstate1 <- simulateInitialState(n_species*2)
 par1 <- getParameters(Beta_r[1,], Beta_s[1,], Beta_g[1,])
-Sim1 <- simulateSeries(initialstate1, times = 1:100, par1, sigma = 0.02)
+Sim1 <- simulateSeries(initialstate1, times = 1:20, par1, sigma = 0.02)
 matplot(Sim1[, 1], Sim1[, -1], type = "b", ylab="N") # log='y'
 
 ## Simulate multiple time series in environmental space
-E <- simulateEnv(n_env, n_locs)
 P <- simulateParametersInEnv(E, Beta_r, Beta_s, Beta_g, returndf = T)
 S <- simulateSeriesInEnv(n_species, n_locs, n_seriesperloc, n_times,
                          E, Beta_r, Beta_s, Beta_g,
@@ -307,7 +308,7 @@ S <- simulateSeriesInEnv(n_species, n_locs, n_seriesperloc, n_times,
                          format = "long")
 
 
-ggplot(filter(P, parameter == "r_hat"),
+ggplot(filter(P, parameter == "r_log"),
        mapping = aes(x = env_1, y = q, color = species, group = species)) +
   geom_point()+
   geom_smooth()+
@@ -368,6 +369,10 @@ getStanData <- function(locations, Env) {
 #### generate acceptable start values
 getInits <- function() {
   list(
+    Beta_r = Beta_r,
+    Beta_s = Beta_s,
+    Beta_g = Beta_g,
+
     g = rlnorm(data$N_species, log(1), 0.01),
     s = - rlnorm(data$N_species, log(2), 0.01),
 
@@ -405,13 +410,30 @@ getInits <- function() {
 
 
 # Simulate and fit! -------------------------------------------------------
-Env <- simulateEnv(n_env, n_locs)
+n_species <- 4
+n_locs <- 500
+n_seriesperloc = 3
+n_times <- 4
+
+## Beta_* are effect of environment on species' parameters matrix[n_env, n_species]
+## These are on the log scale!
+n_env <- 3
+E <- simulateEnv(n_env, n_locs)
+n_beta <- 1 + ncol(poly(E, 2)) # + intercept
+Beta_r <- matrix(rlnorm(n_beta*n_species, -3, 0.01), n_beta, n_species)
+Beta_r[1,] <- 2
+Beta_s <- matrix(runif(n_beta*n_species, -3, 0.01), n_beta, n_species)
+Beta_s[1,] <- -2
+Beta_g <- matrix(runif(n_beta*n_species, -3, 0.01), n_beta, n_species)
+Beta_g[1,] <- -0.5
+
+sigma <- 0.1
 
 sims <- simulateSeriesInEnv(n_species, n_locs, n_seriesperloc, n_times,
-                    Env, Beta_r, Beta_s, Beta_g,
+                    E, Beta_r, Beta_s, Beta_g,
                     sigma,
                     format = "list")
-data <- getStanData(sims, Env)
+data <- getStanData(sims, E)
 
 
 #### Compile model
@@ -423,7 +445,7 @@ model <- cmdstan_model(modelpath)
 fit_optim <- model$optimize(data = data,
                             iter = 10^9,
                             output_dir = "Fits/",
-                            init = getInitsTrue)
+                            init = getInits)
 
 Estimates <- fit_optim$summary()
 

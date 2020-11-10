@@ -13,7 +13,7 @@ data {
   // N
   int<lower=0> N_locs;
   int<lower=0> N_seriesperloc;
-  int<lower=0> N_obs; // not including t0, for now N_obs have to be the same in every series :(
+  int<lower=0> N_obs; // n solution times, not including t0, for now N_obs have to be the same in every series :(
   int<lower=0> N_species; // for now N_species have to be the same in every series :(
   int<lower=0> N_pops;
   int<lower=0> N_beta;
@@ -41,9 +41,9 @@ data {
 
 parameters {
   // Global species specific parameters
-  matrix[N_beta, N_species] beta_r;
-  matrix[N_beta, N_species] beta_s;
-  matrix[N_beta, N_species] beta_g;
+  matrix[N_beta, N_species] Beta_r;
+  matrix[N_beta, N_species] Beta_s;
+  matrix[N_beta, N_species] Beta_g;
 
   // components of A, i.e. population interactions
   vector<lower=0>[N_species] g; // (+) transition rate from J to A
@@ -78,9 +78,9 @@ transformed parameters {
   vector<lower=0>[N_pops] State[N_locs,N_seriesperloc,N_obs];
 
   // Environmental effects
-  r_loc = X * beta_r;
-  s_loc = X * beta_s;
-  g_loc = X * beta_g;
+  r_loc = X * Beta_r;
+  s_loc = X * Beta_s;
+  g_loc = X * Beta_g;
 
   for (l in 1:N_locs) {
     // broadcasting of parameters into the interaction matrix A
@@ -127,10 +127,10 @@ model {
   // Model
   for (n in 1:N_species) {
     // sample location level parameters
-    g_loc[, n] ~ lognormal(log(g[n]), theta);
-    s_loc[, n] ~ lognormal(log(s[n]), theta);
-    r_loc[, n] ~ lognormal(log(r[n]), theta);
-    o_loc[, n] ~ lognormal(log(o[n]), theta);
+    g_loc[, n] ~ lognormal(g[n], theta);
+    s_loc[, n] ~ lognormal(s[n], theta);
+    r_loc[, n] ~ lognormal(r[n], theta);
+    o_loc[, n] ~ lognormal(o[n], theta);
   }
 
   for (l in 1:N_locs) {

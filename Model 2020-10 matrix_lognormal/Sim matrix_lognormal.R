@@ -146,19 +146,16 @@ sigma <- 0.1
 par <- list(f, A) # Parameters list, including a matrix of alpha values.
 
 #### Integrate model to simulate states
-simulateSeries <- function(times = seq(1, 30, by = 2), sigma = 0) {
+simulateSeries <- function(times = seq(0, 30, by = 2), sigma = 0) {
 
   m0 <- runif(n, log(10), 3) * c(2, 1) # Initial state matrix.
 
-  sim0 <- c(time = 0, species = m0)
   Sim <- ode(m0, times, calcModel, par)
-
-  sim0[2:(n+1)] <- rlnorm(sim0, log(sim0), sigma)[2:(n+1)]
   Sim[, 2:(n+1)] <- matrix(rlnorm(Sim, log(Sim), sigma), nrow = nrow(Sim))[, 2:(n+1)]
 
   Sim[is.nan(Sim) | Sim < 0] <- 0
 
-  return(rbind(sim0, Sim))
+  return(Sim)
 }
 
 Sim <- simulateSeries(sigma = 0.02)
@@ -171,16 +168,16 @@ matplot(Sim[, 1], Sim[, -1], type = "b", ylab="N") # log='y'
 ##
 simulateMultipleSeries <- function(n_series = 10, n_times = 10, sigma = 0.1, format = c("long", "wide", "list")) {
   Sims <- replicate(n_series,
-                    simulateSeries(1:(n_times), sigma = sigma),
+                    simulateSeries(0:(n_times-1), sigma = sigma),
                     simplify = F)
 
   if (match.arg(format) %in% c("wide", "long")) {
-    Sims <- cbind(do.call(rbind, Sims), series = rep(1:n_series, each = n_times+1))
+    Sims <- cbind(do.call(rbind, Sims), series = rep(1:n_series, each = n_times))
   }
 
   if (match.arg(format) == "long") {
     Sims <- tidyr::pivot_longer(as.data.frame(Sims),
-                                cols = all_of(paste0("species", 1:n)),
+                                cols = all_of(paste(1:n)),
                                 names_to = "pop",
                                 values_to = "abundance") %>%
       mutate(species = rep(1:n_species, each = 2, length.out = nrow(.)),
@@ -191,7 +188,7 @@ simulateMultipleSeries <- function(n_series = 10, n_times = 10, sigma = 0.1, for
 }
 
 
-S <- simulateMultipleSeries(format = "long", n_times = 60, sigma = 0.05)
+S <- simulateMultipleSeries(format = "long", n_times = 40, sigma = 0.05)
 
 ggplot(S,
        mapping = aes(x = time, y = abundance, color = stage, group = interaction(stage, series))) +
