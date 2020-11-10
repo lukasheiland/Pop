@@ -16,6 +16,7 @@ data {
   int<lower=0> N_obs; // not including t0, for now N_obs have to be the same in every series :(
   int<lower=0> N_species; // for now N_species have to be the same in every series :(
   int<lower=0> N_pops;
+  int<lower=0> N_beta;
 
   // indices for matrix layout
   int<lower=0> I_g[N_species, 3];
@@ -33,12 +34,17 @@ data {
   // actual data
   real time_init[N_locs, N_seriesperloc];
   real times[N_locs, N_seriesperloc, N_obs]; // arrays are row major!
+  matrix[N_locs, N_beta] X; // design matrix
   real<lower=0> y_init[N_locs, N_seriesperloc, N_pops];
   vector<lower=0>[N_pops] Y[N_locs, N_seriesperloc, N_obs]; // two-dimensional array of vectors[N_pops]
 }
 
 parameters {
   // Global species specific parameters
+  matrix[N_beta, N_species] beta_r;
+  matrix[N_beta, N_species] beta_s;
+  matrix[N_beta, N_species] beta_g;
+
   // components of A, i.e. population interactions
   vector<lower=0>[N_species] g; // (+) transition rate from J to A
   vector<upper=0>[N_species] s; // (-) shading affectedness of juveniles from A
@@ -60,21 +66,25 @@ parameters {
 }
 
 transformed parameters {
-  // Location level parameters
-  vector[N_species] g_loc[N_locs];
-  vector[N_species] s_loc[N_locs];
-  vector[N_species] r_loc[N_locs];
-  vector[N_species] o_loc[N_locs];
+  // Location level parameters:
+  matrix[N_locs, N_species] g_loc;
+  matrix[N_locs, N_species] s_loc;
+  matrix[N_locs, N_species] r_loc;
+  matrix[N_locs, N_species] o_loc;
 
   matrix[N_pops, N_pops] A_loc[N_locs]; // combined full matrix at the location level
   vector[N_pops] f_loc[N_locs]; // combined vector of r and o at the location level
   // vector<upper=0>[N_pops] l = diagonal(A); // juvenile self-competition
   vector<lower=0>[N_pops] State[N_locs,N_seriesperloc,N_obs];
 
-  for(l in 1:N_locs) {
-    // variables *_loc are just matrices/vectors inside arrays, which are accesed e.g. througn matrix[l, n, m]
+  // Environmental effects
+  r_loc = X * beta_r;
+  s_loc = X * beta_s;
+  g_loc = X * beta_g;
 
+  for (l in 1:N_locs) {
     // broadcasting of parameters into the interaction matrix A
+    // variables *_loc are just matrices/vectors inside arrays, which are accesed e.g. througn matrix[l, n, m]
     for (n in 1:(N_species*N_species)) {
       A_loc[l,  I_s[n,2], I_s[n,3]] = s_loc[l,  I_s[n,1]]; // adult-juvenile competition on loc level
 
@@ -90,8 +100,8 @@ transformed parameters {
       A_loc[l,  I_lg[n,2], I_lg[n,3]] = A_loc[l,  I_lg[n,2], I_lg[n,3]] - g_loc[l,  n]; // Juveniles act negatively upon themselves through both competition and transition.
     }
 
-    f_loc[l, i_j] = r_loc[l];
-    f_loc[l, i_a] = o_loc[l];
+    f_loc[l, i_j] = to_vector(r_loc[l,]);
+    f_loc[l, i_a] = to_vector(o_loc[l,]);
 
     // Integrate ode.
     // returns an array of column vectors, 'columns' accessed vie State[i]
@@ -115,13 +125,15 @@ model {
 
 
   // Model
-  for (l in 1:N_locs) {
+  for (n in 1:N_species) {
     // sample location level parameters
-    g_loc[l] ~ lognormal(log(g), theta);
-    s_loc[l] ~ lognormal(log(s), theta);
-    r_loc[l] ~ lognormal(log(r), theta);
-    o_loc[l] ~ lognormal(log(o), theta);
+    g_loc[, n] ~ lognormal(log(g[n]), theta);
+    s_loc[, n] ~ lognormal(log(s[n]), theta);
+    r_loc[, n] ~ lognormal(log(r[n]), theta);
+    o_loc[, n] ~ lognormal(log(o[n]), theta);
+  }
 
+  for (l in 1:N_locs) {
     for (z in 1:N_seriesperloc) {
       y_init[l, z, ] ~ lognormal(log(state_init[l, z]), sigma); // Separately fitting initial state to feed to integrator.
 

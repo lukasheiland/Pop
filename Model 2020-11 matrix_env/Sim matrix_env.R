@@ -221,7 +221,7 @@ simulateSeriesInEnv <- function(n_species,
                                 n_locs,
                                 n_seriesperloc = 3,
                                 n_times = 4,
-                                n_env = 2,
+                                Env,
                                 Beta_r,
                                 Beta_s,
                                 Beta_g,
@@ -231,7 +231,6 @@ simulateSeriesInEnv <- function(n_species,
   times <- seq(10, 40, length.out = n_times)
   n_pops <- n_species * 2
 
-  Env <- simulateEnv(n_env, n_locs)
   parsinenv <- simulateParametersInEnv(Env, Beta_r, Beta_s, Beta_g)
 
   simulateSeriesAtLoc <- function(r_hat, s_hat, g_hat) {
@@ -303,7 +302,7 @@ matplot(Sim1[, 1], Sim1[, -1], type = "b", ylab="N") # log='y'
 E <- simulateEnv(n_env, n_locs)
 P <- simulateParametersInEnv(E, Beta_r, Beta_s, Beta_g, returndf = T)
 S <- simulateSeriesInEnv(n_species, n_locs, n_seriesperloc, n_times,
-                         n_env, Beta_r, Beta_s, Beta_g,
+                         E, Beta_r, Beta_s, Beta_g,
                          sigma,
                          format = "long")
 
@@ -325,11 +324,17 @@ ggplot(S,
 
 #### Get a list of lists of data, where each second-level list belongs to one time series
 ## The lists will be unpacked as arrays of doubles, matrices, vectors etc. in stan
-getStanData <- function(locations) {
+getStanData <- function(locations, Env) {
 
+  ## environmental data
+  X <- model.matrix(~ poly(Env, 2))
+  envdata <- list(
+    X = X,
+    N_beta = ncol(X)
+  )
+
+  ## global numbers (For now, n_obs, and n_species have to be the same over all series. Thus, only first element extraction)
   n_pops <- ncol(locations[[1]][[1]]) - 1
-
-  # global numbers (For now, n_obs, and n_species have to be the same over all series. Thus, only first element extraction)
   ndata <- list(
     N_locs = length(locations),
     N_seriesperloc = length(locations[[1]]),
@@ -338,7 +343,7 @@ getStanData <- function(locations) {
     N_pops = n_pops
   )
 
-  # location-wide data
+  ## location-wide data
   ldata <- list(
     time_init = t(sapply(locations,
                        function(l) sapply(l, function(s) s[1, "time"]))), # stan expects a two-dimensional array time_init[N_locs, N_seriesperloc]
@@ -356,7 +361,7 @@ getStanData <- function(locations) {
               c(4, 3, 1, 2)) # stan expects three-dimensional array of n-dimensional vectors: vector[N_species] Y[N_locs,N_seriesperloc,N_obs] ## provided indexing order is opposite in R and stan!
   )
 
-  return(c(ndata, ldata, layoutMatrix(n_species = n_pops/2)))
+  return(c(envdata, ndata, ldata, layoutMatrix(n_species = n_pops/2)))
 }
 
 
@@ -400,13 +405,13 @@ getInits <- function() {
 
 
 # Simulate and fit! -------------------------------------------------------
+Env <- simulateEnv(n_env, n_locs)
 
 sims <- simulateSeriesInEnv(n_species, n_locs, n_seriesperloc, n_times,
-                    n_env, Beta_r, Beta_s, Beta_g,
+                    Env, Beta_r, Beta_s, Beta_g,
                     sigma,
                     format = "list")
-
-data <- getStanData(sims)
+data <- getStanData(sims, Env)
 
 
 #### Compile model
