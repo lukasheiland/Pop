@@ -19,6 +19,13 @@ modeldir <- list.files(pattern = glue("^(Model).*{modelname}$"))
 modelpath <- file.path(modeldir, glue('Model {modelname}.stan'))
 
 
+# Distribution ------------------------------------------------------------
+
+rnbinom2 <- function(n, mu, phi) {
+  rnbinom(n, mu = mu, size = phi)
+}
+
+
 # Multi-species matrix model -------------------------------------------------------------------
 
 calcModel <- function(t,
@@ -170,13 +177,13 @@ getParameters <- function(r_log, s_log, g_log, sigma_par, returndf = F) {
   A[I$I_g[,2:3]] <- g
 
   ## (-) Competition matrix of adults: a_A
-  A[I$Map_a[,3:4]] <- -rlnorm(n_species^2, log(0.05), 0.05)
+  A[I$Map_a[,3:4]] <- -rlnorm(n_species^2, log(0.01), 0.05)
 
   ## (-) Competition matrix of juveniles: a_J
-  A[I$Map_j[,3:4]] <- -rlnorm(n_species^2, log(0.02), 0.01)
+  A[I$Map_j[,3:4]] <- -rlnorm(n_species^2, log(0.005), 0.01)
 
   ## (-) Intra competition of adults (the diagonal of a_A): l[n_species]
-  A[I$I_l[,2:3]] <- -rlnorm(n_species, log(0.1), 0.1)
+  A[I$I_l[,2:3]] <- -rlnorm(n_species, log(0.02), 0.1)
 
   ## (-) Intra competition of juveniles - transition from juveniles: l - g = lg[n_species]
   A[I$I_lg[,2:3]] <- A[I$I_lg[,2:3]] - g
@@ -203,7 +210,7 @@ simulateInitialState <- function(n_pops) {
 }
 
 #### Integrate model to simulate states
-simulateSeries <- function(state_init, times, par, sigma_obs) {
+simulateSeries <- function(state_init, times, par, phi_obs) {
 
   m0 <- state_init
   n_pops <- length(state_init)
@@ -212,7 +219,7 @@ simulateSeries <- function(state_init, times, par, sigma_obs) {
   ## Different in ode interfaces in deSolve and stan! deSolve::ode() returns state at t0, stan only at the solution times.
   Sim <- ode(m0, times, calcModel, par)
   Sim[Sim < 0] <- 0
-  Sim[, 2:(n_pops+1)] <- matrix(rlnorm(Sim, log(Sim), sigma_obs), nrow = nrow(Sim))[, 2:(n_pops+1)]
+  Sim[, 2:(n_pops+1)] <- matrix(rnbinom2(Sim, Sim, phi_obs), nrow = nrow(Sim))[, 2:(n_pops+1)]
 
   return(Sim)
 }
@@ -228,7 +235,7 @@ simulateSeriesInEnv <- function(n_species,
                                 Beta_s,
                                 Beta_g,
                                 sigma_par,
-                                sigma_obs,
+                                phi_obs,
                                 format = c("long", "wide", "list")) {
 
   times <- seq(10, 40, length.out = n_times)
@@ -239,7 +246,7 @@ simulateSeriesInEnv <- function(n_species,
   simulateSeriesAtLoc <- function(r_log, s_log, g_log) {
     par <- getParameters(r_log, s_log, g_log, sigma_par)
     m0 <- simulateInitialState(n_pops = n_pops)
-    seriesatloc <- replicate(n_seriesperloc, simulateSeries(m0, times, par, sigma_obs), simplify = F)
+    seriesatloc <- replicate(n_seriesperloc, simulateSeries(m0, times, par, phi_obs), simplify = F)
     names(seriesatloc) <- 1:n_seriesperloc
     return(seriesatloc)
   }
@@ -288,20 +295,20 @@ n_env <- 3
 E <- simulateEnv(n_env, n_locs)
 n_beta <- 1 + ncol(poly(E, 2)) # + intercept
 Beta_r <- matrix(rnorm(n_beta*n_species, 0, 0.01), n_beta, n_species)
-Beta_r[1,] <- rnorm(n_species, 2, 0.01)
+Beta_r[1,] <- rnorm(n_species, 3, 0.01)
 Beta_s <- matrix(rnorm(n_beta*n_species, 0, 0.01), n_beta, n_species)
-Beta_s[1,] <- rnorm(n_species, -4, 0.01)
+Beta_s[1,] <- rnorm(n_species, -3.5, 0.01)
 Beta_g <- matrix(rnorm(n_beta*n_species, 1, 0.1), n_beta, n_species)
-Beta_g[1,] <- rnorm(n_species, -2.7, 0.01)
+Beta_g[1,] <- rnorm(n_species, -1.7, 0.01)
 
-sigma_obs <- 0.1
+phi_obs <- 10
 sigma_par <- 0.1
 
 
 ## Simulate one time series
 initialstate1 <- simulateInitialState(n_species*2)
 par1 <- getParameters(Beta_r[1,], Beta_s[1,], Beta_g[1,], sigma_par)
-Sim1 <- simulateSeries(initialstate1, times = 1:20, par1, sigma_obs = 0.02)
+Sim1 <- simulateSeries(initialstate1, times = 1:20, par1, phi_obs = 10)
 matplot(Sim1[, 1], Sim1[, -1], type = "b", ylab="N") # log='y'
 
 ## Simulate multiple time series in environmental space
@@ -309,7 +316,7 @@ P <- simulateParametersInEnv(E, Beta_r, Beta_s, Beta_g, returndf = T) %>%
   mutate(q = exp(q))
 S <- simulateSeriesInEnv(n_species, n_locs, n_seriesperloc, n_times,
                          E, Beta_r, Beta_s, Beta_g,
-                         sigma_par, sigma_obs,
+                         sigma_par, phi_obs,
                          format = "long")
 
 
@@ -364,7 +371,7 @@ getStanData <- function(locations, Env) {
     y_init = aperm(sapply(locations,
                     function(l) sapply(l, function(s) s[1, -1]),
                     simplify = "array"),
-                   c(3, 2, 1)), # stan expects three-dimensional array: real y_init[N_locs,N_seriesperloc,N_species];
+                   c(3, 2, 1)), # stan expects two-dimensional array of vectors: vector[[N_species]] y_init[N_locs,N_seriesperloc];
     Y = aperm(sapply(locations,
                function(l) sapply(l, function(s) s[-1, -1], simplify = "array"),
                simplify = "array"),
@@ -378,63 +385,71 @@ getStanData <- function(locations, Env) {
 #### generate acceptable start values
 getInits <- function() {
   list(
-    Beta_s = matrix(0, n_beta, n_species),
-    Beta_g = matrix(0, n_beta, n_species),
-    Beta_r = matrix(0, n_beta, n_species),
+    Beta_s = Beta_s, # matrix(1, n_beta, n_species),
+    Beta_g = Beta_g, # matrix(1, n_beta, n_species),
+    Beta_r = Beta_r, # matrix(1, n_beta, n_species),
     
-    o = rep(0, n_species),
+    o = Beta_r[1,] - 2, # rep(log(0.01), n_species),
+    
+    r_series = array(exp(mean(Beta_r[1,])), c(data$N_locs, data$N_seriesperloc, data$N_species)), # vector<lower=0>[N_species] s_series[N_locs, N_seriesperloc];
+    s_series = array(exp(mean(Beta_s[1,])), c(data$N_locs, data$N_seriesperloc, data$N_species)), # vector<lower=0>[N_species] s_series[N_locs, N_seriesperloc];
+    g_series = array(exp(mean(Beta_g[1,])), c(data$N_locs, data$N_seriesperloc, data$N_species)), # vector<lower=0>[N_species] s_series[N_locs, N_seriesperloc];
+    o_series = array(exp(mean(Beta_r[1,] - 2)), c(data$N_locs, data$N_seriesperloc, data$N_species)), # vector<lower=0>[N_species] s_series[N_locs, N_seriesperloc];
+    
     
     # A_j = - matrix(rlnorm(data$N_species^2, log(0.5), 0.01), nrow = data$N_species),
     # A_a = - matrix(rlnorm(data$N_species^2, log(0.5), 0.01), nrow = data$N_species),
-    A_j = - matrix(0, nrow = data$N_species, ncol = data$N_species),
-    A_a = - matrix(0, nrow = data$N_species, ncol = data$N_species),
+    A_j = matrix(- rlnorm(data$N_species^2, log(0.01), 0.01), ncol = data$N_species),
+    A_a = matrix(- rlnorm(data$N_species^2, log(0.05), 0.01), nrow = data$N_species, ncol = data$N_species),
+    
+    state_init = data$y_init,
 
-    state_init =  data$y_init, # t(replicate(data$N_series, runif(data$N_pops, 10, 20), simplify = "array")), # stan expects vector<lower=0>[N_species] state_init[N_series]
-
-    sigma_obs = 0.1, # rep(0.1, data$N_species)
-    sigma_par = 0.1
+    phi_obs = 5, # rep(0.1, data$N_species)
+    sigma_par = 1
   )
 }
 
 
 
 
+
 # Simulate and fit! -------------------------------------------------------
-n_times_new <- 3
+n_times_new <- 4
 sims <- simulateSeriesInEnv(n_species, n_locs, n_seriesperloc, n_times_new,
                     E, Beta_r, Beta_s, Beta_g,
-                    sigma_par, sigma_obs,
+                    sigma_par, phi_obs,
                     format = "list")
-data <- getStanData(sims, E)
-
+hasnonegatives <- !sapply(sims, function(l) any(sapply(l, function(s) any(s == 0))))
+data <- getStanData(sims[hasnonegatives], E[hasnonegatives,])
 
 #### Compile model
 model <- cmdstan_model(modelpath)
 # model$exe_file() ## path to compiled model
 # model$check_syntax()
-# model$generate_quantities()
 
 #### Optimize model.
 fit_optim <- model$optimize(data = data,
                             iter = 10^9,
                             output_dir = "Fits/",
                             init = getInits)
+fit_optim$init()
 
 Estimates <- fit_optim$summary()
 
 Compare <- cbind(estimate = Estimates[c(92:134, 32:91),],
-                 true = c(sigma_obs, c(A), f, c(data$y_init)))
-View(Compare)
+                 true = c(phi_obs, c(A), f, c(data$y_init)))
+# View(Compare)
 
 
 #### Sample.
-n_chains <- 3
+n_chains <- 1
 fit <- model$sample(data = data,
                     output_dir = "Fits",
                     init = getInits,
                     iter_warmup = 200, iter_sampling = 500,
                     chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
 
+fit$init()
 fit$summary(variables = 'state_init')
 data$y_init
 
