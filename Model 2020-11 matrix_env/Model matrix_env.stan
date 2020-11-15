@@ -1,4 +1,4 @@
-// A generic implementation of the generalized Lotka-Volterra system.
+// Multi-population system
 functions {
   vector ds_dt(real time, vector state, vector f, matrix A, int n_pops) {
 
@@ -139,10 +139,9 @@ model {
   //---------- PRIORS ---------------------------------
   
   //// Level 1. log-scale
-  // o ~ normal(-2, 0.02);
+  o ~ normal(1, 1);
   
-  // sigma ~ cauchy(0, 0.000001);
-  phi_obs ~ exponential(10); // for observations from predictionsions
+  phi_obs ~ cauchy(10, 5); // for observations from predictionsions
   sigma_par ~ exponential(100); // for time series (plots) from locations
 
 
@@ -160,11 +159,10 @@ model {
       o_series[l, z] ~ lognormal(o, sigma_par); // (-), here still positive
 
       //// Level 3. Fit time series level predictions to data.
-      /// LOOP HERE AND MAKE IT FOR EVERY CASE
-      y_init[l, z] ~ neg_binomial_2(state_init[l, z], phi_obs); // Separately fitting initial state to feed to integrator.
+      y_init[l, z] ~ neg_binomial_2(state_init[l, z] + 1e-18, phi_obs); // Separately fitting initial state to feed to integrator.
 
       for (t in 1:N_obs) {
-        Y[l,z,t] ~ neg_binomial_2(State[l, z, t], phi_obs); // Lognormal model of states.
+        Y[l,z,t] ~ neg_binomial_2(State[l, z, t] + 1e-18, phi_obs); // Lognormal model of states.
       } // loop: t in N_obs
       
     } // loop: z in N_seriesperloc

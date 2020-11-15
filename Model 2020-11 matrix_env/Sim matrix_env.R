@@ -159,7 +159,7 @@ getParameters <- function(r_log, s_log, g_log, sigma_par, returndf = F) {
   f <- rep(NA, n_pops)
   f[I$isjuvenile] <- r # Vector of intrinsic growth rates.
   o_log <- r_log-2
-  f[!I$isjuvenile] <- - rlnorm(n_species, o_log, sigma_par) # output rates
+  f[!I$isjuvenile] <- - rlnorm(n_species, o_log, sigma_par) # (-)! output rates, negated here!
 
   A <- matrix(NA, n_pops, n_pops)
 
@@ -285,7 +285,7 @@ simulateSeriesInEnv <- function(n_species,
 
 # Simulate for plotting! ---------------------------------------------------------------
 n_species <- 4
-n_locs <- 100
+n_locs <- 40
 n_seriesperloc = 3
 n_times <- 4
 
@@ -442,7 +442,7 @@ Compare <- cbind(estimate = Estimates[c(92:134, 32:91),],
 
 
 #### Sample.
-n_chains <- 1
+n_chains <- 3
 fit <- model$sample(data = data,
                     output_dir = "Fits",
                     init = getInits,
