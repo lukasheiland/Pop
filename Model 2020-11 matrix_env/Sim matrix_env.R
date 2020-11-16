@@ -434,10 +434,10 @@ fit_optim <- model$optimize(data = data,
                             init = getInits)
 fit_optim$init()
 
-Estimates <- fit_optim$summary()
+Estimates <- fit_optim$summary(variables = c("sigma_par", "phi_obs", "Beta_r", "Beta_s", "Beta_g")) # "o", "state_init"
 
-Compare <- cbind(estimate = Estimates[c(92:134, 32:91),],
-                 true = c(phi_obs, c(A), f, c(data$y_init)))
+Compare <- cbind(estimate = Estimates,
+                 true = c(sigma_par, phi_obs, c(Beta_r), c(Beta_s), c(Beta_g))) # f[(1:n_species)*2], c(data$y_init)
 # View(Compare)
 
 
