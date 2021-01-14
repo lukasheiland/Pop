@@ -67,3 +67,4 @@ vignettes/*.pdf
 docs/
 Model 2020-10 matrix_lognormal/Model matrix_lognormal
 Model 2020-11 matrix_env/Model matrix_env
+Model 2020-12 alphamatrix_threestage/Model alphamatrix_threestage

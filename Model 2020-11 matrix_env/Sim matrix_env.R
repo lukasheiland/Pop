@@ -124,7 +124,7 @@ simulateEnv <- function(n_env, n_locs){
 ## Beta_* are effect of environment on species' parameters matrix[1 + n_env, n_species]
 simulateParametersInEnv <- function(Env, Beta_r, Beta_s, Beta_g, returndf = F) {
   n_species <- ncol(Beta_r)
-  M <- model.matrix(~ poly(Env, 2))
+  M <- model.matrix(~ poly(Env, degree = 2, raw = T)) # set raw for recovery of the coefficients! (but not for fitting real data)
   r_log <- M %*% Beta_r
   s_log <- M %*% Beta_s
   g_log <- M %*% Beta_g
@@ -273,7 +273,7 @@ simulateSeriesInEnv <- function(n_species,
                                 cols = all_of(paste(1:n_pops)),
                                 names_to = "pop",
                                 values_to = "abundance") %>%
-      mutate(pop = as.integer(as.factor(pop))) %>%
+      mutate(pop = as.integer(pop)) %>%
       mutate(species = rep(1:n_species, each = 2, length.out = nrow(.)),
              stage = rep(c("j", "a"), length.out = nrow(.))
       )

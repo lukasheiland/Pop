@@ -113,14 +113,14 @@ transformed parameters {
       f_series[l, z, i_a] = - to_vector(o_series[l, z,]); // (-)!
       
       // Integrate ode.
-      // returns an array of column vectors, 'columns' accessed vie State[i]
+      // returns an array of column vectors, accessed vie State[i]
       State[l, z,] = ode_rk45_tol(ds_dt,
                                   state_init[l, z], time_init[l, z], times[l, z,],
                                   1e-5, 1e-3, 10000, // integrator tolerance settings: real rel_tol, real abs_tol, int max_num_steps
                                   f_series[l, z], A_series[l, z], // model parameters
                                   N_pops);
         
-      // Check integradtion results.
+      // Check integration results.
       for (t in 1:N_obs) {
         for (p in 1:N_pops) {
           // print(State[l, z, t, p]);
