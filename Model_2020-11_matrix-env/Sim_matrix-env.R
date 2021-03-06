@@ -12,11 +12,11 @@ library(cmdstanr)
 
 # Orientation -------------------------------------------------------------
 
-modelname <- "matrix_env"
+modelname <- "matrix-env"
 
 setwd(here())
-modeldir <- list.files(pattern = glue("^(Model).*{modelname}$"))
-modelpath <- file.path(modeldir, glue('Model {modelname}.stan'))
+modeldir <- dir(pattern = glue("^(Model).*{modelname}$"))
+modelpath <- file.path(modeldir, glue('Model_{modelname}.stan'))
 
 
 # Distribution ------------------------------------------------------------

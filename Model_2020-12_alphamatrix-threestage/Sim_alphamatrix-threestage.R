@@ -13,11 +13,11 @@ library(cmdstanr)
 
 # Orientation -------------------------------------------------------------
 
-modelname <- "alphamatrix_threestage"
+modelname <- "alphamatrix-threestage"
 
 setwd(here())
-modeldir <- list.files(pattern = glue("^(Model).*{modelname}$"))
-modelpath <- file.path(modeldir, glue('Model {modelname}.stan'))
+modeldir <- dir(pattern = glue("^(Model).*{modelname}$"))
+modelpath <- file.path(modeldir, glue('Model_{modelname}.stan'))
 
 
 # Distribution ------------------------------------------------------------
@@ -473,6 +473,8 @@ getTrueInits <- function() {
 }
 
 
+#### Calculate initial values based on data
+## NOT YET WORKING!
 getInits <- function() {
   
   n_s <- data$N_species

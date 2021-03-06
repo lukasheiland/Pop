@@ -12,11 +12,11 @@ library(cmdstanr)
 
 # Orientation -------------------------------------------------------------
 
-modelname <- "matrix_poisson"
+modelname <- "matrix-poisson"
 
 setwd(here())
-modeldir <- list.files(pattern = glue("^(Model).*({modelname})$"))
-modelpath <- file.path(modeldir, glue('Model {modelname}.stan'))
+modeldir <- dir(pattern = glue("^(Model).*({modelname})$"))
+modelpath <- file.path(modeldir, glue('Model_{modelname}.stan'))
 
 
 # Multi-species matrix model -------------------------------------------------------------------

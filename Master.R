@@ -6,9 +6,10 @@ library(glue)
 
 
 # Orientation -------------------------------------------------------------
+setwd(here())
 
 modelname <- ""
+modeldir <- dir(pattern = glue("^(Model).*{modelname}$"))
+modelpath <- file.path(modeldir, glue('Model_{modelname}.stan'))
 
-setwd(here())
-modeldir <- list.files(pattern = glue("^(Model).*{modelname}$"))
-modelpath <- file.path(modeldir, glue('Model {modelname}.stan'))
+datadir <- dir(pattern = "Data")
