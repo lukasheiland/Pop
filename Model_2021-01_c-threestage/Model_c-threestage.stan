@@ -1,18 +1,18 @@
 functions {
   
   //// ODE system
-  vector ds_dt(real time, vector state, vector r, vector s, vector g, vector h, vector c_j, vector c_ab, int N_species) {
+  vector ds_dt(real time, vector state, vector r, vector s, vector g, vector h, vector c_j, vector c_ab, int N_spec) {
     
     // Structure of state[N_pops]: stage/species
     
-    vector[N_species] J = segment(state, 1, N_species);
-    vector[N_species] A = segment(state, N_species+1, N_species);
-    vector[N_species] B = segment(state, N_species+N_species+1, N_species);
+    vector[N_spec] J = segment(state, 1, N_spec);
+    vector[N_spec] A = segment(state, N_spec+1, N_spec);
+    vector[N_spec] B = segment(state, N_spec+N_spec+1, N_spec);
     real AB = sum(A + B);
     
-    vector[N_species] dJ = r - (c_j*sum(J) + s*AB + g).*J;
-    vector[N_species] dA = g .* J - (c_ab*AB + h).*A;
-    vector[N_species] dB = h .* A - (c_ab*AB).*B;
+    vector[N_spec] dJ = r - (c_j*sum(J) + s*AB + g).*J;
+    vector[N_spec] dA = g .* J - (c_ab*AB + h).*A;
+    vector[N_spec] dB = h .* A - (c_ab*AB).*B;
     
     return append_row(dJ, append_row(dA, dB));
   }
