@@ -517,7 +517,7 @@ plotFitVsTrue <- function(parname = c(sim = "R_log",
   # simpar <- c(simpar)
   
   # apply(stanarray, c(1, 2), FUN = mean)
-  stanpar <- rstan::extract(rstandraws, pars = parname[2])[[1]] %>% aperm(c(2,3,1)) %>% c()\
+  stanpar <- rstan::extract(rstandraws, pars = parname[2])[[1]] %>% aperm(c(2,3,1)) %>% c()
   
   # cbind(simpar, stanpar
   plot(rep(c(simpar), length.out = length(stanpar)), stanpar, cex = 0.1, col = alpha("black", alpha = 0.03))
