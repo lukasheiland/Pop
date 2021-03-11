@@ -274,7 +274,7 @@ simulateOneSeries <- function(state_init, times, simpars, phi_obs = c(500, 5000)
   if (obserror) {
     ## phi for juveniles
     Sim[, 2:(n_pops/3+1)] <- matrix(rnbinom2(Sim, Sim, phi_obs[1]), nrow = nrow(Sim))[,  2:(n_pops/3+1)]
-    Sim[, (n_pops/3+1):(n_pops+1)] <- matrix(rnbinom2(Sim, Sim, phi_obs[1]), nrow = nrow(Sim))[, (n_pops/3+1):(n_pops+1)]
+    Sim[, (n_pops/3+1):(n_pops+1)] <- matrix(rnbinom2(Sim, Sim, phi_obs[2]), nrow = nrow(Sim))[, (n_pops/3+1):(n_pops+1)]
   }
   Sim <- Sim[!internaltimes,]
   return(Sim)
@@ -489,14 +489,14 @@ formals(generateParameters)
 pars1 <- generateParameters(seed = 1)
 initialstate1 <- generateInitialState(n_species = pars1$n_species)
 pars1 <- within(pars1, {
-  r = exp(pars1$r_log); s = exp(pars1$s_log); g = exp(pars1$g_log);
+  r = exp(pars1$r_log); s = exp(pars1$s_log); g = exp(pars1$g_log); m_j = exp(pars1$m_j);
   h = exp(pars1$h_log); c_j = exp(pars1$c_j_log); c_ab = exp(pars1$c_ab_log);
   sigma_process = c(10, 5, 4);
 })
 times1 <- seq(0, 1, length.out = 20)
 
 #### 1. Continuous
-Sim1 <- simulateOneSeries(initialstate1, times = times1, simpars = pars1, phi_obs = 10, # pars1$phi_obs                       rep(F, length(times1)), obserror = F)
+Sim1 <- simulateOneSeries(initialstate1, times = times1, simpars = pars1, phi_obs = c(10, 100), # pars1$phi_obs                       rep(F, length(times1)), obserror = F)
                           internaltimes = rep(F, length(times1)), discrete = F, obserror = F)
 
 matplot(Sim1[-1, 1], Sim1[-1, -1], type = "b", ylab="N",
@@ -518,7 +518,7 @@ matplot(Sim1_discr[-1, 1], Sim1_discr[-1, -1], type = "b", ylab="N",
 
 
 ### Demo simulations: multiple time series ---------------------------------------------------------------
-pars_demo <- generateParameters(n_times = 50, n_species = 4, n_locs = 10, phi_obs = 1000000)
+pars_demo <- generateParameters(n_times = 50, n_species = 4, n_locs = 10, phi_obs = c(10000, 1000000))
 E_demo <- simulateEnv(pars_demo$n_env, pars_demo$n_locs)
 P_env_demo <- transformParameters(pars_demo, E_demo, returndf = T)
 S_demo <- simulateMultipleSeriesInEnv(pars_demo, E_demo, discrete = F, obserror = F)
