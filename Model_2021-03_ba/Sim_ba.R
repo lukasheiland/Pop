@@ -462,7 +462,7 @@ generateParameters <- function(seed = 1,
                                dbh_lower_a = 100, dbh_lower_b = 200,
                                
                                ## errors:
-                               sigma_process = c(0.05, 0.05, 0.03), shape_par = 10, sigma_obs = c(0.1, 0.01),
+                               sigma_process = c(0.05, 0.05, 0.03), shape_par = 10, sigma_obs = c(1, 0.2),
                                ...) {
   set.seed(seed)
   
@@ -528,7 +528,7 @@ pars1 <- within(pars1,
 times1 <- 1:30
 
 Sim1 <- simulateOneSeries(initialstate1, times = times1, pars = pars1,
-                          processerror = T, obserror = T, log = F)
+                          processerror = T, obserror = F, log = F)
 
 matplot(Sim1[,-1], type = "b", ylab="N",
         pch = rep(c("J", "A", "B"), each = pars1$n_species),
@@ -540,7 +540,7 @@ matplot(Sim1[,-1], type = "b", ylab="N",
 pars_demo <- generateParameters(n_species = 4, n_locs = 50, sigma_obs = c(0.2, 0.1))
 E_demo <- simulateEnv(pars_demo$n_env, pars_demo$n_locs)
 P_env_demo <- transformParameters(pars_demo, E_demo, ranef = F, returndf = T)
-S_demo <- simulateMultipleSeriesInEnv(pars_demo, E_demo, ranef = F, processerror = F, obserror = F)
+S_demo <- simulateMultipleSeriesInEnv(pars_demo, E_demo, ranef = F, processerror = T, obserror = F)
 
 #### Plot time series
 S_demo %>%
@@ -574,13 +574,17 @@ P_env_demo %>%
 ######################################################################################
 
 ## Simulate stan model data --------------------------------------------------------------
-fitseed <- 3
+fitseed <- 4
 
 pars <- generateParameters(seed = fitseed, n_locs = 100)
+
+## Noted parameter sets for certain scenarios
+# vanillapars <- list(m_a = c(0.13775027516741, 0.0831076381707702, 0.166562119281524, 0.362271451589225), h = c(0.672193293391343, 0.274962263141363, 1.55117000304339, 1.2637993645035), c_b = c(0.0548763409667518, 0.0549562861570096, 0.0453146154867612, 0.0515562703000564), c_a = c(0.0359133163808294, 0.0301988023545219, 0.053651385975422, 0.0344764882798942), c_j = c(3.04673529290198e-05, 3.35625859540186e-05, 0.000107020013051792, 3.1738689290975e-05), b = c(0.371076220260419, 0.369004399628789, 0.367460213816979, 0.369441276704991), s_log = c(-2.89551172099146, -3.07261732319882, -2.74442129796894, -2.82235873082675), Beta_s = structure(c(-2.89551172099146, -0.653262427619834, -1.2197015017507, -0.56532684051239, 0.184374087641508, -3.07261732319882, -0.638829951386581, -1.34560395072844, 0.079541211472999, 0.307398816571726, -2.74442129796894, -0.0235255055281198, -0.914472355088622, -0.288782995490497, 0.484239567145924, -2.82235873082675, 0.342400967991008, -0.851087070951239, -0.178237589909241, -0.0528858038195276), .Dim = 5:4), r_log = c(2.24750766250793, 2.06681557751702, 2.04063849803145, 2.18966061373772), Beta_r = structure(c(2.24750766250793, 0.347983316850553, -0.242614333340497, 0.674449097598866, -0.534261535243387, 2.06681557751702, -0.656360882268741, -0.542829932547678, 0.065691505331339, -0.115844224457469, 2.04063849803145, 0.444716041140687, -0.614949092860281, -0.0856366214813095, 0.0793384487216275, 2.18966061373772, -0.479453037499603, -0.794145408858466, 0.360867141409459, -0.184770239060399), .Dim = 5:4), m_j_log = c(-1.12760958447157, -1.37973820185725, -1.26637431415762, -1.26237264887292), Beta_m_j = structure(c(-1.12760958447157, -2.37990958099843, -2.51592648636763, -2.4740337105052, -3.37710560640876, -1.37973820185725, -2.56943406375114, -2.41287504743412, -3.11370270863681, -2.53295191456875, -1.26637431415762, -3.31877174928511, -2.10581980605515, -2.90923230770103, -2.35374383179143, -1.26237264887292, -3.41049678881548, -2.61935173450183, -2.95057815543102, -3.18782757209918), .Dim = 5:4), g_log = c(-11.6918370038258, -11.966966196058, -11.7384755279491, -11.7423486244157), Beta_g = structure(c(-11.6918370038258, -0.771246286131713, -0.881420611870394, -0.202009711406263, 0.317809000556486, -11.966966196058, -1.14062331505058, -1.05658873686445, 0.448269935954636, 0.388431606841362, -11.7384755279491, -0.492140272997715, -0.74882319488003, -0.522568557956654, -0.482824046301504, -11.7423486244157, 0.0825134195138365, -0.818032169754275, -0.550184221292952, -0.641722284436796), .Dim = 5:4), n_beta = 5, seed = 4, n_species = 4, n_stages = 3, n_locs = 100, n_plotsperloc = 3, n_env = 2, dbh_lower_a = 100, dbh_lower_b = 200, sigma_process = c(0.05, 0.05, 0.03), shape_par = 10, sigma_obs = c(1, 0.2))
+
 Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
 data <- simulateMultipleSeriesInEnv(pars, Env, seed = fitseed, ranef = F, format = "standata")
-Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(5, 20, 28),
-                                         seed = fitseed, format = "long", obserror = T) %>%
+Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(3, 15, 25),
+                                         seed = fitseed, format = "long", obserror = T, processerror = T) %>%
   mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
   arrange(sortid, time) %>%
   group_by(loc, species, stage, time) %>%
@@ -653,7 +657,7 @@ drawSamples <- function(model, data, variational = F, n_chains = 3) {
     fit <- model$variational(data = data,
                              output_dir = "Fits",
                              init = getTrueInits,
-                             iter = 10**4) # convergence after 1500 iterations
+                             iter = 20**4) # convergence after 1500 iterations
     
   } else {
     
@@ -733,15 +737,17 @@ plotDrawVsSim <- function(parname = "h",
 
 
 ## Fitted parameters vs. true
+plotDrawVsSim("b")
 plotDrawVsSim("c_j")
 plotDrawVsSim("c_a")
 plotDrawVsSim("c_b")
+plotDrawVsSim("h")
+plotDrawVsSim("m_a")
 
 plotDrawVsSim("Beta_g")
 plotDrawVsSim("Beta_m_j")
 plotDrawVsSim("Beta_r")
 plotDrawVsSim("Beta_s")
-
 
 
 
