@@ -25,7 +25,7 @@ functions {
       
       real BA = sum(A*ba_a_avg + B);
       
-      /// Ricker model: fill the log states
+      /// Ricker model: assign to the the log states
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b))
       State[i_j, t]  =  log1p(expm1(J_log) + r) - c_j*sum(J) - s*BA - m_j - g + u[1, ]; // equivalent to … =  J + (r - (c_j*sum(J) + s*AB + g + m_j).*J + u[1, i_j]) * dt;
       State[i_a, t]  =  log1p(A + expm1(J_log - g)) - c_a*BA - m_a - h + u[2, ];
