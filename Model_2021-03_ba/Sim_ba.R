@@ -598,7 +598,7 @@ Data_long %>%
   facet_wrap(facets = c("species"))
 
 
-#### Returns viable (+- the true) start values ----------------------
+#### Returns +- the true start values ----------------------
 getTrueInits <- function() {
   
   truepars <- attr(data, "pars")
@@ -619,13 +619,13 @@ getTrueInits <- function() {
     c_b   = truepars$c_b,
     h     = truepars$h,
     m_a   = truepars$m_a,
-
+    
     shape_par      = truepars$shape_par,
     sigma_process  = truepars$sigma_process,
     sigma_obs      = c(10, 10, 10),
     
     u = matrix(rnorm(data$N_totalspecies*3, 0, 0), nrow = data$N_totalspecies, ncol = 3),
-
+    
     b_loc     = truepars$b_loc,
     c_j_loc   = truepars$c_j_loc,
     c_a_loc   = truepars$c_a_loc,
@@ -637,7 +637,44 @@ getTrueInits <- function() {
   return(inits)
 }
 
-
+#### Returns viable start values ---------------------------
+getInits <- function() {
+  
+  truepars <- attr(data, "pars")
+  
+  inits <- list(
+    ## from global environment
+    Beta_g = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
+    Beta_m_j = matrix(c(-2, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
+    Beta_r = matrix(c(2, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
+    Beta_s = matrix(c(-3, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
+    
+    state_init_log = data$y0_log, # to void zero inits
+    
+    ## Version with random rates.
+    b     = rgamma(truepars$n_species, 10, 10/0.001),
+    c_j   = rgamma(truepars$n_species, 10, 10/0.001),
+    c_a   = rgamma(truepars$n_species, 10, 10/0.001),
+    c_b   = rgamma(truepars$n_species, 10, 10/0.001),
+    h     = rgamma(truepars$n_species, 10, 10/0.1), #!
+    m_a   = rgamma(truepars$n_species, 10, 10/0.001),
+    
+    shape_par      = c(10, 10, 10),
+    sigma_process  = c(0.1, 0.1, 0.1),
+    sigma_obs      = c(10, 10, 10),
+    
+    u = matrix(rnorm(data$N_totalspecies*3, 0, 0), nrow = data$N_totalspecies, ncol = 3) #,
+    
+    # b_loc     = truepars$b_loc,
+    # c_j_loc   = truepars$c_j_loc,
+    # c_a_loc   = truepars$c_a_loc,
+    # c_b_loc   = truepars$c_b_loc,
+    # h_loc     = truepars$h_loc,
+    # m_a_loc   = truepars$m_a_loc
+  )
+  
+  return(inits)
+}
 
 ## Compile model. --------------------------------------------------------------
 
@@ -649,19 +686,19 @@ model <- cmdstan_model(modelpath)
 ## Draw from model --------------------------------------------------------------
 
 ####  Do the fit ----------------------
-drawSamples <- function(model, data, variational = F, n_chains = 3) {
+drawSamples <- function(model, data, variational = F, n_chains = 6) {
   if(variational) {
     fit <- model$variational(data = data,
-                             output_dir = "Fits",
+                             output_dir = "Fits.nosync",
                              init = getTrueInits,
                              iter = 20**4) # convergence after 1500 iterations
     
   } else {
     
     fit <- model$sample(data = data,
-                        output_dir = "Fits",
+                        output_dir = "Fits.nosync",
                         init = getTrueInits,
-                        iter_warmup = 300, iter_sampling = 300,
+                        iter_warmup = 1500, iter_sampling = 500,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
   }
   return(fit)
@@ -703,7 +740,7 @@ fit$summary() %>%
   View()
 # fit$summary(variables = c("shape_par", "sigma_obs", "h", "c_j", "state_init", "u")) %>% # "o", "state_init"
 
-shinystan::launch_shinystan(shinystanfit)
+shinystan::launch_shinystan(draws)
 
 
 
@@ -712,8 +749,8 @@ truepars <- attr(data, "pars")
 
 #### Draws vs true ----------------------
 plotDrawVsSim <- function(parname = "h",
-                           simdata = data,
-                           rstandraws = draws) {
+                          simdata = data,
+                          rstandraws = draws) {
   
   
   simpar <- attr(simdata, "pars")[[parname]]
