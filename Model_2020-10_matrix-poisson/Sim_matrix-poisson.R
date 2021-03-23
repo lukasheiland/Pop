@@ -281,7 +281,7 @@ View(Compare)
 #### Sample.
 n_chains <- 1
 fit <- model$sample(data = data,
-                    output_dir = "Fits",
+                    output_dir = "Fits.nosync",
                     init = getInits,
                     iter_warmup = 200, iter_sampling = 500,
                     chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))

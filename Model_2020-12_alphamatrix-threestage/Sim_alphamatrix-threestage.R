@@ -590,7 +590,7 @@ model <- cmdstan_model(modelpath)
 #### Variational Bayes sampling. --------------------------------------------------------------
 
 fit_var <- model$variational(data = data,
-                         output_dir = "Fits",
+                         output_dir = "Fits.nosync",
                          init = getTrueInits,
                          iter = 2*10**2)
 
@@ -625,14 +625,14 @@ points(Env[,1], exp(r_hat_true[,1]), col = "blue")
 
 n_chains <- 3
 fit <- model$sample(data = data,
-                    output_dir = "Fits",
+                    output_dir = "Fits.nosync",
                     init = getTrueInits,
                     iter_warmup = 200, iter_sampling = 500,
                     chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
 
 fit <- model$sample(data = data,
                     fixed_param = T,
-                    output_dir = "Fits",
+                    output_dir = "Fits.nosync",
                     init = getTrueInits,
                     iter_warmup = 10, iter_sampling = 100,
                     chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))

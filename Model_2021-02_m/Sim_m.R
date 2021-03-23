@@ -624,7 +624,7 @@ compiledpath <-  model$exe_file()
 
 #### Variational Bayes sampling. --------------------------------------------------------------
 fit_var <- model$variational(data = data,
-                             output_dir = "Fits",
+                             output_dir = "Fits.nosync",
                              init = getTrueInits,
                              eta = 1,
                              iter = 10**4) # convergence after 1500 iterations
@@ -659,7 +659,7 @@ plotFitVsTrue <- function(parname = c(sim = "R_log",
 drawpath <- fit_var$output_files()
 
 ## alternatively
-# drawpath <- file.info(list.files("Fits", full.names = T)) %>%
+# drawpath <- file.info(list.files("Fits.nosync", full.names = T)) %>%
 #   arrange(desc(mtime)) %>%
 #   slice(1) %>%
 #   rownames()
@@ -721,7 +721,7 @@ plot(x, predictB(Beta_g_mean, x))
 
 n_chains <- 3
 fit <- model$sample(data = data,
-                    output_dir = "Fits",
+                    output_dir = "Fits.nosync",
                     init = getTrueInits,
                     iter_warmup = 200, iter_sampling = 200,
                     chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))

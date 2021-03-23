@@ -199,7 +199,7 @@ model <- cmdstan_model(modelpath) # model <- cmdstan_model(modelpath, force_reco
 
 ## no convergence!
 fit_var <- model$variational(data = data,
-                             output_dir = "Fits",
+                             output_dir = "Fits.nosync",
                              init = 0,
                              # eta = 0.1,
                              iter = 5*10**3)

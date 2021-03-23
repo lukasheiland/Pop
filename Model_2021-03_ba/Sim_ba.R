@@ -720,7 +720,7 @@ drawpath <- fit$output_files()
 #            "/Users/heiland/Documents/Studium/Projects/Pop/Fits/Model_ba-202103132331-3-58d01b.csv")
 
 ## alternatively
-# drawpath <- file.info(list.files("Fits", full.names = T)) %>%
+# drawpath <- file.info(list.files("Fits.nosync", full.names = T)) %>%
 #   arrange(desc(mtime)) %>%
 #   slice(1) %>%
 #   rownames()
