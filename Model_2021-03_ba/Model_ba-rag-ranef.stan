@@ -231,7 +231,7 @@ model {
   
   // Beta_r[1,] ~ normal(2, 2); // intercept
   // 1 ./ shape_par ~ normal(0, 100); 
-  sigma_process ~ normal(0, 0.01);
+  // sigma_process ~ normal(0, 0.01);
   sigma_obs ~ gamma(10, 10/2); // for observations from predictionsions
 
   //---------- MODEL ---------------------------------
