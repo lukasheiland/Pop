@@ -80,8 +80,8 @@ transformed data {
   real ba_a_upper = pi() * (dbh_lower_b/2)^2 * 1e-6; // # pi*r^2, mm^2 to m^2
   real ba_a_avg = pi() * ((dbh_lower_a + dbh_lower_b)/2/2)^2 * 1e-6;
   
-  // Data for separate fitting of the initial state
-  vector[N_pops] y0_log [N_locs, N_plots] = y_log[ , , 1, ];
+  //// Data for separate fitting of the initial state
+  // vector[N_pops] y0_log [N_locs, N_plots] = y_log[ , , 1, ];
 }
 
 
@@ -136,11 +136,11 @@ model {
   
   for(l in 1:N_locs) {
     for (p in 1:N_plots) {
-      // print(y_hat_log[l, p, ]);
       
-      y0_log[l, p, ] ~ normal(state_init_log[l, p, ], sigma_obs[rep_obsmethod2pops]);
+      //// Debugging alternatives
+      // print(y_hat_log[l, p, ]);
+      // y0_log[l, p, ] ~ normal(state_init_log[l, p, ], sigma_obs[rep_obsmethod2pops]);
         
-                // include subset times into simulate!
       y_hat_log[l, p, ] = simulate(state_init_log[l, p, ], time_max[l], times[l, ],
                                      exp(g_log[l, ]'), exp(m_j_log[l, ]'), exp(r_log[l, ]'), exp(s_log[l, ]'),
                                      b, c_j, c_a, c_b, h, m_a,
@@ -148,9 +148,8 @@ model {
                                      N_species, N_pops,
                                      i_j, i_a, i_b);
   
-      
-      for (t in 2:N_times) {
-      // for (t in 1:N_times) {
+      // for (t in 2:N_times) { // in case of separate y0_log fitting
+      for (t in 1:N_times) {
         
         y_log[l, p, t] ~ normal(y_hat_log[l, p, t], sigma_obs[rep_obsmethod2pops]);
       
