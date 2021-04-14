@@ -6,14 +6,17 @@ functions {
                   vector b, vector c_j, vector c_a, vector c_b, vector h, vector m_a,
                   real ba_a_avg, real ba_a_upper,
                   int N_spec, int N_pops,
+                  matrix u,
                   int[] i_j, int[] i_a, int[] i_b) {
     
-    // State matrix with [species, times]. Times columns is sensible in order to have col-major access in matrices and for to_vector()
+    
+    // State matrix with [species, times].
     vector[N_pops] State[time_max];
     State[1, ] = initialstate;
-    
+
     for (t in 2:time_max) {
       // Structure of state[N_pops]: stage/species
+      // State has times rows (array row-major),  u has times cols (matrix: col-major access)
       
       vector[N_spec] J_log = State[t-1, i_j];
       vector[N_spec] A_log = State[t-1, i_a];
@@ -26,9 +29,10 @@ functions {
       
       /// Ricker model: assign to the the log states
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b))
-      State[t, i_j]  =  log1p(expm1(J_log) + r) - c_j*sum(J) - s*BA - m_j - g; // equivalent to … =  J + (r - (c_j*sum(J) + s*AB + g + m_j).*J * dt;
-      State[t, i_a]  =  log1p(A + expm1(J_log - g)) - c_a*BA - m_a - h;
-      State[t, i_b]  =  log1p(B + expm1(A_log - h) * ba_a_upper) + b - c_b*sum(B); // exp(A_log - h) * ba_a_upper is the input of new basal area through ingrowth of count A*exp(-h) from A
+      State[t, i_j]  =  log1p(expm1(J_log) + r) - c_j*sum(J) - s*BA - m_j - g + u[i_j, t-1]; // equivalent to … =  J + (r - (c_j*sum(J) + s*AB + g + m_j).*J * dt;
+      State[t, i_a]  =  log1p(A + expm1(J_log - g)) - c_a*BA - m_a - h + + u[i_a, t-1];
+      State[t, i_b]  =  log1p(B + expm1(A_log - h) * ba_a_upper) + b - c_b*sum(B) + u[i_b, t-1]; // exp(A_log - h) * ba_a_upper is the input of new basal area through ingrowth of count A*exp(-h) from A
+      
     }
     
     // print("State: ", State);
@@ -67,6 +71,7 @@ data {
   
   int times[N_locs, N_times]; // assumes start at 1. (Even though the number of times is the same, the times can deviate)
   int time_max[N_locs];
+  int timespan_max; // max(time_max) - time_globalmin
 
   matrix[N_locs, N_beta] X; // design matrix
   
@@ -104,6 +109,8 @@ parameters {
   // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
   vector<lower=0>[2] sigma_obs; // lognormal error for observations from predictions
 
+  matrix[N_pops, timespan_max] u[N_locs];
+
   vector[N_pops] state_init_log[N_locs, N_plots];
 }
 
@@ -130,11 +137,15 @@ model {
   // 1 ./ shape_par ~ normal(0, 100); 
   // sigma_process ~ normal(0, 0.01);
   sigma_obs ~ normal(0, [2, 0.2]); // for observations from predictions
+  
 
   
   //---------- MODEL ---------------------------------
   
   for(l in 1:N_locs) {
+    
+    target += std_normal_lpdf(to_vector(u[l])); // to_vector(u) ~ std_normal();
+    
     for (p in 1:N_plots) {
       
       //// Debugging alternatives
@@ -146,6 +157,7 @@ model {
                                      b, c_j, c_a, c_b, h, m_a,
                                      ba_a_avg, ba_a_upper,
                                      N_species, N_pops,
+                                     u[l],
                                      i_j, i_a, i_b);
   
       // for (t in 2:N_times) { // in case of separate y0_log fitting

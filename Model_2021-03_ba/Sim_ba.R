@@ -100,19 +100,19 @@ calcModel <- function(times,
     ## The total basal area of big trees
     BA <- sum(A * ba_a_avg + B)
     
-    # observation error with rows for stages, cols for species
-    u <- matrix(rnorm(length(s)*3, 0, sigma), nrow = 3)
+    # observation error with for stages/times/species
+    u <- array(0, dim = c(3, n_times-1, length(s))) + rnorm(length(s)*3*(n_times-1), 0, sigma)
     
     ## Two kinds of processes acting ot State_log
     ## 1. All processes that add additively to State, are added within log(State)
     ## 2. All processes that act multiplicatively on the state are added in log space
     
-    J_t_log <- log(J + r) - c_j*sum(J) - s*BA - m_j - g + u[1, ] # count of juveniles J
+    J_t_log <- log(J + r) - c_j*sum(J) - s*BA - m_j - g + u[1, t-1, ] # count of juveniles J
     
-    A_t_log <- log(A + exp(J_log - g)) - c_a*BA - m_a - h + u[2, ] # count of small adults A
+    A_t_log <- log(A + exp(J_log - g)) - c_a*BA - m_a - h + u[2, t-1, ] # count of small adults A
     A_ba <- exp(A_log - h)*ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
     
-    B_t_log <- log(B + A_ba) + b - c_b*sum(B) + u[3, ] # basal area of big adults B
+    B_t_log <- log(B + A_ba) + b - c_b*sum(B) + u[3, t-1, ] # basal area of big adults B
     ## b is the net basal area increment (including density-independent m) basically equivalent to a Ricker model, i.e. constant increment rate leading to exponential growth, negative density dependent limitation scaled with total BA.
     
     State_log[t, ] <- c(J_t_log, A_t_log, B_t_log)
@@ -230,7 +230,6 @@ simulateOneSeries <- function(state_init, times, pars, processerror = T, obserro
     Sim[, (n_pops/3+1):(n_pops+1)] <- matrix(rnorm(Sim, Sim, pars$sigma_obs[2]), nrow = nrow(Sim))[, (n_pops/3+1):(n_pops+1)]
   }
   
-  
   return(Sim)
 }
 
@@ -257,7 +256,7 @@ simulateMultipleSeriesInEnv <- function(pars,
     processerror <- if (modelstructure %in% "ba") T else F
   }
   
-  plotlevelinit <- if (modelstructure %in% c("ba", "ba_rect")) T else F ## whether initial values are different within one cluster (= loc)
+  plotlevelinit <- F ## whether initial values are different within one cluster (= loc)
   
   ## ---- Set parameters ----
   pars <- transformParameters(pars, Env, ranef = ranef)
@@ -309,208 +308,219 @@ simulateMultipleSeriesInEnv <- function(pars,
                  
                  SIMPLIFY = F)
   
-
-  #### HERE ARE A FEW FORNATS USED LATER, DEPENDING ON MODEL STRUCTURE
-  
-  ### -1. rectangular format
-  time_rect <- sims[[1]][[1]][,1] # get the time column  from the very first table
-  sims_rect <- lapply(sims, function(loc) lapply(loc, function (plot) as.data.frame(t(plot)))) # make everything into lists!
-  sims_rect <- array(unlist(sims_rect),
-                     dim = c(length(sims_rect[[1]][[1]][[1]]), length(sims_rect[[1]][[1]]), length(sims_rect[[1]]), length(sims_rect))
-  ) 
-  sims_rect <- aperm(sims_rect)
-  # str(S) ## # 'loc', 'plot', 'pop', 'time'
-  sims_rect <- sims_rect[ , , , -1] # drop the first 'column', which is not a population but the times
-  
-  ### 0. General long-casting for all other cases
-  sims <- lapply(sims, function(l) do.call(rbind, l)) # bind the series within a location into one table
-  sims <- lapply(sims, function(m) cbind(m, plot = rep(1:pars$n_plotsperloc, each = n_times))) # attach an id to series per location. Each n_times, because simulateOneSeries() does only return n_times (n_times_intern/2) observations
-  
-  Sims <- do.call(rbind, sims) # bind all lists of locations into one table
-  Sims <- cbind(Sims, loc = rep(1:pars$n_locs, each = pars$n_plotsperloc * n_times)) # attach an id to series per location
-  
-  Sims <- cbind(Sims, Env[Sims[,"loc"],])
   
   
-  ## CASE: long etc.
-  ## Here come all different long formats used in different hierarchical levels of the stan fit
-  Sims <- tidyr::pivot_longer(as.data.frame(Sims),
-                              cols = all_of(paste(1:(pars$n_species*meta$n_stages))),
-                              names_to = "pop",
-                              values_to = "abundance") %>%
-    mutate(pop = as.integer(pop)) %>%
-    mutate(species = rep(1:pars$n_species, times = meta$n_stages, length.out = nrow(.))) %>%
-    mutate(stage = rep(c("j", "a", "b"), each = pars$n_species, length.out = nrow(.))) %>%
-    mutate(obsmethod = rep(c(1, 2, 2), each = pars$n_species, length.out = nrow(.)))
-  
-  ## Sims <- complete(Sims, group = nesting("loc", "time", species", "stage"), fill = 0) # is assumed!
-  Sims <- group_by(Sims, loc) %>%
-    mutate(isy0 = time == min(time)) %>%
-    ungroup() %>%
-    mutate(stage = factor(stage, levels = c("j", "a", "b"), ordered = T)) %>%
-    arrange(loc, time, pop, plot)
-  
-  
-  ## Get log and exped version of the response
-  Sims <- mutate(Sims, abundance_log = abundance,
-                 abundance = exp(abundance)
-                 )
-  
-  
-  ## Stan format or long format
-  if (format == "long") {
+  ###### Fomat the data from multiple simulations -------------------
+  ## This function is designed to work only within environment simulateMultipleSeriesInEnv
+  formatSims <- function() {
     
-    Sims <- Sims
+    isrectangular <- grepl("rect$", modelstructure)
     
-    ## Old return types
-    ## CASE: locs
-    # if (format == "locs") Sims <- Sims_locs
-    ## CASE: init
-    # if (format == "init") Sims <- Sims_init
-    ## CASE: y0
-    # if (format == "y0") Sims <- Sims_y0
-    ## CASE: y
-    # if (format == "y") Sims <- Sims_reobs
+    #### DECISION structure for formatting
+    ## 0. Do general long casting
+    ##    if format == "long": return(Sims) data.frame!
+    ##
+    ## 1. else if: format == "stan":
+    ##      1a. if: is rectangular: reuse original sims list for rectangular casting, then construct stansims list
+    ##      1b. else: construct stansims list
+    ##   return(stansims)
     
-  } else {
-    ## format == "stan"
+    ######### (0) ##########
+    sims_loc <- lapply(sims, function(l) do.call(rbind, l)) %>% # bind the series within a location into one table
+      lapply(function(m) cbind(m, plot = rep(1:pars$n_plotsperloc, each = n_times))) # attach an id to series per location. Each n_times, because simulateOneSeries() does only return n_times (n_times_intern/2) observations
     
-    #### 1. Special data set structures
-    ## The most comprehensive data set is N_y (resp. N_y0) with grouping locations/resurveys/pops/plots.
-    ## NOTE THAT plots HAS TO BE THE LAST GROUP IN SORTING
-    ## Everything is subset from the master subsets with these groupings (*_reobs, *_y0) and thus consistently sorted.
-    ## Ratio: "resurveys" includes "pops" due of the return structure in ode_*(); "pops" includes "plots" because of the loc == population assumption (randowm effect from location/resurvey/pop to .../plots).
-    ## Factor "pops" is structured stages/species.
+    ## Long casting is needed for both format == "long" and "stan"
+    Sims <- do.call(rbind, sims_loc) # bind all lists of locations into one table
+    Sims <- cbind(Sims, loc = rep(1:pars$n_locs, each = pars$n_plotsperloc * n_times)) # attach an id to series per location
+    Sims <- cbind(Sims, Env[Sims[,"loc"],])
     
+    ## Here come all different long formats used in different hierarchical levels of the stan fit
+    Sims <- tidyr::pivot_longer(as.data.frame(Sims),
+                                cols = all_of(paste(1:(pars$n_species*meta$n_stages))),
+                                names_to = "pop",
+                                values_to = "abundance") %>%
+      mutate(pop = as.integer(pop)) %>%
+      mutate(species = rep(1:pars$n_species, times = meta$n_stages, length.out = nrow(.))) %>%
+      mutate(stage = rep(c("j", "a", "b"), each = pars$n_species, length.out = nrow(.))) %>%
+      mutate(obsmethod = rep(c(1, 2, 2), each = pars$n_species, length.out = nrow(.)))
     
-    ## Format: [N_y0] —   locations/pops(/stage/species)/plots
-    Sims_y0 <- filter(Sims, isy0) %>% select(-isy0) %>%
+    ## Sims <- complete(Sims, group = nesting("loc", "time", species", "stage"), fill = 0) # is assumed!
+    Sims <- group_by(Sims, loc) %>%
+      mutate(isy0 = time == min(time)) %>%
+      ungroup() %>%
+      mutate(stage = factor(stage, levels = c("j", "a", "b"), ordered = T)) %>%
       arrange(loc, time, pop, plot)
     
-    ## Format: [N_y] — locations/resurveys/pops(/stage/species)/plots
-    Sims_reobs <- filter(Sims, !isy0) %>% select(-isy0) %>%
-      arrange(loc, time, pop, plot)
     
-    ## Format: [N_init] — locations/pops
-    Sims_init <- Sims_y0 %>%
-      group_by(loc, pop, stage, species) %>%
-      summarize(n_plots = n_distinct(plot), .groups = "drop")
-    
-    ## Format: [N_yhat] — locations/resurveys/pops
-    Sims_yhat <- Sims_reobs %>%
-      group_by(loc, time, pop, stage, species) %>%
-      summarize(n_plots = n_distinct(plot), .groups = "drop")
-    
-    ## Format: [N_times] — locations/resurveys
-    Sims_times <- Sims_reobs %>% # reobs to  count all times
-      group_by(loc) %>%
-      summarize(time = unique(time), .groups = "drop")
-    
-    ## Format: [N_locs] — locations
-    Sims_locs <- Sims_reobs %>% # reobs to  count all times
-      group_by(loc) %>%
-      ## assumes completion within locations!
-      summarize(time_max = max(time),
-                n_species = n_distinct(species),
-                n_plots = n_distinct(plot),
-                n_pops = n_distinct(pop),
-                n_reobs = n_distinct(time),
-                n_yhat = n_distinct(interaction(pop, time)), .groups = "drop")
+    ## Get log and exped version of the response
+    Sims <- mutate(Sims, abundance_log = abundance,
+                   abundance = exp(abundance)
+    )
     
     
-    ## Prepare design matrix
-    polyformula <- as.formula(paste("~", paste("poly(", colnames(as.data.frame(Env)), ", 2)", collapse = "+")))
-    X <- model.matrix(polyformula, data = as.data.frame(Env))
+    if (format == "long") {
+      
+      return(Sims)
+      
+    }
     
-    if (modelstructure == "ba-rect") {
+    ######### (1) ##########
+    else if (format == "stan"){
       
-      Sims <- list(N_locs = pars$n_locs,
-                   N_plots = pars$n_plotsperloc,
-                   N_times = n_times,
-                   N_species = pars$n_species,
-                   N_pops = pars$n_stages * pars$n_species,
-                   N_beta = pars$n_beta,
-                   
-                   rep_obsmethod2pops = rep(c(1, 2, 2), each = pars$n_species),
-                   i_j = 1:pars$n_species,
-                   i_a = (1:pars$n_species) + pars$n_species,
-                   i_b = (1:pars$n_species) + 2*pars$n_species,
-                   
-                   dbh_lower_a = meta$dbh_lower_a,
-                   dbh_lower_b = meta$dbh_lower_b,
-                   
-                   times = t(replicate(pars$n_locs, times)) - min(times) + 1,
-                   time_max = apply(replicate(pars$n_locs, times), 2, max) - min(times) + 1,
-                   
-                   X = X,
-                  
-                   y_log = sims_rect,
-                   y = exp(sims_rect)
-                )
+      #### Special long data set structures with different amounts of long casting along different ids
+      ## The most comprehensive data set is N_y (resp. N_y0) with grouping locations/resurveys/pops/plots.
+      ## NOTE THAT plots HAS TO BE THE LAST GROUP IN SORTING
+      ## Everything is subset from the master subsets with these groupings (*_reobs, *_y0) and thus consistently sorted.
+      ## Ratio: "resurveys" includes "pops" due of the return structure in ode_*(); "pops" includes "plots" because of the loc == population assumption (randowm effect from location/resurvey/pop to .../plots).
+      ## Factor "pops" is structured stages/species.
       
-      } else if (modelstructure == "ba") {
       
-      Sims <- NULL
+      ## Format: [N_y0] —   locations/pops(/stage/species)/plots
+      Sims_y0 <- filter(Sims, isy0) %>% select(-isy0) %>%
+        arrange(loc, time, pop, plot)
       
-      } else if (modelstructure %in% c("ba-rag-ranef", "ba-rag")) {
+      ## Format: [N_y] — locations/resurveys/pops(/stage/species)/plots
+      Sims_reobs <- filter(Sims, !isy0) %>% select(-isy0) %>%
+        arrange(loc, time, pop, plot)
       
-      Sims_species <- Sims_init[c("loc", "species")] %>% unique()
-      N_init <- nrow(Sims_init)
-      N_times <- nrow(Sims_times)
-      N_yhat <- nrow(Sims_yhat)
-      N_locs <-  nrow(Sims_locs)
-      time_init <-  Sims$time[match(Sims_locs$loc, Sims$loc)] # N_locs!
+      ## Format: [N_init] — locations/pops
+      Sims_init <- Sims_y0 %>%
+        group_by(loc, pop, stage, species) %>%
+        summarize(n_plots = n_distinct(plot), .groups = "drop")
       
-      vrep <- function(...) unlist( c( Vectorize(rep.int)(...) ) ) # :)))))
+      ## Format: [N_yhat] — locations/resurveys/pops
+      Sims_yhat <- Sims_reobs %>%
+        group_by(loc, time, pop, stage, species) %>%
+        summarize(n_plots = n_distinct(plot), .groups = "drop")
       
-      Sims <- list(
-        N_locs = N_locs,
-        N_init = N_init,
-        N_times = N_times,
-        N_yhat = N_yhat,
-        N_y0 = nrow(Sims_y0),
-        N_y = nrow(Sims_reobs),
-        N_species = nrow(Sims_species), 
+      ## Format: [N_times] — locations/resurveys
+      Sims_times <- Sims_reobs %>% # reobs to  count all times
+        group_by(loc) %>%
+        summarize(time = unique(time), .groups = "drop")
+      
+      ## Format: [N_locs] — locations
+      Sims_locs <- Sims_reobs %>% # reobs to  count all times
+        group_by(loc) %>%
+        ## assumes completion within locations!
+        summarize(time_max = max(time),
+                  n_species = n_distinct(species),
+                  n_plots = n_distinct(plot),
+                  n_pops = n_distinct(pop),
+                  n_reobs = n_distinct(time),
+                  n_yhat = n_distinct(interaction(pop, time)), .groups = "drop")
+      
+      
+      ## Prepare design matrix
+      polyformula <- as.formula(paste("~", paste("poly(", colnames(as.data.frame(Env)), ", 2)", collapse = "+")))
+      X <- model.matrix(polyformula, data = as.data.frame(Env))
+      
+      ######### (1a) ##########
+      if (isrectangular) {
         
-        N_totalspecies = length(unique(Sims_init$species)),
-        N_beta = ncol(X),
+        ## Go back to the original sim list for rectangular casting
+        time_rect <- sims[[1]][[1]][,1] # get the time column  from the very first table
+        sims_rect <- lapply(sims, function(loc) lapply(loc, function (plot) as.data.frame(t(plot)))) # make everything into lists!
+        sims_rect <- array(unlist(sims_rect),
+                           dim = c(length(sims_rect[[1]][[1]][[1]]), length(sims_rect[[1]][[1]]), length(sims_rect[[1]]), length(sims_rect))
+        ) 
+        sims_rect <- aperm(sims_rect)
+        # str(S) ## # 'loc', 'plot', 'pop', 'time'
+        sims_rect <- sims_rect[ , , , -1] # drop the first 'column', which is not a population but the times
         
-        n_species = Sims_locs$n_species, 
-        n_pops = Sims_locs$n_pops,
-        n_reobs = Sims_locs$n_reobs,
-        n_yhat = Sims_locs$n_yhat,
+        Times <- t(replicate(pars$n_locs, times)) - min(times) + 1
         
-        ## repeat predictions on level "locations/pops" n_plots times to "locations/pops/plots"
-        rep_init2y0 = vrep(1:N_init, Sims_init$n_plots),
-        ## repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
-        rep_yhat2y = vrep(1:N_yhat, Sims_yhat$n_plots),
-        ## repeat locations on level "locations" n_reobs times to "locations/pops/resurveys"
-        rep_locs2times = vrep(1:N_locs, Sims_locs$n_reobs),
-        
-        obsmethod_y0 = Sims_y0$obsmethod,
-        obsmethod_y = Sims_reobs$obsmethod,
-        
-        dbh_lower_a = meta$dbh_lower_a,
-        dbh_lower_b = meta$dbh_lower_b,
-        
-        species = Sims_species$species,
-        stage = Sims_init$stage,
-        pops = Sims_init$pop,
-        time_init = time_init,
-        time_max_data = Sims_locs$time_max,
-        times_data = Sims_times$time,
-        
-        X = X,
-        
-        y0 = Sims_y0$abundance,
-        y = Sims_reobs$abundance,
-        
-        y0_log = Sims_y0$abundance_log,
-        y_log = Sims_reobs$abundance_log
+        stansims <- list(N_locs = pars$n_locs,
+                         N_plots = pars$n_plotsperloc,
+                         N_times = n_times,
+                         N_species = pars$n_species,
+                         N_pops = pars$n_stages * pars$n_species,
+                         N_beta = pars$n_beta,
+                         
+                         rep_obsmethod2pops = rep(c(1, 2, 2), each = pars$n_species),
+                         i_j = 1:pars$n_species,
+                         i_a = (1:pars$n_species) + pars$n_species,
+                         i_b = (1:pars$n_species) + 2*pars$n_species,
+                         
+                         dbh_lower_a = meta$dbh_lower_a,
+                         dbh_lower_b = meta$dbh_lower_b,
+                         
+                         times = t(replicate(pars$n_locs, times)) - min(times) + 1,
+                         time_max = Times[,ncol(Times)],
+                         timespan_max = max(Times[,ncol(Times)]) - 1, # difference to the first time
+                         
+                         X = X,
+                         
+                         y_log = sims_rect,
+                         y = exp(sims_rect)
         )
-      
+        
       }
+      
+      ######### (1b) ##########
+      else if (modelstructure %in% c("ba-rag-ranef", "ba-rag", "ba")) {
+        
+        Sims_species <- Sims_init[c("loc", "species")] %>% unique()
+        N_init <- nrow(Sims_init)
+        N_times <- nrow(Sims_times)
+        N_yhat <- nrow(Sims_yhat)
+        N_locs <-  nrow(Sims_locs)
+        time_init <-  Sims$time[match(Sims_locs$loc, Sims$loc)] # N_locs!
+        
+        vrep <- function(...) unlist( c( Vectorize(rep.int)(...) ) ) # :)))))
+        
+        stansims <- list(
+          N_locs = N_locs,
+          N_init = N_init,
+          N_times = N_times,
+          N_yhat = N_yhat,
+          N_y0 = nrow(Sims_y0),
+          N_y = nrow(Sims_reobs),
+          N_species = nrow(Sims_species), 
+          
+          N_totalspecies = length(unique(Sims_init$species)),
+          N_beta = ncol(X),
+          
+          n_species = Sims_locs$n_species,
+          n_pops = Sims_locs$n_pops,
+          n_reobs = Sims_locs$n_reobs,
+          n_yhat = Sims_locs$n_yhat,
+          
+          ## repeat predictions on level "locations/pops" n_plots times to "locations/pops/plots"
+          rep_init2y0 = vrep(1:N_init, Sims_init$n_plots),
+          ## repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+          rep_yhat2y = vrep(1:N_yhat, Sims_yhat$n_plots),
+          ## repeat locations on level "locations" n_reobs times to "locations/pops/resurveys"
+          rep_locs2times = vrep(1:N_locs, Sims_locs$n_reobs),
+          
+          obsmethod_y0 = Sims_y0$obsmethod,
+          obsmethod_y = Sims_reobs$obsmethod,
+          
+          dbh_lower_a = meta$dbh_lower_a,
+          dbh_lower_b = meta$dbh_lower_b,
+          
+          species = Sims_species$species,
+          stage = Sims_init$stage,
+          pops = Sims_init$pop,
+          time_init = time_init,
+          time_max_data = Sims_locs$time_max,
+          times_data = Sims_times$time,
+          
+          X = X,
+          
+          y0 = Sims_y0$abundance,
+          y = Sims_reobs$abundance,
+          
+          y0_log = Sims_y0$abundance_log,
+          y_log = Sims_reobs$abundance_log
+        )
+        
+      }
+    }
+    
+    return(stansims)
   }
+  
+  Sims <- formatSims()
   
   attr(Sims, "pars") <- pars
   return(Sims)
@@ -592,7 +602,7 @@ pars1 <- within(pars1,
 times1 <- 1:30
 
 Sim1 <- simulateOneSeries(initialstate1, times = times1, pars = pars1,
-                          processerror = T, obserror = F, log = F)
+                          processerror = F, obserror = F, log = F)
 
 matplot(Sim1[,-1], type = "b", ylab="N",
         pch = rep(c("J", "A", "B"), each = pars1$n_species),
@@ -709,7 +719,7 @@ getTrueInits <- function() {
     sigma_process  = truepars$sigma_process,
     sigma_obs      = truepars$sigma_obs,
     
-    # u = matrix(rnorm(data$N_totalspecies*3, 0, 0), nrow = data$N_totalspecies, ncol = 3),
+    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0), nrow = pars$n_species, ncol = data$timespan_max)),
     
     b_loc     = truepars$b_loc,
     c_j_loc   = truepars$c_j_loc,
@@ -752,7 +762,7 @@ getInits <- function() {
     sigma_process  = c(0.1, 0.1, 0.1),
     sigma_obs      = c(10, 10),
     
-    # u = matrix(rnorm(data$N_totalspecies*3, 0, 0.5), nrow = data$N_totalspecies, ncol = 3) #,
+    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0), nrow = pars$n_species, ncol = data$timespan_max)),
     
     b_loc     = truepars$b_loc,
     c_j_loc   = truepars$c_j_loc,
@@ -770,7 +780,7 @@ getInits <- function() {
 ## Draw from model --------------------------------------------------------------
 
 ####  Do the fit ----------------------
-drawSamples <- function(model, data, variational = F, n_chains = 1, initfunc = getInits) {
+drawSamples <- function(model, data, variational = F, n_chains = 1, initfunc = getTrueInits) {
   if(variational) {
     fit <- model$variational(data = data,
                              output_dir = "Fits.nosync",
