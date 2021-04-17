@@ -12,7 +12,7 @@ functions {
     
     // State matrix with [species, times].
     vector[N_pops] State[time_max];
-    State[1, ] = initialstate;
+    State[1] = initialstate;
 
     for (t in 2:time_max) {
       // Structure of state[N_pops]: stage/species
@@ -36,7 +36,7 @@ functions {
     }
     
     // print("State: ", State);
-    return State[times,];
+    return State[times];
   }
   
 }
@@ -60,14 +60,14 @@ data {
   // int<lower=1> pops[N_pops];
 
   // obsmethod — factor (1, 2)
-  int<lower=1> rep_obsmethod2pops[N_pops];
+  int<lower=1> rep_obsmethod2pops[N_pops]; // 1 1 1 1 2 2 2 2 2 2 2 2
 
   int<lower=1> i_j[N_species]; // e.g. 1:4
   int<lower=1> i_a[N_species]; // e.g. 5:9, etc.
   int<lower=1> i_b[N_species];
 
-  real dbh_lower_a;
-  real dbh_lower_b;
+  real dbh_lower_a; // 100
+  real dbh_lower_b; // 200
   
   int times[N_locs, N_times]; // assumes start at 1. (Even though the number of times is the same, the times can deviate)
   int time_max[N_locs];
@@ -76,7 +76,7 @@ data {
   matrix[N_locs, N_beta] X; // design matrix
   
   // The response.
-  vector[N_pops] y_log [N_locs, N_plots, N_times];
+  vector[N_pops] y_log [N_locs, N_times, N_plots];
 }
 
 
@@ -107,11 +107,11 @@ parameters {
   vector<lower=0>[N_species] m_a;
   
   // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
-  vector<lower=0>[2] sigma_obs; // lognormal error for observations from predictions
+  vector<lower=0>[2] sigma_obs; // observation error
 
   matrix[N_pops, timespan_max] u[N_locs];
 
-  vector[N_pops] state_init_log[N_locs, N_plots];
+  vector[N_pops] state_init_log[N_locs];
 }
 
 
@@ -129,16 +129,17 @@ transformed parameters {
 
 model {
   
-  vector[N_pops] y_hat_log[N_locs, N_plots, N_times];
+  vector[N_pops] y_hat_log[N_locs, N_times];
   
   //---------- PRIORS ---------------------------------
   
   // Beta_r[1,] ~ normal(2, 2); // intercept
   // 1 ./ shape_par ~ normal(0, 100); 
   // sigma_process ~ normal(0, 0.01);
-  sigma_obs ~ normal(0, [2, 0.2]); // for observations from predictions
-  Beta_g[1,] ~ normal(-12, 1);
-  to_vector(Beta_g[2:N_beta,]) ~ std_normal();
+  sigma_obs ~ normal(0, [1, 0.1]); // for observations from predictions
+  
+  // Beta_g[1,] ~ normal(-12, 1);
+  // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
   h ~ normal(0.5, 0.2);
   
@@ -148,24 +149,25 @@ model {
     
     target += std_normal_lpdf(to_vector(u[l])); // to_vector(u) ~ std_normal();
     
-    for (p in 1:N_plots) {
+    y_hat_log[l, ] = simulate(state_init_log[l], time_max[l], times[l],
+                              exp(g_log[l, ]'), exp(m_j_log[l, ]'), exp(r_log[l, ]'), exp(s_log[l, ]'),
+                              b, c_j, c_a, c_b, h, m_a,
+                              ba_a_avg, ba_a_upper,
+                              N_species, N_pops,
+                              u[l],
+                              i_j, i_a, i_b);
+    
+    for (t in 1:N_times) {
       
       //// Debugging alternatives
       // print(y_hat_log[l, p, ]);
       // y0_log[l, p, ] ~ normal(state_init_log[l, p, ], sigma_obs[rep_obsmethod2pops]);
         
-      y_hat_log[l, p, ] = simulate(state_init_log[l, p, ], time_max[l], times[l, ],
-                                     exp(g_log[l, ]'), exp(m_j_log[l, ]'), exp(r_log[l, ]'), exp(s_log[l, ]'),
-                                     b, c_j, c_a, c_b, h, m_a,
-                                     ba_a_avg, ba_a_upper,
-                                     N_species, N_pops,
-                                     u[l],
-                                     i_j, i_a, i_b);
   
       // for (t in 2:N_times) { // in case of separate y0_log fitting
-      for (t in 1:N_times) {
+      for (p in 1:N_plots) {
         
-        y_log[l, p, t] ~ normal(y_hat_log[l, p, t], sigma_obs[rep_obsmethod2pops]);
+        y_log[l, t, p, ] ~ normal(y_hat_log[l, t], sigma_obs[rep_obsmethod2pops]);
       
       }
     }

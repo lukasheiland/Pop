@@ -423,8 +423,8 @@ simulateMultipleSeriesInEnv <- function(pars,
         sims_rect <- array(unlist(sims_rect),
                            dim = c(length(sims_rect[[1]][[1]][[1]]), length(sims_rect[[1]][[1]]), length(sims_rect[[1]]), length(sims_rect))
         ) 
-        sims_rect <- aperm(sims_rect)
-        # str(S) ## # 'loc', 'plot', 'pop', 'time'
+        sims_rect <- aperm(sims_rect, perm = c(4, 2, 3, 1))
+        # str(S) ## # 'loc', 'time', 'plot', 'pop'
         sims_rect <- sims_rect[ , , , -1] # drop the first 'column', which is not a population but the times
         
         Times <- t(replicate(pars$n_locs, times)) - min(times) + 1
@@ -671,8 +671,8 @@ fitseed <- 4
 pars <- generateParameters(seed = fitseed, n_locs = 70)
 
 Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
-data <- simulateMultipleSeriesInEnv(pars, Env, times = c(3, 15, 25), modelstructure = modelname, format = "stan")
-Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(3, 15, 25),
+data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 5, 8), modelstructure = modelname, format = "stan")
+Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 5, 8),
                                          modelstructure = modelname, format = "long") %>%
   mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
   arrange(sortid, time) %>%
@@ -705,7 +705,7 @@ getTrueInits <- function() {
     Beta_s = truepars$Beta_s,
     
     state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
-                                   data$y_log[,,1,] + rnorm(data$y_log[,,1,], 0, 0.01),
+                                   data$y_log[,1,,] + rnorm(data$y_log[,1,,], 0, 0.01),
     
     ## Version with random rates.
     b     = truepars$b,
@@ -719,7 +719,7 @@ getTrueInits <- function() {
     sigma_process  = truepars$sigma_process,
     sigma_obs      = truepars$sigma_obs,
     
-    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0), nrow = pars$n_species, ncol = data$timespan_max)),
+    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0.001), nrow = pars$n_species, ncol = data$timespan_max)),
     
     b_loc     = truepars$b_loc,
     c_j_loc   = truepars$c_j_loc,
@@ -799,7 +799,7 @@ drawSamples <- function(model, data, variational = F, n_chains = 1, initfunc = g
 }
 
 
-fit <- drawSamples(model, data, variational = F, initfunc = getTrueInits)
+fit <- drawSamples(model, data, variational = T, initfunc = getInits)
 fit$output()
 fit$time()
 fit$init()
