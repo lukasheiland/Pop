@@ -137,8 +137,10 @@ model {
   // 1 ./ shape_par ~ normal(0, 100); 
   // sigma_process ~ normal(0, 0.01);
   sigma_obs ~ normal(0, [2, 0.2]); // for observations from predictions
+  Beta_g[1,] ~ normal(-12, 1);
+  to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-
+  h ~ normal(0.5, 0.2);
   
   //---------- MODEL ---------------------------------
   

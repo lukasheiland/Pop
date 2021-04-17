@@ -571,7 +571,7 @@ generateParameters <- function(seed = 1,
   c_j <- exp(rnorm(n_species, -10, 0.5))
   c_a <- exp(rnorm(n_species, -3.3, 0.2))
   c_b <- exp(rnorm(n_species, -3, 0.1))
-  h <- exp(rnorm(n_species, -0.1, 0.5))
+  h <- exp(rnorm(n_species, -0.5, 0.3))
   m_a <- exp(rnorm(n_species, -1.5, 0.5))
   
   
@@ -780,7 +780,7 @@ getInits <- function() {
 ## Draw from model --------------------------------------------------------------
 
 ####  Do the fit ----------------------
-drawSamples <- function(model, data, variational = F, n_chains = 1, initfunc = getTrueInits) {
+drawSamples <- function(model, data, variational = F, n_chains = 1, initfunc = getInits) {
   if(variational) {
     fit <- model$variational(data = data,
                              output_dir = "Fits.nosync",
@@ -799,9 +799,13 @@ drawSamples <- function(model, data, variational = F, n_chains = 1, initfunc = g
 }
 
 
-fit <- drawSamples(model, data, variational = T)
+fit <- drawSamples(model, data, variational = F, initfunc = getTrueInits)
 fit$output()
+fit$time()
 fit$init()
+fit$draws(variables = NULL, inc_warmup = F)
+fit$return_codes()
+
 
 
 ## Extract draws -----------------------------------------------------------
@@ -817,9 +821,10 @@ drawpath <- fit$output_files() # dput(fit$output_files())
 ### Get draws
 ## rstan format for use in other packages
 draws <- rstan::read_stan_csv(drawpath)
+draws
 
 ## get draws with cmdstanr
-# draws_var <- read_cmdstan_csv(drawpath)
+# draws <- read_cmdstan_csv(drawpath, variables = NULL)
 
 
 
