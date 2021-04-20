@@ -30,7 +30,7 @@ functions {
       /// Ricker model: assign to the the log states
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b))
       State[t, i_j]  =  log1p(expm1(J_log) + r) - c_j*sum(J) - s*BA - m_j - g + u[i_j, t-1]; // equivalent to … =  J + (r - (c_j*sum(J) + s*AB + g + m_j).*J * dt;
-      State[t, i_a]  =  log1p(A + expm1(J_log - g)) - c_a*BA - m_a - h + + u[i_a, t-1];
+      State[t, i_a]  =  log1p(A + expm1(J_log - g)) - c_a*BA - m_a - h + u[i_a, t-1];
       State[t, i_b]  =  log1p(B + expm1(A_log - h) * ba_a_upper) + b - c_b*sum(B) + u[i_b, t-1]; // exp(A_log - h) * ba_a_upper is the input of new basal area through ingrowth of count A*exp(-h) from A
       
     }
@@ -93,18 +93,23 @@ transformed data {
 parameters {
   //// Level 1, (global, species): species-specific rates, indepndent of environment.
   // … dependent on environment.
-  matrix[N_beta, N_species] Beta_g; // (J-, A+) transition rate from J to A
-  matrix[N_beta, N_species] Beta_m_j; // (J-) density independent mortalitty
-  matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
-  matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
+  
+  // matrix[N_beta, N_species] Beta_g; // (J-, A+) transition rate from J to A
+  // matrix[N_beta, N_species] Beta_m_j; // (J-) density independent mortalitty
+  // matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
+  // matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
 
   // … independent of environment
   vector<lower=0>[N_species] b;
-  vector<lower=0>[N_species] c_j;
   vector<lower=0>[N_species] c_a;
   vector<lower=0>[N_species] c_b;
+  vector<lower=0>[N_species] c_j;
+  vector<lower=0>[N_species] g;
   vector<lower=0>[N_species] h; // (A-, B+), here still unconstrained on log scale, flow out of the system, independent of environment ("intercept only")
   vector<lower=0>[N_species] m_a;
+  vector<lower=0>[N_species] m_j;
+  vector<lower=0>[N_species] r;
+  vector<lower=0>[N_species] s;
   
   // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
   vector<lower=0>[2] sigma_obs; // observation error
@@ -119,10 +124,10 @@ transformed parameters {
   
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
   // Location level parameters (unconstrained because on log scale!)
-  matrix[N_locs, N_species] g_log = X * Beta_g;
-  matrix[N_locs, N_species] m_j_log = X * Beta_m_j;
-  matrix[N_locs, N_species] r_log = X * Beta_r;
-  matrix[N_locs, N_species] s_log = X * Beta_s;
+  // matrix[N_locs, N_species] g_log = X * Beta_g;
+  // matrix[N_locs, N_species] m_j_log = X * Beta_m_j;
+  // matrix[N_locs, N_species] r_log = X * Beta_r;
+  // matrix[N_locs, N_species] s_log = X * Beta_s;
   
 }
 
@@ -141,16 +146,20 @@ model {
   // Beta_g[1,] ~ normal(-12, 1);
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-  h ~ normal(0.5, 0.2);
+  h ~ gamma(10, 10/0.6);
+  g ~ gamma(5, 5/0.01);
+  b ~ gamma(10, 10/0.4);
   
   //---------- MODEL ---------------------------------
   
   for(l in 1:N_locs) {
     
-    target += std_normal_lpdf(to_vector(u[l])); // to_vector(u) ~ std_normal();
+    // Like a prior
+    to_vector(u[l]) ~ std_normal();
     
     y_hat_log[l, ] = simulate(state_init_log[l], time_max[l], times[l],
-                              exp(g_log[l, ]'), exp(m_j_log[l, ]'), exp(r_log[l, ]'), exp(s_log[l, ]'),
+                              // exp(g_log[l, ]'), exp(m_j_log[l, ]'), exp(r_log[l, ]'), exp(s_log[l, ]'),
+                              g, m_j, r, s,
                               b, c_j, c_a, c_b, h, m_a,
                               ba_a_avg, ba_a_upper,
                               N_species, N_pops,

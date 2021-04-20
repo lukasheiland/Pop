@@ -11,6 +11,8 @@ library(tictoc)
 library(cmdstanr)
 # install_cmdstan(cores = 3)
 library(rstan)
+rstan_options(javascript = FALSE)
+
 library(bayesplot)
 
 
@@ -40,8 +42,6 @@ rgamma2 <- function(n, mean, shape) {
 # Model formulation  ----------------------------------------------------------------
 ######################################################################################
 
-## Discrete model -------------------------------------------------------------------
-
 #### Returns log states for times -------------------
 calcModel <- function(times,
                       initialstate_log, # A vector of species states.
@@ -49,19 +49,18 @@ calcModel <- function(times,
 ) { 
   
   
-  ## Just unpacking for readability. Order: 1. environmentally-dependent, 2. -independent
+  ## Just unpacking for readability.
   
+  b <- pars$b # Length n_species vector of basal area increment rates.
+  c_a <- pars$c_a # Length n_species vector
+  c_b <- pars$c_b # Length n_species vector
+  c_j <- pars$c_j # Length n_species vector
   g <- pars$g # Length n_species vector of transition rates.
+  h <- pars$h # Length n_species vector of transition rates.
+  m_a <- pars$m_a # Length n_species vector of mortalities
   m_j <- pars$m_j # Length n_species vector of mortalities
   r <- pars$r # Length n_species vector of input rates
   s <- pars$s # Length n_species vector of shading rates
-  
-  b <- pars$b # Length n_species vector of basal area increment rates.
-  c_j <- pars$c_j # Length n_species vector
-  c_a <- pars$c_a # Length n_species vector
-  c_b <- pars$c_b # Length n_species vector
-  h <- pars$h # Length n_species vector of transition rates.
-  m_a <- pars$m_a # Length n_species vector of mortalities
   
   dbh_lower_a <- pars$dbh_lower_a
   dbh_lower_b <- pars$dbh_lower_b
@@ -101,18 +100,18 @@ calcModel <- function(times,
     BA <- sum(A * ba_a_avg + B)
     
     # observation error with for stages/times/species
-    u <- array(0, dim = c(3, n_times-1, length(s))) + rnorm(length(s)*3*(n_times-1), 0, sigma)
+    u <- matrix(0, nrow = length(s), ncol = 3) + rnorm(length(s)*3, 0, sigma)
     
     ## Two kinds of processes acting ot State_log
     ## 1. All processes that add additively to State, are added within log(State)
     ## 2. All processes that act multiplicatively on the state are added in log space
     
-    J_t_log <- log(J + r) - c_j*sum(J) - s*BA - m_j - g + u[1, t-1, ] # count of juveniles J
+    J_t_log <- log(J + r) - c_j*sum(J) - s*BA - m_j - g + u[ ,1] # count of juveniles J
     
-    A_t_log <- log(A + exp(J_log - g)) - c_a*BA - m_a - h + u[2, t-1, ] # count of small adults A
+    A_t_log <- log(A + exp(J_log - g)) - c_a*BA - m_a - h + u[ ,2] # count of small adults A
     A_ba <- exp(A_log - h)*ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
     
-    B_t_log <- log(B + A_ba) + b - c_b*sum(B) + u[3, t-1, ] # basal area of big adults B
+    B_t_log <- log(B + A_ba) + b - c_b*sum(B) + u[ ,3] # basal area of big adults B
     ## b is the net basal area increment (including density-independent m) basically equivalent to a Ricker model, i.e. constant increment rate leading to exponential growth, negative density dependent limitation scaled with total BA.
     
     State_log[t, ] <- c(J_t_log, A_t_log, B_t_log)
@@ -144,62 +143,73 @@ simulateEnv <- function(n_env, n_locs){
 ### 1. Generate environment parameters for the population model from expected values on the log scale
 ## Beta_* are effect of environment on species' parameters matrix[1 + n_env, n_species]
 ### 2. others: either a: random gamma, b: just replicate to loc dimensions.
-transformParameters <- function(pars, Env, ranef = F, returndf = F) {
+transformParameters <- function(pars, Env,
+                                envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a  = F, m_j = F, r = F, s = F),
+                                ranef = F, returndf = F) {
+  
+  
+  parname_envdep <- names(envdependent)[envdependent]
+  parname_envindep <- names(envdependent)[!envdependent]
   
   Env <- as.data.frame(Env)
-  
-  ## 1. Envrionmentally-dependent transformations
   polyformula <- as.formula(paste("~", paste("poly(", colnames(Env), ", 2)", collapse = "+")))
   M <- model.matrix(polyformula, data = as.data.frame(Env))
   
   ### 1. env-dependent parameters  ###
-  g_log <- M %*% pars$Beta_g
-  m_j_log <- M %*% pars$Beta_m_j
-  r_log <- M %*% pars$Beta_r
-  s_log <- M %*% pars$Beta_s
+  multiplyEnv <- function(parname) {
+    Par <- M %*% pars[[glue("Beta_{parname}")]]
+    return(Par)
+  }
   
-  transpars <- list(g_loc = exp(g_log), m_j_loc = exp(m_j_log), r_loc = exp(r_log), s_loc = exp(s_log)) # env-dependent
+  pars_envdep <- sapply(parname_envdep, multiplyEnv, USE.NAMES = T, simplify = F) %>%
+    setNames(glue("{str_to_title(parname_envdep)}_log"))  # ! name env-depedent matrices to upper
+  
+  pars_envdep <- lapply(pars_envdep, exp) %>%
+    setNames(glue("{str_to_title(parname_envdep)}_loc")) %>%
+    c(pars_envdep)
   
   ## 2. Environmentally-independent transformation to a matrix with nrow == nrow(Env)
+  replicateWithRanef <- function(parname) {
+    Par <- t(replicate(pars$n_locs, rgamma2(pars[[parname]], pars[[parname]], pars$shape_par)))
+    return(Par)
+  }
+  
+  replicateToLoc <- function(parname) {
+    Par <- t(replicate(pars$n_locs, pars[[parname]]))
+    return(Par)
+  }
+  
   if(ranef) {
     ## 2a. With random effects
-    b_loc <- t(replicate(pars$n_locs, rgamma2(pars$b, pars$b, pars$shape_par)))
-    c_j_loc <- t(replicate(pars$n_locs, rgamma2(pars$c_j, pars$c_j, pars$shape_par)))
-    c_a_loc <- t(replicate(pars$n_locs, rgamma2(pars$c_a, pars$c_a, pars$shape_par)))
-    c_b_loc <- t(replicate(pars$n_locs, rgamma2(pars$c_b, pars$c_b, pars$shape_par)))
-    h_loc <- t(replicate(pars$n_locs, rgamma2(pars$h, pars$h, pars$shape_par)))
-    m_a_loc <- t(replicate(pars$n_locs, rgamma2(pars$m_a, pars$m_a, pars$shape_par)))
+    pars_envindep <- sapply(parname_envindep, replicateWithRanef, USE.NAMES = T, simplify = F) %>%
+      setNames(glue("{str_to_title(parname_envindep)}_loc"))  # ! name env-indepedent matrices to upper
     
   } else {
     ## 2b. Just a replicate without random effects
-    b_loc <- t(replicate(pars$n_locs, pars$b))
-    c_j_loc <- t(replicate(pars$n_locs, pars$c_j))
-    c_a_loc <- t(replicate(pars$n_locs, pars$c_a))
-    c_b_loc <- t(replicate(pars$n_locs, pars$c_b))
-    h_loc <- t(replicate(pars$n_locs, pars$h))
-    m_a_loc <- t(replicate(pars$n_locs, pars$m_a))
+    pars_envindep <- sapply(parname_envindep, replicateToLoc, USE.NAMES = T, simplify = F) %>%
+      setNames(glue("{str_to_title(parname_envindep)}_loc"))
   }
   
-  ## add env independent parameters to transpars
-  transpars <- c(transpars,
-                 list(b_loc = b_loc, c_j_loc = c_j_loc, c_a_loc = c_a_loc, c_b_loc = c_b_loc, h_loc = h_loc, m_a_loc = m_a_loc))
-  
-  ## untransformed env-dependent
-  logpars <- list(g_log = g_log, m_j_log = m_j_log, r_log = r_log, s_log = s_log)
   
   if (returndf) {
-    transpars <- lapply(transpars, as.data.frame)
+    
+    transpars <- lapply(pars_envdep, as.data.frame)
     transpars <- do.call(cbind, transpars)
-    transpars <- pivot_longer(cbind(transpars, Env),
-                              cols = starts_with(c("g", "m_", "r", "s",
-                                                   "b", "c_", "h")),
+    transpars <- cbind(transpars, Env)
+    
+    transpars <- pivot_longer(transpars,
+                              cols = starts_with(names(envdependent), ignore.case = T),
                               names_sep = "\\.",
                               names_to = c("parameter", "species"),
                               values_to = c("q")) %>%
+      mutate(parameter = str_to_lower(parameter)) %>%
       mutate(species = as.integer(as.factor(species)))
-  } else {
-    transpars <- c(pars, transpars, logpars)
-  }
+  
+    } else {
+    
+    transpars <- c(pars, pars_envdep, pars_envindep, list(envdependent = envdependent))
+  
+    }
   
   return(transpars)
 }
@@ -218,7 +228,7 @@ simulateOneSeries <- function(state_init, times, pars, processerror = T, obserro
   
   n_pops <- length(state_init)
   
-  if(!processerror) pars$sigma_process <- c(0, 0, 0)
+  if(!processerror) pars$sigma_process <- 0
   
   Sim <- calcModel(state_init, times = times, pars = pars)
   if(!log) Sim <- exp(Sim)
@@ -237,7 +247,8 @@ simulateOneSeries <- function(state_init, times, pars, processerror = T, obserro
 #### Multiple simulations -------------------
 simulateMultipleSeriesInEnv <- function(pars,
                                         Env,
-                                        times = 2:32, # internal model will still start at 1
+                                        times = 2:22, # internal model will still start at 1
+                                        envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a  = F, m_j = F, r = F, s = F),
                                         modelstructure = c("ba", "ba-rect", "ba-rag", "ba-rag-ranef"),
                                         format = c("long", "stan"),
                                         obserror = T, processerror = NULL, ranef = NULL) {
@@ -259,16 +270,24 @@ simulateMultipleSeriesInEnv <- function(pars,
   plotlevelinit <- F ## whether initial values are different within one cluster (= loc)
   
   ## ---- Set parameters ----
-  pars <- transformParameters(pars, Env, ranef = ranef)
+  pars <- transformParameters(pars, Env, envdependent = envdependent, ranef = ranef)
   meta <- pars # for info like n_stages, dbh_lower_a
   
   #### Internal function to mapply over locations with different environments and therefore possibly different parameters
-  simulateOneSeriesInEnv <- function(g_, m_j_, r_, s_,
-                                     b_, c_j_, c_a_, c_b_, h_, m_a_) {
+  simulateOneSeriesInEnv <- function(b_, c_a_, c_b_, c_j_, g_, h_, m_a_, m_j_, r_, s_) {
     
     ## replace global pars with local variants
-    simpars <- within(pars, {g <- g_; m_j <- m_j_; r <- r_; s <- s_;
-    b <- b_; c_j <- c_j_; c_a <- c_a_; c_b <- c_b_; h <- h_; m_a <- m_a_;}
+    simpars <- within(pars, {
+      b <- b_;
+      c_a <- c_a_;
+      c_b <- c_b_;
+      c_j <- c_j_;
+      g <- g_;
+      h <- h_;
+      m_a <- m_a_;
+      m_j <- m_j_;
+      r <- r_;
+      s <- s_;}
     ) # list of dependent and independent parameters for one environment
     
     
@@ -292,22 +311,18 @@ simulateMultipleSeriesInEnv <- function(pars,
   
   ## Sims is a: list[n_loc] <- list[n_plotsperloc] <- matrix[n_times, n_species]
   sims <- mapply(simulateOneSeriesInEnv,
-                 ## env-dependent
-                 as.data.frame(t(pars$g_loc)),
-                 as.data.frame(t(pars$m_j_loc)),
-                 as.data.frame(t(pars$r_loc)),
-                 as.data.frame(t(pars$s_loc)),
-                 
-                 ## env-independent
-                 as.data.frame(t(pars$b_loc)),
-                 as.data.frame(t(pars$c_j_loc)),
-                 as.data.frame(t(pars$c_a_loc)),
-                 as.data.frame(t(pars$c_b_loc)),
-                 as.data.frame(t(pars$h_loc)),
-                 as.data.frame(t(pars$m_a_loc)),
+                 as.data.frame(t(pars$B_loc)),
+                 as.data.frame(t(pars$C_a_loc)),
+                 as.data.frame(t(pars$C_b_loc)),
+                 as.data.frame(t(pars$C_j_loc)),
+                 as.data.frame(t(pars$G_loc)),
+                 as.data.frame(t(pars$H_loc)),
+                 as.data.frame(t(pars$M_a_loc)),
+                 as.data.frame(t(pars$M_j_loc)),
+                 as.data.frame(t(pars$R_loc)),
+                 as.data.frame(t(pars$S_loc)),
                  
                  SIMPLIFY = F)
-  
   
   
   ###### Fomat the data from multiple simulations -------------------
@@ -536,43 +551,76 @@ generateParameters <- function(seed = 1,
                                dbh_lower_a = 100, dbh_lower_b = 200,
                                
                                ## errors:
-                               sigma_process = c(0.05, 0.05, 0.03), shape_par = 10, sigma_obs = c(1, 0.2),
+                               sigma_process = 0.05, shape_par = 10, sigma_obs = c(1, 0.2),
                                ...) {
   set.seed(seed)
+  
+  parnames <- c("b", "c_a", "c_b", "c_j", "g", "h", "m_a", "m_j", "r", "s")
   
   ## Beta_* are effect of environment on species' parameters matrix[n_env, n_species]
   ## These are on the log scale!
   n_beta <- 1 + 2 * n_env # degree 2 polynomial + intercept
   
-  ### 1. env-dependent parameters (log scale) ### 
+  ### 1. log-scale parameters and env-dependence
+  
+  b_log <- rnorm(n_species, -1, 0.01)
+  Beta_b <- matrix(rnorm(n_beta*n_species, -0.5, 0.5), n_beta, n_species)
+  Beta_b[1,] <- b_log
+  Beta_b[3,] <- rnorm(n_species, -1, 0.2)
+  
+  # Usually thought of as env-indepedent, but generated with zero effects here for consistency
+  Beta_c_a <- Beta_c_b <- Beta_c_j <- matrix(0, n_beta, n_species)
+  c_a_log <- rnorm(n_species, -3.3, 0.2)
+  Beta_c_a[1,] <- c_a_log
+  c_b_log <- rnorm(n_species, -3, 0.1)
+  Beta_c_b[1,] <- c_b_log
+  c_j_log <- rnorm(n_species, -10, 0.5)
+  Beta_c_j[1,] <- c_j_log
+  
+  g_log <- rnorm(n_species, -5, 0.2)
   Beta_g <- matrix(rnorm(n_beta*n_species, -0.5, 0.5), n_beta, n_species)
-  g_log <- rnorm(n_species, -12, 0.2)
   Beta_g[1,] <- g_log
   Beta_g[3,] <- rnorm(n_species, -1, 0.2)
   
-  Beta_m_j <- matrix(rnorm(n_beta*n_species, -3, 0.5), n_beta, n_species)
+  h_log <- rnorm(n_species, -0.5, 0.3)
+  Beta_h <- matrix(rnorm(n_beta*n_species, -0.5, 0.5), n_beta, n_species)
+  Beta_h[1,] <- h_log
+  Beta_h[3,] <- rnorm(n_species, -1, 0.2)
+  
+  m_a_log <- rnorm(n_species, -1.5, 0.5)
+  Beta_m_a <- matrix(rnorm(n_beta*n_species, -2, 0.5), n_beta, n_species)
+  Beta_m_a[1,] <- m_a_log
+  Beta_m_a[3,] <- rnorm(n_species, -2, 0.2)
+  
   m_j_log <- rnorm(n_species, -1.2, 0.1)
+  Beta_m_j <- matrix(rnorm(n_beta*n_species, -3, 0.5), n_beta, n_species)
   Beta_m_j[1,] <- m_j_log
   Beta_m_j[3,] <- rnorm(n_species, -2.5, 0.2)
   
-  Beta_r <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   r_log <- rnorm(n_species, 2.2, 0.2)
+  Beta_r <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   Beta_r[1,] <- r_log
   Beta_r[3,] <- rnorm(n_species, -0.5, 0.2)
   
-  Beta_s <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   s_log <- rnorm(n_species, -2.9, 0.1)
+  Beta_s <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   Beta_s[1,] <- s_log
   Beta_s[3,] <- rnorm(n_species, -1, 0.2)
   
   
-  ### 2. env-independent parameters ("state model scale", positive) ### 
-  b <- exp(rnorm(n_species, -1, 0.01))
-  c_j <- exp(rnorm(n_species, -10, 0.5))
-  c_a <- exp(rnorm(n_species, -3.3, 0.2))
-  c_b <- exp(rnorm(n_species, -3, 0.1))
-  h <- exp(rnorm(n_species, -0.5, 0.3))
-  m_a <- exp(rnorm(n_species, -1.5, 0.5))
+  ### 2. "state model scale"-parameters, positive; for env-independent models
+  b <- exp(b_log)
+  
+  c_a <- exp(c_a_log)
+  c_b <- exp(c_b_log)
+  c_j <- exp(c_j_log)
+  
+  g <- exp(g_log)
+  h <- exp(h_log)
+  m_a <- exp(m_a_log)
+  m_j <- exp(m_j_log)
+  r <- exp(r_log)
+  s <- exp(s_log)
   
   
   pars <- c(as.list(environment()), list(...)) ## Carries along all parameter values within the named list.
@@ -596,10 +644,7 @@ formals(generateParameters)
 pars1 <- generateParameters(seed = 1)
 initialstate1 <- generateInitialState(n_species = pars1$n_species)
 ## transform parameters manually, use *_log because they are vectors[n_species] (instead of matrices as produced by transformParameters)
-pars1 <- within(pars1,
-                {g = exp(pars1$g_log); m_j = exp(m_j_log); r = exp(pars1$r_log); s = exp(pars1$s_log);}
-)
-times1 <- 1:30
+times1 <- 1:15
 
 Sim1 <- simulateOneSeries(initialstate1, times = times1, pars = pars1,
                           processerror = F, obserror = F, log = F)
@@ -611,10 +656,12 @@ matplot(Sim1[,-1], type = "b", ylab="N",
 
 
 ## Multiple time series in env ---------------------------------------------------------------
+envdep_demo <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, m_a = F, m_j = F, r = T, s = T)
 pars_demo <- generateParameters(n_species = 4, n_locs = 50, sigma_obs = c(0.2, 0.1))
 E_demo <- simulateEnv(pars_demo$n_env, pars_demo$n_locs)
-P_env_demo <- transformParameters(pars_demo, E_demo, ranef = F, returndf = T)
-S_demo <- simulateMultipleSeriesInEnv(pars_demo, E_demo, ranef = F, processerror = T, obserror = F)
+P_env_demo <- transformParameters(pars_demo, E_demo, envdep_demo, ranef = F, returndf = T)
+S_demo <- simulateMultipleSeriesInEnv(pars_demo, E_demo, times = 2:22,
+                                      envdependent = envdep_demo, ranef = F, processerror = T, obserror = F)
 
 #### Plot time series
 S_demo %>%
@@ -626,7 +673,7 @@ S_demo %>%
 
 #### Plot parameters
 P_env_demo %>%
-  filter(parameter %in% c("g_loc")) %>%
+  filter(parameter %in% c("s_loc")) %>%
   gf_point(q ~ env_1 | species) %>%
   gf_smooth()
 
@@ -695,39 +742,20 @@ getTrueInits <- function() {
   
   isragged <- grepl("^ba-rag", modelname)
   
-  truepars <<- attr(data, "pars")
+  truepars <- attr(data, "pars")
+  truepars <- truepars[sapply(truepars, is.numeric)]
+  parnames <- names(truepars)
+  names(truepars) <- ifelse(str_ends(parnames, "_loc"), str_to_lower(parnames), parnames)
   
-  inits <- list(
-    ## from global environment
-    Beta_g = truepars$Beta_g,
-    Beta_m_j = truepars$Beta_m_j,
-    Beta_r = truepars$Beta_r,
-    Beta_s = truepars$Beta_s,
-    
+  newpars <- list(
     state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
                                    data$y_log[,1,,] + rnorm(data$y_log[,1,,], 0, 0.01),
     
-    ## Version with random rates.
-    b     = truepars$b,
-    c_j   = truepars$c_j,
-    c_a   = truepars$c_a,
-    c_b   = truepars$c_b,
-    h     = truepars$h,
-    m_a   = truepars$m_a,
-    
-    shape_par      = truepars$shape_par,
-    sigma_process  = truepars$sigma_process,
-    sigma_obs      = truepars$sigma_obs,
-    
-    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0.001), nrow = pars$n_species, ncol = data$timespan_max)),
-    
-    b_loc     = truepars$b_loc,
-    c_j_loc   = truepars$c_j_loc,
-    c_a_loc   = truepars$c_a_loc,
-    c_b_loc   = truepars$c_b_loc,
-    h_loc     = truepars$h_loc,
-    m_a_loc   = truepars$m_a_loc
+    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0.001), nrow = pars$n_species, ncol = data$timespan_max))
   )
+  
+  inits <- c(newpars, truepars)
+  truepars <<- truepars
   
   return(inits)
 }
@@ -738,38 +766,79 @@ getInits <- function() {
   isragged <- grepl("^ba-rag", modelname)
   
   truepars <<- attr(data, "pars")
+  n_species <- truepars$n_species
+  n_locs <- truepars$n_locs
+  
+  
+  b_log <- rnorm(n_species, -1, 0.01)
+  c_a_log <- rnorm(n_species, -3.3, 0.2)
+  c_b_log <- rnorm(n_species, -3, 0.1)
+  c_j_log <- rnorm(n_species, -10, 0.5)
+  g_log <- rnorm(n_species, -12, 0.2)
+  h_log <- rnorm(n_species, -0.5, 0.3)
+  m_a_log <- rnorm(n_species, -1.5, 0.5)
+  m_j_log <- rnorm(n_species, -1.2, 0.1)
+  r_log <- rnorm(n_species, 2.2, 0.2)
+  s_log <- rnorm(n_species, -2.9, 0.1)
+  
+  beta_null <- function() { matrix(c(-1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.001) }
+  
   
   inits <- list(
+    
+    b_log = b_log,
+    c_a_log = c_a_log,
+    c_b_log = c_b_log,
+    c_j_log = c_j_log,
+    g_log = g_log,
+    h_log = h_log,
+    m_a_log = m_a_log,
+    m_j_log = m_j_log,
+    r_log = r_log,
+    s_log = s_log,
+    
     ## from global environment
-    Beta_g = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
-    Beta_m_j = matrix(c(-2, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
-    Beta_r = matrix(c(4, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
-    Beta_s = matrix(c(-3, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
+    Beta_b = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
+    Beta_c_a = beta_null(),
+    Beta_c_b = beta_null(),
+    Beta_c_j = beta_null(),
+    Beta_g = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
+    Beta_h = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
+    Beta_m_a = matrix(c(-4, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
+    Beta_m_j = matrix(c(-2, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
+    Beta_r = matrix(c(3, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
+    Beta_s = matrix(c(-3, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
     
     state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
       data$y_log[,,1,] + rnorm(data$y_log[,,1,], 0, 0.01),
 
+    b = exp(b_log),
+    c_a = exp(c_a_log),
+    c_b = exp(c_b_log),
+    c_j = exp(c_j_log),
+    g = exp(g_log),
+    h = exp(h_log),
+    m_a = exp(m_a_log),
+    m_j = exp(m_j_log),
+    r = exp(r_log),
+    s = exp(s_log),
     
-    ## Version with random rates.
-    b     = rgamma(truepars$n_species, 10, 10/0.2),
-    c_j   = rgamma(truepars$n_species, 10, 10/0.001),
-    c_a   = rgamma(truepars$n_species, 10, 10/0.001),
-    c_b   = rgamma(truepars$n_species, 10, 10/0.001),
-    h     = rgamma(truepars$n_species, 10, 10/0.1), #!
-    m_a   = rgamma(truepars$n_species, 10, 10/0.001),
+    b_loc = matrix(rep(exp(b_log), n_locs), nrow = n_locs, byrow = T),
+    c_a_loc =  matrix(rep(exp(c_a_log),n_locs), nrow = n_locs, byrow = T),
+    c_b_loc =  matrix(rep(exp(c_b_log),n_locs), nrow = n_locs, byrow = T),
+    c_j_loc =  matrix(rep(exp(c_j_log),n_locs), nrow = n_locs, byrow = T),
+    g =  matrix(rep(exp(g_log),n_locs), nrow = n_locs, byrow = T),
+    h =  matrix(rep(exp(h_log),n_locs), nrow = n_locs, byrow = T),
+    m_a_loc =  matrix(rep(exp(m_a_log),n_locs), nrow = n_locs, byrow = T),
+    m_j_loc =  matrix(rep(exp(m_j_log),n_locs), nrow = n_locs, byrow = T),
+    r_loc =  matrix(rep(exp(r_log),n_locs), nrow = n_locs, byrow = T),
+    s_loc =  matrix(rep(exp(s_log),n_locs), nrow = n_locs, byrow = T),
     
     shape_par      = c(10, 10, 10),
-    sigma_process  = c(0.1, 0.1, 0.1),
+    sigma_process  = c(0.01),
     sigma_obs      = c(10, 10),
     
-    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0), nrow = pars$n_species, ncol = data$timespan_max)),
-    
-    b_loc     = truepars$b_loc,
-    c_j_loc   = truepars$c_j_loc,
-    c_a_loc   = truepars$c_a_loc,
-    c_b_loc   = truepars$c_b_loc,
-    h_loc     = truepars$h_loc,
-    m_a_loc   = truepars$m_a_loc
+    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0.001), nrow = pars$n_species, ncol = data$timespan_max))
   )
   
   return(inits)
@@ -798,13 +867,13 @@ drawSamples <- function(model, data, variational = F, n_chains = 1, initfunc = g
   return(fit)
 }
 
-
+# model <- cmdstan_model(modelpath)
 fit <- drawSamples(model, data, variational = T, initfunc = getInits)
 fit$output()
 fit$time()
-fit$init()
-fit$draws(variables = NULL, inc_warmup = F)
-fit$return_codes()
+# fit$init()
+# fit$draws(variables = NULL, inc_warmup = F)
+# fit$return_codes()
 
 
 
@@ -821,7 +890,6 @@ drawpath <- fit$output_files() # dput(fit$output_files())
 ### Get draws
 ## rstan format for use in other packages
 draws <- rstan::read_stan_csv(drawpath)
-draws
 
 ## get draws with cmdstanr
 # draws <- read_cmdstan_csv(drawpath, variables = NULL)
@@ -830,11 +898,8 @@ draws
 
 ## Summary -----------------------------------------------------------------
 
-fit$summary() %>%
-  View()
 # fit$summary(variables = c("shape_par", "sigma_obs", "h", "c_j", "state_init", "u")) %>% # "o", "state_init"
-
-shinystan::launch_shinystan(draws)
+# shinystan::launch_shinystan(draws)
 
 
 
@@ -871,6 +936,10 @@ plotDrawVsSim("c_a")
 plotDrawVsSim("c_b")
 plotDrawVsSim("h")
 plotDrawVsSim("m_a")
+plotDrawVsSim("g")
+plotDrawVsSim("m_j")
+plotDrawVsSim("r")
+plotDrawVsSim("s")
 
 plotDrawVsSim("Beta_g")
 plotDrawVsSim("Beta_m_j")
