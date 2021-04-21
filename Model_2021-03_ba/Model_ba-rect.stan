@@ -6,7 +6,7 @@ functions {
                   vector b, vector c_j, vector c_a, vector c_b, vector h, vector m_a,
                   real ba_a_avg, real ba_a_upper,
                   int N_spec, int N_pops,
-                  matrix u,
+                  // matrix u, // a matrix[N_pops, time_max-1]
                   int[] i_j, int[] i_a, int[] i_b) {
     
     
@@ -26,12 +26,18 @@ functions {
       vector[N_spec] B = exp(State[t-1, i_b]);
       
       real BA = sum(A*ba_a_avg + B);
+      // vector[N_pops] u_t = u[, t-1]; // does assignment to vector work?
       
       /// Ricker model: assign to the the log states
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b))
-      State[t, i_j]  =  log1p(expm1(J_log) + r) - c_j*sum(J) - s*BA - m_j - g + u[i_j, t-1]; // equivalent to … =  J + (r - (c_j*sum(J) + s*AB + g + m_j).*J * dt;
-      State[t, i_a]  =  log1p(A + expm1(J_log - g)) - c_a*BA - m_a - h + u[i_a, t-1];
-      State[t, i_b]  =  log1p(B + expm1(A_log - h) * ba_a_upper) + b - c_b*sum(B) + u[i_b, t-1]; // exp(A_log - h) * ba_a_upper is the input of new basal area through ingrowth of count A*exp(-h) from A
+      
+      // State[t, i_j]  =  log1p(expm1(J_log) + r) - c_j*sum(J) - s*BA - m_j - g; // + u[i_j]; // equivalent to … =  J + (r - (c_j*sum(J) + s*AB + g + m_j).*J * dt;
+      // State[t, i_a]  =  log1p(A + expm1(J_log - g)) - c_a*BA - m_a - h; // + u[i_a];
+      // State[t, i_b]  =  log1p(B + expm1(A_log - h) * ba_a_upper) + b - c_b*sum(B); // + u[i_b]; // exp(A_log - h) * ba_a_upper is the input of new basal area through ingrowth of count A*exp(-h) from A
+      
+      State[t, i_j]  =  log(J + r) - c_j*sum(J) - s*BA - m_j - g;
+      State[t, i_a]  =  log(A + exp(J_log - g)) - c_a*BA - m_a - h;
+      State[t, i_b]  =  log(B + exp(A_log - h) * ba_a_upper) + b - c_b*sum(B);
       
     }
     
@@ -76,6 +82,7 @@ data {
   matrix[N_locs, N_beta] X; // design matrix
   
   // The response.
+  vector[N_pops] y0_loc_log [N_locs];
   vector[N_pops] y_log [N_locs, N_times, N_plots];
 }
 
@@ -114,13 +121,15 @@ parameters {
   // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
   vector<lower=0>[2] sigma_obs; // observation error
 
-  matrix[N_pops, timespan_max] u[N_locs];
+  // matrix[N_pops, timespan_max] u[N_locs];
 
   vector[N_pops] state_init_log[N_locs];
 }
 
 
 transformed parameters {
+  
+  vector[N_pops] y_hat_log[N_locs, N_times];
   
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
   // Location level parameters (unconstrained because on log scale!)
@@ -129,12 +138,22 @@ transformed parameters {
   // matrix[N_locs, N_species] r_log = X * Beta_r;
   // matrix[N_locs, N_species] s_log = X * Beta_s;
   
+  for(l in 1:N_locs) {
+    
+    y_hat_log[l, ] = simulate(state_init_log[l], time_max[l], times[l, ],
+                              // exp(g_log[l, ]'), exp(m_j_log[l, ]'), exp(r_log[l, ]'), exp(s_log[l, ]'),
+                              g, m_j, r, s,
+                              b, c_j, c_a, c_b, h, m_a,
+                              ba_a_avg, ba_a_upper,
+                              N_species, N_pops,
+                              // u[l],
+                              i_j, i_a, i_b);
+    }
+
 }
 
 
 model {
-  
-  vector[N_pops] y_hat_log[N_locs, N_times];
   
   //---------- PRIORS ---------------------------------
   
@@ -146,25 +165,17 @@ model {
   // Beta_g[1,] ~ normal(-12, 1);
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-  h ~ gamma(10, 10/0.6);
-  g ~ gamma(5, 5/0.01);
-  b ~ gamma(10, 10/0.4);
+  // h ~ gamma(10, 10/0.6);
+  // g ~ gamma(5, 5/0.01);
+  // b ~ gamma(10, 10/0.4);
   
   //---------- MODEL ---------------------------------
   
   for(l in 1:N_locs) {
-    
-    // Like a prior
-    to_vector(u[l]) ~ std_normal();
-    
-    y_hat_log[l, ] = simulate(state_init_log[l], time_max[l], times[l],
-                              // exp(g_log[l, ]'), exp(m_j_log[l, ]'), exp(r_log[l, ]'), exp(s_log[l, ]'),
-                              g, m_j, r, s,
-                              b, c_j, c_a, c_b, h, m_a,
-                              ba_a_avg, ba_a_upper,
-                              N_species, N_pops,
-                              u[l],
-                              i_j, i_a, i_b);
+
+    // Some priors
+    state_init_log[l] ~ normal(y0_loc_log[l], sigma_obs[rep_obsmethod2pops]);
+    // to_vector(u[l]) ~ normal(0, 0.1);
     
     for (t in 1:N_times) {
       
@@ -182,3 +193,21 @@ model {
     }
   }
 }
+
+// generated quantities {
+//   
+//   real sim_log [N_locs, N_times, N_plots, N_pops];
+//   
+//   for(l in 1:N_locs) {
+//       
+//     for (t in 1:N_times) {
+//       
+//       for (p in 1:N_plots) {
+//         
+//         sim_log[l, t, p, ] = normal_rng(y_hat_log[l, t], sigma_obs[rep_obsmethod2pops]);
+//       
+//       }
+//     }
+//   }
+//   
+// }
