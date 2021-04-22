@@ -194,20 +194,23 @@ model {
   }
 }
 
-// generated quantities {
-//   
-//   real sim_log [N_locs, N_times, N_plots, N_pops];
-//   
-//   for(l in 1:N_locs) {
-//       
-//     for (t in 1:N_times) {
-//       
-//       for (p in 1:N_plots) {
-//         
-//         sim_log[l, t, p, ] = normal_rng(y_hat_log[l, t], sigma_obs[rep_obsmethod2pops]);
-//       
-//       }
-//     }
-//   }
-//   
-// }
+generated quantities {
+
+  real y_log_sim [N_locs, N_times, N_plots, N_pops];
+  vector[N_pops] y_hat_log_rep[N_locs, N_times, N_plots];
+
+  for(l in 1:N_locs) {
+
+    for (t in 1:N_times) {
+
+      for (p in 1:N_plots) {
+
+        y_hat_log_rep[l, t, p, ] = y_hat_log[l, t, ];
+        y_log_sim[l, t, p, ] = normal_rng(y_hat_log[l, t], sigma_obs[rep_obsmethod2pops]);
+
+
+      }
+    }
+  }
+
+}

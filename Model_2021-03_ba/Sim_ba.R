@@ -401,15 +401,15 @@ pars <- generateParameters(seed = fitseed, n_locs = 70)
 
 Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
 
-data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 5, 8),
+data <- simulateMultipleSeriesInEnv(pars, Env, times = c(1, 5, 8),
                                     envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F, r = F, s = F),
                                     modelstructure = modelname, format = "stan",
-                                    obserror = T, processerror = F)
+                                    obserror = F, processerror = F)
 
-Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 5, 8),
+Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(1, 5, 8),
                                          envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F,  r = F, s = F),
                                          modelstructure = modelname, format = "long",
-                                         obserror = T, processerror = F) %>%
+                                         obserror = F, processerror = F) %>%
   mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
   arrange(sortid, time) %>%
   group_by(loc, species, stage, time) %>%
@@ -426,112 +426,7 @@ Data_long %>%
   facet_wrap(facets = c("species"))
 
 
-#### Returns +- the true start values ----------------------
-getTrueInits <- function() {
-  
-  isragged <- grepl("^ba-rag", modelname)
-  
-  truepars <- attr(data, "pars")
-  truepars <- truepars[sapply(truepars, is.numeric)]
-  parnames <- names(truepars)
-  names(truepars) <- ifelse(str_ends(parnames, "_loc"), str_to_lower(parnames), parnames)
-  
-  newpars <- list(
-    state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
-                                   data$y_log[,1,,] + rnorm(data$y_log[,1,,], 0, 0.01),
-    
-    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0.001), nrow = pars$n_species, ncol = data$timespan_max))
-  )
-  
-  inits <- c(newpars, truepars)
-  truepars <<- truepars
-  
-  return(inits)
-}
 
-#### Returns viable start values ---------------------------
-getInits <- function() {
-  
-  isragged <- grepl("^ba-rag", modelname)
-  
-  truepars <<- attr(data, "pars")
-  n_species <- truepars$n_species
-  n_locs <- truepars$n_locs
-  
-  
-  b_log <- rnorm(n_species, -1, 0.01)
-  c_a_log <- rnorm(n_species, -3.3, 0.2)
-  c_b_log <- rnorm(n_species, -3, 0.1)
-  c_j_log <- rnorm(n_species, -10, 0.5)
-  g_log <- rnorm(n_species, -12, 0.2)
-  h_log <- rnorm(n_species, -0.5, 0.3)
-  m_a_log <- rnorm(n_species, -1.5, 0.5)
-  m_j_log <- rnorm(n_species, -1.2, 0.1)
-  r_log <- rnorm(n_species, 2.2, 0.2)
-  s_log <- rnorm(n_species, -2.9, 0.1)
-  
-  beta_null <- function() { matrix(c(-1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.001) }
-  
-  
-  inits <- list(
-    
-    b_log = b_log,
-    c_a_log = c_a_log,
-    c_b_log = c_b_log,
-    c_j_log = c_j_log,
-    g_log = g_log,
-    h_log = h_log,
-    m_a_log = m_a_log,
-    m_j_log = m_j_log,
-    r_log = r_log,
-    s_log = s_log,
-    
-    ## from global environment
-    Beta_b = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species),
-    Beta_c_a = beta_null(),
-    Beta_c_b = beta_null(),
-    Beta_c_j = beta_null(),
-    Beta_g = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
-    Beta_h = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
-    Beta_m_a = matrix(c(-4, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
-    Beta_m_j = matrix(c(-2, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
-    Beta_r = matrix(c(3, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
-    Beta_s = matrix(c(-3, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
-    
-    state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
-      data$y_log[,,1,] + rnorm(data$y_log[,,1,], 0, 0.01),
-
-    b = exp(b_log),
-    c_a = exp(c_a_log),
-    c_b = exp(c_b_log),
-    c_j = exp(c_j_log),
-    g = exp(g_log),
-    h = exp(h_log),
-    m_a = exp(m_a_log),
-    m_j = exp(m_j_log),
-    r = exp(r_log),
-    s = exp(s_log),
-    
-    b_loc = matrix(rep(exp(b_log), n_locs), nrow = n_locs, byrow = T),
-    c_a_loc =  matrix(rep(exp(c_a_log),n_locs), nrow = n_locs, byrow = T),
-    c_b_loc =  matrix(rep(exp(c_b_log),n_locs), nrow = n_locs, byrow = T),
-    c_j_loc =  matrix(rep(exp(c_j_log),n_locs), nrow = n_locs, byrow = T),
-    g =  matrix(rep(exp(g_log),n_locs), nrow = n_locs, byrow = T),
-    h =  matrix(rep(exp(h_log),n_locs), nrow = n_locs, byrow = T),
-    m_a_loc =  matrix(rep(exp(m_a_log),n_locs), nrow = n_locs, byrow = T),
-    m_j_loc =  matrix(rep(exp(m_j_log),n_locs), nrow = n_locs, byrow = T),
-    r_loc =  matrix(rep(exp(r_log),n_locs), nrow = n_locs, byrow = T),
-    s_loc =  matrix(rep(exp(s_log),n_locs), nrow = n_locs, byrow = T),
-    
-    shape_par      = c(10, 10, 10),
-    sigma_process  = c(0.01),
-    sigma_obs      = c(1.1, 1.1),
-    
-    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0.001), nrow = pars$n_species, ncol = data$timespan_max))
-  )
-  
-  return(inits)
-}
 
 
 ## Draw from model --------------------------------------------------------------
