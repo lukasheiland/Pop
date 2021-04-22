@@ -336,6 +336,8 @@ formatSims <- function() {
 #### Returns +- the true start values ----------------------
 getTrueInits <- function() {
   
+  responsescaleerror <- 0
+  
   isragged <- grepl("^ba-rag", modelname)
   
   truepars <- attr(data, "pars")
@@ -345,9 +347,9 @@ getTrueInits <- function() {
   
   newpars <- list(
     state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
-      data$y_log[,1,,] + rnorm(data$y_log[,1,,], 0, 0.01),
+      data$y_log[,1,1,] + rnorm(data$y_log[,1,1,], 0, responsescaleerror),
     
-    u = replicate(pars$n_locs, matrix(rnorm(pars$n_species*3, 0, 0.001), nrow = pars$n_species, ncol = data$timespan_max))
+    u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = pars$n_species*3, ncol = data$timespan_max))
   )
   
   inits <- c(newpars, truepars)
@@ -358,6 +360,8 @@ getTrueInits <- function() {
 
 #### Returns viable start values ---------------------------
 getInits <- function() {
+  
+  responsescaleerror <- 0
   
   isragged <- grepl("^ba-rag", modelname)
   
@@ -405,9 +409,6 @@ getInits <- function() {
     Beta_r = matrix(c(3, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
     Beta_s = matrix(c(-3, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
     
-    state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
-      data$y_log[,,1,] + rnorm(data$y_log[,,1,], 0, 0.01),
-    
     b = exp(b_log),
     c_a = exp(c_a_log),
     c_b = exp(c_b_log),
@@ -434,8 +435,11 @@ getInits <- function() {
     sigma_process  = c(0.01),
     sigma_obs      = c(1.1, 1.1),
     
-    u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = truepars$n_species, ncol = data$timespan_max))
-  )
+    state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
+      data$y_log[,1,1,] + rnorm(data$y_log[,1,1,], 0, responsescaleerror),
+    
+    u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = pars$n_species*3, ncol = data$timespan_max))
+    )
   
   return(inits)
 }

@@ -60,7 +60,7 @@ calcModel <- function(times,
   n_times <- length(times_intern)
   
   
-  radius_a_upper <- dbh_lower_a/2
+  radius_a_upper <- dbh_lower_b/2
   radius_a_avg <- (dbh_lower_a + dbh_lower_b)/2/2 # [mm]
   ba_a_upper <-  pi * radius_a_upper^2 * 1e-6
   ba_a_avg <- pi * radius_a_avg^2 * 1e-6 # mm^2 to m^2
@@ -485,7 +485,7 @@ drawpath <- fit$output_files() # dput(fit$output_files())
     #   rownames()
 
 
-# drawnames <- unique(str_extract(s$variable, "[a-zA-Z_]*"))
+# drawnames <- unique(str_extract(fit$metadata()$stan_variables, "[a-zA-Z_]*"))
 # targetvarname <- intersect(drawnames, names(truepars)) # this drops boilerplate variables like u
 # targetvarname <- c(targetvarname, "state_init_log") # "y_hat_log" "sim_log", "y_hat_log"
 excludevarname <- c("u") # state_init_log
@@ -501,8 +501,8 @@ draws <- extract(stanfit, pars = c(excludevarname), include = F)
 
 ## Summary -----------------------------------------------------------------
 
-s <- summary(stanfit) # , pars = excludevarname, include = F
-s
+# s <- summary(stanfit) # , pars = excludevarname, include = F
+# s
 
 
 # Inspection --------------------------------------------------------------
@@ -511,9 +511,21 @@ truepars <- attr(data, "pars")
 
 #### Predictions vs. true --------------------
 
-plot(c(draws$sim_log[1,,,,,drop =T]) ~ c(data$y_log))
-plot(c(draws$y_hat_log[1,,,,drop =T]) ~ c(apply(data$y_log, c(1, 2, 4), mean))) # average the plots away
-abline(0, 1)
+## Plot model simulations from enerated quantities
+if (fit$metadata()$algorithm == "fixed_param") {
+  
+  ## if obserror = F, y_log in sim === y_hat
+  plot(c(draws$y_hat_log_rep[1,,1,,]) ~ c(data$y_log[,1,,]))
+  
+  plot(c(lol$state_init_log) ~ c(data$y_log[,1,1,1]))
+  
+  
+  plot(c(draws$sim_log[1,,,,,drop =T]) ~ c(data$y_log))
+  plot(c(draws$y_hat_log[1,,,,drop =T]) ~ c(apply(data$y_log, c(1, 2, 4), mean))) # average the plots away
+  abline(0, 1)
+  
+}
+
 
 
 #### Draws vs true ----------------------
@@ -533,7 +545,7 @@ plotDrawVsSim <- function(parname = "h",
     
     Stanpar %>%
       # sample_n(1000) %>%
-      gf_point(draw ~ true, alpha = 0.3, size = 0.1) %>%
+      gf_point(draw ~ true, alpha = 0.3, size = 0.5) %>%
       gf_abline(slope = 1, intercept = 0, gformula = NULL)
     
   } else if (str_starts(parname, "Beta")) {

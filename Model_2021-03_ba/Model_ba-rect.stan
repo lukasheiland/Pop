@@ -12,7 +12,8 @@ functions {
     
     // State matrix with [species, times].
     vector[N_pops] State[time_max];
-    State[1] = initialstate;
+    State[1,] = initialstate;
+    // print("State 1 before: ", State[1,]);
 
     for (t in 2:time_max) {
       // Structure of state[N_pops]: stage/species
@@ -41,8 +42,9 @@ functions {
       
     }
     
-    // print("State: ", State);
-    return State[times];
+    // print("State 1 after: ", State[1,]);
+
+    return State[times,];
   }
   
 }
@@ -160,7 +162,7 @@ model {
   // Beta_r[1,] ~ normal(2, 2); // intercept
   // 1 ./ shape_par ~ normal(0, 100); 
   // sigma_process ~ normal(0, 0.01);
-  sigma_obs ~ normal(0, [1, 0.1]); // for observations from predictions
+  // sigma_obs ~ normal(0, [1, 0.1]); // for observations from predictions
   
   // Beta_g[1,] ~ normal(-12, 1);
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
@@ -174,7 +176,8 @@ model {
   for(l in 1:N_locs) {
 
     // Some priors
-    state_init_log[l] ~ normal(y0_loc_log[l], sigma_obs[rep_obsmethod2pops]);
+    // state_init_log[l] ~ normal(y0_loc_log[l], sigma_obs[rep_obsmethod2pops]);
+    
     // to_vector(u[l]) ~ normal(0, 0.1);
     
     for (t in 1:N_times) {
@@ -205,7 +208,7 @@ generated quantities {
 
       for (p in 1:N_plots) {
 
-        y_hat_log_rep[l, t, p, ] = y_hat_log[l, t, ];
+        y_hat_log_rep[l, t, p,] = y_hat_log[l, t,];
         y_log_sim[l, t, p, ] = normal_rng(y_hat_log[l, t], sigma_obs[rep_obsmethod2pops]);
 
 
