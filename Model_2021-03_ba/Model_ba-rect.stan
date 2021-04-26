@@ -162,12 +162,12 @@ model {
   // Beta_r[1,] ~ normal(2, 2); // intercept
   // 1 ./ shape_par ~ normal(0, 100); 
   // sigma_process ~ normal(0, 0.01);
-  // sigma_obs ~ normal(0, [1, 0.1]); // for observations from predictions
+  sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
   
   // Beta_g[1,] ~ normal(-12, 1);
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-  // h ~ gamma(10, 10/0.6);
+  h ~ gamma(10, 10/1);
   // g ~ gamma(5, 5/0.01);
   // b ~ gamma(10, 10/0.4);
   
@@ -176,7 +176,7 @@ model {
   for(l in 1:N_locs) {
 
     // Some priors
-    // state_init_log[l] ~ normal(y0_loc_log[l], sigma_obs[rep_obsmethod2pops]);
+    state_init_log[l] ~ normal(y0_loc_log[l], sigma_obs[rep_obsmethod2pops]);
     
     // to_vector(u[l]) ~ normal(0, 0.1);
     
