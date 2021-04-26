@@ -20,7 +20,7 @@ library(bayesplot)
 setwd(here())
 modeldir <- dir(pattern = glue("^(Model).*ba$"))
 
-source(glue("{modeldir}/Sim_ba_helpers.R"))
+source(glue("{modeldir}/Sim_ba_helpers.R"), encoding = "UTF-8")
 
 
 ######################################################################################
@@ -395,21 +395,21 @@ model <- cmdstan_model(modelpath)
 
 
 ## Simulate stan model data --------------------------------------------------------------
-fitseed <- 1
+parseed <- 1
 
-pars <- generateParameters(seed = fitseed, n_locs = 70)
+pars <- generateParameters(seed = parseed, n_locs = 70)
 
 Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
 
 data <- simulateMultipleSeriesInEnv(pars, Env, times = c(1, 5, 8),
                                     envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F, r = F, s = F),
                                     modelstructure = modelname, format = "stan",
-                                    obserror = F, processerror = F)
+                                    obserror = T, processerror = F)
 
 Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(1, 5, 8),
                                          envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F,  r = F, s = F),
                                          modelstructure = modelname, format = "long",
-                                         obserror = F, processerror = F) %>%
+                                         obserror = T, processerror = F) %>%
   mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
   arrange(sortid, time) %>%
   group_by(loc, species, stage, time) %>%
