@@ -361,7 +361,7 @@ getTrueInits <- function() {
 #### Returns viable start values ---------------------------
 getInits <- function() {
   
-  responsescaleerror <- 0
+  responsescaleerror <- 1
   
   isragged <- grepl("^ba-rag", modelname)
   

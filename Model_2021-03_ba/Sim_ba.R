@@ -20,7 +20,7 @@ library(bayesplot)
 setwd(here())
 modeldir <- dir(pattern = glue("^(Model).*ba$"))
 
-source(glue("{modeldir}/Sim_ba_helpers.R"), encoding = "UTF-8")
+source(file.path(modeldir, "Sim_ba_helpers.R"))
 
 
 ######################################################################################
@@ -114,7 +114,7 @@ calcModel <- function(times,
 
 
 #### Simulate one time series for a specific fixed set of parameters. -------------------
-simulateOneSeries <- function(state_init, times, pars, processerror = T, obserror = T, log = T) {
+simulateOneSeries <- function(state_init, times, pars, processerror = T, obserror = T, log = T, nominaltimes = NULL) {
   
   
   n_pops <- length(state_init)
@@ -124,7 +124,8 @@ simulateOneSeries <- function(state_init, times, pars, processerror = T, obserro
   Sim <- calcModel(state_init, times = times, pars = pars)
   if(!log) Sim <- exp(Sim)
   
-  Sim <- set_colnames(cbind(times, Sim), c("time", paste(1:ncol(Sim)))) # Make matrix look like from ode integrator for compatibility
+  if(is.null(nominaltimes)) nominaltimes <- times ## this is for setting the time column in the returned matrix
+  Sim <- set_colnames(cbind(nominaltimes, Sim), c("time", paste(1:ncol(Sim)))) # Make matrix look like from ode integrator for compatibility
   
   if (obserror) {
     Sim[, 2:(n_pops/3+1)] <- matrix(rnorm(Sim, Sim, pars$sigma_obs[1]), nrow = nrow(Sim))[,  2:(n_pops/3+1)]
@@ -142,12 +143,21 @@ simulateMultipleSeriesInEnv <- function(pars,
                                         envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a  = F, m_j = F, r = F, s = F),
                                         modelstructure = c("ba", "ba-rect", "ba-rag", "ba-rag-ranef"),
                                         format = c("long", "stan"),
-                                        obserror = T, processerror = NULL, ranef = NULL) {
+                                        obserror = T, processerror = NULL, ranef = NULL, independentstart = F) {
   
   modelstructure <- match.arg(modelstructure)
   format <- match.arg(format)
   
   n_times <- length(times)
+
+  ## Times are just used internally to let simulations start independently, the data still includes the times vector
+  Times <- rep(times, pars$n_locs) %>% matrix(nrow = n_times) %>% as.data.frame()
+  nominaltimes <- NULL
+  
+  if(independentstart) {
+    nominaltimes <- times
+    Times <- lapply(Times, function(t) t + sample(0:max(times*2), 1, replace = T, prob = (max(times*2):0)^8) )
+  }
   
   ## set default values for modelstructures when not explicitly overridden
   if (is.null(ranef)) {
@@ -165,7 +175,7 @@ simulateMultipleSeriesInEnv <- function(pars,
   meta <- pars # for info like n_stages, dbh_lower_a
   
   #### Internal function to mapply over locations with different environments and therefore possibly different parameters
-  simulateOneSeriesInEnv <- function(b_, c_a_, c_b_, c_j_, g_, h_, m_a_, m_j_, r_, s_) {
+  simulateOneSeriesInEnv <- function(b_, c_a_, c_b_, c_j_, g_, h_, m_a_, m_j_, r_, s_, times_) {
     
     
     ## list of env-dependent and -independent parameters for one environment, replacing the original global parameters in "pars"
@@ -182,16 +192,18 @@ simulateMultipleSeriesInEnv <- function(pars,
     if (plotlevelinit) {
       
       seriesatloc <- replicate(pars$n_plotsperloc,
-                               simulateOneSeries(generateInitialState(n_species = pars$n_species), times, simpars,
-                                                 processerror = processerror, obserror = obserror), simplify = F)
+                               simulateOneSeries(generateInitialState(n_species = pars$n_species), times_, simpars,
+                                                 processerror = processerror, obserror = obserror, nominaltimes = nominaltimes),
+                                                 simplify = F)
     } else {
       
       ## cluster level init
       # Replication is post initial state generation
       m0 <- generateInitialState(n_species = pars$n_species)
       seriesatloc <- replicate(pars$n_plotsperloc,
-                               simulateOneSeries(m0, times, simpars,
-                                                 processerror = processerror, obserror = obserror), simplify = F)
+                               simulateOneSeries(m0, times_, simpars,
+                                                 processerror = processerror, obserror = obserror, nominaltimes = nominaltimes),
+                                                 simplify = F)
     }
     
     
@@ -211,6 +223,7 @@ simulateMultipleSeriesInEnv <- function(pars,
                  as.data.frame(t(pars$M_j_loc)),
                  as.data.frame(t(pars$R_loc)),
                  as.data.frame(t(pars$S_loc)),
+                 Times,
                  
                  SIMPLIFY = F)
   
@@ -339,11 +352,11 @@ matplot(Sim1[,-1], type = "b", ylab="N",
 
 ## Multiple time series in env ---------------------------------------------------------------
 envdep_demo <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, m_a = F, m_j = F, r = T, s = T)
-pars_demo <- generateParameters(n_species = 4, n_locs = 50, sigma_obs = c(0.2, 0.1))
+pars_demo <- generateParameters(n_species = 4, n_locs = 50, sigma_obs = c(0.05, 0.02))
 E_demo <- simulateEnv(pars_demo$n_env, pars_demo$n_locs)
 P_env_demo <- transformParameters(pars_demo, E_demo, envdep_demo, ranef = F, returndf = T)
 S_demo <- simulateMultipleSeriesInEnv(pars_demo, E_demo, times = 2:22,
-                                      envdependent = envdep_demo, ranef = F, processerror = T, obserror = T)
+                                      envdependent = envdep_demo, ranef = F, processerror = T, obserror = T, independentstart = T)
 
 #### Plot time series
 S_demo %>%
@@ -401,15 +414,15 @@ pars <- generateParameters(seed = parseed, n_locs = 70)
 
 Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
 
-data <- simulateMultipleSeriesInEnv(pars, Env, times = c(1, 5, 8),
+data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 5, 10),
                                     envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F, r = F, s = F),
                                     modelstructure = modelname, format = "stan",
-                                    obserror = T, processerror = F)
+                                    obserror = F, processerror = F, independentstart = T)
 
-Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(1, 5, 8),
+Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 5, 10),
                                          envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F,  r = F, s = F),
                                          modelstructure = modelname, format = "long",
-                                         obserror = T, processerror = F) %>%
+                                         obserror = T, processerror = F, independentstart = F) %>%
   mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
   arrange(sortid, time) %>%
   group_by(loc, species, stage, time) %>%
@@ -462,7 +475,7 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
 # model <- cmdstan_model(modelpath)
 
 ## Model fit
-fit <- drawSamples(model, data, method = "variational", initfunc = getInits)
+fit <- drawSamples(model, data, method = "sim", initfunc = getTrueInits)
 
 ## Other diagnostics
 # fit$output()
