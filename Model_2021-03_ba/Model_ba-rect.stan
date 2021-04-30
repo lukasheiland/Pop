@@ -2,8 +2,8 @@ functions {
   
   //// Difference equations
   vector[] simulate(vector initialstate, int time_max, int[] times,
-                  vector g, vector m_j, vector r, vector s,
-                  vector b, vector c_j, vector c_a, vector c_b, vector h, vector m_a,
+                  vector g, vector r, vector s,
+                  vector b, vector c_j, vector c_b, vector h,
                   real ba_a_avg, real ba_a_upper,
                   int N_spec, int N_pops,
                   // matrix u, // a matrix[N_pops, time_max-1]
@@ -26,19 +26,16 @@ functions {
       vector[N_spec] A = exp(A_log);
       vector[N_spec] B = exp(State[t-1, i_b]);
       
-      real BA = sum(A*ba_a_avg + B);
+      vector[N_spec] BA = A*ba_a_avg + B;
+      real BA_sum = sum(BA);
       // vector[N_pops] u_t = u[, t-1]; // does assignment to vector work?
       
       /// Ricker model: assign to the the log states
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b))
       
-      // State[t, i_j]  =  log1p(expm1(J_log) + r) - c_j*sum(J) - s*BA - m_j - g; // + u[i_j]; // equivalent to … =  J + (r - (c_j*sum(J) + s*AB + g + m_j).*J * dt;
-      // State[t, i_a]  =  log1p(A + expm1(J_log - g)) - c_a*BA - m_a - h; // + u[i_a];
-      // State[t, i_b]  =  log1p(B + expm1(A_log - h) * ba_a_upper) + b - c_b*sum(B); // + u[i_b]; // exp(A_log - h) * ba_a_upper is the input of new basal area through ingrowth of count A*exp(-h) from A
-      
-      State[t, i_j]  =  log(J + r) - c_j*sum(J) - s*BA - m_j - g;
-      State[t, i_a]  =  log(A + exp(J_log - g)) - c_a*BA - m_a - h;
-      State[t, i_b]  =  log(B + exp(A_log - h) * ba_a_upper) + b - c_b*sum(B);
+      State[t, i_j]  =  log(J + r.*BA) - c_j*sum(J) - s*BA_sum - g; // - m_j
+      State[t, i_a]  =  log(A + J.*exp(g)) - c_b*BA_sum - h; // - m_a
+      State[t, i_b]  =  log(B + (A.*exp(h))*ba_a_upper) + b - c_b*BA_sum;
       
     }
     
@@ -81,7 +78,7 @@ data {
   int time_max[N_locs];
   int timespan_max; // max(time_max) - time_globalmin
 
-  matrix[N_locs, N_beta] X; // design matrix
+  // matrix[N_locs, N_beta] X; // design matrix
   
   // The response.
   vector[N_pops] y0_loc_log [N_locs];
@@ -104,19 +101,16 @@ parameters {
   // … dependent on environment.
   
   // matrix[N_beta, N_species] Beta_g; // (J-, A+) transition rate from J to A
-  // matrix[N_beta, N_species] Beta_m_j; // (J-) density independent mortalitty
   // matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
   // matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
 
   // … independent of environment
   vector<lower=0>[N_species] b;
-  vector<lower=0>[N_species] c_a;
+  // vector<lower=0>[N_species] c_a;
   vector<lower=0>[N_species] c_b;
   vector<lower=0>[N_species] c_j;
   vector<lower=0>[N_species] g;
   vector<lower=0>[N_species] h; // (A-, B+), here still unconstrained on log scale, flow out of the system, independent of environment ("intercept only")
-  vector<lower=0>[N_species] m_a;
-  vector<lower=0>[N_species] m_j;
   vector<lower=0>[N_species] r;
   vector<lower=0>[N_species] s;
   
@@ -136,16 +130,15 @@ transformed parameters {
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
   // Location level parameters (unconstrained because on log scale!)
   // matrix[N_locs, N_species] g_log = X * Beta_g;
-  // matrix[N_locs, N_species] m_j_log = X * Beta_m_j;
   // matrix[N_locs, N_species] r_log = X * Beta_r;
   // matrix[N_locs, N_species] s_log = X * Beta_s;
   
   for(l in 1:N_locs) {
     
     y_hat_log[l, ] = simulate(state_init_log[l], time_max[l], times[l, ],
-                              // exp(g_log[l, ]'), exp(m_j_log[l, ]'), exp(r_log[l, ]'), exp(s_log[l, ]'),
-                              g, m_j, r, s,
-                              b, c_j, c_a, c_b, h, m_a,
+                              // exp(g_log[l, ]'), exp(r_log[l, ]'), exp(s_log[l, ]'),
+                              g, r, s,
+                              b, c_j, c_b, h,
                               ba_a_avg, ba_a_upper,
                               N_species, N_pops,
                               // u[l],
@@ -163,12 +156,13 @@ model {
   // 1 ./ shape_par ~ normal(0, 100); 
   // sigma_process ~ normal(0, 0.01);
   sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
+  r ~ normal(20, 4);
   
   // Beta_g[1,] ~ normal(-12, 1);
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-  h ~ gamma(10, 10/1);
-  // g ~ gamma(5, 5/0.01);
+  h ~ normal(0.4, 1);
+  // g ~ gamma(5, 5/0.007);
   // b ~ gamma(10, 10/0.4);
   
   //---------- MODEL ---------------------------------

@@ -275,6 +275,7 @@ formatSims <- function() {
       
       stansims <- list(
         N_locs = N_locs,
+        N_plots = pars$n_plotsperloc,
         N_init = N_init,
         N_times = N_times,
         N_yhat = N_yhat,
@@ -309,6 +310,7 @@ formatSims <- function() {
         time_init = time_init,
         time_max_data = Sims_locs$time_max,
         times_data = Sims_times$time,
+        timespan_max = diff(range(c(data$time_init, data$time_max_data))),
         
         X = X,
         
@@ -338,7 +340,7 @@ getTrueInits <- function() {
   
   responsescaleerror <- 0
   
-  isragged <- grepl("^ba-rag", modelname)
+  isragged <- grepl("^ba-rag", modelname) || modelname == "ba"
   
   truepars <- attr(data, "pars")
   truepars <- truepars[sapply(truepars, is.numeric)]
@@ -349,7 +351,7 @@ getTrueInits <- function() {
     state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
       data$y_log[,1,1,] + rnorm(data$y_log[,1,1,], 0, responsescaleerror),
     
-    u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = pars$n_species*3, ncol = data$timespan_max))
+    u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = truepars$n_species*3, ncol = data$timespan_max))
   )
   
   inits <- c(newpars, truepars)

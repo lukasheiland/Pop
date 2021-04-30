@@ -28,7 +28,7 @@ source(file.path(modeldir, "Sim_ba_helpers.R"))
 ######################################################################################
 
 #### Returns log states for times -------------------
-calcModel <- function(times,
+calcModel_m <- function(times,
                       initialstate_log, # A vector of species states.
                       pars # internal number of discrete time steps within a unit of time
                       ) { 
@@ -82,7 +82,8 @@ calcModel <- function(times,
     B <- exp(B_log)
     
     ## The total basal area of big trees
-    BA <- sum(A * ba_a_avg + B)
+    BA <- A * ba_a_avg + B
+    BA_sum <- sum(BA)
     
     # observation error for stages/times/species
     u <- matrix(0, nrow = length(s), ncol = 3) + rnorm(length(s)*3, 0, sigma)
@@ -91,13 +92,13 @@ calcModel <- function(times,
     ## 1. All processes that add additively to State, are added within log(State)
     ## 2. All processes that act multiplicatively on the state are added in log space
     
-    J_t_log <- log(J + r) - c_j*sum(J) - s*BA - m_j - g + u[ ,1] # count of juveniles J
+    J_t_log <- log(J + r*BA) - c_j*sum(J) - s*BA_sum - m_j - g + u[ ,1] # count of juveniles J
     
-    A_t_log <- log(A + exp(J_log - g)) - c_a*BA - m_a - h + u[ ,2] # count of small adults A
-    A_ba <- exp(A_log - h)*ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
+    A_t_log <- log(A + J * exp(g)) - c_b*BA_sum - m_a - h + u[ ,2] # count of small adults A
+    A_ba <- A * exp(h) * ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
     
-    B_t_log <- log(B + A_ba) + b - c_b*sum(B) + u[ ,3] # basal area of big adults B
-    ## b is the net basal area increment (including density-independent m) basically equivalent to a Ricker model, i.e. constant increment rate leading to exponential growth, negative density dependent limitation scaled with total BA.
+    B_t_log <- log(B + A_ba) + b - c_b*BA_sum + u[ ,3] # basal area of big adults B
+    ## b is the net basal area increment (including density-independent m) basically equivalent to a Ricker model, i.e. constant increment rate leading to exponential growth, negative density dependent limitation scaled with total BA_sum.
     
     State_log[t, ] <- c(J_t_log, A_t_log, B_t_log)
   }
@@ -106,6 +107,13 @@ calcModel <- function(times,
   return(State_log[whichtimes,])
 }
 
+## alternate to not have m_*, i.e. density-indepedent mortality
+calcModel <- function(times, initialstate, pars, ...) { 
+  
+  calcModel_m(times, initialstate,
+            within(pars, { m_a <- 0;  m_j <- 0; r_ldd <- 0;}),
+            ...)
+  }
 
 
 ######################################################################################
@@ -156,7 +164,7 @@ simulateMultipleSeriesInEnv <- function(pars,
   
   if(independentstart) {
     nominaltimes <- times
-    Times <- lapply(Times, function(t) t + sample(0:max(times*2), 1, replace = T, prob = (max(times*2):0)^8) )
+    Times <- lapply(Times, function(t) t + sample(0:max(times*2), 1, replace = T, prob = (max(times*2):0)^6) )
   }
   
   ## set default values for modelstructures when not explicitly overridden
@@ -258,27 +266,27 @@ generateParameters <- function(seed = 1,
   
   ### 1. log-scale parameters and env-dependence
   
-  b_log <- rnorm(n_species, -1, 0.01)
+  b_log <- rnorm(n_species, -1, 0.03)
   Beta_b <- matrix(rnorm(n_beta*n_species, -0.5, 0.5), n_beta, n_species)
   Beta_b[1,] <- b_log
   Beta_b[3,] <- rnorm(n_species, -1, 0.2)
   
   # Usually thought of as env-indepedent, but generated with zero effects here for consistency
   Beta_c_a <- Beta_c_b <- Beta_c_j <- matrix(0, n_beta, n_species)
-  c_a_log <- rnorm(n_species, -3.3, 0.2)
+  c_a_log <- rnorm(n_species, -2, 0.2)
   Beta_c_a[1,] <- c_a_log
   c_b_log <- rnorm(n_species, -3, 0.1)
   Beta_c_b[1,] <- c_b_log
-  c_j_log <- rnorm(n_species, -10, 0.5)
+  c_j_log <- rnorm(n_species, -4, 0.5)
   Beta_c_j[1,] <- c_j_log
   
-  g_log <- rnorm(n_species, -5, 0.2)
+  g_log <- rnorm(n_species, -2, 0.2)
   Beta_g <- matrix(rnorm(n_beta*n_species, -0.5, 0.5), n_beta, n_species)
   Beta_g[1,] <- g_log
   Beta_g[3,] <- rnorm(n_species, -1, 0.2)
   
-  h_log <- rnorm(n_species, -0.5, 0.3)
-  Beta_h <- matrix(rnorm(n_beta*n_species, -0.5, 0.5), n_beta, n_species)
+  h_log <- rnorm(n_species, -1, 0.3)
+  Beta_h <- matrix(rnorm(n_beta*n_species, -0.2, 0.5), n_beta, n_species)
   Beta_h[1,] <- h_log
   Beta_h[3,] <- rnorm(n_species, -1, 0.2)
   
@@ -292,12 +300,12 @@ generateParameters <- function(seed = 1,
   Beta_m_j[1,] <- m_j_log
   Beta_m_j[3,] <- rnorm(n_species, -2.5, 0.2)
   
-  r_log <- rnorm(n_species, 2.2, 0.2)
+  r_log <- rnorm(n_species, 2, 0.1)
   Beta_r <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   Beta_r[1,] <- r_log
   Beta_r[3,] <- rnorm(n_species, -0.5, 0.2)
   
-  s_log <- rnorm(n_species, -2.9, 0.1)
+  s_log <- rnorm(n_species, -4, 0.1)
   Beta_s <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   Beta_s[1,] <- s_log
   Beta_s[3,] <- rnorm(n_species, -1, 0.2)
@@ -336,10 +344,10 @@ generateParameters <- function(seed = 1,
 
 #### prerequisites for a single time series
 formals(generateParameters)
-pars1 <- generateParameters(seed = 1)
+pars1 <- generateParameters(seed = 1, n_species = 2)
 initialstate1 <- generateInitialState(n_species = pars1$n_species)
 ## transform parameters manually, use *_log because they are vectors[n_species] (instead of matrices as produced by transformParameters)
-times1 <- 1:15
+times1 <- 2:50
 
 Sim1 <- simulateOneSeries(initialstate1, times = times1, pars = pars1,
                           processerror = F, obserror = F, log = F)
@@ -356,7 +364,7 @@ pars_demo <- generateParameters(n_species = 4, n_locs = 50, sigma_obs = c(0.05, 
 E_demo <- simulateEnv(pars_demo$n_env, pars_demo$n_locs)
 P_env_demo <- transformParameters(pars_demo, E_demo, envdep_demo, ranef = F, returndf = T)
 S_demo <- simulateMultipleSeriesInEnv(pars_demo, E_demo, times = 2:22,
-                                      envdependent = envdep_demo, ranef = F, processerror = T, obserror = T, independentstart = T)
+                                      envdependent = envdep_demo, ranef = F, processerror = T, obserror = F, independentstart = F)
 
 #### Plot time series
 S_demo %>%
@@ -395,9 +403,10 @@ modeldir <- dir(pattern = glue("^(Model).*ba$"))
 
 modelname <- c("ba",
                "ba-rect", # fully rectangular, without process error
+               "ba-rect-m", # ... as above, including density indepedent mortality
                "ba-rag", # ragged, clusterwise-initialization
                "ba-rag-ranef" # like ba-rag but with random demographic pars
-               )[2]
+               )[1]
 
 modelpath <- file.path(modeldir, glue('Model_{modelname}.stan'))
 
@@ -410,19 +419,30 @@ model <- cmdstan_model(modelpath)
 ## Simulate stan model data --------------------------------------------------------------
 parseed <- 1
 
-pars <- generateParameters(seed = parseed, n_locs = 70)
+pars <- generateParameters(seed = parseed, n_locs = 50, n_species = 2)
 
 Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
 
-data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 5, 10),
+data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
+                                    envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F, r = F, s = F),
+                                    modelstructure = modelname, format = "stan",
+                                    obserror = T, processerror = F, independentstart = T)
+
+data_ba_rect <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
                                     envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F, r = F, s = F),
                                     modelstructure = modelname, format = "stan",
                                     obserror = F, processerror = F, independentstart = T)
 
-Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 5, 10),
+data_ba <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
+                                       envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, m_a = F, m_j = F, r = T, s = T),
+                                       modelstructure = modelname, format = "stan",
+                                       obserror = F, processerror = F, independentstart = T)
+
+
+Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
                                          envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F,  r = F, s = F),
                                          modelstructure = modelname, format = "long",
-                                         obserror = T, processerror = F, independentstart = F) %>%
+                                         obserror = F, processerror = F, independentstart = T) %>%
   mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
   arrange(sortid, time) %>%
   group_by(loc, species, stage, time) %>%
@@ -445,7 +465,7 @@ Data_long %>%
 ## Draw from model --------------------------------------------------------------
 
 ####  Do the fit ----------------------
-drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n_chains = 6, initfunc = 0) {
+drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n_chains = 6, initfunc = getTrueInits) {
   
   if(match.arg(method) == "variational") {
     fit <- model$variational(data = data,
@@ -475,6 +495,7 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
 # model <- cmdstan_model(modelpath)
 
 ## Model fit
+data <- get(paste0("data_", modelname))
 fit <- drawSamples(model, data, method = "sim", initfunc = getTrueInits)
 
 ## Other diagnostics
@@ -506,16 +527,19 @@ excludevarname <- c("u") # state_init_log
 ### Get draws
 ## rstan format for use in other packages
 stanfit <- rstan::read_stan_csv(drawpath)
-draws <- extract(stanfit, pars = c(excludevarname), include = F)
+draws <- rstan::extract(stanfit, pars = c(excludevarname), include = F)
     ## get draws with cmdstanr
     # draws <- read_cmdstan_csv(drawpath, variables = NULL)
 
 
 
 ## Summary -----------------------------------------------------------------
+# library(shinystan)
 
 # s <- summary(stanfit) # , pars = excludevarname, include = F
 # s
+
+# launch_shinystan(stanfit, rstudio = F)
 
 
 # Inspection --------------------------------------------------------------
@@ -525,19 +549,16 @@ truepars <- attr(data, "pars")
 #### Predictions vs. true --------------------
 
 ## Plot model simulations from enerated quantities
-if (fit$metadata()$algorithm == "fixed_param") {
+
+plot(c(draws$y_hat_log_rep[1,,1,,data$i_j]) ~ c(data$y_log[,1,,data$i_j]))
+plot(c(draws$y_hat_log_rep[1,,1,,data$i_a]) ~ c(data$y_log[,1,,data$i_a]))
+plot(c(draws$y_hat_log_rep[1,,1,,data$i_b]) ~ c(data$y_log[,1,,data$i_b]))
+
+plot(draws$y_hat_log_rep[1,] ~ data$y_log)
+
   
-  ## if obserror = F, y_log in sim === y_hat
-  plot(c(draws$y_hat_log_rep[1,,1,,]) ~ c(data$y_log[,1,,]))
-  
-  plot(c(lol$state_init_log) ~ c(data$y_log[,1,1,1]))
-  
-  
-  plot(c(draws$sim_log[1,,,,,drop =T]) ~ c(data$y_log))
-  plot(c(draws$y_hat_log[1,,,,drop =T]) ~ c(apply(data$y_log, c(1, 2, 4), mean))) # average the plots away
-  abline(0, 1)
-  
-}
+# plot(c(draws$y_hat_log[1,,,,drop =T]) ~ c(apply(data$y_log, c(1, 2, 4), mean))) # average the plots away
+abline(0, 1)
 
 
 
@@ -585,19 +606,19 @@ plotDrawVsSim <- function(parname = "h",
 ## Fitted parameters vs. true
 plotDrawVsSim("b")
 plotDrawVsSim("c_j")
-plotDrawVsSim("c_a")
+# plotDrawVsSim("c_a")
 plotDrawVsSim("c_b")
-plotDrawVsSim("h")
-plotDrawVsSim("m_a")
 plotDrawVsSim("g")
-plotDrawVsSim("m_j")
+plotDrawVsSim("h")
+# plotDrawVsSim("m_a")
+# plotDrawVsSim("m_j")
 plotDrawVsSim("r")
 plotDrawVsSim("s")
 
-plotDrawVsSim("Beta_g")
-plotDrawVsSim("Beta_m_j")
-plotDrawVsSim("Beta_r")
-plotDrawVsSim("Beta_s")
+# plotDrawVsSim("Beta_g")
+# plotDrawVsSim("Beta_m_j")
+# plotDrawVsSim("Beta_r")
+# plotDrawVsSim("Beta_s")
 
 
 
