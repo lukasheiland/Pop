@@ -116,7 +116,7 @@ parameters {
   
   // matrix[N_pops, timespan_max] u[N_locs];
 
-  vector[N_pops] state_init[N_locs];
+  vector<lower=0>[N_pops] state_init[N_locs];
 }
 
 
@@ -156,12 +156,12 @@ model {
   // sigma_process ~ normal(0, 0.01);
   // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
   
-  r ~ normal(20, 4);
+  // r ~ normal(20, 4);
   
   // Beta_g[1,] ~ normal(-12, 1);
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-  h ~ normal(0.4, 1);
+  // h ~ normal(0.4, 1);
   // g ~ gamma(5, 5/0.007);
   // b ~ gamma(10, 10/0.4);
   
@@ -171,7 +171,7 @@ model {
 
     // Some priors
     // normal: // state_init[loc] ~ normal(y0_loc[loc], sigma_obs[rep_obsmethod2pops]);
-    // state_init[loc] ~ gamma(alpha_obs[rep_obsmethod2pops], alpha_obs[rep_obsmethod2pops] ./ y0_loc[loc]);
+    state_init[loc] ~ gamma(alpha_obs[rep_obsmethod2pops], alpha_obs[rep_obsmethod2pops] ./ y0_loc[loc]);
     
     // to_vector(u[loc]) ~ normal(0, 0.1);
     

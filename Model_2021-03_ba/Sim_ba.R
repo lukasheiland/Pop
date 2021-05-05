@@ -521,7 +521,7 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
 # model <- cmdstan_model(modelpath)
 
 ## Model fit
-fit <- drawSamples(model, data, method = "sim", initfunc = getTrueInits)
+fit <- drawSamples(model, data, method = "variational", initfunc = 0)
 
 ## Other diagnostics
 # fit$output()
@@ -578,9 +578,9 @@ truepars <- attr(data, "pars")
 if(modelname == "ba-rect") {
   
   # predictions per life stages
-  plot(c(draws$y_hat_rep[1,,3,,data$i_j]) ~ c(data$y[,3,,data$i_j]))
+  plot(c(draws$y_hat_rep[100,,3,,data$i_j]) ~ c(data$y[,3,,data$i_j]))
   abline(0, 1)
-  plot(c(draws$y_hat_rep[1,,3,,data$i_a]) ~ c(data$y[,3,,data$i_a]))
+  plot(c(draws$y_hat_rep[100,,3,,data$i_a]) ~ c(data$y[,3,,data$i_a]))
   abline(0, 1)
   plot(c(draws$y_hat_rep[1,,3,,data$i_b]) ~ c(data$y[,3,,data$i_b]))
   abline(0, 1)
