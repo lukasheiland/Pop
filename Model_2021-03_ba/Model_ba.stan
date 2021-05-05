@@ -2,7 +2,7 @@ functions {
   
   //// Difference equations
   matrix simulate(vector initialstate, int time_max,
-                  vector g, vector r, vector s,
+                  vector g, vector r, vector s, vector l,
                   vector b, vector c_j, vector c_b, vector h,
                   real ba_a_avg, real ba_a_upper,
                   int N_spec, int N_pops,
@@ -27,7 +27,7 @@ functions {
       
       /// Ricker model: assign to the the log states
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b)); It is important to expm1() some state (here J), because the rates are positive anyway
-      State[i_j,t]  =  log(J + r.*BA) - c_j*sum(J) - s*BA_sum - g; // - m_j
+      State[i_j,t]  =  log(J + r.*BA + l) - c_j*sum(J) - s*BA_sum - g; // - m_j
       State[i_a,t]  =  log(A + J.*exp(g)) - c_b*BA_sum - h; // - m_a
       State[i_b,t]  =  log(B + (A.*exp(h))*ba_a_upper) + b - c_b*BA_sum;
     
@@ -41,7 +41,7 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(vector state_init, int[] time_max, int[] times, int[] species, int[] pops,
-                matrix g, matrix r, matrix s,  // env-dependent on log scale
+                matrix g, matrix r, matrix s,  matrix l, // env-dependent on log scale
                 vector b, vector c_j, vector c_b, vector h, // env-independent, on state model scale
                 real ba_a_avg, real ba_a_upper,
                 int[] n_species, int[] n_pops, int[] n_reobs, int[] n_yhat,
@@ -53,10 +53,10 @@ functions {
     int pos_yhat = 1;
     vector[N_yhat] y_hat;
 
-    for (l in 1:N_locs) {
-      int n_s = n_species[l];
-      int n_p = n_pops[l];
-      int n_t = n_reobs[l];
+    for (loc in 1:N_locs) {
+      int n_s = n_species[loc];
+      int n_p = n_pops[loc];
+      int n_t = n_reobs[loc];
       
       // Slicing the global parameter vectors down to local level present species.
       int s_species[n_s] = segment(species, pos_species, n_s);
@@ -67,11 +67,11 @@ functions {
       int i_b[n_s] = segment(pops, pos_pops+n_s+n_s, n_s);
 
       //// Returns an matrix State[p, t]
-      // print("r", exp(r[l, s_species])'); print("h", h[l, s_species]);
-      matrix[n_p, time_max[l]] States =
+      // print("r", exp(r[loc, s_species])'); print("h", h[loc, s_species]);
+      matrix[n_p, time_max[loc]] States =
                         simulate(segment(state_init, pos_pops, n_p), // segment has length n_pops. Structure state_init: locs/stage/species 
-                                 time_max[l],
-                                 exp(g[l, s_species]'), exp(r[l, s_species]'), exp(s[l, s_species]'), // link function: r, l, g, m are still on the log scale
+                                 time_max[loc],
+                                 exp(g[loc, s_species]'), exp(r[loc, s_species]'), exp(s[loc, s_species]'), exp(l[loc, s_species]'), // link function: r, loc, g, m are still on the log scale
                                  b[s_species], c_j[s_species], c_b[s_species], h[s_species],  // environmentally-independent parameters have been transformed through lognormal
                                  ba_a_avg, ba_a_upper,
                                  n_s, n_p,
@@ -80,14 +80,14 @@ functions {
   
       // Flattening the matrix into a vector for the location and append it to y_hat local vector yhat[m], and then into function-global vector y_hat[N_yhat].
       // to_vector converts matrix to a column vector in column-major order.
-      y_hat[pos_yhat:(pos_yhat - 1 + n_yhat[l])] =
+      y_hat[pos_yhat:(pos_yhat - 1 + n_yhat[loc])] =
                        to_vector(States[ , segment(times, pos_times, n_t)]); // only select columns with times in the data
       
       
       pos_species = pos_species + n_s;
       pos_pops = pos_pops + n_p;
       pos_times = pos_times + n_t;
-      pos_yhat = pos_yhat + n_yhat[l];
+      pos_yhat = pos_yhat + n_yhat[loc];
     }
 
   return y_hat; // Structure: locations/resurveys/pops(==stages/species)
@@ -158,7 +158,7 @@ transformed data {
   real ba_a_upper = pi() * (dbh_lower_b/2)^2 * 1e-6; // # pi*r^2, mm^2 to m^2
   real ba_a_avg = pi() * ((dbh_lower_a + dbh_lower_b)/2/2)^2 * 1e-6;
 
-  for (l in 1:N_locs) time_max[l] = time_max_data[l] - time_init[l] + 1; // no vector operations for arrays
+  for (loc in 1:N_locs) time_max[loc] = time_max_data[loc] - time_init[loc] + 1; // no vector operations for arrays
   for (t in 1:N_times) times[t] = times_data[t] - time_init[rep_locs2times[t]] + 1;
   
 }
@@ -171,6 +171,8 @@ parameters {
   // matrix[N_beta, N_totalspecies] Beta_m_j; // (J-) density independent mortalitty
   matrix[N_beta, N_totalspecies] Beta_r; // // (J+) flow into the system, dependent on env
   matrix[N_beta, N_totalspecies] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
+  matrix[N_beta, N_totalspecies] Beta_l; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
+
 
   // … independent of environment
   vector<lower=0>[N_totalspecies] b;
@@ -195,6 +197,8 @@ transformed parameters {
   // matrix[N_locs, N_totalspecies] m_j_log = X * Beta_m_j;
   matrix[N_locs, N_totalspecies] r_log = X * Beta_r;
   matrix[N_locs, N_totalspecies] s_log = X * Beta_s;
+  matrix[N_locs, N_totalspecies] l_log = X * Beta_l;
+
 
 }
 
@@ -215,7 +219,7 @@ model {
 
   // Level 2 (locs) to level 3 y.
   vector[N_yhat] y_hat_log = unpack(state_init_log, time_max, times, species, pops,
-                                    g_log, r_log, s_log, // rates matrix[N_locs, N_totalspecies]; will have to be transformed
+                                    g_log, r_log, s_log, l_log, // rates matrix[N_locs, N_totalspecies]; will have to be transformed
                                     b, c_j, c_b, h, // rates vector[N_totalspecies]
                                     ba_a_avg, ba_a_upper,
                                     n_species, n_pops, n_reobs, n_yhat,
@@ -233,7 +237,7 @@ generated quantities {
   vector[N_y] y_hat_log_rep;
   
   vector[N_yhat] y_hat_log = unpack(state_init_log, time_max, times, species, pops,
-                                    g_log, r_log, s_log, // rates matrix[N_locs, N_totalspecies]; will have to be transformed
+                                    g_log, r_log, s_log, l_log, // rates matrix[N_locs, N_totalspecies]; will have to be transformed
                                     b, c_j, c_b, h, // rates vector[N_totalspecies]
                                     ba_a_avg, ba_a_upper,
                                     n_species, n_pops, n_reobs, n_yhat,

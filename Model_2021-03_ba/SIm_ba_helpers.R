@@ -33,9 +33,9 @@ simulateEnv <- function(n_env, n_locs){
 
 
 #### Simulate vector of initial states -------------------
-generateInitialState <- function(n_species, n_stages = 3, generatelog = T) {
+generateInitialState <- function(n_species, n_stages = 3, logstate = F) {
   s <-  rep(2:0, each = n_species) + rnorm(n_stages, 0, 0.1) # Initial state matrix.
-  if(generatelog) return(s) else return(exp(s))
+  if(logstate) return(s) else return(exp(s))
 }
 
 
@@ -47,7 +47,7 @@ generateInitialState <- function(n_species, n_stages = 3, generatelog = T) {
 ## Beta_* are effect of environment on species' parameters matrix[1 + n_env, n_species]
 ### 2. others: either a: random gamma, b: just replicate to loc dimensions.
 transformParameters <- function(pars, Env,
-                                envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a  = F, m_j = F, r = F, s = F),
+                                envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, l = F, m_a  = F, m_j = F, r = F, s = F),
                                 ranef = F, returndf = F) {
   
   
@@ -67,7 +67,13 @@ transformParameters <- function(pars, Env,
   pars_envdep <- sapply(parname_envdep, multiplyEnv, USE.NAMES = T, simplify = F) %>%
     setNames(glue("{str_to_title(parname_envdep)}_log"))  # ! name env-depedent matrices to upper
   
-  pars_envdep <- lapply(pars_envdep, exp) %>%
+  transformBeta <- function(B, name) {
+    if (name %in% c("g", "h")) {
+      return(plogis(B))
+    } else return(exp(B))
+  }
+  
+  pars_envdep <- mapply(transformBeta, pars_envdep, parname_envdep, SIMPLIFY = F) %>%
     setNames(glue("{str_to_title(parname_envdep)}_loc")) %>%
     c(pars_envdep)
   
@@ -161,11 +167,6 @@ formatSims <- function() {
     arrange(loc, time, pop, plot)
   
   
-  ## Get log and exped version of the response
-  Sims <- mutate(Sims, abundance_log = abundance,
-                 abundance = exp(abundance)
-  )
-  
   if (format == "long") { } # Sims <- Sims
   
   ######### (1) ##########
@@ -254,9 +255,10 @@ formatSims <- function() {
                        
                        X = X,
                        
-                       y0_loc_log = apply(exp(sims_rect), c(1, 2, 4), mean)[, 1, ] %>% log(),
-                       y_log = sims_rect,
-                       y = exp(sims_rect)
+                       y0_loc = apply(sims_rect, c(1, 2, 4), mean)[, 1, ],
+                       y0_loc_log = apply(exp(sims_rect), c(1, 2, 4), mean)[, 1, ] %>% log(), # only for cases with log response
+                       
+                       y = sims_rect
       )
       
     }
@@ -310,15 +312,13 @@ formatSims <- function() {
         time_init = time_init,
         time_max_data = Sims_locs$time_max,
         times_data = Sims_times$time,
-        timespan_max = diff(range(c(data$time_init, data$time_max_data))),
+        timespan_max = diff(range(c(time_init, Sims_locs$time_max))),
         
         X = X,
         
         y0 = Sims_y0$abundance,
         y = Sims_reobs$abundance,
-        
-        y0_log = Sims_y0$abundance_log,
-        y_log = Sims_reobs$abundance_log
+
       )
       
     }
@@ -338,8 +338,6 @@ formatSims <- function() {
 #### Returns +- the true start values ----------------------
 getTrueInits <- function() {
   
-  responsescaleerror <- 0
-  
   isragged <- grepl("^ba-rag", modelname) || modelname == "ba"
   
   truepars <- attr(data, "pars")
@@ -348,8 +346,8 @@ getTrueInits <- function() {
   names(truepars) <- ifelse(str_ends(parnames, "_loc"), str_to_lower(parnames), parnames)
   
   newpars <- list(
-    state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
-      data$y_log[,1,1,] + rnorm(data$y_log[,1,1,], 0, responsescaleerror),
+    state_init = if (isragged) data$y0[which(!duplicated(data$rep_init2y0))] else
+      data$y[,1,1,],
     
     u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = truepars$n_species*3, ncol = data$timespan_max))
   )
@@ -363,7 +361,7 @@ getTrueInits <- function() {
 #### Returns viable start values ---------------------------
 getInits <- function() {
   
-  responsescaleerror <- 1
+  responsescaleerror <- 0.1
   
   isragged <- grepl("^ba-rag", modelname)
   
@@ -376,11 +374,12 @@ getInits <- function() {
   c_a_log <- rnorm(n_species, -3.3, 0.2)
   c_b_log <- rnorm(n_species, -3, 0.1)
   c_j_log <- rnorm(n_species, -10, 0.5)
-  g_log <- rnorm(n_species, -12, 0.2)
-  h_log <- rnorm(n_species, -0.5, 0.3)
+  g_logit <- rnorm(n_species, -1, 0.2)
+  h_logit <- rnorm(n_species, -0.5, 0.3)
   m_a_log <- rnorm(n_species, -1.5, 0.5)
   m_j_log <- rnorm(n_species, -1.2, 0.1)
-  r_log <- rnorm(n_species, 2.2, 0.2)
+  r_log <- rnorm(n_species, 1.5, 0.2)
+  l_log <- rnorm(n_species, -1, 0.2)
   s_log <- rnorm(n_species, -2.9, 0.1)
   
   beta_null <- function() { matrix(c(-1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.001) }
@@ -392,8 +391,11 @@ getInits <- function() {
     c_a_log = c_a_log,
     c_b_log = c_b_log,
     c_j_log = c_j_log,
-    g_log = g_log,
-    h_log = h_log,
+    
+    g_logit = g_logit,
+    h_logit = h_logit,
+    
+    l_log = l_log,
     m_a_log = m_a_log,
     m_j_log = m_j_log,
     r_log = r_log,
@@ -406,6 +408,7 @@ getInits <- function() {
     Beta_c_j = beta_null(),
     Beta_g = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
     Beta_h = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
+    Beta_l = matrix(c(1, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
     Beta_m_a = matrix(c(-4, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
     Beta_m_j = matrix(c(-2, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
     Beta_r = matrix(c(3, rep(0, truepars$n_beta-1)), ncol = truepars$n_species, nrow = truepars$n_beta) + rnorm(truepars$n_beta*truepars$n_species, 0, 0.3),
@@ -415,8 +418,11 @@ getInits <- function() {
     c_a = exp(c_a_log),
     c_b = exp(c_b_log),
     c_j = exp(c_j_log),
-    g = exp(g_log),
-    h = exp(h_log),
+    
+    g = plogis(g_logit),
+    h = plogis(h_logit),
+    
+    l = exp(l_log),
     m_a = exp(m_a_log),
     m_j = exp(m_j_log),
     r = exp(r_log),
@@ -426,8 +432,9 @@ getInits <- function() {
     c_a_loc =  matrix(rep(exp(c_a_log),n_locs), nrow = n_locs, byrow = T),
     c_b_loc =  matrix(rep(exp(c_b_log),n_locs), nrow = n_locs, byrow = T),
     c_j_loc =  matrix(rep(exp(c_j_log),n_locs), nrow = n_locs, byrow = T),
-    g =  matrix(rep(exp(g_log),n_locs), nrow = n_locs, byrow = T),
-    h =  matrix(rep(exp(h_log),n_locs), nrow = n_locs, byrow = T),
+    g_loc =  matrix(rep(plogis(g_logit),n_locs), nrow = n_locs, byrow = T),
+    h_loc =  matrix(rep(plogis(h_logit),n_locs), nrow = n_locs, byrow = T),
+    l_loc =  matrix(rep(exp(l_log),n_locs), nrow = n_locs, byrow = T),
     m_a_loc =  matrix(rep(exp(m_a_log),n_locs), nrow = n_locs, byrow = T),
     m_j_loc =  matrix(rep(exp(m_j_log),n_locs), nrow = n_locs, byrow = T),
     r_loc =  matrix(rep(exp(r_log),n_locs), nrow = n_locs, byrow = T),
@@ -435,13 +442,116 @@ getInits <- function() {
     
     shape_par      = c(10, 10, 10),
     sigma_process  = c(0.01),
-    sigma_obs      = c(1.1, 1.1),
     
-    state_init_log = if (isragged) rnorm(data$y0_log, data$y0_log, 0.01) else
-      data$y_log[,1,1,] + rnorm(data$y_log[,1,1,], 0, responsescaleerror),
+    sigma_obs      = c(1.1, 1.1),
+    alpha_obs      = c(10, 20),
+    phi_obs      = c(10, 20),
+    
+    state_init = if (isragged) data$y0[which(!duplicated(data$rep_init2y0))] + rnorm(data$N_init, 0, responsescaleerror) else
+      data$y[,1,1,] + rnorm(data$y[,1,1,], 0, responsescaleerror),
     
     u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = pars$n_species*3, ncol = data$timespan_max))
     )
   
   return(inits)
 }
+
+
+
+
+######################################################################################
+# Alternative model formulation  -----------------------------------------------------
+######################################################################################
+
+calcModel_ricker <- function(times,
+                             initialstate_log, # A vector of species states.
+                             pars # internal number of discrete time steps within a unit of time
+) { 
+  
+  
+  ## Just unpacking for readability.
+  
+  b <- pars$b # Length n_species vector of basal area increment rates.
+  c_a <- pars$c_a # Length n_species vector
+  c_b <- pars$c_b # Length n_species vector
+  c_j <- pars$c_j # Length n_species vector
+  g <- pars$g # Length n_species vector of transition rates.
+  h <- pars$h # Length n_species vector of transition rates.
+  l <- pars$l 
+  m_a <- pars$m_a # Length n_species vector of mortalities
+  m_j <- pars$m_j # Length n_species vector of mortalities
+  r <- pars$r # Length n_species vector of input rates
+  s <- pars$s # Length n_species vector of shading rates
+  
+  dbh_lower_a <- pars$dbh_lower_a
+  dbh_lower_b <- pars$dbh_lower_b
+  
+  sigma <- pars$sigma_process
+  
+  ## Set the count variables
+  n <- length(r) # no species
+  
+  ## 
+  times_intern <- 1:max(times)
+  n_times <- length(times_intern)
+  
+  
+  radius_a_upper <- dbh_lower_b/2
+  radius_a_avg <- (dbh_lower_a + dbh_lower_b)/2/2 # [mm]
+  ba_a_upper <-  pi * radius_a_upper^2 * 1e-6
+  ba_a_avg <- pi * radius_a_avg^2 * 1e-6 # mm^2 to m^2
+  
+  # Prepare a state matrix
+  whichstate <- rep(1:3, each = n)
+  State_log <- matrix(rep(initialstate_log, times = n_times), nrow = n_times, byrow = T)
+  
+  ## Here comes the model.
+  for (t in 2:n_times) {
+    
+    ## States at t-1: *State*_log, and *State*
+    J_log <- State_log[t-1,whichstate == 1]
+    A_log <- State_log[t-1,whichstate == 2]
+    B_log <- State_log[t-1,whichstate == 3]
+    
+    J <- exp(J_log)
+    A <- exp(A_log)
+    B <- exp(B_log)
+    
+    ## The total basal area of big trees
+    BA <- A * ba_a_avg + B
+    BA_sum <- sum(BA)
+    
+    # observation error for stages/times/species
+    u <- matrix(0, nrow = length(s), ncol = 3) + rnorm(length(s)*3, 0, sigma)
+    
+    ## Two kinds of processes acting ot State_log
+    ## 1. All processes that add additively to State, are added within log(State)
+    ## 2. All processes that act multiplicatively on the state are added in log space
+    
+    J_trans <- A + r*BA + l + (J - J*g)
+    J_t_log <- log(J_trans) + (1 - c_j*sum(J_t_add) - s*BA_sum - m_j)  + u[ ,1] # count of juveniles J
+    
+    A_trans <- A + J*g + (A - A*h)
+    A_t_log <- log(A_trans) + (1 - c_b*BA_sum - m_a) + u[ ,2] # count of small adults A
+    
+    A_ba <-  A * h * ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
+    B_trans <- B + A_ba
+    B_t_log <- log(B_trans) + b - c_b*BA_sum + u[ ,3] # basal area of big adults B
+    ## b is the net basal area increment (including density-independent m) basically equivalent to a Ricker model, i.e. constant increment rate leading to exponential growth, negative density dependent limitation scaled with total BA_sum.
+    
+    State_log[t, ] <- c(J_t_log, A_t_log, B_t_log)
+  }
+  
+  whichtimes <- which(times_intern %in% times)
+  return(State_log[whichtimes,])
+}
+
+
+
+
+
+
+
+
+
+

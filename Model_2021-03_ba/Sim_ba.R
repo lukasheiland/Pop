@@ -8,10 +8,11 @@ library(glue)
 
 library(tictoc)
 
-library(cmdstanr)
-# install_cmdstan(cores = 3)
 library(rstan)
 rstan_options(javascript = FALSE)
+library(cmdstanr)
+# install_cmdstan(cores = 3)
+
 
 library(bayesplot)
 
@@ -27,12 +28,12 @@ source(file.path(modeldir, "Sim_ba_helpers.R"))
 # Model formulation  ----------------------------------------------------------------
 ######################################################################################
 
-#### Returns log states for times -------------------
-calcModel_m <- function(times,
-                      initialstate_log, # A vector of species states.
+
+#### Returns states for times -------------------
+calcModel <- function(times,
+                      initialstate, # A vector of species states.
                       pars # internal number of discrete time steps within a unit of time
-                      ) { 
-  
+                      ) {
   
   ## Just unpacking for readability.
   
@@ -42,6 +43,7 @@ calcModel_m <- function(times,
   c_j <- pars$c_j # Length n_species vector
   g <- pars$g # Length n_species vector of transition rates.
   h <- pars$h # Length n_species vector of transition rates.
+  l <- pars$l # Length n_species vector of input rates.
   m_a <- pars$m_a # Length n_species vector of mortalities
   m_j <- pars$m_j # Length n_species vector of mortalities
   r <- pars$r # Length n_species vector of input rates
@@ -53,12 +55,11 @@ calcModel_m <- function(times,
   sigma <- pars$sigma_process
   
   ## Set the count variables
-  n <- length(r) # no species
+  n <- length(r) # no. of species
   
   ## 
   times_intern <- 1:max(times)
   n_times <- length(times_intern)
-  
   
   radius_a_upper <- dbh_lower_b/2
   radius_a_avg <- (dbh_lower_a + dbh_lower_b)/2/2 # [mm]
@@ -67,19 +68,15 @@ calcModel_m <- function(times,
   
   # Prepare a state matrix
   whichstate <- rep(1:3, each = n)
-  State_log <- matrix(rep(initialstate_log, times = n_times), nrow = n_times, byrow = T)
+  State <- matrix(rep(initialstate, times = n_times), nrow = n_times, byrow = T)
   
   ## Here comes the model.
   for (t in 2:n_times) {
     
-    ## States at t-1: *State*_log, and *State*
-    J_log <- State_log[t-1,whichstate == 1]
-    A_log <- State_log[t-1,whichstate == 2]
-    B_log <- State_log[t-1,whichstate == 3]
-    
-    J <- exp(J_log)
-    A <- exp(A_log)
-    B <- exp(B_log)
+    ## States at t-1: *State*, and *State*
+    J <- State[t-1,whichstate == 1]
+    A <- State[t-1,whichstate == 2]
+    B <- State[t-1,whichstate == 3]
     
     ## The total basal area of big trees
     BA <- A * ba_a_avg + B
@@ -88,30 +85,36 @@ calcModel_m <- function(times,
     # observation error for stages/times/species
     u <- matrix(0, nrow = length(s), ncol = 3) + rnorm(length(s)*3, 0, sigma)
     
-    ## Two kinds of processes acting ot State_log
-    ## 1. All processes that add additively to State, are added within log(State)
-    ## 2. All processes that act multiplicatively on the state are added in log space
+    ## Two kinds of processes acting ot State. multiplicative in exp(...) and additive at the end
     
-    J_t_log <- log(J + r*BA) - c_j*sum(J) - s*BA_sum - m_j - g + u[ ,1] # count of juveniles J
+    J_trans <- r*BA + l + (J - g*J) # use rlnorm + u[ ,1]
+    J_t <- J_trans * 1/(1 + c_j*sum(J) + s*BA_sum + m_j) # count of juveniles J
+    # with all variables > 0, and 0 < g, m_j < 1
     
-    A_t_log <- log(A + J * exp(g)) - c_b*BA_sum - m_a - h + u[ ,2] # count of small adults A
-    A_ba <- A * exp(h) * ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
+    A_trans <- g*J + (A - h*A) # + u[ ,2]
+    A_t <-  A_trans * 1/(1 + c_b*BA_sum + m_a) # count of small adults
+    # with all variables > 0, and 0 < h, m_a < 1
     
-    B_t_log <- log(B + A_ba) + b - c_b*BA_sum + u[ ,3] # basal area of big adults B
+    A_ba <- A * h * ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
+    B_trans <- A_ba + B # + u[ ,3]
+    B_t <- (1+b)*B_trans * 1/(1 + c_b*BA_sum)  # basal area of big adults B
     ## b is the net basal area increment (including density-independent m) basically equivalent to a Ricker model, i.e. constant increment rate leading to exponential growth, negative density dependent limitation scaled with total BA_sum.
     
-    State_log[t, ] <- c(J_t_log, A_t_log, B_t_log)
+    State[t, ] <- c(J_t, A_t, B_t)
   }
   
   whichtimes <- which(times_intern %in% times)
-  return(State_log[whichtimes,])
+  
+  return(State[whichtimes,])
+
 }
 
-## alternate to not have m_*, i.e. density-indepedent mortality
-calcModel <- function(times, initialstate, pars, ...) { 
+
+## Wrapper for choosing a model and hard-resetting parameters
+calcModelWrapper <- function(times, initialstate, pars, ...) { 
   
-  calcModel_m(times, initialstate,
-            within(pars, { m_a <- 0;  m_j <- 0; r_ldd <- 0;}),
+  calcModel(times, initialstate,
+            within(pars, { m_a <- 0;  m_j <- 0;}), # l <- 0;
             ...)
   }
 
@@ -122,22 +125,35 @@ calcModel <- function(times, initialstate, pars, ...) {
 
 
 #### Simulate one time series for a specific fixed set of parameters. -------------------
-simulateOneSeries <- function(state_init, times, pars, processerror = T, obserror = T, log = T, nominaltimes = NULL) {
+simulateOneSeries <- function(state_init, times, pars,
+                              processerror = T, obserror = T, exping = F, nominaltimes = NULL) {
   
   
   n_pops <- length(state_init)
   
   if(!processerror) pars$sigma_process <- 0
   
-  Sim <- calcModel(state_init, times = times, pars = pars)
-  if(!log) Sim <- exp(Sim)
+  Sim <- calcModelWrapper(state_init, times = times, pars = pars)
+  
+  if(exping) Sim <- exp(Sim)
   
   if(is.null(nominaltimes)) nominaltimes <- times ## this is for setting the time column in the returned matrix
+  
   Sim <- set_colnames(cbind(nominaltimes, Sim), c("time", paste(1:ncol(Sim)))) # Make matrix look like from ode integrator for compatibility
   
   if (obserror) {
-    Sim[, 2:(n_pops/3+1)] <- matrix(rnorm(Sim, Sim, pars$sigma_obs[1]), nrow = nrow(Sim))[,  2:(n_pops/3+1)]
-    Sim[, (n_pops/3+1):(n_pops+1)] <- matrix(rnorm(Sim, Sim, pars$sigma_obs[2]), nrow = nrow(Sim))[, (n_pops/3+1):(n_pops+1)]
+    
+    robs <- function(n, mu, errorgroup) {
+      
+      switch(pars$obsprocess,
+             normal = rnorm(n, mu, pars$sigma_obs[errorgroup]),
+             negbinomial = rnbinom2(n, mu, pars$phi_obs[errorgroup]),
+             gamma = rgamma2(n, mu, pars$alpha_obs[errorgroup])
+      )
+    }
+    Sim[, 2:(n_pops/3+1)] <- matrix(robs(Sim, Sim, errorgroup = 1), nrow = nrow(Sim))[,  2:(n_pops/3+1)]
+    Sim[, (n_pops/3+1):(n_pops+1)] <- matrix(robs(Sim, Sim, errorgroup = 2), nrow = nrow(Sim))[, (n_pops/3+1):(n_pops+1)]
+    
   }
   
   return(Sim)
@@ -148,7 +164,8 @@ simulateOneSeries <- function(state_init, times, pars, processerror = T, obserro
 simulateMultipleSeriesInEnv <- function(pars,
                                         Env,
                                         times = 2:22, # internal model will still start at 1
-                                        envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a  = F, m_j = F, r = F, s = F),
+                                        envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, l = F, m_a  = F, m_j = F, r = F, s = F),
+                                        logstate = F,
                                         modelstructure = c("ba", "ba-rect", "ba-rag", "ba-rag-ranef"),
                                         format = c("long", "stan"),
                                         obserror = T, processerror = NULL, ranef = NULL, independentstart = F) {
@@ -183,7 +200,7 @@ simulateMultipleSeriesInEnv <- function(pars,
   meta <- pars # for info like n_stages, dbh_lower_a
   
   #### Internal function to mapply over locations with different environments and therefore possibly different parameters
-  simulateOneSeriesInEnv <- function(b_, c_a_, c_b_, c_j_, g_, h_, m_a_, m_j_, r_, s_, times_) {
+  simulateOneSeriesInEnv <- function(b_, c_a_, c_b_, c_j_, g_, h_, l_, m_a_, m_j_, r_, s_, times_) {
     
     
     ## list of env-dependent and -independent parameters for one environment, replacing the original global parameters in "pars"
@@ -191,6 +208,7 @@ simulateMultipleSeriesInEnv <- function(pars,
       b <- b_;
       c_a <- c_a_; c_b <- c_b_; c_j <- c_j_;
       g <- g_; h <- h_;
+      l <- l_;
       m_a <- m_a_; m_j <- m_j_;
       r <- r_;
       s <- s_;})
@@ -200,14 +218,15 @@ simulateMultipleSeriesInEnv <- function(pars,
     if (plotlevelinit) {
       
       seriesatloc <- replicate(pars$n_plotsperloc,
-                               simulateOneSeries(generateInitialState(n_species = pars$n_species), times_, simpars,
+                               simulateOneSeries(generateInitialState(n_species = pars$n_species, logstate = logstate),
+                                                 times_, simpars,
                                                  processerror = processerror, obserror = obserror, nominaltimes = nominaltimes),
                                                  simplify = F)
     } else {
       
       ## cluster level init
       # Replication is post initial state generation
-      m0 <- generateInitialState(n_species = pars$n_species)
+      m0 <- generateInitialState(n_species = pars$n_species, logstate = logstate)
       seriesatloc <- replicate(pars$n_plotsperloc,
                                simulateOneSeries(m0, times_, simpars,
                                                  processerror = processerror, obserror = obserror, nominaltimes = nominaltimes),
@@ -227,6 +246,7 @@ simulateMultipleSeriesInEnv <- function(pars,
                  as.data.frame(t(pars$C_j_loc)),
                  as.data.frame(t(pars$G_loc)),
                  as.data.frame(t(pars$H_loc)),
+                 as.data.frame(t(pars$L_loc)),
                  as.data.frame(t(pars$M_a_loc)),
                  as.data.frame(t(pars$M_j_loc)),
                  as.data.frame(t(pars$R_loc)),
@@ -254,11 +274,14 @@ generateParameters <- function(seed = 1,
                                dbh_lower_a = 100, dbh_lower_b = 200,
                                
                                ## errors:
-                               sigma_process = 0.05, shape_par = 10, sigma_obs = c(1, 0.2),
+                               sigma_process = 0.05, shape_par = 10,
+                               alpha_obs = c(100, 500), sigma_obs = c(1, 0.2), phi_obs = c(10, 100),# observation error, both for a possible normal, negbinomial, and response are provided
+                               obsprocess = c("gamma", "normal", "negbinomial"),
                                ...) {
   set.seed(seed)
   
-  parnames <- c("b", "c_a", "c_b", "c_j", "g", "h", "m_a", "m_j", "r", "s")
+  parnames <- c("b", "c_a", "c_b", "c_j", "g", "h", "l", "m_a", "m_j", "r", "s")
+  obsprocess <- match.arg(obsprocess)
   
   ## Beta_* are effect of environment on species' parameters matrix[n_env, n_species]
   ## These are on the log scale!
@@ -275,20 +298,25 @@ generateParameters <- function(seed = 1,
   Beta_c_a <- Beta_c_b <- Beta_c_j <- matrix(0, n_beta, n_species)
   c_a_log <- rnorm(n_species, -2, 0.2)
   Beta_c_a[1,] <- c_a_log
-  c_b_log <- rnorm(n_species, -3, 0.1)
+  c_b_log <- rnorm(n_species, -1.5, 0.5)
   Beta_c_b[1,] <- c_b_log
-  c_j_log <- rnorm(n_species, -4, 0.5)
+  c_j_log <- rnorm(n_species, -3, 0.5)
   Beta_c_j[1,] <- c_j_log
   
-  g_log <- rnorm(n_species, -2, 0.2)
-  Beta_g <- matrix(rnorm(n_beta*n_species, -0.5, 0.5), n_beta, n_species)
-  Beta_g[1,] <- g_log
-  Beta_g[3,] <- rnorm(n_species, -1, 0.2)
+  g_logit <- rnorm(n_species, -1, 0.1)
+  Beta_g <- matrix(rnorm(n_beta*n_species, -0.3, 0.2), n_beta, n_species)
+  Beta_g[1,] <- g_logit
+  Beta_g[3,] <- rnorm(n_species, -0.4, 0.2)
   
-  h_log <- rnorm(n_species, -1, 0.3)
-  Beta_h <- matrix(rnorm(n_beta*n_species, -0.2, 0.5), n_beta, n_species)
-  Beta_h[1,] <- h_log
-  Beta_h[3,] <- rnorm(n_species, -1, 0.2)
+  h_logit <- rnorm(n_species, 0.2, 0.1)
+  Beta_h <- matrix(rnorm(n_beta*n_species, -0.3, 0.2), n_beta, n_species)
+  Beta_h[1,] <- h_logit
+  Beta_h[3,] <- rnorm(n_species, -0.4, 0.2)
+  
+  l_log <- rnorm(n_species, 1, 0.1)
+  Beta_l <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
+  Beta_l[1,] <- l_log
+  Beta_l[3,] <- rnorm(n_species, -0.5, 0.2)
   
   m_a_log <- rnorm(n_species, -1.5, 0.5)
   Beta_m_a <- matrix(rnorm(n_beta*n_species, -2, 0.5), n_beta, n_species)
@@ -300,12 +328,12 @@ generateParameters <- function(seed = 1,
   Beta_m_j[1,] <- m_j_log
   Beta_m_j[3,] <- rnorm(n_species, -2.5, 0.2)
   
-  r_log <- rnorm(n_species, 2, 0.1)
+  r_log <- rnorm(n_species, 3, 0.1)
   Beta_r <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   Beta_r[1,] <- r_log
   Beta_r[3,] <- rnorm(n_species, -0.5, 0.2)
   
-  s_log <- rnorm(n_species, -4, 0.1)
+  s_log <- rnorm(n_species, -1.3, 0.1)
   Beta_s <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   Beta_s[1,] <- s_log
   Beta_s[3,] <- rnorm(n_species, -1, 0.2)
@@ -318,8 +346,10 @@ generateParameters <- function(seed = 1,
   c_b <- exp(c_b_log)
   c_j <- exp(c_j_log)
   
-  g <- exp(g_log)
-  h <- exp(h_log)
+  g <- plogis(g_logit)
+  h <- plogis(h_logit)
+  
+  l <- exp(l_log)
   m_a <- exp(m_a_log)
   m_j <- exp(m_j_log)
   r <- exp(r_log)
@@ -344,13 +374,12 @@ generateParameters <- function(seed = 1,
 
 #### prerequisites for a single time series
 formals(generateParameters)
-pars1 <- generateParameters(seed = 1, n_species = 2)
+pars1 <- generateParameters(seed = 1, n_species = 3, obsprocess = "gamma")
 initialstate1 <- generateInitialState(n_species = pars1$n_species)
-## transform parameters manually, use *_log because they are vectors[n_species] (instead of matrices as produced by transformParameters)
-times1 <- 2:50
+times1 <- 1:40
 
 Sim1 <- simulateOneSeries(initialstate1, times = times1, pars = pars1,
-                          processerror = F, obserror = F, log = F)
+                          processerror = F, obserror = T)
 
 matplot(Sim1[,-1], type = "b", ylab="N",
         pch = rep(c("J", "A", "B"), each = pars1$n_species),
@@ -359,12 +388,12 @@ matplot(Sim1[,-1], type = "b", ylab="N",
 
 
 ## Multiple time series in env ---------------------------------------------------------------
-envdep_demo <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, m_a = F, m_j = F, r = T, s = T)
-pars_demo <- generateParameters(n_species = 4, n_locs = 50, sigma_obs = c(0.05, 0.02))
+envdep_demo <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, l = T, m_a = F, m_j = F, r = F, s = T)
+pars_demo <- generateParameters(n_species = 3, n_locs = 50)
 E_demo <- simulateEnv(pars_demo$n_env, pars_demo$n_locs)
 P_env_demo <- transformParameters(pars_demo, E_demo, envdep_demo, ranef = F, returndf = T)
-S_demo <- simulateMultipleSeriesInEnv(pars_demo, E_demo, times = 2:22,
-                                      envdependent = envdep_demo, ranef = F, processerror = T, obserror = F, independentstart = F)
+S_demo <- simulateMultipleSeriesInEnv(pars_demo, E_demo, times = 2:100,
+                                      envdependent = envdep_demo, ranef = F, processerror = F, obserror = F, independentstart = F)
 
 #### Plot time series
 S_demo %>%
@@ -380,7 +409,7 @@ P_env_demo %>%
   gf_point(q ~ env_1 | species) %>%
   gf_smooth()
 
-ggplot(filter(P_env_demo, parameter == "r_loc"),
+ggplot(filter(P_env_demo, parameter == "g_loc"),
        mapping = aes(x = env_1, y = q, color = species, group = species)) +
   geom_point()+
   geom_smooth()+
@@ -403,10 +432,9 @@ modeldir <- dir(pattern = glue("^(Model).*ba$"))
 
 modelname <- c("ba",
                "ba-rect", # fully rectangular, without process error
-               "ba-rect-m", # ... as above, including density indepedent mortality
                "ba-rag", # ragged, clusterwise-initialization
                "ba-rag-ranef" # like ba-rag but with random demographic pars
-               )[1]
+               )[2]
 
 modelpath <- file.path(modeldir, glue('Model_{modelname}.stan'))
 
@@ -419,28 +447,26 @@ model <- cmdstan_model(modelpath)
 ## Simulate stan model data --------------------------------------------------------------
 parseed <- 1
 
-pars <- generateParameters(seed = parseed, n_locs = 50, n_species = 2)
+pars <- generateParameters(seed = parseed, n_locs = 50, n_species = 2, n_plotsperloc = 4)
 
 Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
 
+
+envdependent_ba_rect <- c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, l = T, m_a = F, m_j = F, r = F, s = F)
+envdependent_ba_rag <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
+envdependent_ba <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
+envdependent_ba_rag_ranef <- envdependent_ba_rag
+
 data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
-                                    envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F, r = F, s = F),
-                                    modelstructure = modelname, format = "stan",
+                                    envdependent = get(paste0("envdependent_", sub("-", "_", modelname))),
+                                    logstate = F,
+                                    modelstructure = modelname, # !!! this determines the data layout
+                                    format = "stan",
                                     obserror = T, processerror = F, independentstart = T)
-
-data_ba_rect <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
-                                    envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F, r = F, s = F),
-                                    modelstructure = modelname, format = "stan",
-                                    obserror = F, processerror = F, independentstart = T)
-
-data_ba <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
-                                       envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, m_a = F, m_j = F, r = T, s = T),
-                                       modelstructure = modelname, format = "stan",
-                                       obserror = F, processerror = F, independentstart = T)
 
 
 Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
-                                         envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, m_a = F, m_j = F,  r = F, s = F),
+                                         envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, l = T, m_a = F, m_j = F, r = F, s = F),
                                          modelstructure = modelname, format = "long",
                                          obserror = F, processerror = F, independentstart = T) %>%
   mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
@@ -495,7 +521,6 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
 # model <- cmdstan_model(modelpath)
 
 ## Model fit
-data <- get(paste0("data_", modelname))
 fit <- drawSamples(model, data, method = "sim", initfunc = getTrueInits)
 
 ## Other diagnostics
@@ -550,16 +575,36 @@ truepars <- attr(data, "pars")
 
 ## Plot model simulations from enerated quantities
 
-plot(c(draws$y_hat_log_rep[1,,1,,data$i_j]) ~ c(data$y_log[,1,,data$i_j]))
-plot(c(draws$y_hat_log_rep[1,,1,,data$i_a]) ~ c(data$y_log[,1,,data$i_a]))
-plot(c(draws$y_hat_log_rep[1,,1,,data$i_b]) ~ c(data$y_log[,1,,data$i_b]))
-
-plot(draws$y_hat_log_rep[1,] ~ data$y_log)
-
+if(modelname == "ba-rect") {
   
-# plot(c(draws$y_hat_log[1,,,,drop =T]) ~ c(apply(data$y_log, c(1, 2, 4), mean))) # average the plots away
-abline(0, 1)
+  # predictions per life stages
+  plot(c(draws$y_hat_rep[1,,3,,data$i_j]) ~ c(data$y[,3,,data$i_j]))
+  abline(0, 1)
+  plot(c(draws$y_hat_rep[1,,3,,data$i_a]) ~ c(data$y[,3,,data$i_a]))
+  abline(0, 1)
+  plot(c(draws$y_hat_rep[1,,3,,data$i_b]) ~ c(data$y[,3,,data$i_b]))
+  abline(0, 1)
+  
+  plot(c(draws$y_sim[1,,3,,data$i_j]) ~ c(data$y[,3,,data$i_j]))
+  abline(0, 1)
+  plot(c(draws$y_sim[1,,3,,data$i_a]) ~ c(data$y[,3,,data$i_a]))
+  abline(0, 1)
+  plot(c(draws$y_sim[1,,3,,data$i_b]) ~ c(data$y[,3,,data$i_b]))
+  abline(0, 1)
+  
+  
+}
 
+if(modelname %in% c("ba", "ba-rag", "ba-rag-ranef")) {
+  R <- data.frame(y_hat_rep = draws$y_hat_rep[1,], y = data$y,
+                  pops = data$pops[rep(data$rep_init2y0, each = data$n_reobs[1])])
+  
+  R %>% ggformula::gf_point(y_hat_rep ~ y) %>%
+    gf_abline(gformula = NULL, slope = 1, intercept = 0)
+  
+  # plot(draws$state_init[1, data$rep_init2y0] ~ data$y0)
+  
+}
 
 
 #### Draws vs true ----------------------
@@ -610,6 +655,7 @@ plotDrawVsSim("c_j")
 plotDrawVsSim("c_b")
 plotDrawVsSim("g")
 plotDrawVsSim("h")
+plotDrawVsSim("l")
 # plotDrawVsSim("m_a")
 # plotDrawVsSim("m_j")
 plotDrawVsSim("r")
