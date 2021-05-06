@@ -283,6 +283,9 @@ generateParameters <- function(seed = 1,
   parnames <- c("b", "c_a", "c_b", "c_j", "g", "h", "l", "m_a", "m_j", "r", "s")
   obsprocess <- match.arg(obsprocess)
   
+  alpha_obs_inv <- 1/alpha_obs
+  phi_obs_inv <- 1/phi_obs
+  
   ## Beta_* are effect of environment on species' parameters matrix[n_env, n_species]
   ## These are on the log scale!
   n_beta <- 1 + 2 * n_env # degree 2 polynomial + intercept
@@ -497,15 +500,17 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
     fit <- model$variational(data = data,
                              output_dir = "Fits.nosync",
                              init = initfunc,
+                             eta = 0.001,
                              iter = 20**4) # convergence after 1500 iterations
     
     } else if (match.arg(method) == "mcmc") {
     
-    fit <- model$sample(data = data,
-                        output_dir = "Fits.nosync",
-                        init = initfunc,
-                        iter_warmup = 1500, iter_sampling = 500,
-                        chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
+      fit <- model$sample(data = data,
+                          output_dir = "Fits.nosync",
+                          init = initfunc,
+                          iter_warmup = 3000, iter_sampling = 1000,
+                          adapt_delta = 0.99,
+                          chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
     
     } else if (match.arg(method) == "sim") {
     
@@ -521,7 +526,7 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
 # model <- cmdstan_model(modelpath)
 
 ## Model fit
-fit <- drawSamples(model, data, method = "variational", initfunc = 0)
+fit <- drawSamples(model, data, method = "variational", initfunc = getInits)
 
 ## Other diagnostics
 # fit$output()
@@ -529,9 +534,6 @@ fit <- drawSamples(model, data, method = "variational", initfunc = 0)
 # fit$init()
 # fit$draws(variables = NULL, inc_warmup = F)
 # fit$return_codes()
-
-## Simulate with fixed parameters for debugging
-# fit <- drawSamples(model, data, method = "sim", initfunc = getTrueInits)
 
 
 ## Extract draws -----------------------------------------------------------
@@ -559,11 +561,17 @@ draws <- rstan::extract(stanfit, pars = c(excludevarname), include = F)
 
 
 ## Summary -----------------------------------------------------------------
+
+## Explore stanfit object
+s <- summary(stanfit) # , pars = excludevarname, include = F
+s
+
+traceplot(stanfit, pars = c("r", "g", "h", "b", "alpha_obs"))
+pairs(stanfit, pars = c("r", "g", "s"))
+
+
+## Shinystan
 # library(shinystan)
-
-# s <- summary(stanfit) # , pars = excludevarname, include = F
-# s
-
 # launch_shinystan(stanfit, rstudio = F)
 
 
@@ -649,8 +657,8 @@ plotDrawVsSim <- function(parname = "h",
 
 
 ## Fitted parameters vs. true
-plotDrawVsSim("b")
-plotDrawVsSim("c_j")
+plotDrawVsSim("b_log")
+plotDrawVsSim("c_j_log")
 # plotDrawVsSim("c_a")
 plotDrawVsSim("c_b")
 plotDrawVsSim("g")

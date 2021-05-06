@@ -26,9 +26,9 @@ functions {
       vector[N_spec] BA = A*ba_a_avg + B;
       real BA_sum = sum(BA);
 
-      State[t, i_j]  =  (r.*BA + l + (J - g.*J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      State[t, i_a]  =  (g.*J + (A - h.*A)) ./ (1 + c_b*BA_sum);
-      State[t, i_b]  =  (1+b).*((h.*A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+      State[t, i_j]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+      State[t, i_a]  =  (g .* J + (A - h .*A )) ./ (1 + c_b*BA_sum);
+      State[t, i_b]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
       
     }
     
@@ -84,6 +84,8 @@ transformed data {
   real ba_a_upper = pi() * (dbh_lower_b/2)^2 * 1e-6; // # pi*r^2, mm^2 to m^2
   real ba_a_avg = pi() * ((dbh_lower_a + dbh_lower_b)/2/2)^2 * 1e-6;
   
+  vector[N_pops] y0_loc_log [N_locs] = log(y0_loc);
+  
   //// Data for separate fitting of the initial state
   // vector[N_pops] y0 [N_locs, N_plots] = y[ , , 1, ];
 }
@@ -100,23 +102,23 @@ parameters {
 
 
   // … independent of environment
-  vector<lower=0>[N_species] b;
-  // vector<lower=0>[N_species] c_a;
-  vector<lower=0>[N_species] c_b;
-  vector<lower=0>[N_species] c_j;
-  vector<lower=0,upper=1>[N_species] g;
-  vector<lower=0,upper=1>[N_species] h; // (A-, B+), here still unconstrained on log scale, flow out of the system, independent of environment ("intercept only")
-  vector<lower=0>[N_species] l;
-  vector<lower=0>[N_species] r;
-  vector<lower=0>[N_species] s;
+  vector[N_species] b_log;
+  // vector[N_species] c_a_log;
+  vector[N_species] c_b_log;
+  vector[N_species] c_j_log;
+  vector[N_species] g_logit;
+  vector[N_species] h_logit; // (A-, B+), here still unconstrained on log scale, flow out of the system, independent of environment ("intercept only")
+  // vector[N_species] l_log;
+  vector[N_species] r_log;
+  vector[N_species] s_log;
   
   // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
   // vector<lower=0>[2] sigma_obs; // observation error
-  vector<lower=0>[2] alpha_obs; // observation error
+  vector<lower=0>[2] alpha_obs_inv; // observation error
   
   // matrix[N_pops, timespan_max] u[N_locs];
 
-  vector<lower=0>[N_pops] state_init[N_locs];
+  vector[N_pops] state_init_log[N_locs];
 }
 
 
@@ -131,13 +133,15 @@ transformed parameters {
   // matrix[N_locs, N_species] s_log = X * Beta_s;
   matrix[N_locs, N_species] l_log = X * Beta_l;
 
+  vector<lower=0>[2] alpha_obs = inv(alpha_obs_inv);
   
   for(loc in 1:N_locs) {
     
-    y_hat[loc, ] = simulate(state_init[loc], time_max[loc], times[loc, ],
+    y_hat[loc, ] = simulate(exp(state_init_log[loc]), time_max[loc], times[loc, ],
                               // exp(g_log[loc, ]'), exp(r_log[loc, ]'), exp(s_log[loc, ]'),
-                              g, r, s,  exp(l_log[loc, ]'),
-                              b, c_j, c_b, h,
+                              inv_logit(g_logit), exp(r_log), exp(s_log),
+                              exp(l_log[loc, ]'),
+                              exp(b_log), exp(c_j_log), exp(c_b_log), inv_logit(h_logit),
                               ba_a_avg, ba_a_upper,
                               N_species, N_pops,
                               // u[loc],
@@ -152,18 +156,19 @@ model {
   //---------- PRIORS ---------------------------------
   
   // Beta_r[1,] ~ normal(2, 2); // intercept
-  // 1 ./ shape_par ~ normal(0, 100); 
-  // sigma_process ~ normal(0, 0.01);
-  // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
+  
+  // sigma_process_inv ~ normal(0, 0.01);
+  // sigma_obs_inv ~ normal(0, [0.5, 0.1]); // for observations from predictions
+  alpha_obs_inv ~ normal(0, [0.1, 0.01]);
   
   // r ~ normal(20, 4);
   
   // Beta_g[1,] ~ normal(-12, 1);
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-  // h ~ normal(0.4, 1);
-  // g ~ gamma(5, 5/0.007);
-  // b ~ gamma(10, 10/0.4);
+  h_logit ~ logistic(0.5, 10);
+  g_logit ~ logistic(0.2, 10);
+  b_log ~ normal(-1, 1);
   
   //---------- MODEL ---------------------------------
   
@@ -171,7 +176,7 @@ model {
 
     // Some priors
     // normal: // state_init[loc] ~ normal(y0_loc[loc], sigma_obs[rep_obsmethod2pops]);
-    state_init[loc] ~ gamma(alpha_obs[rep_obsmethod2pops], alpha_obs[rep_obsmethod2pops] ./ y0_loc[loc]);
+    state_init_log[loc] ~ normal(y0_loc_log[loc], 2);
     
     // to_vector(u[loc]) ~ normal(0, 0.1);
     
@@ -192,6 +197,7 @@ model {
     }
   }
 }
+
 
 generated quantities {
 

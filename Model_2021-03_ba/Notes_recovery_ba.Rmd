@@ -1,0 +1,43 @@
+# ba Recovery
+
+## Simulation and Paramater sets
+
+## Recovery
+
+ 
+
+## Unsystematic recovery experience
+
+### Possible problems with the discrete model
+    - suspicion: with state independent r == l the system is not identifiable (WITH LIMITED DATA)
+    - with some parameter-configurations the DISCRETE MODEL has periodic fluctuations which could be indiscernable from errors
+
+### Success
+- fit, i.e. predictions always work
+- sigma_obs recovery works always well with some regularization
+
+### Initial values
+- with random initial value parameter further outside the true range the chains do not even respond, probably because the log-likelihood is always -Inf
+    - prior on initial values +- around the true values: chains do at least walk
+
+### Times
+- just increasing the number of re-observations per time series does not improve the divergence problems
+- also spreading the times differently per time series has not helped fixing the divergence problems
+- but in other cases more times per series (5) massively improved the fit
+
+
+
+
+
+### Regularization in hierarchical models
+
+#### constraints for sigma in Lognormal
+- These are notes from a former version with lognormal random demographic rates:
+    - lognormal is fucked up because with big sigmas the mean gets highly biased towards greater values
+	    - Model gets ill-specified if sigma_par is not pushed towards 0
+	    - but regularization will introduce significant bias
+	    -> very soft prior sigma ~ normal(0, 1) [truncated]
+
+#### Regularization of final observation error
+- Really tight regularization on the observation error dispersion in phi_obs for recovery
+ - When in doubt, go tighter (higher): 1/phi_obs ~ normal(0, 0.001);

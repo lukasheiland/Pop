@@ -340,14 +340,17 @@ getTrueInits <- function() {
   
   isragged <- grepl("^ba-rag", modelname) || modelname == "ba"
   
+  state_init <- if (isragged) data$y0[which(!duplicated(data$rep_init2y0))] else data$y[,1,1,]
+  
   truepars <- attr(data, "pars")
   truepars <- truepars[sapply(truepars, is.numeric)]
   parnames <- names(truepars)
   names(truepars) <- ifelse(str_ends(parnames, "_loc"), str_to_lower(parnames), parnames)
   
   newpars <- list(
-    state_init = if (isragged) data$y0[which(!duplicated(data$rep_init2y0))] else
-      data$y[,1,1,],
+    
+    state_init = state_init,
+    state_init_log = log(state_init),
     
     u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = truepars$n_species*3, ncol = data$timespan_max))
   )
@@ -369,6 +372,7 @@ getInits <- function() {
   n_species <- truepars$n_species
   n_locs <- truepars$n_locs
   
+  state_init <- if (isragged) data$y0[which(!duplicated(data$rep_init2y0))] + rnorm(data$N_init, 0, responsescaleerror) else data$y[,1,1,] + rnorm(data$y[,1,1,], 0, responsescaleerror)
   
   b_log <- rnorm(n_species, -1, 0.01)
   c_a_log <- rnorm(n_species, -3.3, 0.2)
@@ -445,10 +449,11 @@ getInits <- function() {
     
     sigma_obs      = c(1.1, 1.1),
     alpha_obs      = c(10, 20),
+    alpha_obs_inv   = c(0.1, 0.2),
     phi_obs      = c(10, 20),
     
-    state_init = if (isragged) data$y0[which(!duplicated(data$rep_init2y0))] + rnorm(data$N_init, 0, responsescaleerror) else
-      data$y[,1,1,] + rnorm(data$y[,1,1,], 0, responsescaleerror),
+    state_init = state_init,
+    state_init_log = log(state_init),
     
     u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = pars$n_species*3, ncol = data$timespan_max))
     )
