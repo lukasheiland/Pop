@@ -119,12 +119,15 @@ parameters {
   // matrix[N_pops, timespan_max] u[N_locs];
 
   vector[N_pops] state_init_log[N_locs];
+  // vector[N_pops] state_init_log_raw[N_locs];
 }
 
 
 transformed parameters {
   
   vector[N_pops] y_hat[N_locs, N_times];
+  // vector[N_pops] state_init_log[N_locs];
+
   
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
   // Location level parameters (unconstrained because on log scale!)
@@ -134,8 +137,10 @@ transformed parameters {
   matrix[N_locs, N_species] l_log = X * Beta_l;
 
   vector<lower=0>[2] alpha_obs = inv(alpha_obs_inv);
-  
+
   for(loc in 1:N_locs) {
+    
+    // state_init_log[loc] = y0_loc_log[loc] + sigma_obs[rep_obsmethod2pops] .* state_init_log_raw[loc];
     
     y_hat[loc, ] = simulate(exp(state_init_log[loc]), time_max[loc], times[loc, ],
                               // exp(g_log[loc, ]'), exp(r_log[loc, ]'), exp(s_log[loc, ]'),
@@ -155,20 +160,25 @@ model {
   
   //---------- PRIORS ---------------------------------
   
-  // Beta_r[1,] ~ normal(2, 2); // intercept
   
-  // sigma_process_inv ~ normal(0, 0.01);
-  // sigma_obs_inv ~ normal(0, [0.5, 0.1]); // for observations from predictions
+  // sigma_process ~ normal(0, 0.01);
+  // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
   alpha_obs_inv ~ normal(0, [0.1, 0.01]);
   
-  // r ~ normal(20, 4);
+  // 
   
   // Beta_g[1,] ~ normal(-12, 1);
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-  h_logit ~ logistic(0.5, 10);
-  g_logit ~ logistic(0.2, 10);
-  b_log ~ normal(-1, 1);
+  Beta_l[1,] ~ normal(-1, 2); // intercept
+  b_log ~ normal(-1, 0.1);
+  c_b_log ~ normal(3, 0.1);
+  c_j_log ~ normal(3, 0.1);
+  g_logit ~ logistic(0.2, 1);
+  h_logit ~ logistic(0.5, 1);
+  r_log ~ normal(3, 0.1);
+  r_log ~ normal(3, 0.1);
+  
   
   //---------- MODEL ---------------------------------
   
@@ -176,7 +186,8 @@ model {
 
     // Some priors
     // normal: // state_init[loc] ~ normal(y0_loc[loc], sigma_obs[rep_obsmethod2pops]);
-    state_init_log[loc] ~ normal(y0_loc_log[loc], 2);
+    // state_init_log_raw[loc] ~ std_normal();
+    //  state_init_log[loc] ~ normal(y0_loc_log[loc], 0.1);
     
     // to_vector(u[loc]) ~ normal(0, 0.1);
     

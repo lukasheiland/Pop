@@ -34,7 +34,7 @@ simulateEnv <- function(n_env, n_locs){
 
 #### Simulate vector of initial states -------------------
 generateInitialState <- function(n_species, n_stages = 3, logstate = F) {
-  s <-  rep(2:0, each = n_species) + rnorm(n_stages, 0, 0.1) # Initial state matrix.
+  s <-  rep(2:0, each = n_species) + rnorm(n_stages, 0, 1) # Initial state matrix.
   if(logstate) return(s) else return(exp(s))
 }
 

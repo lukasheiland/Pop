@@ -181,7 +181,7 @@ simulateMultipleSeriesInEnv <- function(pars,
   
   if(independentstart) {
     nominaltimes <- times
-    Times <- lapply(Times, function(t) t + sample(0:max(times*2), 1, replace = T, prob = (max(times*2):0)^6) )
+    Times <- lapply(Times, function(t) t + sample(0:max(times*5), 1, replace = T)) # prob = (max(times*3):0)^6)
   }
   
   ## set default values for modelstructures when not explicitly overridden
@@ -526,7 +526,7 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
 # model <- cmdstan_model(modelpath)
 
 ## Model fit
-fit <- drawSamples(model, data, method = "variational", initfunc = getInits)
+fit <- drawSamples(model, data, method = "variational", initfunc = 0)
 
 ## Other diagnostics
 # fit$output()
@@ -566,8 +566,11 @@ draws <- rstan::extract(stanfit, pars = c(excludevarname), include = F)
 s <- summary(stanfit) # , pars = excludevarname, include = F
 s
 
-traceplot(stanfit, pars = c("r", "g", "h", "b", "alpha_obs"))
-pairs(stanfit, pars = c("r", "g", "s"))
+traceplot(stanfit, pars = c("r_log", "g_logit", "h_logit", "c_j_log", "alpha_obs"))
+
+varname <- fit$metadata()$stan_variables
+pairs(stanfit, pars = varname[1:floor(0.5*length(varname))])
+pairs(stanfit, pars = varname[(floor(0.5*length(varname))+1):length(varname)])
 
 
 ## Shinystan
@@ -660,14 +663,14 @@ plotDrawVsSim <- function(parname = "h",
 plotDrawVsSim("b_log")
 plotDrawVsSim("c_j_log")
 # plotDrawVsSim("c_a")
-plotDrawVsSim("c_b")
-plotDrawVsSim("g")
-plotDrawVsSim("h")
-plotDrawVsSim("l")
+plotDrawVsSim("c_b_log")
+plotDrawVsSim("g_logit")
+plotDrawVsSim("h_logit")
+# plotDrawVsSim("l")
 # plotDrawVsSim("m_a")
 # plotDrawVsSim("m_j")
-plotDrawVsSim("r")
-plotDrawVsSim("s")
+plotDrawVsSim("r_log")
+plotDrawVsSim("s_log")
 
 # plotDrawVsSim("Beta_g")
 # plotDrawVsSim("Beta_m_j")

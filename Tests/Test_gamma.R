@@ -35,7 +35,7 @@ Y <- matrix(rgamma(Y_hat, Y_hat, sigma), ncol = ncol(Y_hat), nrow = nrow(Y_hat))
 y_0 <- Y[1,]
 Y <- Y[-1,]
 
-curve(dgamma(x, 3, sigma), 0, 10)
+curve(dgamma(x, 4, sigma), 0, 10)
 
 ## Even a small overestimation if sigma leads to a large bias towards smaller r.
 ## This is dependent on the size of r, where with smaller r < 1 the effect gets more pronounced.
@@ -93,13 +93,12 @@ model {
 # f_gamma <- write_stan_file(stancode)
 model_gamma <- cmdstan_model(f_gamma)
 
-fit_gamma <- model_gamma$optimize(data = list(N = n,
+fit_gamma <- model_gamma$variational(data = list(N = n,
                                   N_times = length(times),
                                   time = times,
                                   time_init = 0,
                                   y_init = y_0,
-                                  Y = Y),
-                        iter = 10000)
+                                  Y = Y))
 
 fit_gamma$summary()
 
