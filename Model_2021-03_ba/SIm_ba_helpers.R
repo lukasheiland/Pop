@@ -324,6 +324,8 @@ formatSims <- function() {
     }
     
     ## if (format == "stan")
+    stansims$L_loc <- pars$L_loc # get L_log, from transformed parameters to represent predicted dispersal prob
+    stansims$L_loc_log <- pars$L_log # get L_log, from transformed parameters to represent predicted dispersal prob
     Sims <- stansims
     
   } ## closing if (format == "stan")

@@ -72,6 +72,8 @@ data {
   int timespan_max; // max(time_max) - time_globalmin
 
   matrix[N_locs, N_beta] X; // design matrix
+  matrix[N_locs, N_species] L_loc; // design matrix
+
   
   // The response.
   vector[N_pops] y0_loc [N_locs];
@@ -98,7 +100,7 @@ parameters {
   // matrix[N_beta, N_species] Beta_g; // (J-, A+) transition rate from J to A
   // matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
   // matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
-  matrix[N_beta, N_species] Beta_l;
+  // matrix[N_beta, N_species] Beta_l;
 
 
   // … independent of environment
@@ -134,7 +136,7 @@ transformed parameters {
   // matrix[N_locs, N_species] g_logit = X * Beta_g;
   // matrix[N_locs, N_species] r_log = X * Beta_r;
   // matrix[N_locs, N_species] s_log = X * Beta_s;
-  matrix[N_locs, N_species] l_log = X * Beta_l;
+  // matrix[N_locs, N_species] l_log = X * Beta_l;
 
   vector<lower=0>[2] alpha_obs = inv(alpha_obs_inv);
 
@@ -145,7 +147,7 @@ transformed parameters {
     y_hat[loc, ] = simulate(exp(state_init_log[loc]), time_max[loc], times[loc, ],
                               // exp(g_log[loc, ]'), exp(r_log[loc, ]'), exp(s_log[loc, ]'),
                               inv_logit(g_logit), exp(r_log), exp(s_log),
-                              exp(l_log[loc, ]'),
+                              L_loc[loc, ]', // exp(l_log[loc, ]'),
                               exp(b_log), exp(c_j_log), exp(c_b_log), inv_logit(h_logit),
                               ba_a_avg, ba_a_upper,
                               N_species, N_pops,
@@ -165,19 +167,16 @@ model {
   // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
   alpha_obs_inv ~ normal(0, [0.1, 0.01]);
   
-  // 
-  
-  // Beta_g[1,] ~ normal(-12, 1);
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-  Beta_l[1,] ~ normal(-1, 2); // intercept
+  // Beta_l[1,] ~ normal(-1, 2); // intercept
   b_log ~ normal(-1, 0.1);
   c_b_log ~ normal(3, 0.1);
   c_j_log ~ normal(3, 0.1);
   g_logit ~ logistic(0.2, 1);
   h_logit ~ logistic(0.5, 1);
   r_log ~ normal(3, 0.1);
-  r_log ~ normal(3, 0.1);
+  s_log ~ normal(-1, 0.5);
   
   
   //---------- MODEL ---------------------------------

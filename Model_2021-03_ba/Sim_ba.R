@@ -510,6 +510,7 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
                           init = initfunc,
                           iter_warmup = 3000, iter_sampling = 1000,
                           adapt_delta = 0.99,
+                          max_treedepth = 16,
                           chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
     
     } else if (match.arg(method) == "sim") {
@@ -567,10 +568,11 @@ s <- summary(stanfit) # , pars = excludevarname, include = F
 s
 
 traceplot(stanfit, pars = c("r_log", "g_logit", "h_logit", "c_j_log", "alpha_obs"))
+traceplot(stanfit, pars = c("b_log", "c_b_log", "Beta_l"))
 
 varname <- fit$metadata()$stan_variables
-pairs(stanfit, pars = varname[1:floor(0.5*length(varname))])
-pairs(stanfit, pars = varname[(floor(0.5*length(varname))+1):length(varname)])
+pairs(stanfit, pars = varname[1:floor(0.2*length(varname))])
+pairs(stanfit, pars = varname[(length(varname)-1):length(varname)])
 
 
 ## Shinystan
