@@ -1,5 +1,13 @@
-# Library -----------------------------------------------------------------
+# Orientation -------------------------------------------------------------
 library(here)
+
+setwd(here())
+modeldir <- dir(pattern = glue("^(Model).*ba$"))
+
+source(file.path(modeldir, "Sim_ba_helpers.R"))
+
+# startsource —————————————————————————————————————————————————————————————
+# Library -----------------------------------------------------------------
 
 library(tidyverse)
 library(ggformula)
@@ -16,12 +24,6 @@ library(cmdstanr)
 
 library(bayesplot)
 
-
-# Orientation -------------------------------------------------------------
-setwd(here())
-modeldir <- dir(pattern = glue("^(Model).*ba$"))
-
-source(file.path(modeldir, "Sim_ba_helpers.R"))
 
 
 ######################################################################################
@@ -306,12 +308,12 @@ generateParameters <- function(seed = 1,
   c_j_log <- rnorm(n_species, -3, 0.5)
   Beta_c_j[1,] <- c_j_log
   
-  g_logit <- rnorm(n_species, -1, 0.1)
+  g_logit <- rnorm(n_species, -1, 0.3)
   Beta_g <- matrix(rnorm(n_beta*n_species, -0.3, 0.2), n_beta, n_species)
   Beta_g[1,] <- g_logit
   Beta_g[3,] <- rnorm(n_species, -0.4, 0.2)
   
-  h_logit <- rnorm(n_species, 0.2, 0.1)
+  h_logit <- rnorm(n_species, 0.2, 0.2)
   Beta_h <- matrix(rnorm(n_beta*n_species, -0.3, 0.2), n_beta, n_species)
   Beta_h[1,] <- h_logit
   Beta_h[3,] <- rnorm(n_species, -0.4, 0.2)
@@ -364,11 +366,11 @@ generateParameters <- function(seed = 1,
 }
 
 
+# endsource —————————————————————————————————————————————————————————————————————————
 
-
-######################################################################################
+# ————————————————————————————————————————————————————————————————————————————————— #
 # Demo Simulations ------------------------------------------------------------------
-######################################################################################
+# ————————————————————————————————————————————————————————————————————————————————— #
 
 ## One time series ---------------------------------------------------------------
 
@@ -450,7 +452,7 @@ model <- cmdstan_model(modelpath)
 ## Simulate stan model data --------------------------------------------------------------
 parseed <- 1
 
-pars <- generateParameters(seed = parseed, n_locs = 50, n_species = 2, n_plotsperloc = 4)
+pars <- generateParameters(seed = parseed, n_locs = 100, n_species = 2, n_plotsperloc = 4)
 
 Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
 
@@ -508,9 +510,9 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
       fit <- model$sample(data = data,
                           output_dir = "Fits.nosync",
                           init = initfunc,
-                          iter_warmup = 3000, iter_sampling = 1000,
+                          iter_warmup = 200, iter_sampling = 1000,
                           adapt_delta = 0.99,
-                          max_treedepth = 16,
+                          # max_treedepth = 16,
                           chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
     
     } else if (match.arg(method) == "sim") {
@@ -529,6 +531,16 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
 ## Model fit
 fit <- drawSamples(model, data, method = "variational", initfunc = 0)
 
+recoverysetup <- list(drawfile = basename(fit$output_files()),
+                      metadata = fit$metadata(),
+                      truepars = fit,
+                      data = pars,
+                      model = calcModel)
+
+fitbasename <- str_split(recoverysetup$drawfile[1], "-")[[1]]
+fitbasename <- paste(fitbasename[1:(length(fitbasename)-2)], collapse = "-")
+saveRDS(recoverysetup, file.path("Fits.nosync", glue("{fitbasename}.rds")))
+  
 ## Other diagnostics
 # fit$output()
 # fit$time()
@@ -579,131 +591,4 @@ pairs(stanfit, pars = varname[(length(varname)-1):length(varname)])
 # library(shinystan)
 # launch_shinystan(stanfit, rstudio = F)
 
-
-# Inspection --------------------------------------------------------------
-truepars <- attr(data, "pars")
-
-
-#### Predictions vs. true --------------------
-
-## Plot model simulations from enerated quantities
-
-if(modelname == "ba-rect") {
-  
-  # predictions per life stages
-  plot(c(draws$y_hat_rep[100,,3,,data$i_j]) ~ c(data$y[,3,,data$i_j]))
-  abline(0, 1)
-  plot(c(draws$y_hat_rep[100,,3,,data$i_a]) ~ c(data$y[,3,,data$i_a]))
-  abline(0, 1)
-  plot(c(draws$y_hat_rep[1,,3,,data$i_b]) ~ c(data$y[,3,,data$i_b]))
-  abline(0, 1)
-  
-  plot(c(draws$y_sim[1,,3,,data$i_j]) ~ c(data$y[,3,,data$i_j]))
-  abline(0, 1)
-  plot(c(draws$y_sim[1,,3,,data$i_a]) ~ c(data$y[,3,,data$i_a]))
-  abline(0, 1)
-  plot(c(draws$y_sim[1,,3,,data$i_b]) ~ c(data$y[,3,,data$i_b]))
-  abline(0, 1)
-  
-  
-}
-
-if(modelname %in% c("ba", "ba-rag", "ba-rag-ranef")) {
-  R <- data.frame(y_hat_rep = draws$y_hat_rep[1,], y = data$y,
-                  pops = data$pops[rep(data$rep_init2y0, each = data$n_reobs[1])])
-  
-  R %>% ggformula::gf_point(y_hat_rep ~ y) %>%
-    gf_abline(gformula = NULL, slope = 1, intercept = 0)
-  
-  # plot(draws$state_init[1, data$rep_init2y0] ~ data$y0)
-  
-}
-
-
-#### Draws vs true ----------------------
-plotDrawVsSim <- function(parname = "h",
-                          simdata = data,
-                          rstandraws = stanfit) {
-  
-  simpar <- attr(simdata, "pars")[[parname]]
-  
-  if(is.vector(simpar)) {
-    
-    Stanpar <- rstan::extract(rstandraws, pars = parname)[[1]] %>%
-      as.data.frame() %>%
-      pivot_longer(cols = everything(), names_to = "species", values_to = "draw") %>%
-      mutate(species = as.integer(as.factor(species))) %>%
-      bind_cols(true = rep(simpar, length.out = nrow(.)))
-    
-    Stanpar %>%
-      # sample_n(1000) %>%
-      gf_point(draw ~ true, alpha = 0.3, size = 0.5) %>%
-      gf_abline(slope = 1, intercept = 0, gformula = NULL)
-    
-  } else if (str_starts(parname, "Beta")) {
-    
-    print("Not yet implemented.")
-    
-  } else {
-    
-    # Stanpar <- rstan::extract(rstandraws, pars = parname)[[1]] %>%
-    #   as.data.frame() %>%
-    #   pivot_longer(cols = everything(), names_to = "species", values_to = "draw") %>%
-    #   mutate(species = as.integer(as.factor(species))) %>%
-    #   bind_cols(true = rep(simpar, length.out = nrow(.)))
-    # 
-    # Stanpar %>%
-    #   # sample_n(1000) %>%
-    #   gf_point(draw ~ true | species, alpha = 0.3, size = 0.1) %>%
-    #   gf_abline(slope = 1, intercept = 0, gformula = NULL)
-    
-  }
-}
-
-
-## Fitted parameters vs. true
-plotDrawVsSim("b_log")
-plotDrawVsSim("c_j_log")
-# plotDrawVsSim("c_a")
-plotDrawVsSim("c_b_log")
-plotDrawVsSim("g_logit")
-plotDrawVsSim("h_logit")
-# plotDrawVsSim("l")
-# plotDrawVsSim("m_a")
-# plotDrawVsSim("m_j")
-plotDrawVsSim("r_log")
-plotDrawVsSim("s_log")
-
-# plotDrawVsSim("Beta_g")
-# plotDrawVsSim("Beta_m_j")
-# plotDrawVsSim("Beta_r")
-# plotDrawVsSim("Beta_s")
-
-
-
-#### Parameter vs Env ----------------------
-predictParameterInEnv <- function(B, x = seq(-1, 1, by = 0.01), n_beta = 2, species = 1) {
-  E <- as.data.frame(replicate(n_beta, x))
-  polyformula <- as.formula(paste("~", paste("poly(", colnames(E), ", 2)", collapse = "+")))
-  X <- model.matrix(polyformula, data = E)
-  X %*% B[,1]
-}
-
-# poly2 <- function(x, b) {b[1] + x*b[2] + x^2*b[3]}
-# getVertex <- function(b) {-b[2]/(2*b[3])}
-
-plotParameterInEnv <- function(betaname, x = Env[,1]) {
-  truepars <- attr(data, "pars")
-  Beta_true <- truepars[[betaname]]
-  Beta_mean <- matrix(fit$summary(variables = betaname)$mean, data$N_beta, data$N_totalspecies)
-  
-  X <- cbind(true = predictParameterInEnv(Beta_true, x), meandraw = predictParameterInEnv(Beta_mean, x))
-  matplot(x, X, col = c("blue", "black"), pch = c("T", "D"), type = "p")
-}
-
-
-plotParameterInEnv("Beta_g")
-plotParameterInEnv("Beta_m_j")
-plotParameterInEnv("Beta_r")
-plotParameterInEnv("Beta_s")
 

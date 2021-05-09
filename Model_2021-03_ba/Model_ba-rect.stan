@@ -170,11 +170,11 @@ model {
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
   // Beta_l[1,] ~ normal(-1, 2); // intercept
-  b_log ~ normal(-1, 0.1);
+  b_log ~ normal([-1, -0.9], 0.1);
   c_b_log ~ normal(3, 0.1);
   c_j_log ~ normal(3, 0.1);
-  g_logit ~ logistic(0.2, 1);
-  h_logit ~ logistic(0.5, 1);
+  g_logit ~ normal([-0.9, -0.92], 0.1);
+  h_logit ~ normal([0.06, 0.16], 0.1);
   r_log ~ normal(3, 0.1);
   s_log ~ normal(-1, 0.5);
   

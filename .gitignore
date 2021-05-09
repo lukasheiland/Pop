@@ -3,6 +3,7 @@ Data/
 Fits/*
 Fits.nosync/*
 Test/
+*/Sim_recovery*/
 
 # Some special files
 */Recovery*.csv
@@ -71,3 +72,4 @@ docs/
 # ignore compiled model files and fits but not the stan files
 */Model_*
 !*.stan
+Model_2021-03_ba/Sim_recovery_ba.html

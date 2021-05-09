@@ -379,7 +379,7 @@ getInits <- function() {
   b_log <- rnorm(n_species, -1, 0.01)
   c_a_log <- rnorm(n_species, -3.3, 0.2)
   c_b_log <- rnorm(n_species, -3, 0.1)
-  c_j_log <- rnorm(n_species, -10, 0.5)
+  c_j_log <- rnorm(n_species, -5, 0.5)
   g_logit <- rnorm(n_species, -1, 0.2)
   h_logit <- rnorm(n_species, -0.5, 0.3)
   m_a_log <- rnorm(n_species, -1.5, 0.5)
