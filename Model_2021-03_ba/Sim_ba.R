@@ -510,9 +510,9 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
       fit <- model$sample(data = data,
                           output_dir = "Fits.nosync",
                           init = initfunc,
-                          iter_warmup = 200, iter_sampling = 1000,
+                          iter_warmup = 500, iter_sampling = 800,
                           adapt_delta = 0.99,
-                          # max_treedepth = 16,
+                          max_treedepth = 16,
                           chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
     
     } else if (match.arg(method) == "sim") {
@@ -520,7 +520,7 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
       fit <- model$sample(data = data,
                           output_dir = NULL,
                           init = initfunc,
-                          iter_sampling = 200,
+                          iter_sampling = 500,
                           fixed_param = TRUE)
   }
   return(fit)
@@ -533,8 +533,8 @@ fit <- drawSamples(model, data, method = "variational", initfunc = 0)
 
 recoverysetup <- list(drawfile = basename(fit$output_files()),
                       metadata = fit$metadata(),
-                      truepars = fit,
-                      data = pars,
+                      truepars = pars,
+                      data = data,
                       model = calcModel)
 
 fitbasename <- str_split(recoverysetup$drawfile[1], "-")[[1]]
