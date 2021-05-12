@@ -116,7 +116,7 @@ calcModel <- function(times,
 calcModelWrapper <- function(times, initialstate, pars, ...) { 
   
   calcModel(times, initialstate,
-            within(pars, { m_a <- 0;  m_j <- 0;}), # l <- 0;
+            within(pars, { m_a <- 0;  m_j <- 0; l <- 0;}), # 
             ...)
   }
 
@@ -294,31 +294,31 @@ generateParameters <- function(seed = 1,
   
   ### 1. log-scale parameters and env-dependence
   
-  b_log <- rnorm(n_species, -1, 0.03)
+  b_log <- rnorm(n_species, c(-1, -2), 0.5)
   Beta_b <- matrix(rnorm(n_beta*n_species, -0.5, 0.5), n_beta, n_species)
   Beta_b[1,] <- b_log
   Beta_b[3,] <- rnorm(n_species, -1, 0.2)
   
   # Usually thought of as env-indepedent, but generated with zero effects here for consistency
   Beta_c_a <- Beta_c_b <- Beta_c_j <- matrix(0, n_beta, n_species)
-  c_a_log <- rnorm(n_species, -2, 0.2)
+  c_a_log <- rnorm(n_species, -2, 1)
   Beta_c_a[1,] <- c_a_log
-  c_b_log <- rnorm(n_species, -1.5, 0.5)
+  c_b_log <- rnorm(n_species, -2.5, 1)
   Beta_c_b[1,] <- c_b_log
-  c_j_log <- rnorm(n_species, -3, 0.5)
+  c_j_log <- rnorm(n_species, -3, 2)
   Beta_c_j[1,] <- c_j_log
   
-  g_logit <- rnorm(n_species, -1, 0.3)
+  g_logit <- rnorm(n_species, c(-0.2, -1), 1)
   Beta_g <- matrix(rnorm(n_beta*n_species, -0.3, 0.2), n_beta, n_species)
   Beta_g[1,] <- g_logit
   Beta_g[3,] <- rnorm(n_species, -0.4, 0.2)
   
-  h_logit <- rnorm(n_species, 0.2, 0.2)
+  h_logit <- rnorm(n_species, 0.2, 0.5)
   Beta_h <- matrix(rnorm(n_beta*n_species, -0.3, 0.2), n_beta, n_species)
   Beta_h[1,] <- h_logit
   Beta_h[3,] <- rnorm(n_species, -0.4, 0.2)
   
-  l_log <- rnorm(n_species, 1, 0.1)
+  l_log <- rnorm(n_species, 3, 0.8)
   Beta_l <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   Beta_l[1,] <- l_log
   Beta_l[3,] <- rnorm(n_species, -0.5, 0.2)
@@ -333,12 +333,12 @@ generateParameters <- function(seed = 1,
   Beta_m_j[1,] <- m_j_log
   Beta_m_j[3,] <- rnorm(n_species, -2.5, 0.2)
   
-  r_log <- rnorm(n_species, 3, 0.1)
+  r_log <- rnorm(n_species, c(3, 1), 0.5)
   Beta_r <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   Beta_r[1,] <- r_log
   Beta_r[3,] <- rnorm(n_species, -0.5, 0.2)
   
-  s_log <- rnorm(n_species, -1.3, 0.1)
+  s_log <- rnorm(n_species, -1.6, 0.5)
   Beta_s <- matrix(rnorm(n_beta*n_species, 0, 0.5), n_beta, n_species)
   Beta_s[1,] <- s_log
   Beta_s[3,] <- rnorm(n_species, -1, 0.2)
@@ -379,12 +379,12 @@ generateParameters <- function(seed = 1,
 
 #### prerequisites for a single time series
 formals(generateParameters)
-pars1 <- generateParameters(seed = 1, n_species = 3, obsprocess = "gamma")
+pars1 <- generateParameters(seed = 2, n_species = 2, obsprocess = "gamma")
 initialstate1 <- generateInitialState(n_species = pars1$n_species)
-times1 <- 1:40
+times1 <- 2:40
 
 Sim1 <- simulateOneSeries(initialstate1, times = times1, pars = pars1,
-                          processerror = F, obserror = T)
+                          processerror = F, obserror = F)
 
 matplot(Sim1[,-1], type = "b", ylab="N",
         pch = rep(c("J", "A", "B"), each = pars1$n_species),
@@ -450,7 +450,7 @@ model <- cmdstan_model(modelpath)
 
 
 ## Simulate stan model data --------------------------------------------------------------
-parseed <- 1
+parseed <- 2
 
 pars <- generateParameters(seed = parseed, n_locs = 100, n_species = 2, n_plotsperloc = 4)
 
@@ -462,7 +462,7 @@ envdependent_ba_rag <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, l = T, 
 envdependent_ba <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
 envdependent_ba_rag_ranef <- envdependent_ba_rag
 
-data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
+data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 15),
                                     envdependent = get(paste0("envdependent_", sub("-", "_", modelname))),
                                     logstate = F,
                                     modelstructure = modelname, # !!! this determines the data layout
@@ -470,7 +470,7 @@ data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
                                     obserror = T, processerror = F, independentstart = T)
 
 
-Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 10),
+Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 15),
                                          envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, l = T, m_a = F, m_j = F, r = F, s = F),
                                          modelstructure = modelname, format = "long",
                                          obserror = F, processerror = F, independentstart = T) %>%
