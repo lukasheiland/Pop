@@ -35,7 +35,8 @@ source(file.path("Recovery_functions.R"), local = knitr::knit_global())
     - with randmoly different starting values,
     - randomly different start times, i.e. different amounts of progress
     - start time always > 1 (values far out-of equilibrium are omitted
-    
+
+- black: species 1, red: species 2.
 - **Setups 1 - 4 ** have included a varying but fixed input ldd.
   
 
@@ -186,12 +187,12 @@ pairs(stanfit2, pars = corpars_b)
 
 ## Same parameters as above but with hard reset of c tp 0
 
-# calcModelWrapper <- function(times, initialstate, pars, ...) { 
-#   
-#   calcModel(times, initialstate,
-#             within(pars, { m_a <- 0;  m_j <- 0; c_j <- 0; c_a <- 0;}), # l <- 0;
-#             ...)
-#   }
+calcModelWrapper <- function(times, initialstate, pars, ...) { 
+  
+  calcModel(times, initialstate,
+            within(pars, { m_a <- 0;  m_j <- 0; c_j <- 0; c_a <- 0;}), # l <- 0;
+            ...)
+  }
 
 setupbasename3 <- "Model_ba-rect-202105081104"
 setup3 <- readRDS(file.path(rootdir, "Fits.nosync", "Recovery", paste0(setupbasename3, ".rds")))
@@ -265,7 +266,7 @@ pairs(stanfit3, pars = corpars_b)
 
 ```{r}
 
-## Same parameters as above but with hard reset of c tp 0
+## Same parameters as above but with hard reset of c to 0
 
 setupbasename4 <- "Model_ba-rect-202105081530"
 setup4 <- readRDS(file.path(rootdir, "Fits.nosync", "Recovery", paste0(setupbasename4, ".rds")))
@@ -322,19 +323,17 @@ pairs(stanfit4, pars = corpars_b)
 
 
 ### Setup 5
-- remove l!
-- outcompetition of one species
-- probably wrong priors because they weren't checked
+- more different parameters per species
 
 ```{r}
 
 ## Same parameters as above but with hard reset of c tp 0
 
-setupbasename5 <- "Model_ba-rect-202105101437"
+setupbasename5 <- "Model_ba-rect-202105122308"
 setup5 <- readRDS(file.path(rootdir, "Fits.nosync", "Recovery", paste0(setupbasename5, ".rds")))
-pars5 <- within(setup5$truepars, { m_a <- 0;  m_j <- 0; c_j <- 0; c_a <- 0; l = 0})
+pars5 <- within(setup5$truepars, { m_a <- 0;  m_j <- 0; c_j <- 0; c_a <- 0})
 initialstate5 <- generateInitialState(n_species = pars5$n_species)
-times5 <- seq(10, 100, 10)
+times5 <- seq(1:10)
 
 Sim5 <- simulateOneSeries(initialstate5, times = times5, pars = pars5,
                           processerror = F, obserror = F)
@@ -350,7 +349,7 @@ matplot(Sim5[,-1], type = "b", ylab="N",
 stanfit5 <- rstan::read_stan_csv(file.path(rootdir, "Fits.nosync", "Recovery", setup5$drawfile))
 draws5 <- rstan::extract(stanfit5)
 
-# plotPredictedVsTrue(draws5, setup5$data) # does not work because of data fuckup
+plotPredictedVsTrue(draws5, setup5$data) # does not work because of data fuckup
 
 ```
 
@@ -373,8 +372,8 @@ plotEstimateVsTrue("s_log", setup5$data, stanfit5)
 ```{r, out.width='\\textwidth', fig.height = 8, fig.align='center', results=FALSE, warning=FALSE, echo=FALSE, dev='png'}
 ## plot correlations
 setup5$metadata$stan_variables
-corpars_a <- setup5$metadata$stan_variables[c(1, 2, 3, 5, 6)]
-corpars_b <- setup5$metadata$stan_variables[c(2, 3, 4, 6, 7)]
+corpars_a <- setup5$metadata$stan_variables[c(1, 2, 3, 6, 7)]
+corpars_b <- setup5$metadata$stan_variables[c(2, 3, 5, 7, 8)]
 
 pairs(stanfit5, pars = corpars_a)
 pairs(stanfit5, pars = corpars_b)
@@ -388,7 +387,8 @@ pairs(stanfit5, pars = corpars_b)
 
 
 ### Setup 6
-- very different parameters
+- like 5 but with l removed!
+- outcompetition of one species
 
 
 ## Model
@@ -431,25 +431,36 @@ B_t <- (1+b)*B_trans * 1/(1 + c_b*BA_sum)
 
 - Setup 1: including c_j
     - no recovery at all
-    - positive: c_j_log[1] ~ r_log[1]
+    - positive: c_j_log[1] ~ r_log[1] dominant species!
     - positive: c_b_log ~ b_log
+    - positive: b_log[2] ~ g_log[2] subordinate species!
+
     - although b and r are dependent on species state and c are on the sum, they are highly correlated
 
 - Setup 2: c_j set all c to 0, accidentally exp growth in B
     - this gets rid of the biggerst problem, that c_b and r/b are similarly dependent on state, but:
     - positive r_log ~ s_log remains (similar situation, only lag through state transition)
+
     
 - Setup 3: c_j set 0 (c_b limitation present)
     - reintroduces the good model, but also the problem
     - positive c_b ~ b ~ g (within species!)
+    - especially positive: c_b_log[2] ~ g_log[2] subordinate species!
+
     - positive s ~ r
     
 - Setup 4: c_j set 0 (c_b )
-    - here, the recovery seens to be completely broken. Additional error, e.g. in prior specification?
+    - here, the recovery seems to be completely broken. Probably error, in prior specification because they weren't checked!
     - all the same correlations
         - positive c_b ~ b ~ g (within species!)
         - positive r_log ~ s_log (within species)
-
+        
+- Setup 5:
+    - MORE DIFFERENT PARAMETERS
+    - Better recovery
+    - all the same correlations
+        - positive c_b ~ b (within species!)
+        - positive r_log ~ s_log (within species)
 
 - IN GENERAL: Closely coupled parameters with opposite effects are not MARGINALLY identifiable here, even though they are differently dependent on the sum of all (c_b) and single species (b). (also r and s).
 

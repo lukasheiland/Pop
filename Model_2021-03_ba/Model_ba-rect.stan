@@ -78,6 +78,7 @@ data {
   // The response.
   vector[N_pops] y0_loc [N_locs];
   vector[N_pops] y [N_locs, N_times, N_plots];
+  
 }
 
 
@@ -87,6 +88,27 @@ transformed data {
   real ba_a_avg = pi() * ((dbh_lower_a + dbh_lower_b)/2/2)^2 * 1e-6;
   
   vector[N_pops] y0_loc_log [N_locs] = log(y0_loc);
+  
+  // priors
+  vector[N_species] mu_b_log = [-1.5, -1.5]';
+  // vector[N_species] mu_c_a_log = [, ]';
+  vector[N_species] mu_c_b_log = [-2, -2]';
+  vector[N_species] mu_c_j_log = [-1.5, -1.5]';
+  vector[N_species] mu_g_logit = [0.7, -0.2]';
+  vector[N_species] mu_h_logit = [-0.5, -0.01]';
+  // vector[N_species] mu_l_log = [, ]';
+  vector[N_species] mu_r_log = [2, 2]';
+  vector[N_species] mu_s_log = [-1.5, -1.5]';
+  
+  vector[N_species] sigma_b_log = [1, 1]';
+  // vector[N_species] sigma_c_a_log = [1, 1]';
+  vector[N_species] sigma_c_b_log = [2, 2]';
+  vector[N_species] sigma_c_j_log = [1, 1]';
+  vector[N_species] sigma_g_logit = [1, 1]';
+  vector[N_species] sigma_h_logit = [0.5, 0.5]';
+  // vector[N_species] sigma_l_log = [1, 1]';
+  vector[N_species] sigma_r_log = [2, 2]';
+  vector[N_species] sigma_s_log = [2, 2]';
   
   //// Data for separate fitting of the initial state
   // vector[N_pops] y0 [N_locs, N_plots] = y[ , , 1, ];
@@ -169,15 +191,40 @@ model {
   
   // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
   
-  // Beta_l[1,] ~ normal(-1, 2); // intercept
-  b_log ~ normal([-1.4, -1.9], 1);
-  c_b_log ~ normal(-1, 1);
-  c_j_log ~ normal(-2, 1);
-  g_logit ~ normal([1.9, -2], 1);
-  h_logit ~ normal([-0.2, -0.01], 0.5);
-  r_log ~ normal(3, 2);
-  s_log ~ normal(-1, 1);
+  b_log   ~ normal(mu_b_log, sigma_b_log);
+  c_b_log ~ normal(mu_c_b_log, sigma_c_b_log);
+  c_j_log ~ normal(mu_c_j_log, sigma_c_j_log);
+  g_logit ~ normal(mu_g_logit, sigma_g_logit);
+  h_logit ~ normal(mu_h_logit, sigma_h_logit);
+  r_log   ~ normal(mu_r_log, sigma_r_log);
+  s_log   ~ normal(mu_s_log, sigma_s_log);
   
+  // b_log_2nd ~ normal(mu_b_log, sigma_b_log);
+  // c_b_log_2nd ~ normal(mu_c_b_log, sigma_c_b_log);
+  // c_j_log_2nd ~ normal(mu_c_j_log, sigma_c_j_log);
+  // g_logit_2nd ~ normal(mu_g_logit, sigma_g_logit);
+  // h_logit_2nd ~ normal(mu_h_logit, sigma_h_logit);
+  // r_log_2nd ~ normal(mu_r_log, sigma_r_log);
+  // s_log_2nd ~ normal(mu_s_log, sigma_s_log);
+  // 
+  // Beta_b[1,] = b_log;
+  // Beta_g[1,] = g_log;
+  // Beta_h[1,] = h_log;
+  // Beta_r[1,] = r_log;
+  // Beta_s[1,] = s_log;
+  // 
+  // Beta_b[2,] ~ std_normal(); // or better smaller
+  // Beta_g[2,] ~ std_normal();
+  // Beta_h[2,] ~ std_normal();
+  // Beta_r[2,] ~ std_normal();
+  // Beta_s[2,] ~ std_normal();
+  // 
+  // Beta_b[3,] = b_log_2nd;
+  // Beta_g[3,] = g_logit_2nd;
+  // Beta_h[3,] = h_logit_2nd;
+  // Beta_r[3,] = r_log_2nd;
+  // Beta_s[3,] = s_log_2nd;
+
   
   //---------- MODEL ---------------------------------
   
@@ -213,6 +260,14 @@ generated quantities {
 
   real y_sim [N_locs, N_times, N_plots, N_pops];
   vector[N_pops] y_hat_rep[N_locs, N_times, N_plots];
+  
+  // vector[N_species] prior_b_log = normal_rng([-1.4, -1.9], 1);
+  // vector[N_species] prior_c_b_log = normal_rng(-1, 1);
+  // vector[N_species] prior_c_j_log = normal_rng(-2, 1);
+  // vector[N_species] prior_g_logit = normal_rng([1.9, -2], 1);
+  // vector[N_species] prior_h_logit = normal_rng([-0.2, -0.01], 0.5);
+  // vector[N_species] prior_r_log = normal_rng(3, 2);
+  // vector[N_species] prior_s_log = normal_rng(-1, 1);
 
   for(loc in 1:N_locs) {
 

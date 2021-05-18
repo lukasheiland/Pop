@@ -116,7 +116,7 @@ calcModel <- function(times,
 calcModelWrapper <- function(times, initialstate, pars, ...) { 
   
   calcModel(times, initialstate,
-            within(pars, { m_a <- 0;  m_j <- 0; l <- 0;}), # 
+            within(pars, { m_a <- 0;  m_j <- 0; }), # l <- 0;
             ...)
   }
 
@@ -450,7 +450,7 @@ model <- cmdstan_model(modelpath)
 
 
 ## Simulate stan model data --------------------------------------------------------------
-parseed <- 2
+parseed <- 1
 
 pars <- generateParameters(seed = parseed, n_locs = 100, n_species = 2, n_plotsperloc = 4)
 
@@ -462,18 +462,18 @@ envdependent_ba_rag <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, l = T, 
 envdependent_ba <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
 envdependent_ba_rag_ranef <- envdependent_ba_rag
 
-data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 15),
+data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 3, 4),
                                     envdependent = get(paste0("envdependent_", sub("-", "_", modelname))),
                                     logstate = F,
                                     modelstructure = modelname, # !!! this determines the data layout
                                     format = "stan",
-                                    obserror = T, processerror = F, independentstart = T)
+                                    obserror = T, processerror = F, independentstart = F)
 
 
-Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 8, 15),
+Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 3, 4),
                                          envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, l = T, m_a = F, m_j = F, r = F, s = F),
                                          modelstructure = modelname, format = "long",
-                                         obserror = F, processerror = F, independentstart = T) %>%
+                                         obserror = F, processerror = F, independentstart = F) %>%
   mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
   arrange(sortid, time) %>%
   group_by(loc, species, stage, time) %>%

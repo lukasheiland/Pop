@@ -1,0 +1,105 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Hypothesis tests with model ba
+
+##
+- Reparamaeterizing correlated variables as a fraction of two correlated parameters is not the best solution because they are not always colinear, or only one species behaves colinear, or different parameters are colinear.
+
+
+```{r setup, include=FALSE}
+library(readr)
+library(rstan)
+
+rootdir <- ".." # knitr uses current location as wd
+
+## source first part of Sim
+setwd(rootdir) # only temporarily for textConnection
+source(file.path("Model_2021-03_ba", "Sim_ba_helpers.R"), local = knitr::knit_global())
+sartkeypattern = "# startsource"
+stopkeypattern = "# endsource"
+lines <- read_lines(file.path("Model_2021-03_ba", "Sim_ba.R"))
+startline <- grep(sartkeypattern, lines)
+stopline <- grep(stopkeypattern, lines)
+lines_collapsed <- paste(lines[startline:stopline], collapse='\n')
+source(textConnection(lines_collapsed), local = TRUE)
+source(file.path("Recovery_functions.R"), local = knitr::knit_global())
+
+```
+
+
+### Setup 5
+- more different parameters per species
+
+```{r}
+
+setupbasename5 <- "Model_ba-rect-202105122308"
+setup5 <- readRDS(file.path(rootdir, "Fits.nosync", "Recovery", paste0(setupbasename5, ".rds")))
+pars5 <- within(setup5$truepars, { m_a <- 0;  m_j <- 0; c_j <- 0; c_a <- 0})
+initialstate5 <- generateInitialState(n_species = pars5$n_species)
+times5 <- seq(1:10)
+
+Sim5 <- simulateOneSeries(initialstate5, times = times5, pars = pars5,
+                          processerror = F, obserror = F)
+
+matplot(Sim5[,-1], type = "b", ylab="N",
+        pch = rep(c("J", "A", "B"), each = pars5$n_species),
+        col = 1:pars5$n_species, xlab = "time") # log='y'
+
+```
+
+
+```{r, echo=FALSE}
+stanfit5 <- rstan::read_stan_csv(file.path(rootdir, "Fits.nosync", "Recovery", setup5$drawfile))
+draws5 <- rstan::extract(stanfit5)
+
+plotPredictedVsTrue(draws5, setup5$data) # does not work because of data fuckup
+
+```
+
+
+```{r, warning=FALSE, results='hide', echo=FALSE, out.width="30%"}
+## here are the drawn parameters:
+setup5$metadata$stan_variables
+
+plotEstimateVsTrue(parname = "b_log", simdata = setup5$data, stanfit = stanfit5)
+plotEstimateVsTrue("c_b_log", setup5$data, stanfit5)
+plotEstimateVsTrue("g_logit", setup5$data, stanfit5)
+plotEstimateVsTrue("h_logit", setup5$data, stanfit5) # best recovery
+plotEstimateVsTrue("r_log", setup5$data, stanfit5)
+plotEstimateVsTrue("s_log", setup5$data, stanfit5)
+
+```
+
+
+
+```{r, out.width='\\textwidth', fig.height = 8, fig.align='center', results=FALSE, warning=FALSE, echo=FALSE, dev='png'}
+## plot correlations
+setup5$metadata$stan_variables
+corpars_a <- setup5$metadata$stan_variables[c(1, 2, 3, 6, 7)]
+corpars_b <- setup5$metadata$stan_variables[c(2, 3, 5, 7, 8)]
+
+pairs(stanfit5, pars = corpars_a)
+pairs(stanfit5, pars = corpars_b)
+
+
+```
+
+###
+
+- Setup 5:
+    - MORE DIFFERENT PARAMETERS
+    - Better recovery
+    - all the same correlations
+        - positive c_b ~ b (within species!)
+        - positive r_log ~ s_log (within species)
+        
+
+- IN GENERAL: Closely coupled parameters with opposite effects are not MARGINALLY identifiable here, even though they are differently dependent on the sum of all (c_b) and single species (b). (also r and s).
+
+- QUESTION: Although the marginal posterior distributions are wide, can't I still test all of the hypotheses in question (e.g. relative magnitude of rates in certain environments) from checks on the conditional posteriors?
+    - with c_j included?
+
+ 
