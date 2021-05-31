@@ -4,6 +4,7 @@ Fits/*
 Fits.nosync/*
 Test/
 */Sim_recovery*/
+*/Math/
 
 # Some special files
 */Recovery*.csv

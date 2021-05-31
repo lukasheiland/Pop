@@ -129,6 +129,24 @@ plotStatePairs <- function(standata) {
   
 }
 
+#### plot time series in Data ----------------------
+plotTimeSeries <- function(longdata) {
+  
+  longdata %>%
+    mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
+    arrange(sortid, time) %>%
+    group_by(loc, species, stage, time) %>%
+    mutate(abundance_loc = mean(abundance)) %>%
+    group_by(loc, plot, species, stage) %>%
+    mutate(ist0 = time == time[1], ist1 = time == time[2]) %>%
+    ungroup() %>% 
+    
+    ggplot(mapping = aes(x = time, y = abundance, color = env_1, lty = stage, group = interaction(loc, stage, plot))) +
+    geom_line() +
+    facet_wrap(facets = c("species"))
+
+  }
+
 
 
 

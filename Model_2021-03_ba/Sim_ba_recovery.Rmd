@@ -387,8 +387,67 @@ pairs(stanfit5, pars = corpars_b)
 
 
 ### Setup 6
-- like 5 but with l removed!
-- outcompetition of one species
+- like 5 but with data mainly before equilibrium (used unragged times 1:3)
+
+```{r}
+
+## Same parameters as above but with hard reset of c tp 0
+
+setupbasename6 <- "Model_ba-rect-202105182155"
+setup6 <- readRDS(file.path(rootdir, "Fits.nosync", "Recovery", paste0(setupbasename6, ".rds")))
+pars6 <- within(setup6$truepars, {m_a <- 0;  m_j <- 0;})
+initialstate6 <- generateInitialState(n_species = pars6$n_species)
+times6 <- seq(1:8)
+
+Sim6 <- simulateOneSeries(initialstate6, times = times6, pars = pars6,
+                          processerror = F, obserror = F)
+
+matplot(Sim6[,-1], type = "b", ylab="N",
+        pch = rep(c("J", "A", "B"), each = pars6$n_species),
+        col = 1:pars6$n_species, xlab = "time") # log='y'
+
+# plotTimeSeries(setup6$data$Long)
+
+```
+
+
+```{r, echo=FALSE, dev='png'}
+stanfit6 <- rstan::read_stan_csv(file.path(rootdir, "Fits.nosync", "Recovery", setup6$drawfile))
+draws6 <- rstan::extract(stanfit6)
+
+plotPredictedVsTrue(draws6, setup6$data)
+
+```
+
+
+```{r, warning=FALSE, results='hide', echo=FALSE, out.width="30%"}
+## here are the drawn parameters:
+setup6$metadata$stan_variables
+
+plotEstimateVsTrue(parname = "b_log", simdata = setup6$data, stanfit = stanfit6)
+plotEstimateVsTrue("c_b_log", setup6$data, stanfit6)
+plotEstimateVsTrue("g_logit", setup6$data, stanfit6)
+plotEstimateVsTrue("h_logit", setup6$data, stanfit6) # best recovery
+plotEstimateVsTrue("r_log", setup6$data, stanfit6)
+plotEstimateVsTrue("s_log", setup6$data, stanfit6)
+
+```
+
+
+
+```{r, out.width='\\textwidth', fig.height = 8, fig.align='center', results=FALSE, warning=FALSE, echo=FALSE, dev='png'}
+## plot correlations
+setup6$metadata$stan_variables
+corpars_a <- setup6$metadata$stan_variables[c(1, 2, 3, 6, 7)]
+corpars_b <- setup6$metadata$stan_variables[c(2, 3, 5, 7, 8)]
+
+pairs(stanfit6, pars = corpars_a)
+pairs(stanfit6, pars = corpars_b)
+
+# plotStatePairs(data)
+```
+
+
 
 
 ## Model
@@ -471,7 +530,7 @@ B_t <- (1+b)*B_trans * 1/(1 + c_b*BA_sum)
 ## Further unsystematic recovery experience
 
 ### Possible problems with the discrete model
-- suspicion: with state independent r == l the system might not be identifiable (WITH LIMITED DATA)
+- suspicion: with state independent r == l the system might not be identifiable in equilibrium!
 - with some parameter-configurations the discrete model has periodic fluctuations on the same scale as the error
 
 ### Success
