@@ -324,6 +324,7 @@ formatSims <- function() {
     }
     
     ## if (format == "stan")
+    stansims$tolerance_fix <- 0.0001
     stansims$L_loc <- pars$L_loc # get L_log, from transformed parameters to represent predicted dispersal prob
     stansims$L_loc_log <- pars$L_log # get L_log, from transformed parameters to represent predicted dispersal prob
     stansims$Long <- Sims

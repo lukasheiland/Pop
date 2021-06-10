@@ -26,9 +26,9 @@ library(bayesplot)
 
 
 
-######################################################################################
+# ——————————————————————————————————————————————————————————————————————————————————— #
 # Model formulation  ----------------------------------------------------------------
-######################################################################################
+# ——————————————————————————————————————————————————————————————————————————————————— #
 
 
 #### Returns states for times -------------------
@@ -121,9 +121,9 @@ calcModelWrapper <- function(times, initialstate, pars, ...) {
   }
 
 
-######################################################################################
+# ——————————————————————————————————————————————————————————————————————————————————— #
 # Simulation functions ---------------------------------------------------------------
-######################################################################################
+# ——————————————————————————————————————————————————————————————————————————————————— #
 
 
 #### Simulate one time series for a specific fixed set of parameters. -------------------
@@ -427,11 +427,11 @@ P_env_demo %>%
 
 
 
-######################################################################################
-# Fit simulated data with stan    ----------------------------------------------------
-######################################################################################
+# ————————————————————————————————————————————————————————————————————————————————— #
+# Fit simulated data with stan    --------------------------------------------------
+# ————————————————————————————————————————————————————————————————————————————————— #
 
-## Orient and compile model. --------------------------------------------------------------
+## Orient and compile model. -------------------------------------------------------
 
 modeldir <- dir(pattern = glue("^(Model).*ba$"))
 
@@ -449,7 +449,7 @@ model <- cmdstan_model(modelpath)
 
 
 
-## Simulate stan model data --------------------------------------------------------------
+## Simulate stan model data --------------------------------------------------------
 parseed <- 1
 
 pars <- generateParameters(seed = parseed, n_locs = 100, n_species = 2, n_plotsperloc = 4)
@@ -469,11 +469,19 @@ data <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 3, 4),
                                     format = "stan",
                                     obserror = T, processerror = F, independentstart = F)
 
+## just a data set with a long time span to check fix point (equilibrium) recovery
+pseudofixpointdata <- simulateMultipleSeriesInEnv(pars, Env, times = c(1, 500),
+                                                   envdependent = get(paste0("envdependent_", sub("-", "_", modelname))),
+                                                   logstate = F,
+                                                   modelstructure = modelname, # !!! this determines the data layout
+                                                   format = "stan",
+                                                   obserror = F, processerror = F, independentstart = F)
 
-Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(2, 3, 4),
+
+Data_long <- simulateMultipleSeriesInEnv(pars, Env, times = c(100, 101),
                                          envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, l = T, m_a = F, m_j = F, r = F, s = F),
                                          modelstructure = modelname, format = "long",
-                                         obserror = F, processerror = F, independentstart = F) %>%
+                                         obserror = T, processerror = F, independentstart = F) %>%
   mutate(sortid = paste(loc, plot, species, stage, sep = "_")) %>%
   arrange(sortid, time) %>%
   group_by(loc, species, stage, time) %>%
@@ -496,7 +504,7 @@ Data_long %>%
 ## Draw from model --------------------------------------------------------------
 
 ####  Do the fit ----------------------
-drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n_chains = 6, initfunc = getTrueInits) {
+drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n_chains = 3, initfunc = getTrueInits) {
   
   if(match.arg(method) == "variational") {
     fit <- model$variational(data = data,
@@ -510,7 +518,7 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
       fit <- model$sample(data = data,
                           output_dir = "Fits.nosync",
                           init = initfunc,
-                          iter_warmup = 500, iter_sampling = 800,
+                          iter_warmup = 400, iter_sampling = 500,
                           adapt_delta = 0.99,
                           max_treedepth = 16,
                           chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
@@ -529,12 +537,13 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
 # model <- cmdstan_model(modelpath)
 
 ## Model fit
-fit <- drawSamples(model, data, method = "variational", initfunc = 0)
+fit <- drawSamples(model, data, method = "mcmc", initfunc = 0)
 
 recoverysetup <- list(drawfile = basename(fit$output_files()),
                       metadata = fit$metadata(),
                       truepars = pars,
                       data = data,
+                      pseudofixpointdata = pseudofixpointdata,
                       model = calcModel)
 
 fitbasename <- str_split(recoverysetup$drawfile[1], "-")[[1]]
