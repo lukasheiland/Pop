@@ -2,8 +2,7 @@ functions {
   
   //// Difference equations
   vector[] simulate(vector initialstate, int time_max, int[] times,
-                  vector g, vector r, vector s, vector l,
-                  vector b, vector c_j, vector c_b, vector h,
+                  vector b, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
                   real ba_a_avg, real ba_a_upper,
                   int N_spec, int N_pops,
                   // matrix u, // a matrix[N_pops, time_max-1]
@@ -37,9 +36,9 @@ functions {
     return State[times,];
   }
   
-    //// Gets the specific Jacobian, given states and parameters
-  matrix jacobian(real J1, real J2,   real A1, real A2,   real B1, real B2,
-                real b1, real b2,   real c_b1, real c_b2,   real c_j1, real c_j2,   real g1, real g2,   real h1, real h2,   real l1, real l2,     real r1, real r2,   real s1, real s2,
+  //// Gets the specific Jacobian, given states and parameters
+  matrix jacobian(real J1, real J2, real A1, real A2, real B1, real B2,
+                real b1, real b2, real c_b1, real c_b2, real c_j1, real c_j2, real g1, real g2, real h1, real h2, real l1, real l2, real r1, real r2, real s1, real s2,
                 real p, real q) {
       
       matrix[6, 6] J;
@@ -57,6 +56,55 @@ functions {
   }
   
   
+  //// Transforms the vertex form into normal polynomial.
+  vector[] transformToNormal(vector[] V) {
+    
+    // P is an: array[2] vector[N_beta], where array[1] is the mu, array[2] sigma;
+    array[2] vector[5] P = V;
+    
+    // assumes vertex form f(x,y) == a_1*(x−p)^2 + a_2*(y−q)^2 + z
+    // and input parameters vector[z, p, a_1, q, a_2]
+    real z = V[1, 1];
+    real p = V[1, 2];
+    real a_1 = V[1, 3];
+    real q = V[1, 4];
+    real a_2 = V[1, 5]; // a == a
+    
+    // and output polynomial parameters vector[c, b_1, a_1, b_2, a_2]
+    // as in f(x, y) = a_1*x^2 + b_1*x + a_2*y^2 + b_2*y + c
+    P[1, 1] = a_2*q^2 + a_1*p^2 + z; // replace z with with c
+    P[1, 2] = -2*a_1*p; // replace p and q with b1 and b2
+    P[1, 4] = -2*a_2*q;
+    
+    return P;
+  }
+  
+  //// Transforms polynomial form into vertex form
+  vector[] transformToVertex(matrix P) {
+    
+    // P is a matrix[N_beta, N_species]
+    array[2] vector[5] V;
+    
+    for (i in 1:2) {
+      
+      real c = P[1, i];
+      real b_1 = P[2, i];
+      real a_1 = P[3, i];
+      real b_2 = P[4, i];
+      real a_2 = P[5, i];
+      
+      // assumes vertex form f(x,y) == a_1*(x−p)^2 + a_2*(y−q)^2 + z
+      // output vector[z, p, a_1, q, a_2]
+      V[i, 2] = -b_1 / (2*a_1); // p
+      V[i, 4] = -b_2 / (2*a_2); // q
+      V[i, 1] = c - a_2*V[i, 4]^2 - a_1*V[i, 2]^2; // z
+      V[i, 3] = a_1;
+      V[i, 5] = a_2;
+    }
+    return V;
+  }
+  
+  
   //// Returns the two norm of a matrix.
   real norm(matrix M) {
     return max(singular_values(M)); // "the maximum amplification is given by the maximum singular value" hence this is the 2-norm of a matrix
@@ -68,34 +116,35 @@ functions {
   // Expects a state vector[N_pops]
   // returns a state vector of the form [J1, …, A1, …, B1, …, BA1, …, iterations]
   vector iterateFix(vector state_0,
-                     vector g, vector r, vector s, vector l,
-                     vector b, vector c_j, vector c_b, vector h,
-                     real ba_a_avg, real ba_a_upper,
-                     int N_spec, int N_pops,
-                     int[] i_j, int[] i_a, int[] i_b,
-                     real tolerance_fix) {
+                    vector b, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
+                    real ba_a_avg, real ba_a_upper,
+                    int N_spec, int N_pops,
+                    int[] i_j, int[] i_a, int[] i_b,
+                    real tolerance_fix, int fixiter_max) {
                        
     vector[N_pops+N_spec] s_0 = append_row(state_0, [0, 0]'); // two additional states for BA
     
-    // initialize while loop variables
-    vector[N_pops+N_spec] s_1 = s_0 - tolerance_fix - 1; 
+    //// initialize while loop conditions
+    vector[N_pops+N_spec] s_1; 
+    vector[N_spec] eps_ba = [1.0, 1.0]'; // tolerance_fix is set to <upper=0.5>, that's why it is enough to set it to one for the while loop to run
     int i = 0;
-    int notconvergent = 1;
-    vector[N_spec] eps_ba = [1.0, 1.0]'; // tolerance_fix is set to <upper=0.5>
+    // int notconvergent = 1;
     
-    while ( (notconvergent && max(eps_ba) > tolerance_fix) || i < 5000 ) { // 
+    
+    while ( max(eps_ba) > tolerance_fix && i < fixiter_max ) { // if notconvergent were a good criterion: (notconvergent && max(eps_ba) > tolerance_fix)
       
-      s_0 = s_1;
+      vector[N_spec] J;
+      vector[N_spec] A;
+      vector[N_spec] B;
       
-      vector[N_spec] J = s_0[i_j];
-      vector[N_spec] A = s_0[i_a];
-      vector[N_spec] B = s_0[i_b];
-
+      J = s_0[i_j];
+      A = s_0[i_a];
+      B = s_0[i_b];
+      
       vector[N_spec] BA = A*ba_a_avg + B;
       vector[N_spec] BA_1;
       real BA_sum = sum(BA);
       
-
       s_1[i_j]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
       s_1[i_a]  =  (g .* J + (A - h .*A )) ./ (1 + c_b*BA_sum);
       s_1[i_b]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
@@ -103,9 +152,9 @@ functions {
       BA_1 =  s_1[i_a]*ba_a_avg + s_1[i_b]; // New BA as additional state.
       s_1[(N_pops+1):] = BA_1;
       
-      notconvergent = (1 <= norm(jacobian(s_1[i_j[1]], s_1[i_j[2]], s_1[i_a[1]], s_1[i_a[2]], s_1[i_b[1]], s_1[i_b[2]], b[1], b[2], c_b[1], c_b[2], c_j[1], c_j[2], g[1], g[2], h[1], h[2], l[1], l[2], r[1], r[2], s[1], s[2], ba_a_avg, ba_a_upper)) );
-      eps_ba = fabs((BA_1 - BA)./BA_1);
-      
+      // notconvergent = (1 <= norm(jacobian(s_1[i_j[1]], s_1[i_j[2]], s_1[i_a[1]], s_1[i_a[2]], s_1[i_b[1]], s_1[i_b[2]], b[1], b[2], c_b[1], c_b[2], c_j[1], c_j[2], g[1], g[2], h[1], h[2], l[1], l[2], r[1], r[2], s[1], s[2], ba_a_avg, ba_a_upper)) );
+      eps_ba = fabs((BA_1 - BA) ./ BA_1);
+      s_0 = s_1;
       i += 1;
     }
     
@@ -125,33 +174,43 @@ data {
   int<lower=0> N_species;
   int<lower=0> N_pops; // populations are species*stages
   
-  int<lower=0> N_beta;
+  int<lower=0> N_beta; // number of environmental effects: degree 2 polynomial + intercept == (1 + 2 * n_env) == 5
   
-  //// actual data
-  // int<lower=1> species[N_species]; // not needed?
-  // int<lower=1> pops[N_pops];
 
   // obsmethod — factor (1, 2)
-  int<lower=1> rep_obsmethod2pops[N_pops]; // 1 1 1 1 2 2 2 2 2 2 2 2
+  array[N_pops] int<lower=1> rep_obsmethod2pops; // 1 1 1 1 2 2 2 2 2 2 2 2
 
-  int<lower=1> i_j[N_species]; // e.g. 1:4
-  int<lower=1> i_a[N_species]; // e.g. 5:9, etc.
-  int<lower=1> i_b[N_species];
+  array[N_species] int<lower=1> i_j; // e.g. 1:4
+  array[N_species] int<lower=1> i_a; // e.g. 5:9, etc.
+  array[N_species] int<lower=1> i_b;
 
 
   
-  int times[N_locs, N_times]; // assumes start at 1. (Even though the number of times is the same, the times can deviate)
-  int time_max[N_locs];
+  array[N_locs, N_times] int times; // assumes start at 1. (Even though the number of times is the same, the times can deviate)
+  array[N_locs] int time_max;
   int timespan_max; // max(time_max) - time_globalmin
 
   matrix[N_locs, N_beta] X; // design matrix
-  matrix[N_locs, N_species] L_loc; // design matrix
+  array[N_locs] vector<lower=0>[N_species] L_smooth;
 
-  
   // The response.
-  vector[N_pops] y0_loc [N_locs];
-  vector[N_pops] y [N_locs, N_times, N_plots];
+  array[N_locs] vector[N_pops] y0_loc;
+  array[N_locs, N_times, N_plots] vector[N_pops] y;
   
+  //// Priors. The 2 reflect the two parameters mu and sigma
+  // environmentally-dependent priors are species-agnostic on purpose
+  // assumes vertex form f(x,y) == a_1*(x−p)^2 + a_2*(y−q)^2 + z
+  // and parameters vector[z, p, q, a_1, a_2]
+  array[2] vector[N_beta] prior_Vertex_c_j;
+  array[2] vector[N_beta] prior_Vertex_g;
+  array[2] vector[N_beta] prior_Vertex_r;
+  array[2] vector[N_beta] prior_Vertex_s;
+  
+  array[2] vector[N_species] prior_b_log;
+  array[2] vector[N_species] prior_c_b_log;
+  array[2] vector[N_species] prior_h_logit;
+  
+  array[2] vector[N_species] prior_l_log;
   
   // Settings
   real<upper=0.5> tolerance_fix;
@@ -163,100 +222,92 @@ data {
 
 transformed data {
   
-  int N_genstates = N_pops + N_species;
-  
   // Shift all times to start at 1.
   real ba_a_upper = pi() * (dbh_lower_b/2)^2 * 1e-6; // / pi*r^2, mm^2 to m^2
   real ba_a_avg = pi() * ((dbh_lower_a + dbh_lower_b)/2/2)^2 * 1e-6;
   
-  vector[N_pops] y0_loc_log [N_locs] = log(y0_loc);
+  array[N_locs] vector[N_pops] y0_loc_log = log(y0_loc);
   
   // priors
-  vector[N_species] mu_b_log = [-1.5, -1.5]';
-  // vector[N_species] mu_c_a_log = [, ]';
-  vector[N_species] mu_c_b_log = [-2, -2]';
-  vector[N_species] mu_c_j_log = [-1.5, -1.5]';
-  vector[N_species] mu_g_logit = [0.7, -0.2]';
-  vector[N_species] mu_h_logit = [-0.5, -0.01]';
-  // vector[N_species] mu_l_log = [, ]';
-  vector[N_species] mu_r_log = [2, 2]';
-  vector[N_species] mu_s_log = [-1.5, -1.5]';
-  
-  vector[N_species] sigma_b_log = [1, 1]';
-  // vector[N_species] sigma_c_a_log = [1, 1]';
-  vector[N_species] sigma_c_b_log = [2, 2]';
-  vector[N_species] sigma_c_j_log = [1, 1]';
-  vector[N_species] sigma_g_logit = [1, 1]';
-  vector[N_species] sigma_h_logit = [0.5, 0.5]';
-  // vector[N_species] sigma_l_log = [1, 1]';
-  vector[N_species] sigma_r_log = [2, 2]';
-  vector[N_species] sigma_s_log = [2, 2]';
+  array[2] vector[N_beta] prior_Beta_c_j = transformToNormal(prior_Vertex_c_j);
+  array[2] vector[N_beta] prior_Beta_g = transformToNormal(prior_Vertex_g);
+  array[2] vector[N_beta] prior_Beta_r = transformToNormal(prior_Vertex_r);
+  array[2] vector[N_beta] prior_Beta_s = transformToNormal(prior_Vertex_s);
   
   //// Data for separate fitting of the initial state
   // vector[N_pops] y0 [N_locs, N_plots] = y[ , , 1, ];
+  
+  //// Data for generated quantities
+  int N_genstates = N_pops + N_species;
 }
 
 
 parameters {
   //// Level 1, (global, species): species-specific rates, indepndent of environment.
-  // … dependent on environment.
   
-  // matrix[N_beta, N_species] Beta_g; // (J-, A+) transition rate from J to A
-  // matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
-  // matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
-  // matrix[N_beta, N_species] Beta_l;
-
-
   // … independent of environment
   vector[N_species] b_log;
-  // vector[N_species] c_a_log;
   vector[N_species] c_b_log;
-  vector[N_species] c_j_log;
-  vector[N_species] g_logit;
-  vector[N_species] h_logit; // (A-, B+), here still unconstrained on log scale, flow out of the system, independent of environment ("intercept only")
-  // vector[N_species] l_log;
-  vector[N_species] r_log;
-  vector[N_species] s_log;
+  vector[N_species] h_logit;
+  // vector[N_species] c_a_log;
   
-  // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
-  // vector<lower=0>[2] sigma_obs; // observation error
+  // … dependent on environment. Matrix for convenient matrix multiplication
+  matrix[N_beta, N_species] Beta_c_j;
+  matrix[N_beta, N_species] Beta_g; // (J-, A+) transition rate from J to A
+  matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
+  matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
+  
+  // Special case l
+  vector[N_species] l_log;
+  matrix[N_locs, N_species] L_random; // array[N_locs] vector[N_species] L_random; // here real array is used for compatibility with to_vector
+  vector<lower=0>[N_species] sigma_l;
+
+  
+  // Errors
   vector<lower=0>[2] alpha_obs_inv; // observation error
+    // vector<lower=0>[2] sigma_obs; // observation error
+    // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
   
   // matrix[N_pops, timespan_max] u[N_locs];
-
+  
   vector[N_pops] state_init_log[N_locs];
-  // vector[N_pops] state_init_log_raw[N_locs];
+    // vector[N_pops] state_init_log_raw[N_locs];
 }
 
 
 transformed parameters {
   
-  vector[N_pops] y_hat[N_locs, N_times];
-  // vector[N_pops] state_init_log[N_locs];
+  array[N_locs] vector[N_species] L_loc;
+  
+  array[N_locs, N_times] vector[N_pops] y_hat;
+  // array[N_locs] vector[N_pops] state_init_log;
 
   
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
   // Location level parameters (unconstrained because on log scale!)
-  // matrix[N_locs, N_species] g_logit = X * Beta_g;
-  // matrix[N_locs, N_species] r_log = X * Beta_r;
-  // matrix[N_locs, N_species] s_log = X * Beta_s;
-  // matrix[N_locs, N_species] l_log = X * Beta_l;
+  matrix[N_locs, N_species] C_j_log = X * Beta_c_j;
+  matrix[N_locs, N_species] G_logit = X * Beta_g;
+  matrix[N_locs, N_species] R_log = X * Beta_r;
+  matrix[N_locs, N_species] S_log = X * Beta_s;
 
   vector<lower=0>[2] alpha_obs = inv(alpha_obs_inv);
 
   for(loc in 1:N_locs) {
     
+    L_loc[loc, ] = exp(l_log) .* L_smooth[loc, ] + // Offset with fixed coefficient. "The smooth to real number coefficient"
+                 sigma_l .* L_random[loc, ]'; // non-centered loc-level random effects
+    
+    
+    //// For non-centered observation error
     // state_init_log[loc] = y0_loc_log[loc] + sigma_obs[rep_obsmethod2pops] .* state_init_log_raw[loc];
     
     y_hat[loc, ] = simulate(exp(state_init_log[loc]), time_max[loc], times[loc, ],
-                              // exp(g_log[loc, ]'), exp(r_log[loc, ]'), exp(s_log[loc, ]'),
-                              inv_logit(g_logit), exp(r_log), exp(s_log),
-                              L_loc[loc, ]', // exp(l_log[loc, ]'),
-                              exp(b_log), exp(c_j_log), exp(c_b_log), inv_logit(h_logit),
-                              ba_a_avg, ba_a_upper,
-                              N_species, N_pops,
-                              // u[loc],
-                              i_j, i_a, i_b);
+                            exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                            ba_a_avg, ba_a_upper,
+                            N_species, N_pops,
+                            // u[loc],
+                            i_j, i_a, i_b);
+                              
     }
 
 }
@@ -267,45 +318,33 @@ model {
   //---------- PRIORS ---------------------------------
   
   
-  // sigma_process ~ normal(0, 0.01);
+  // sigma_pr ocess ~ normal(0, 0.01);
   // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
-  alpha_obs_inv ~ normal(0, [0.1, 0.01]);
   
-  // to_vector(Beta_g[2:N_beta,]) ~ std_normal();
+  //// Hyperpriors
+  alpha_obs_inv ~ normal(0, [0.1, 0.01]); // Observation error
   
-  b_log   ~ normal(mu_b_log, sigma_b_log);
-  c_b_log ~ normal(mu_c_b_log, sigma_c_b_log);
-  c_j_log ~ normal(mu_c_j_log, sigma_c_j_log);
-  g_logit ~ normal(mu_g_logit, sigma_g_logit);
-  h_logit ~ normal(mu_h_logit, sigma_h_logit);
-  r_log   ~ normal(mu_r_log, sigma_r_log);
-  s_log   ~ normal(mu_s_log, sigma_s_log);
+  // ... for special offset L
+  to_vector(L_random) ~ std_normal(); // Random part around slope for l
+  sigma_l ~ cauchy(0, 2); // Regularizing half-normal on sigma for random slope for l
+  l_log ~ normal(prior_l_log[1,], prior_l_log[2,]);
   
-  // b_log_2nd ~ normal(mu_b_log, sigma_b_log);
-  // c_b_log_2nd ~ normal(mu_c_b_log, sigma_c_b_log);
-  // c_j_log_2nd ~ normal(mu_c_j_log, sigma_c_j_log);
-  // g_logit_2nd ~ normal(mu_g_logit, sigma_g_logit);
-  // h_logit_2nd ~ normal(mu_h_logit, sigma_h_logit);
-  // r_log_2nd ~ normal(mu_r_log, sigma_r_log);
-  // s_log_2nd ~ normal(mu_s_log, sigma_s_log);
-  // 
-  // Beta_b[1,] = b_log;
-  // Beta_g[1,] = g_log;
-  // Beta_h[1,] = h_log;
-  // Beta_r[1,] = r_log;
-  // Beta_s[1,] = s_log;
-  // 
-  // Beta_b[2,] ~ std_normal(); // or better smaller
-  // Beta_g[2,] ~ std_normal();
-  // Beta_h[2,] ~ std_normal();
-  // Beta_r[2,] ~ std_normal();
-  // Beta_s[2,] ~ std_normal();
-  // 
-  // Beta_b[3,] = b_log_2nd;
-  // Beta_g[3,] = g_logit_2nd;
-  // Beta_h[3,] = h_logit_2nd;
-  // Beta_r[3,] = r_log_2nd;
-  // Beta_s[3,] = s_log_2nd;
+  
+  //// Priors on Parameters
+  // prior_*[2, N_species]
+  b_log   ~ normal(prior_b_log[1,], prior_b_log[2,]);
+  c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
+  h_logit ~ normal(prior_h_logit[1,], prior_c_b_log[2,]);
+  
+  // same priors for both species
+  for (spec in 1:N_species) {
+    // prior_Beta_*[2, N_beta]
+    Beta_c_j[, spec] ~ normal(prior_Beta_c_j[1, ], prior_Beta_c_j[2, ]);
+    Beta_g[, spec]  ~ normal(prior_Beta_g[1, ], prior_Beta_g[2, ]);
+    Beta_r[, spec] ~ normal(prior_Beta_r[1, ], prior_Beta_r[2, ]);
+    Beta_s[, spec] ~ normal(prior_Beta_s[1, ], prior_Beta_s[2, ]);
+  }
+  
 
   
   //---------- MODEL ---------------------------------
@@ -339,25 +378,31 @@ model {
 
 
 generated quantities {
+  
+  int fixiter_max = 5000;
+
   array[N_locs, N_times, N_plots, N_pops] real y_sim ;
   vector[N_pops] y_hat_rep[N_locs, N_times, N_plots]; // mainly for recovery test purposes
   
-  array[N_locs] matrix[N_pops, N_pops] Jacobian_3; // N_stages * N_species. because each has it's own function
-  array[N_locs] matrix[N_pops, N_pops] Jacobian_fix; // N_stages * N_species. because each has it's own function
-  array[N_locs] real rho_3;
-  array[N_locs] real rho_fix;
+  // array[N_locs] matrix[N_pops, N_pops] Jacobian_last; // N_stages * N_species. because each has it's own function
+  // array[N_locs] matrix[N_pops, N_pops] Jacobian_fix; // N_stages * N_species. because each has it's own function
+  // array[N_locs] real rho_last; // spectral radius at the most recent time in the data, however this convergence criterion seems to not apply to our fixed point (sufficient but not necessary, see Notes.md)
+  // array[N_locs] real rho_fix; // ... at the fixed point
+  // array[N_locs] int convergent; // rho < 1
+  
+  // array[N_locs] matrix[N_pops, N_pops] Jacobian_s_0;
+  // array[N_locs] int converged_s_0;
+  
   array[N_locs] int converged; // tolerance has been reached
-  array[N_locs] int convergent; // rho < 1
   array[N_locs] real iterations_fix;
   array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
   array[N_locs] int dominant_fix;
   array[N_locs] int major_fix;
 
-  // array[N_locs] matrix[N_pops, N_pops] Jacobian_c_b_0;
-  // array[N_locs] int converged_c_b_0;
-  array[N_locs] vector[N_genstates+N_species+1] state_fix_c_b_0;
-  array[N_locs] int dominant_fix_c_b_0;
-  array[N_locs] int major_fix_c_b_0;
+  //// Here, the idea was to set c_b to 0 but this will also lead to Inf pop growth without m
+  // array[N_locs] vector[N_genstates+N_species+1] state_fix_c_b_0;
+  // array[N_locs] int dominant_fix_c_b_0;
+  // array[N_locs] int major_fix_c_b_0;
   
   array[N_locs] vector[N_pops+N_species+1] state_fix_g_half;
   array[N_locs] vector[N_pops+N_species] contribution_g_half;
@@ -365,42 +410,41 @@ generated quantities {
   array[N_locs] vector[N_genstates+N_species+1] state_fix_r_0;
   array[N_locs] vector[N_genstates] contribution_r;
   
-  // array[N_locs] matrix[N_pops, N_pops] Jacobian_s_0;
-  // array[N_locs] int converged_s_0;
+
   array[N_locs] vector[N_genstates+N_species+1] state_fix_s_0;
   array[N_locs] int dominant_fix_s_0;
   array[N_locs] int major_fix_s_0;
   array[N_locs] vector[N_genstates] contribution_s;
   
+  // Vertices of the quadratic plane with [env_1 | env_2 | parameter]
+  array[N_species] vector[N_beta] Vertex_c_j = transformToVertex(Beta_c_j);
+  array[N_species] vector[N_beta] Vertex_g = transformToVertex(Beta_g);
+  array[N_species] vector[N_beta] Vertex_r = transformToVertex(Beta_r);
+  array[N_species] vector[N_beta] Vertex_s = transformToVertex(Beta_s);
 
   for(loc in 1:N_locs) {
     
-
-    Jacobian_3[loc] = jacobian(y_hat[loc, N_times, i_j[1]], y_hat[loc, N_times, i_j[2]], y_hat[loc, N_times, i_a[1]], y_hat[loc, N_times, i_a[2]], y_hat[loc, N_times, i_b[1]], y_hat[loc, N_times, i_b[2]],
-                      exp(b_log[1]), exp(b_log[2]),   exp(c_b_log[1]), exp(c_b_log[2]),   exp(c_j_log[1]), exp(c_j_log[2]),   inv_logit(g_logit[1]), inv_logit(g_logit[2]),   inv_logit(h_logit[1]), inv_logit(h_logit[2]),  L_loc[loc, 1],  L_loc[loc, 2],   exp(r_log[1]), exp(r_log[2]),   exp(s_log[1]), exp(s_log[2]),
-                      ba_a_avg, ba_a_upper);
-    rho_3[loc] = norm(Jacobian_3[loc]);
-    
+    // Jacobian_last[loc] = jacobian(y_hat[loc, N_times, i_j[1]], y_hat[loc, N_times, i_j[2]], y_hat[loc, N_times, i_a[1]], y_hat[loc, N_times, i_a[2]], y_hat[loc, N_times, i_b[1]], y_hat[loc, N_times, i_b[2]],
+    //                   exp(b_log[1]), exp(b_log[2]),   exp(c_b_log[1]), exp(c_b_log[2]),   exp(c_j_log[1]), exp(c_j_log[2]),   inv_logit(g_logit[1]), inv_logit(g_logit[2]),   inv_logit(h_logit[1]), inv_logit(h_logit[2]),  L_loc[loc, 1],  L_loc[loc, 2],   exp(r_log[1]), exp(r_log[2]),   exp(s_log[1]), exp(s_log[2]),
+    //                   ba_a_avg, ba_a_upper);
+    // rho_last[loc] = norm(Jacobian_last[loc]);
     
     //// fix point, given parameters
     state_fix[loc] = iterateFix(y_hat[loc, N_times], // use the third time as initial value
-                                   inv_logit(g_logit), exp(r_log), exp(s_log),
-                                   L_loc[loc, ]', // exp(l_log[loc, ]'),
-                                   exp(b_log), exp(c_j_log), exp(c_b_log), inv_logit(h_logit),
-                                   ba_a_avg, ba_a_upper,
-                                   N_species, N_pops,
-                                   i_j, i_a, i_b,
-                                   tolerance_fix);
+                                exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                ba_a_avg, ba_a_upper,
+                                N_species, N_pops,
+                                i_j, i_a, i_b,
+                                tolerance_fix, fixiter_max);
                                    
     iterations_fix[loc] = state_fix[loc, N_genstates+N_species+1];
-    converged[loc] = iterations_fix[loc] < 5000;
-
-    Jacobian_fix[loc] = jacobian(state_fix[loc, i_j[1]], state_fix[loc, i_j[2]], state_fix[loc, i_a[1]], state_fix[loc, i_a[2]], state_fix[loc, i_b[1]], state_fix[loc, i_b[2]],
-                      exp(b_log[1]), exp(b_log[2]), exp(c_b_log[1]), exp(c_b_log[2]), exp(c_j_log[1]), exp(c_j_log[2]), inv_logit(g_logit[1]), inv_logit(g_logit[2]),   inv_logit(h_logit[1]), inv_logit(h_logit[2]),  L_loc[loc, 1],  L_loc[loc, 2],   exp(r_log[1]), exp(r_log[2]),   exp(s_log[1]), exp(s_log[2]),
-                      ba_a_avg, ba_a_upper);
+    converged[loc] = iterations_fix[loc] < fixiter_max;
     
-    rho_fix[loc] = norm(Jacobian_fix[loc]);
-    convergent[loc] = rho_fix[loc] < 1;
+    // Jacobian_fix[loc] = jacobian(state_fix[loc, i_j[1]], state_fix[loc, i_j[2]], state_fix[loc, i_a[1]], state_fix[loc, i_a[2]], state_fix[loc, i_b[1]], state_fix[loc, i_b[2]],
+    //                   exp(b_log[1]), exp(b_log[2]), exp(c_b_log[1]), exp(c_b_log[2]), exp(c_j_log[1]), exp(c_j_log[2]), inv_logit(g_logit[1]), inv_logit(g_logit[2]),   inv_logit(h_logit[1]), inv_logit(h_logit[2]),  L_loc[loc, 1],  L_loc[loc, 2],   exp(r_log[1]), exp(r_log[2]),   exp(s_log[1]), exp(s_log[2]),
+    //                   ba_a_avg, ba_a_upper);
+    // rho_fix[loc] = norm(Jacobian_fix[loc]);
+    // convergent[loc] = rho_fix[loc] < 1;
     
     
     if (converged[loc]) { # && convergent[loc]
@@ -408,55 +452,35 @@ generated quantities {
       dominant_fix[loc] = state_fix[loc, N_pops+1]/state_fix[loc, N_genstates] > 3; // BA_1 > 75%
       major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
       
-      
-      //// ... given c_b == 0
-      state_fix_c_b_0[loc] = iterateFix(state_fix[loc, 1:N_pops], // use the fixed point as initial value
-                                    inv_logit(g_logit), exp(r_log), exp(s_log),
-                                    L_loc[loc, ]', // exp(l_log[loc, ]'),
-                                    exp(b_log), exp(c_j_log), [0.0, 0.0]', inv_logit(h_logit),
-                                    ba_a_avg, ba_a_upper,
-                                    N_species, N_pops,
-                                    i_j, i_a, i_b,
-                                    tolerance_fix);
-                                    
-      dominant_fix_c_b_0[loc] = state_fix_c_b_0[loc, N_pops+1]/state_fix_c_b_0[loc, N_genstates] > 3; // BA_1 > 75%
-      major_fix_c_b_0[loc] = state_fix_c_b_0[loc, N_pops+1] > state_fix_c_b_0[loc, N_genstates]; // BA_1 > 50%
-      
       //// ... given g == 0.5*g
       state_fix_g_half[loc] = iterateFix(state_fix[loc, 1:N_pops], // use the fixed point as initial value
-                                                 inv_logit(g_logit)*0.5, exp(r_log), exp(s_log),
-                                                 L_loc[loc, ]', // exp(l_log[loc, ]'),
-                                                 exp(b_log), exp(c_j_log), exp(c_b_log), inv_logit(h_logit),
-                                                 ba_a_avg, ba_a_upper,
-                                                 N_species, N_pops,
-                                                 i_j, i_a, i_b,
-                                                 tolerance_fix);
+                                          exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]') * 0.5, inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                          ba_a_avg, ba_a_upper,
+                                          N_species, N_pops,
+                                          i_j, i_a, i_b,
+                                          tolerance_fix, fixiter_max);
       
       contribution_g_half[loc] = state_fix[loc, 1:N_genstates] - state_fix_g_half[loc, 1:N_genstates];
 
       
       //// ... given r == 0
       state_fix_r_0[loc] = iterateFix(state_fix[loc, 1:N_pops], // use the fixed point as initial value
-                                                 inv_logit(g_logit), [0.0, 0.0]', exp(s_log),
-                                                 L_loc[loc, ]', // exp(l_log[loc, ]'),
-                                                 exp(b_log), exp(c_j_log), exp(c_b_log), inv_logit(h_logit),
-                                                 ba_a_avg, ba_a_upper,
-                                                 N_species, N_pops,
-                                                 i_j, i_a, i_b,
-                                                 tolerance_fix);
+                                      exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], [0.0, 0.0]', exp(S_log[loc,]'),
+                                      ba_a_avg, ba_a_upper,
+                                      N_species, N_pops,
+                                      i_j, i_a, i_b,
+                                      tolerance_fix, fixiter_max);
       
       contribution_r[loc] = state_fix[loc, 1:N_genstates] - state_fix_r_0[loc, 1:N_genstates];
 
 
       //// ... given s == 0
       state_fix_s_0[loc] = iterateFix(state_fix[loc, 1:N_pops], // use the fixed point as initial value
-                                                         inv_logit(g_logit), exp(r_log), [0.0, 0.0]',
-                                                         L_loc[loc, ]', // exp(l_log[loc, ]'),
-                                                         exp(b_log), exp(c_j_log), exp(c_b_log), inv_logit(h_logit),
-                                                         ba_a_avg, ba_a_upper,
-                                                         N_species, N_pops,
-                                                         i_j, i_a, i_b,
-                                                         tolerance_fix);
+                                      exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), [0.0, 0.0]',
+                                      ba_a_avg, ba_a_upper,
+                                      N_species, N_pops,
+                                      i_j, i_a, i_b,
+                                      tolerance_fix, fixiter_max);
       
       dominant_fix_s_0[loc] = state_fix_s_0[loc, N_pops+1]/state_fix_s_0[loc, N_genstates] > 3; // BA_1 > 75%
       major_fix_s_0[loc] = state_fix_s_0[loc, N_pops+1] > state_fix_s_0[loc, N_genstates]; // BA_1 > 50%
@@ -464,7 +488,7 @@ generated quantities {
 
     } else {
       
-      print("System has not converged.");
+      print("System has not converged after ", fixiter_max, "iterations.");
     
     }
     
@@ -481,5 +505,4 @@ generated quantities {
       }
     }
   }
-
 }
