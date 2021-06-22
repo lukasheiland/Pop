@@ -1,7 +1,8 @@
 # Directories
 Data/
 Fits/*
-Fits.nosync/*
+/Fits.nosync/*
+*/*/Fits.nosync/*
 Test/
 */Sim_recovery*/
 */Math/

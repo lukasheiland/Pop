@@ -1,11 +1,13 @@
-
+# library(cmdstanr)
 
 ####  Do the fit ----------------------
-drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n_chains = 3, initfunc = 0) {
+drawSamples <- function(model, data,
+                        method = c("variational", "mcmc", "sim"), n_chains = 3, initfunc = 0,
+                        dirpath = "Fits.nosync") {
   
   if(match.arg(method) == "variational") {
     fit <- model$variational(data = data,
-                             output_dir = "Fits.nosync",
+                             output_dir = dirpath,
                              init = initfunc,
                              eta = 0.001,
                              iter = 20**4) # convergence after 1500 iterations
@@ -13,7 +15,7 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
   } else if (match.arg(method) == "mcmc") {
     
     fit <- model$sample(data = data,
-                        output_dir = "Fits.nosync",
+                        output_dir = dirpath,
                         init = initfunc,
                         iter_warmup = 400, iter_sampling = 600,
                         adapt_delta = 0.99,
@@ -31,3 +33,4 @@ drawSamples <- function(model, data, method = c("variational", "mcmc", "sim"), n
   
   return(fit)
 }
+

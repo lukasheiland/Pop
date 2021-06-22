@@ -14,10 +14,14 @@ library(parallel)
 knitr::opts_knit$set(root.dir = here())
 setwd(here()) # For Rstudio, which apparently ignores opts_knit for inline chunk runs
 modeldir <- dir(pattern = "^(Model).*ba$")
+recoverydir <- file.path(modeldir, "Sim_ba_recovery")
 
 source(file.path(modeldir, "Sim_ba_functions.R"), local = knitr::knit_global())
 source(file.path(modeldir, "Sim_ba_recovery_functions.R"), local = knitr::knit_global())
+source(file.path(modeldir, "Sim_ba_recovery_functions.R"), local = knitr::knit_global())
 source(file.path(modeldir, "Fit_ba_functions.R"), local = knitr::knit_global())
+source(file.path(modeldir, "Fit_ba_test_functions.R"), local = knitr::knit_global())
+
 ```
 
 ## Introduction
@@ -51,7 +55,7 @@ timesets <- list(perturbed = c(1, 2, 4), mixed = c(2, 3, 5), climax = c(20, 40, 
 
 Env <- simulateEnv(n_env = parametersets[[1]]$n_env, n_locs = parametersets[[1]]$n_locs)
 envdependent <- c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
-model <- cmdstan_model(file.path(modeldir, 'Model_ba_rect.stan'))
+model <- cmdstan_model(file.path(modeldir, 'Model_ba-rect.stan'))
 
 tasks <- list(
   names = c("s1", "s2", "s3", "g1", "g2", "g3", "c1", "c2", "c3",
@@ -63,7 +67,7 @@ tasks <- list(
   priorfactor = as.list(rep(1:3, 5))
 )
 names(tasks$pars) <- tasks$names
-saveRDS(tasks, file.path(modeldir, "Sim_ba_recovery_tasks.rds"))
+saveRDS(tasks, file.path(recoverydir, "Fits.nosync", "Sim_ba_recovery_tasks.rds"))
 
 # str(tasks, max.level = 1)
 # formals(setupRecovery)
@@ -71,8 +75,10 @@ saveRDS(tasks, file.path(modeldir, "Sim_ba_recovery_tasks.rds"))
 setups <- parallel::mcmapply(setupRecovery,
                  pars = tasks$pars, times = tasks$times, independentstart = tasks$independentstart, priorfactor = tasks$priorfactor,
                  MoreArgs = list(model = model, Env = Env, envdependent = envdependent),
-                 mc.cores = getOption("mc.cores", 8*3),
-                 SIMPLIFY = F, USE.NAMES = T) # will use the names of pars
+                 mc.cores = getOption("mc.cores", 10),
+                 SIMPLIFY = F, USE.NAMES = T) # will use the names of pars1
+
+saveRDS(setups, file.path(recoverydir, "Fits.nosync", "Sim_ba_recovery_tasks.rds"))
 ```
 
 ### 1. Three parameter sets

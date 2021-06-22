@@ -447,7 +447,7 @@ generated quantities {
     // convergent[loc] = rho_fix[loc] < 1;
     
     
-    if (converged[loc]) { # && convergent[loc]
+    if (converged[loc]) { // && convergent[loc]
       
       dominant_fix[loc] = state_fix[loc, N_pops+1]/state_fix[loc, N_genstates] > 3; // BA_1 > 75%
       major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%

@@ -1,5 +1,5 @@
 # Library -----------------------------------------------------------------
-library(GGally)
+# library(GGally) ##?
 library(cmdstanr)
 
 
@@ -15,6 +15,9 @@ setupRecovery <- function(pars,
                           Env,
                           envdependent = c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
                           ) {
+  
+  modelname <- "ba-rect"
+  modeldir <- dir(pattern = glue("^(Model).*ba$"))
   
   data <- simulateMultipleSeriesInEnv(pars = pars, Env = Env, times = times,
                                       envdependent = envdependent,
@@ -32,7 +35,8 @@ setupRecovery <- function(pars,
   
   
   
-  fit <- drawSamples(data, model, method = "mcmc", initfunc = 0)
+  fit <- drawSamples(nodel, data, method = "mcmc", initfunc = 0,
+                     dirpath = file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", glue("{fitbasename}.rds")))
   ## draws will get saved unter fitbasename….csv
   fitbasename <- str_split(recoverysetup$drawfile[1], "-")[[1]]
   fitbasename <- paste(fitbasename[1:(length(fitbasename)-2)], collapse = "-")
@@ -45,8 +49,6 @@ setupRecovery <- function(pars,
                 pseudofixpointdata = pseudofixpointdata,
                 envdependent = get(paste0("envdependent_", sub("-", "_", modelname)))
                 )
-  
-  saveRDS(setup, file.path("Fits.nosync", glue("{fitbasename}.rds")))
   
   return(setup)
   
@@ -181,7 +183,7 @@ getInits <- function() {
 
 
 # ——————————————————————————————————————————————————————————————————————————————————— #
-# Testing functions  ----------------------------------------------------------------
+# Plotting functions  ----------------------------------------------------------------
 # ——————————————————————————————————————————————————————————————————————————————————— #
 
 # Plot predicted (generated quantities) vs. true values -----------------------------------------
@@ -226,44 +228,9 @@ plotPredictedVsTrue <- function(draws, data, modelname = "ba-rect") {
 }
 
 
-#### Parameter vs Env ----------------------
-generatePriors <- function(data, n = 1000) {
-  priorpars <- data[str_starts(names(data), "prior_")]
-  isVertex <- str_starts(names(priorpars), "prior_Vertex")
-  priorpars[isVertex] <- lapply(priorpars[isVertex], function(p) cbind(p, p)) # the cbind is for compatibility with the posteriors
-  priorpars <- lapply(priorpars, function(P) apply(P, 2, function(col) rnorm(n, col[1], col[2])))
-  priorpars <- lapply(priorpars, as.data.frame)
-  return(priorpars)
-}
-
-
-#### Draws vs true ----------------------
-plotEstimate <- function(prior,
-                         posterior,
-                         expected) {
-  
-  plot(density(posterior), xlim = range(prior))
-  lines(density(prior), col = "lightblue")
-  abline(v = expected, col = "lightblue")
-}
-
-
-plotEstimates <- function(priors,
-                          posteriors,
-                          truevalues) {
-  
-  l <- length(priors)
-  par(mfrow = c(ceiling(l/2), 2))
-  for (i in 1:l) {
-   plotEstimate(priors[[i]], posteriors[[i]], truevalues[[i]]) 
-  }
-  par(mfrow = c(1, 1))
-}
-
-
 plotEstimateVsTrue <- function(prior,
-                                 posterior,
-                                 true) {
+                               posterior,
+                               true) {
   
   simpar <- attr(simdata, "pars")[[parname]]
   

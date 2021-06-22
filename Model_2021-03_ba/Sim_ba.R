@@ -22,7 +22,7 @@ modeldir <- dir(pattern = glue("^(Model).*ba$"))
 source(file.path(modeldir, "Sim_ba_functions.R"))
 source(file.path(modeldir, "Sim_ba_recovery_functions.R"))
 source(file.path(modeldir, "Fit_ba_functions.R"))
-source(file.path(modeldir, "Model_ba_test_functions.R"))
+source(file.path(modeldir, "Fit_ba_test_functions.R"))
 
 
 # ————————————————————————————————————————————————————————————————————————————————— #
@@ -203,8 +203,7 @@ setup <- list(drawfile = fitbasename,
               envdependent = get(paste0("envdependent_", sub("-", "_", modelname)))
               )
 
-saveRDS(setup, file.path("Fits.nosync", glue("{fitbasename}.rds")))
-
+saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", glue("{fitbasename}.rds")))
 
 
 ## Summary -----------------------------------------------------------------
@@ -228,25 +227,26 @@ pairs(stanfit, pars = varname[(length(varname)-1):length(varname)])
 
 ## Quick recovery check -----------------------------------------------------------------
 
-priors <- generatePriors(data, n = 1000)
+#### 0. Predicted vs. true
+plotPredictedVsTrue(draws, setup$data)
 
-unpackDrawMatrix <- function(M) {
-  nrow <- dim(M)[2]
-  ncol <- dim(M)[3]
-  posteriors <- as.data.frame(t(apply(M, 1, c)))
-  return(posteriors)
-}
+### 1. Estimates vs. priors
+priors <- drawPriors(data, n = 1000)
 
-plotEstimates(priors = priors$prior_Vertex_c_j),
+plotEstimates(priors = priors$prior_b_log,
+              posteriors = unpackDrawsArray(draws$b_log),
+              truevalues = as.list(c(setup$truepars$b_log)))
+
+plotEstimates(priors = priors$prior_Vertex_c_j,
               posteriors = unpackDrawMatrix(draws$vertex_c_j),
               truevalues = as.list(c(setup$truepars$Beta_c_j))
               )
 
 
-#### Predicted vs. true
-plotPredictedVsTrue(draws, setup$data)
+### 1a. Estimates line plots vs. true
 
-#### Parameter estimate vs. true
+## TODO
+
 ## here are the drawn parameters: # setup$metadata$stan_variables
 plotEstimateVsTrue(parname = "b_log", simdata = setup$data, stanfit = stanfit)
 plotEstimateVsTrue("c_b_log", setup$data, stanfit)
