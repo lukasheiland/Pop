@@ -75,10 +75,10 @@ saveRDS(tasks, file.path(recoverydir, "Fits.nosync", "Sim_ba_recovery_tasks.rds"
 setups <- parallel::mcmapply(setupRecovery,
                  pars = tasks$pars, times = tasks$times, independentstart = tasks$independentstart, priorfactor = tasks$priorfactor,
                  MoreArgs = list(model = model, Env = Env, envdependent = envdependent),
-                 mc.cores = getOption("mc.cores", 10),
+                 mc.cores = getOption("mc.cores", 15),
                  SIMPLIFY = F, USE.NAMES = T) # will use the names of pars1
 
-saveRDS(setups, file.path(recoverydir, "Fits.nosync", "Sim_ba_recovery_tasks.rds"))
+saveRDS(setups, file.path(recoverydir, "Fits.nosync", "Sim_ba_allsetups.rds"))
 ```
 
 ### 1. Three parameter sets

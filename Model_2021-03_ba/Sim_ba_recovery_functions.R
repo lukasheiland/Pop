@@ -49,6 +49,8 @@ setupRecovery <- function(pars,
                 envdependent = get(paste0("envdependent_", sub("-", "_", modelname)))
                 )
   
+  saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", fitbasename, "setup.rds")
+  
   return(setup)
   
 }

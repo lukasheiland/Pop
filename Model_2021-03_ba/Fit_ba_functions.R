@@ -20,6 +20,7 @@ drawSamples <- function(model, data,
     
     fit <- model$sample(data = data,
                         output_dir = dirpath,
+                        # output_basename = ,
                         init = initfunc,
                         iter_warmup = 400, iter_sampling = 600,
                         adapt_delta = 0.99,
