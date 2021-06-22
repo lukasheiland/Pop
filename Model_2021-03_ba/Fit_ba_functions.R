@@ -5,6 +5,10 @@ drawSamples <- function(model, data,
                         method = c("variational", "mcmc", "sim"), n_chains = 3, initfunc = 0,
                         dirpath = "Fits.nosync") {
   
+  if (!dir.exists(dirpath)) {
+    dir.create(dirpath)
+  }
+  
   if(match.arg(method) == "variational") {
     fit <- model$variational(data = data,
                              output_dir = dirpath,
