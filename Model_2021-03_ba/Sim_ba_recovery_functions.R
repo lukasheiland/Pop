@@ -35,7 +35,7 @@ setupRecovery <- function(pars,
   
   
   
-  fit <- drawSamples(nodel, data, method = "mcmc", initfunc = 0,
+  fit <- drawSamples(model, data, method = "mcmc", initfunc = 0,
                      dirpath = file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", glue("{fitbasename}.rds")))
   ## draws will get saved unter fitbasename….csv
   fitbasename <- str_split(recoverysetup$drawfile[1], "-")[[1]]
