@@ -92,24 +92,23 @@ plotTimeSeries <- function(longdata) {
 #### Posterior vs prior vs. true ----------------------
 plotEstimate <- function(prior,
                          posterior,
-                         expected = NULL) {
+                         expectedvalue = NULL) {
   
-  plot(density(posterior), xlim = range(prior))
+  plot(density(posterior), xlim = quantile(prior, prob = c(0.05, 0.95)))
   lines(density(prior), col = "lightblue")
-  if(!is.null(expected)) abline(v = expected, col = "lightblue")
+  if(!is.null(expectedvalue)) abline(v = expectedvalue, col = "lightblue")
 }
 
 
 plotEstimates <- function(priors,
                           posteriors,
-                          truevalues = NULL) {
+                          expectedvalues = NULL) {
   
   l <- length(priors)
   par(mfrow = c(ceiling(l/2), 2))
   for (i in 1:l) {
-    plotEstimate(priors[[i]], posteriors[[i]], truevalues[[i]]) 
+    plotEstimate(priors[[i]], posteriors[[i]], expectedvalues[[i]]) 
   }
   par(mfrow = c(1, 1))
 }
-
 

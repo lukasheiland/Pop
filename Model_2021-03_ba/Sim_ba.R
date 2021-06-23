@@ -227,46 +227,64 @@ pairs(stanfit, pars = varname[(length(varname)-1):length(varname)])
 
 ## Quick recovery check -----------------------------------------------------------------
 
+## Recovery check expected format:
+## lists (data frames of compatible-length variables)
+
 #### 0. Predicted vs. true
 plotPredictedVsTrue(draws, setup$data)
 
 ### 1. Estimates vs. priors
-priors <- drawPriors(data, n = 1000)
+n_draws <- length(draws$lp__)
+priors <- drawPriors(data, n = n_draws)
 
 plotEstimates(priors = priors$prior_b_log,
               posteriors = unpackDrawsArray(draws$b_log),
-              truevalues = as.list(c(setup$truepars$b_log)))
+              expectedvalues = as.list(setup$truepars$b_log))
 
 plotEstimates(priors = priors$prior_Vertex_c_j,
-              posteriors = unpackDrawMatrix(draws$vertex_c_j),
-              truevalues = as.list(c(setup$truepars$Beta_c_j))
-              )
+              posteriors = unpackDrawsArray(draws$vertex_c_j),
+              expectedvalues = as.list(c(setup$truepars$Beta_c_j)))
 
 
 ### 1a. Estimates line plots vs. true
 
-## TODO
-
 ## here are the drawn parameters: # setup$metadata$stan_variables
-plotEstimateVsTrue(parname = "b_log", simdata = setup$data, stanfit = stanfit)
-plotEstimateVsTrue("c_b_log", setup$data, stanfit)
-# plotEstimateVsTrue("c_b_log", setup$data, stanfit)
-plotEstimateVsTrue("g_logit", setup$data, stanfit)
-# plotEstimateVsTrue("h_logit", setup$data, stanfit) # best recovery
-plotEstimateVsTrue("r_log", setup$data, stanfit)
-plotEstimateVsTrue("s_log", setup$data, stanfit)
+truepars <- attr(setup$data, "pars") # includes transformed
+
+plotEstimateLine(priors = priors$prior_h_logit,
+                 posteriors = unpackDrawsArray(draws$h_logit),
+                 expectedvalues = setup$truepars$h_logit)
+
+plotEstimateLine(priors = cbind(a = priors$prior_c_b_log, b = priors$prior_b_log),
+                 posteriors = cbind(a = unpackDrawsArray(draws$c_b_log), b = unpackDrawsArray(draws$b_log)),
+                 expectedvalues = c(setup$truepars$c_b_log, setup$truepars$b_log))
+
+plotEstimateLine(priors = unpackDrawsArray(draws$G_logit),
+                 posteriors = unpackDrawsArray(draws$G_logit),
+                 expectedvalues = c(truepars$G_log))
 
 
-## Posterior pairs
-setup1$metadata$stan_variables
-corpars_a <- setup$metadata$stan_variables[c(1, 2, 3, 6, 7)]
-corpars_b <- setup$metadata$stan_variables[c(2, 4, 5, 7, 8)]
+## 2. Posterior pairs
+# varnames <- setup$metadata$stan_variables
+# corpars_a <- varnames[c(1, 2, 3, 6, 7)]
+# corpars_b <- varnames[c(2, 4, 5, 7, 8)]
 
-pairs(stanfit1, pars = corpars_a)
-pairs(stanfit1, pars = corpars_b)
+# ?rstan:::pairs.stanfit
+pairs(stanfit, pars = c("h_logit", "c_b_log"))
 
+## 3. pairs for states in data to inspect how states are correlated
+plotStatePairs(data)
 
-# plotStatePairs(data)
+## 4. Beta in Env
+plotBetaInEnv(Betadraws = draws$Beta_g, Beta_true = truepars$Beta_g)
+plotBetaInEnv(Betadraws = draws$Beta_g, Beta_true = truepars$Beta_g, env = 2)
+plotBetaInEnv(Betadraws = draws$Beta_c_j, Beta_true = truepars$Beta_c_j)
+plotBetaInEnv(Betadraws = draws$Beta_s, Beta_true = truepars$Beta_s, env = 2) # Check priors with marginal plot!
+
+## 5. Calculate RMSE for all parameters
+rmse <- calculateRMSE(standraws = draws, standata = data)
+boxplotRMSE(rmse) # boxplot(rmse)
+
 
 
 ## Quick test power checks -------------------------------------------------
@@ -282,10 +300,6 @@ pseudofixpoint <- setup$pseudofixpointdata$y[, 2, 1,]
 drawfixpoint <- apply(draws$state_fix[,, 1:6], c(2, 3), mean)
 plot(drawfixpoint ~ pseudofixpoint, col = rowMeans(draws$iterations_fix))
 
-## 3. rho_3 and rho_fix
-# hist(draws$rho_3)
-# hist(draws$rho_fix, add = T, col = 3)
-# diff_3 <- draws$y_hat[,,3,6] - draws$y_hat[,,2,6]
-# plot(draws$rho_3 ~ diff_3)
-# plot(draws$rho_fix ~ draws$state_fix[,,10])
+## 3. Contribution of parameter given dominance for env bins
+
 

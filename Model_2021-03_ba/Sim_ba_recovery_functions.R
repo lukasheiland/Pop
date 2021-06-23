@@ -49,7 +49,7 @@ setupRecovery <- function(pars,
                 envdependent = get(paste0("envdependent_", sub("-", "_", modelname)))
                 )
   
-  saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", fitbasename, "setup.rds")
+  saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", fitbasename, "setup.rds"))
   
   return(setup)
   
@@ -229,72 +229,47 @@ plotPredictedVsTrue <- function(draws, data, modelname = "ba-rect") {
 }
 
 
-plotEstimateVsTrue <- function(prior,
-                               posterior,
-                               true) {
+## Arrange estimates on a line with expected values ---------------------------------------
+plotEstimateLine <- function(priors,
+                             posteriors,
+                             expectedvalues) {
   
-  simpar <- attr(simdata, "pars")[[parname]]
+  Prior <- pivot_longer(as.data.frame(priors), cols = everything(), names_to = "i", values_to = "prior") %>%
+    mutate(i = as.integer(fct_inorder(i)))
+  Posterior <-  pivot_longer(as.data.frame(posteriors), cols = everything(), names_to = "i", values_to = "posterior") %>%
+    select(-i)
+  Data <- bind_cols(Prior, Posterior, expected = unlist(expectedvalues)[Prior$i]) %>%
+    pivot_longer(cols = c("prior", "posterior"), names_to = "when")
   
-  if(is.vector(simpar)) {
-    
-    Stanpar <- rstan::extract(stanfit, pars = parname)[[1]] %>%
-      as.data.frame() %>%
-      pivot_longer(cols = everything(), names_to = "species", values_to = "draw") %>%
-      mutate(species = as.integer(as.factor(species))) %>%
-      bind_cols(true = rep(simpar, length.out = nrow(.)))
-    
-    Stanpar %>%
-      # sample_n(1000) %>%
-      gf_point(draw ~ true, alpha = 0.3, size = 0.5, title = parname) %>%
-      gf_abline(slope = 1, intercept = 0, gformula = NULL)
-    
-  } else if (str_starts(parname, "Beta")) {
-    
-    print("Not yet implemented.")
-    
-  } else {
-    
-    # Stanpar <- rstan::extract(rstandraws, pars = parname)[[1]] %>%
-    #   as.data.frame() %>%
-    #   pivot_longer(cols = everything(), names_to = "species", values_to = "draw") %>%
-    #   mutate(species = as.integer(as.factor(species))) %>%
-    #   bind_cols(true = rep(simpar, length.out = nrow(.)))
-    # 
-    # Stanpar %>%
-    #   # sample_n(1000) %>%
-    #   gf_point(draw ~ true | species, alpha = 0.3, size = 0.1) %>%
-    #   gf_abline(slope = 1, intercept = 0, gformula = NULL)
-    
-  }
-  
-  plot(density(prior), col = "lightblue")
-  lines(density(posterior))
-  abline(v = 1, col = "lightblue")
-  
-  
+  Data %>%
+    sample_n(10000) %>%
+    gf_point(value ~ expected, alpha = 0.2, size = 0.5, color = ~ when) %>%
+    gf_abline(slope = 1, intercept = 0, gformula = NULL, alpha = 0.1)
 }
-
 
 
 
 #### Parameter vs Env ----------------------
-predictParameterInEnv <- function(B, x = seq(-1, 1, by = 0.01), n_beta = 2, species = 1) {
-  E <- as.data.frame(replicate(n_beta, x))
+predictBeta <- function(Beta, x = seq(-1, 1, by = 0.01), env = 1, species = 1) {
+  E <- as.data.frame(x)
   polyformula <- as.formula(paste("~", paste("poly(", colnames(E), ", 2)", collapse = "+")))
   X <- model.matrix(polyformula, data = E)
-  X %*% B[,1]
+  X %*% Beta[c(1, 2:3 + {if(env == 2) env else 0} ),species]
 }
 
-# poly2 <- function(x, b) {b[1] + x*b[2] + x^2*b[3]}
-# getVertex <- function(b) {-b[2]/(2*b[3])}
 
-plotParameterInEnv <- function(betaname, x = Env[,1]) {
-  truepars <- attr(data, "pars")
-  Beta_true <- truepars[[betaname]]
-  Beta_mean <- matrix(fit$summary(variables = betaname)$mean, data$N_beta, data$N_totalspecies)
+plotBetaInEnv <- function(Betadraws, Beta_true = NULL, x = seq(-1, 1, by = 0.01), env = 1, species = 1) {
   
-  X <- cbind(true = predictParameterInEnv(Beta_true, x), meandraw = predictParameterInEnv(Beta_mean, x))
-  matplot(x, X, col = c("blue", "black"), pch = c("T", "D"), type = "p")
+  n_draws <- dim(Betadraws)[1]
+  
+  plot(x = x, y = predictBeta(apply(Betadraws, c(2, 3), mean), x = x, env = env, species = species), type = "n")
+  
+  for(i in 1:n_draws) {
+    lines(x = x, y = predictBeta(Betadraws[i, ,], x = x, env = env, species = species), col = alpha("red", 0.3), lwd = 0.1)
+  }
+  
+  if (!is.null(Beta_true)) lines(x, predictBeta(Beta_true, x = x, env = env, species = species), col = "blue", lwd = 1)
+  
 }
 
 
@@ -320,6 +295,38 @@ plotStatePairs <- function(standata) {
 }
 
 
+# ——————————————————————————————————————————————————————————————————————————————————— #
+# Recovery summary statistics  -------------------------------------------------------
+# ——————————————————————————————————————————————————————————————————————————————————— #
+
+calculateRMSE <- function(standraws, standata) {
+  
+  truepars <- attr(standata, "pars")
+  true <- c(truepars, list(y_hat_rep = data$y))
+  
+  calc <- function(d, p) {
+    sparedims <- 2:length(dim(d))
+    n_draws <- dim(d)[1]
+    
+    mse <- apply((d - repArray(p, n_draws))^2, sparedims, mean)
+    return(sqrt(mse))
+  }
+  
+  names <- intersect(names(standraws), names(true))
+  
+  rmse <- mapply(calc, standraws[names], true[names], SIMPLIFY = F, USE.NAMES = T)
+  return(rmse)
+}
 
 
+boxplotRMSE <- function(rmse, n_species = 2) {
+  rmse$y_hat_rep <- matrix(c(rmse$y_hat_rep), ncol = n_species) # y_hat structure does not play a role, recast into a 2xX matrix like the others
+  R <- do.call(rbind, rmse)
+  
+  names_rmse <- rep(names(rmse), sapply(rmse, function(x) length(x)/n_species))
+  R <- data.frame(R, par = names_rmse) %>%
+    pivot_longer(cols = starts_with("X"), names_to = "species")
+  
+  boxplot(value ~ par, data = R)
+}
 
