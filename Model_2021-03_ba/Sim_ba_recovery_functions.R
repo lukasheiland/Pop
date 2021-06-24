@@ -40,20 +40,19 @@ setupRecovery <- function(pars,
                      iter_warmup = 400, iter_sampling = 600,
                      dirpath = file.path(modeldir, "Sim_ba_recovery", "Fits.nosync"), ...)
   
-  ## draws will get saved unter fitbasename….csv
-  fitbasename <- str_split(basename(fit$output_files())[1], "-")[[1]]
-  fitbasename <- paste(fitbasename[1:(length(fitbasename)-2)], collapse = "-")
-  
   setup <- list(drawfile = basename(fit$output_files()),
                 metadata = fit$metadata(),
                 truepars = pars,
                 times = times, # also in data of course
                 data = data,
                 pseudofixpointdata = pseudofixpointdata,
-                envdependent = get(paste0("envdependent_", sub("-", "_", modelname)))
-  )
+                envdependent = envdependent)
   
-  saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", fitbasename, "setup.rds"))
+  ## draws will get saved under fitbasename….csv
+  fitbasename <- str_split(basename(fit$output_files())[1], "-")[[1]]
+  fitbasename <- paste(fitbasename[1:(length(fitbasename)-2)], collapse = "-")
+  
+  saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", paste0(fitbasename, "_setup.rds")))
   
   return(setup)
   
