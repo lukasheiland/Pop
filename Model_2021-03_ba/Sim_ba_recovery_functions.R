@@ -11,6 +11,7 @@ setupRecovery <- function(pars,
                           times,
                           independentstart,
                           priorfactor,
+                          recoveryname = "",
                           model,
                           Env,
                           envdependent = c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T),
@@ -41,6 +42,7 @@ setupRecovery <- function(pars,
                      dirpath = file.path(modeldir, "Sim_ba_recovery", "Fits.nosync"), ...)
   
   setup <- list(drawfile = basename(fit$output_files()),
+                recoveryname = recoveryname,
                 metadata = fit$metadata(),
                 truepars = pars,
                 times = times, # also in data of course
@@ -52,7 +54,7 @@ setupRecovery <- function(pars,
   fitbasename <- str_split(basename(fit$output_files())[1], "-")[[1]]
   fitbasename <- paste(fitbasename[1:(length(fitbasename)-2)], collapse = "-")
   
-  saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", paste0(fitbasename, "_setup.rds")))
+  saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", paste(fitbasename, recoveryname, "setup.rds", sep = "_")))
   
   return(setup)
   
