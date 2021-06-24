@@ -3,6 +3,7 @@
 ####  Do the fit ----------------------
 drawSamples <- function(model, data,
                         method = c("variational", "mcmc", "sim"), n_chains = 3, initfunc = 0,
+                        iter_warmup = 400, iter_sampling = 600,
                         dirpath = "Fits.nosync", ...) {
   
   if (!dir.exists(dirpath)) {
@@ -23,7 +24,7 @@ drawSamples <- function(model, data,
                         output_dir = dirpath,
                         # output_basename = ,
                         init = initfunc,
-                        iter_warmup = 400, iter_sampling = 600,
+                        iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                         adapt_delta = 0.99,
                         max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains),

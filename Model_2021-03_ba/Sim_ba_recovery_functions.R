@@ -15,7 +15,7 @@ setupRecovery <- function(pars,
                           Env,
                           envdependent = c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T),
                           ...) # passed on to draw samples and cmdstanr methods
-                          {
+{
   
   modelname <- "ba-rect"
   modeldir <- dir(pattern = glue("^(Model).*ba$"))
@@ -37,10 +37,11 @@ setupRecovery <- function(pars,
   
   require(cmdstanr)
   fit <- drawSamples(model, data, method = "mcmc", initfunc = 0,
+                     iter_warmup = 400, iter_sampling = 600,
                      dirpath = file.path(modeldir, "Sim_ba_recovery", "Fits.nosync"), ...)
   
   ## draws will get saved unter fitbasename….csv
-  fitbasename <- str_split(fit$drawfile[1], "-")[[1]]
+  fitbasename <- str_split(basename(fit$output_files())[1], "-")[[1]]
   fitbasename <- paste(fitbasename[1:(length(fitbasename)-2)], collapse = "-")
   
   setup <- list(drawfile = basename(fit$output_files()),
@@ -50,7 +51,7 @@ setupRecovery <- function(pars,
                 data = data,
                 pseudofixpointdata = pseudofixpointdata,
                 envdependent = get(paste0("envdependent_", sub("-", "_", modelname)))
-                )
+  )
   
   saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", fitbasename, "setup.rds"))
   
