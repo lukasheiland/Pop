@@ -37,9 +37,18 @@ setupRecovery <- function(pars,
   
   
   require(cmdstanr)
-  fit <- drawSamples(model, data, method = "mcmc", initfunc = 0,
-                     iter_warmup = 400, iter_sampling = 600,
-                     dirpath = file.path(modeldir, "Sim_ba_recovery", "Fits.nosync"), ...)
+  
+  ## try multiple times for when initial values lead to errors  
+  fit <- NULL
+  attempt <- 1
+  while( is.null(fit) && attempt <= 5 ) {
+    attempt <- attempt + 1
+    try({
+      fit <- drawSamples(model, data, method = "mcmc", initfunc = 0,
+                         iter_warmup = 2, iter_sampling = 2,
+                         dirpath = file.path(modeldir, "Sim_ba_recovery", "Fits.nosync"), ...)
+    })
+  }
   
   setup <- list(drawfile = basename(fit$output_files()),
                 recoveryname = recoveryname,
@@ -54,7 +63,7 @@ setupRecovery <- function(pars,
   fitbasename <- basename(fit$output_files()[1])
   fitbasename_generic <- str_replace(fitbasename, pattern = "-\\d-", "-x-")
   id_generic <- tools::file_path_sans_ext(fitbasename_generic)
-
+  
   saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", paste(id_generic, recoveryname, "setup.rds", sep = "_")))
   
   return(setup)
