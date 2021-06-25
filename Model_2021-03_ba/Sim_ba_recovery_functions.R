@@ -51,10 +51,11 @@ setupRecovery <- function(pars,
                 envdependent = envdependent)
   
   ## draws will get saved under fitbasename….csv
-  fitbasename <- str_split(basename(fit$output_files())[1], "-")[[1]]
-  fitbasename <- paste(fitbasename[1:(length(fitbasename)-2)], collapse = "-")
-  
-  saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", paste(fitbasename, recoveryname, "setup.rds", sep = "_")))
+  fitbasename <- basename(fit$output_files()[1])
+  fitbasename_generic <- str_replace(fitbasename, pattern = "-\\d-", "-x-")
+  id_generic <- tools::file_path_sans_ext(fitbasename_generic)
+
+  saveRDS(setup, file.path(modeldir, "Sim_ba_recovery", "Fits.nosync", paste(id_generic, recoveryname, "setup.rds", sep = "_")))
   
   return(setup)
   

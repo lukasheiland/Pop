@@ -156,9 +156,6 @@ Data_long %>%
 fit <- drawSamples(model, data, method = "mcmc", initfunc = 0)
 
 
-# fitbasename <- str_split(recoverysetup$drawfile[1], "-")[[1]]
-# fitbasename <- paste(fitbasename[1:(length(fitbasename)-2)], collapse = "-")
-
 ## Other diagnostics
 # fit$output()
 # fit$time()
