@@ -1,0 +1,72 @@
+name|type|data|command|depend|seed|path|time|size|bytes|format|iteration|parent|children|seconds|warnings|error
+drawSamples|function|a4b6a1b648c834a0||||||||||||||
+species_select|stem|d419dfa36660ba80|a0f202c0765a9724|a3dad144c40657ed|1885087072||t18809.7965552683s|b6d2e014b07bc296|51|rds|vector|||1.522||
+model_brms|stem|d419dfa36660ba80|035ae63e955eb8bb|ef46db3751d8e999|274656695||t18809.7965572372s|b6d2e014b07bc296|51|rds|vector|||0.002||
+gqmodelpath_stan|stem|d419dfa36660ba80|035ae63e955eb8bb|ef46db3751d8e999|-939302154||t18809.7965573172s|b6d2e014b07bc296|51|rds|vector|||0.001||
+modelpath_stan|stem|d419dfa36660ba80|035ae63e955eb8bb|ef46db3751d8e999|1572180954||t18809.796557404s|b6d2e014b07bc296|51|rds|vector|||0.002||
+gqmodel_stan|stem||9ef7646375bc0aae|b4f0e991754de173|-603143319||||0|rds|vector|||0.046||Assertion on stan_file failed File does not exist .
+predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927||t18809.8784997507s|0e696b453c03de61|85|rds|vector|||1.703||
+data_env|stem|faa90f41769cdc3f|9b5a1393dd591e71|923b9c1ac60275f8|-2092641161||t18809.8785336378s|9dc61a1f01cee8a2|5471696|rds|vector|||0.473||
+joinBigSmall|function|483c0b19e968a5b8||||||||||||||
+selectSpecies|function|48f09dd14d875a10||||||||||||||
+Data_small|stem|6a314f778e23d1f7|7ad74de1b1caac4c|c2862238ee7262c4|-1821452620||t18810.4368068482s|d1ea46e6f01b98ed|15258942|rds|vector|||47.846||
+threshold_dbh|stem|b1b40ad4f285cecb|9196226201acf742|ef46db3751d8e999|1977269053||t18810.7601461387s|ded833868582137a|50|rds|vector|||1.08||
+taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t18810.760146226s|425d385953b3c542|67|rds|vector|||0.001||
+addAbundanceSmooth|function|c2fd48c5c83ebffa||||||||||||||
+S_env|stem|6ad8fd4dc41f03d6|f77ba367cf3d8588|dec4878ce7579d25|379008817||t18810.8174957731s|8a2fe700c9a00b25|12617068|rds|vector|||20.162||
+Data_big|stem|a70d1717922d1ea0|56bebf0f0eab6c1e|d19aefc5f426b420|1222093926||t18811.6303604312s|7a3921ea31f89fe2|23325500|rds|vector|||12.634||
+fitSpline|function|241ff4ac6ffba79b||||||||||||||
+addSpline|function|e28d7925aa353805||||||||||||||
+taxon_splines|stem|99065f745c104405|7c823d68b07aa287|d3dabdfcfcf05b54|-1863036415||t18812.0116500305s|ff026697d66e9a9f|75|rds|vector||taxon_splines_13af37df*taxon_splines_aad96518|2.185||
+fit_splines_8b27fc48|branch|16c0b09e7c1ddf61|59d551949b2917ee|6cccc2554f73e2e1|2056219549||t18812.5549866247s|c4d849d2b1890484|44763879|rds|vector|fit_splines||189.154||
+fit_splines_8f91cb96|branch|ee3395fe2fb72b07|59d551949b2917ee|e720f561a53c1e40|465219754||t18812.5649263868s|48f535cebaa22c1b|168892234|rds|vector|fit_splines||851.6|You ask for a dense sparse distance matrix, I require one more iteration.To avoid the iteration, increase nearestdistnnz option to something likeoptionsspam.nearestdistnnzc10183500,400constructed 19612 lines out of 20367.|
+fit_splines|pattern|560143a67c75e9cc|59d551949b2917ee||-679171076||||213656113|rds|vector||fit_splines_8b27fc48*fit_splines_8f91cb96|1040.754||
+fits_splines_8b27fc48|branch|297c3939cb7f04f3|59d551949b2917ee|5eda54c1c3ea8662|-1101197618||t18812.8746056219s|21d044c209f1c75d|170760521|rds|list|fits_splines||586.641|You ask for a dense sparse distance matrix, I require one more iteration.To avoid the iteration, increase nearestdistnnz option to something likeoptionsspam.nearestdistnnzc10270000,400constructed 19649 lines out of 20540.|
+fits_splines_8f91cb96|branch|d6079d7f88bcba5e|59d551949b2917ee|8655b6f66b0b141f|1006855412||t18812.8875259016s|42ea524342334716|171176948|rds|list|fits_splines||1092.476|You ask for a dense sparse distance matrix, I require one more iteration.To avoid the iteration, increase nearestdistnnz option to something likeoptionsspam.nearestdistnnzc10270000,400constructed 19649 lines out of 20540.|
+file_DE_BWI3|stem|058b911418a4c002|709617124a41c948|ef46db3751d8e999|-150710612|Inventory.nosync/DE BWI/Data/DE_BWI3.rds|t18113.7913725514s|db0167c6d07c2de8|85664805|file|vector|||7.581||
+Data_DE_BWI3|stem|94beae2dd1426335|a5199bd105d8a04e|cb6c6b04c1714f3c|-1703608711||t18814.3742583313s|db0167c6d07c2de8|85664805|rds|vector|||3.875||
+selectGrid|function|8d5cad750744ad35||||||||||||||
+file_DE_geo|stem|fc11702de5751e68|60bce8164256a1d6|ef46db3751d8e999|-1810833906|Inventory.nosync/DE BWI/Data/DE_BWI_geo.rds|t18113.7914067473s|5f8cd763e5ac0a66|1266826|file|vector|||2.325||
+Data_geo|stem|1e11998b9af424de|a5740b3bcb5e0ba0|855c9f9a61208aa8|-1122140380||t18814.5877954704s|e60015ce142a6e82|1266824|rds|vector|||0.311||
+Stages_splines_0a42ac06|branch||f7a71fd6962f7159|ecf9a17bacaae9ad|-1600644831||||0|rds|vector|Stages_splines||3.636||nicht anwendbare Methode für predict auf Objekt der Klasse cinteger, numeric angewendet
+file_DE_small|stem|6a314f778e23d1f7|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18829.7718975102s|d1ea46e6f01b98ed|15258942|file|vector|||0.003||
+file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18829.9049113858s|e684589703d38eb9|5533814|file|vector|||1.968||
+file_DE_big|stem|a70d1717922d1ea0|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18829.9162231058s|7a3921ea31f89fe2|23325500|file|vector|||1.773||
+Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t18829.9185400108s|e684589703d38eb9|5533814|rds|vector|||0.388||
+Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t18829.9185465046s|102883cb8e914333|1060126|rds|vector|||0.013||
+Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|15f280e2b5debec0|-1840226744||t18829.9185701823s|9b01f5e608a77422|1022676|rds|vector|||1.543||
+constructPriors|function|a6b65e0492ce680d||||||||||||||
+formatDirect|function|ac28ecf575b1dbfc||||||||||||||
+extractDrawsDirect|function|0d9ee00112905c8f||||||||||||||
+formatSims|function|8d66dd66620da6d3||||||||||||||
+drawDirect|function|be7c9cc0e6e172fc||||||||||||||
+modelpath|stem|1ce772216b3a8c30|528f46330e6d2fc1|ef46db3751d8e999|-971198735||t18844.5373793006s|c852eab37a726e04|78|rds|vector|||3.426||
+Stages|stem|67da4b63c4422c77|8052e56c3d07b1ad|3037f0f626b47d13|-2131128411||t18845.4868426353s|68788e6853f25db1|11140800|rds|vector|||108.052||
+Stages_env|stem|483f80fb694badf2|f77ba367cf3d8588|324c79175c3c3951|818674129||t18845.487162735s|2df1b0c19278e84b|21496010|rds|vector|||18.338||
+BA_splines_8b27fc48|branch|82cf1b79099c0be4|b6787a099b0952c8|8bae5b1948f5bec4|1622992429||t18845.4899636155s|70ebc0e4f2bf139a|557840|rds|list|BA_splines||241.58|st_centroid assumes attributes are constant over geometries of x|
+BA_splines_8f91cb96|branch|197e967aa878a7d7|b6787a099b0952c8|38517595b1371577|1329551659||t18845.4930322596s|779498052ef9eda5|588506|rds|list|BA_splines||264.973|st_centroid assumes attributes are constant over geometries of x|
+BA_splines|pattern|1d097a9558dc8bbd|b6787a099b0952c8||-609085420||||1146346|rds|list||BA_splines_8b27fc48*BA_splines_8f91cb96|506.553||
+fits_splines_0ca4e81c|branch|40c21cd57b45d728|eb400811e4ce2b94|1e01978148119173|-835288051||t18845.4949207817s|ff99baedae8f0e4a|71937716|rds|list|fits_splines||159.418||
+fits_splines_7d954a1d|branch|8ce2200d6e5fa1e2|eb400811e4ce2b94|70de8b4c3a9d61e5|-1957033310||t18845.4966069301s|7164160f7d291dc8|72052837|rds|list|fits_splines||142.377||
+fits_splines|pattern|b2fcf79808b46c51|eb400811e4ce2b94||1779771359||||143990553|rds|list||fits_splines_0ca4e81c*fits_splines_7d954a1d|301.795||
+Stages_splines|stem|37b40dcbc0e736fe|f7a71fd6962f7159|2d17d77bc4f12342|-580962439||t18845.4967971812s|9bbfe9d805c8528c|25607528|rds|list|||6.713||
+Stages_select|stem|af23ef331b83a651|61dc2a384c112b9d|272865901e9b1e4d|-1427272822||t18845.4973743598s|22741b3abc45ff16|578080|rds|vector|||49.663||
+Stages_scaled|stem|40c44f2ab841887b|3dcd57ae62f1cb6c|bd89f5811fb49980|1092130661||t18845.4973772008s|5d587fd983f43acd|586465|rds|vector|||0.029||
+stages_inverse|stem|8b5923c9874a0af6|f105d2bb637a226d|556b4764cbeec2b3|1612002466||t18845.4973933175s|194921908a479262|45303|rds|vector|||1.369||
+file_testmodel|stem|c69dfe2f99e8ecc8|aa2d46886f249026|85141c0bb56aa53f|-546501342|Model_2021-03_ba/Model_ba_test.stan|t18845.5068926985s|396ba6311cc3b916|16904|file|vector|||2.709||
+testmodel|stem|0446a40097a8fa53|54f2323d684c4fa7|6b076844ca32983c|1558219038||t18845.50911886s|89dea1b195f7b777|7438|rds|vector|||38.117||
+drawTestInverse|function|25b63374bc7e35c9||||||||||||||
+addPackage|function|d45c347b66cce55c||||||||||||||
+drawInverse|function|0a04879c351eeeae||||||||||||||
+joinEnv|function|2488b8203673870c||||||||||||||
+extractDrawsInverse|function|c259893564425c7a||||||||||||||
+summarizeEnvByCluster|function|c82eb6a80de9b3e7||||||||||||||
+formatInverse|function|1c9381a42a9af2f8||||||||||||||
+predictSplines|function|3a9471ea0b459e9a||||||||||||||
+selectClusters|function|a89fdc944b51e691||||||||||||||
+scalePredictors|function|bb487aa82094e20a||||||||||||||
+joinStages|function|da66eec8bf927220||||||||||||||
+cleanEnv|function|06a0767a0f88a954||||||||||||||
+fitSplines|function|3923fc14ded03ec4||||||||||||||
+constructConstantGrid|function|68c401f1ba4d758b||||||||||||||
+testfit_inverse|stem|9e9ebae5e042918b|8485413ac9d66395|3ffeae1e3b49deb6|534562196||t18844.6184684255s||48|rds|vector|||5.299||Versuch eine NichtFunktion anzuwenden

@@ -36,7 +36,8 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(vector[] state_init, int[] time_max, int[] times,
-                vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_logit, vector h_logit, vector[] L_loc, matrix R_log, matrix S_log,
+                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_logit, vector h_logit, vector[] L_loc, vector r_log, vector s_log,
+                // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_logit, vector h_logit, vector[] L_loc, matrix R_log, matrix S_log,
                 vector ba_a_avg, real ba_a_upper,
                 int[] n_obs, int[] n_yhat,
                 int N_species, int N_pops, int L_yhat, int N_locs,
@@ -56,7 +57,7 @@ functions {
                         
                         simulate(state_init[loc, ],
                                  time_max[loc],
-                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), inv_logit(g_logit), inv_logit(h_logit), L_loc[loc, ], exp(r_log), exp(s_log),
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
                                  i_j, i_a, i_b);
@@ -233,17 +234,17 @@ data {
   // assumes vertex form f(x,y) == a_1*(x−p)^2 + a_2*(y−q)^2 + z
   // and parameters vector[z, p, q, a_1, a_2]
   
-  array[2] vector[N_beta] prior_Vertex_c_j;
-  array[2] vector[N_beta] prior_Vertex_g;
-  array[2] vector[N_beta] prior_Vertex_r;
-  array[2] vector[N_beta] prior_Vertex_s;
+  // array[2] vector[N_beta] prior_Vertex_c_j;
+  // array[2] vector[N_beta] prior_Vertex_g;
+  // array[2] vector[N_beta] prior_Vertex_r;
+  // array[2] vector[N_beta] prior_Vertex_s;
   
-  array[2] vector[N_species] prior_b_log;
-  array[2] vector[N_species] prior_c_a_log;
-  array[2] vector[N_species] prior_c_b_log;
-  array[2] vector[N_species] prior_h_logit;
+  // array[2] vector[N_species] prior_b_log;
+  // array[2] vector[N_species] prior_c_a_log;
+  // array[2] vector[N_species] prior_c_b_log;
+  // array[2] vector[N_species] prior_h_logit;
   
-  array[2] vector[N_species] prior_l_log;
+  // array[2] vector[N_species] prior_l_log;
   
 
 }
@@ -253,10 +254,10 @@ transformed data {
   // Times are all assumed to be shifted to start at 1!
 
   // priors
-  array[2] vector[N_beta] prior_Beta_c_j = transformToNormal(prior_Vertex_c_j);
-  array[2] vector[N_beta] prior_Beta_g = transformToNormal(prior_Vertex_g);
-  array[2] vector[N_beta] prior_Beta_r = transformToNormal(prior_Vertex_r);
-  array[2] vector[N_beta] prior_Beta_s = transformToNormal(prior_Vertex_s);
+  // array[2] vector[N_beta] prior_Beta_c_j = transformToNormal(prior_Vertex_c_j);
+  // array[2] vector[N_beta] prior_Beta_g = transformToNormal(prior_Vertex_g);
+  // array[2] vector[N_beta] prior_Beta_r = transformToNormal(prior_Vertex_r);
+  // array[2] vector[N_beta] prior_Beta_s = transformToNormal(prior_Vertex_s);
   
   //// Data for separate fitting of the initial state
   // vector[N_pops] y0 [N_locs, N_plots] = y[ , , 1, ];
@@ -274,14 +275,18 @@ parameters {
   vector[N_species] b_log;
   vector[N_species] c_a_log;
   vector[N_species] c_b_log;
+  vector[N_species] c_j_log;
+  vector[N_species] g_logit;
   vector[N_species] h_logit;
-  // vector[N_species] c_a_log;
+  vector[N_species] r_log;
+  vector[N_species] s_log;
+  
   
   // … dependent on environment. Matrix for convenient matrix multiplication
-  matrix[N_beta, N_species] Beta_c_j;
-  matrix[N_beta, N_species] Beta_g; // (J-, A+) transition rate from J to A
-  matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
-  matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
+  // matrix[N_beta, N_species] Beta_c_j;
+  // matrix[N_beta, N_species] Beta_g; // (J-, A+) transition rate from J to A
+  // matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
+  // matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
   
   //// Special case l
   vector[N_species] l_log;
@@ -308,10 +313,10 @@ transformed parameters {
   
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
   // Location level parameters (unconstrained because on log scale!)
-  matrix[N_locs, N_species] C_j_log = X * Beta_c_j;
-  matrix[N_locs, N_species] G_logit = X * Beta_g;
-  matrix[N_locs, N_species] R_log = X * Beta_r;
-  matrix[N_locs, N_species] S_log = X * Beta_s;
+  // matrix[N_locs, N_species] C_j_log = X * Beta_c_j;
+  // matrix[N_locs, N_species] G_logit = X * Beta_g;
+  // matrix[N_locs, N_species] R_log = X * Beta_r;
+  // matrix[N_locs, N_species] S_log = X * Beta_s;
 
   vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
   
@@ -323,7 +328,8 @@ transformed parameters {
   }
   
   vector[L_yhat] y_hat = unpack(state_init, time_max, times,
-                                b_log, c_a_log, c_b_log, C_j_log, G_logit, h_logit, L_loc,R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
+                                b_log, c_a_log, c_b_log, c_j_log, g_logit, h_logit, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
+                                // b_log, c_a_log, c_b_log, C_j_log, G_logit, h_logit, L_loc,R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat, // varying numbers per loc
                                 N_species, N_pops, L_yhat, N_locs, // fixed numbers
@@ -336,33 +342,33 @@ model {
 
   //---------- PRIORS ---------------------------------
   
-  // sigma_pr ocess ~ normal(0, 0.01);
+  // sigma_process ~ normal(0, 0.01);
   // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
   
   //// Hyperpriors
-  alpha_obs_inv ~ normal(0, 0.1); // Observation error
+  // alpha_obs_inv ~ normal(0, [0.1, 0.01]); // Observation error
   
   // ... for special offset L
   // to_vector(L_random) ~ std_normal(); // Random part around slope for l
   // sigma_l ~ cauchy(0, 2); // Regularizing half-normal on sigma for random slope for l
-  l_log ~ normal(prior_l_log[1,], prior_l_log[2,]);
+  // l_log ~ normal(prior_l_log[1,], prior_l_log[2,]);
   
   
   //// Priors on Parameters
   // prior_*[2, N_species]
-  b_log   ~ normal(prior_b_log[1,], prior_b_log[2,]);
-  c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
-  c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
-  h_logit ~ normal(prior_h_logit[1,], prior_c_b_log[2,]);
+  // b_log   ~ normal(prior_b_log[1,], prior_b_log[2,]);
+  // c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
+  // c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
+  // h_logit ~ normal(prior_h_logit[1,], prior_c_b_log[2,]);
   
   // same priors for both species
-  for (spec in 1:N_species) {
-    // prior_Beta_*[2, N_beta]
-    Beta_c_j[, spec] ~ normal(prior_Beta_c_j[1, ], prior_Beta_c_j[2, ]);
-    Beta_g[, spec]  ~ normal(prior_Beta_g[1, ], prior_Beta_g[2, ]);
-    Beta_r[, spec] ~ normal(prior_Beta_r[1, ], prior_Beta_r[2, ]);
-    Beta_s[, spec] ~ normal(prior_Beta_s[1, ], prior_Beta_s[2, ]);
-  }
+  // for (spec in 1:N_species) {
+  //   // prior_Beta_*[2, N_beta]
+  //   Beta_c_j[, spec] ~ normal(prior_Beta_c_j[1, ], prior_Beta_c_j[2, ]);
+  //   Beta_g[, spec]  ~ normal(prior_Beta_g[1, ], prior_Beta_g[2, ]);
+  //   Beta_r[, spec] ~ normal(prior_Beta_r[1, ], prior_Beta_r[2, ]);
+  //   Beta_s[, spec] ~ normal(prior_Beta_s[1, ], prior_Beta_s[2, ]);
+  // }
 
   //---------- MODEL ---------------------------------
 
@@ -372,3 +378,50 @@ model {
   /// alternatively
   // y ~ neg_binomial_0(y_hat[rep_yhat2y], theta, sigma_obs);
 }
+
+
+generated quantities {
+  
+  int fixiter_max = 5000;
+  
+  //// Variables for prediction
+  vector[L_y] y_hat_rep;
+  array[L_y] real y_sim;
+  
+  
+  //// Variables for fix point conversion
+  array[N_locs] int converged; // tolerance has been reached
+  array[N_locs] real iterations_fix;
+  array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
+  array[N_locs] int dominant_fix;
+  array[N_locs] int major_fix;
+
+  //// Predictions
+  y_hat_rep = y_hat[rep_yhat2y];
+  y_sim = gamma_rng(alpha_obs[rep_obsmethod2y], alpha_obs[rep_obsmethod2y] ./ y_hat[rep_yhat2y]);
+  
+  
+  //// Fix point iteration
+  for(loc in 1:N_locs) {
+    
+    //// fix point, given parameters
+    state_fix[loc] = iterateFix(state_init[loc],
+                                exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), inv_logit(g_logit), inv_logit(h_logit), L_loc[loc, ], exp(r_log), exp(s_log),
+                                // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                ba_a_avg, ba_a_upper,
+                                N_species, N_pops,
+                                i_j, i_a, i_b,
+                                tolerance_fix, fixiter_max);
+                                   
+    iterations_fix[loc] = state_fix[loc, N_genstates+N_species+1];
+    converged[loc] = iterations_fix[loc] < fixiter_max;
+    
+    if (converged[loc]) { // && convergent[loc]
+      
+      dominant_fix[loc] = state_fix[loc, N_pops+1]/state_fix[loc, N_genstates] > 3; // BA_1 > 75%
+      major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
+    }
+  }
+ 
+}
+

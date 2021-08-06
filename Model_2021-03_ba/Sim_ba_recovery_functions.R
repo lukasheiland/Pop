@@ -45,7 +45,7 @@ setupRecovery <- function(pars,
     attempt <- attempt + 1
     try({
       fit <- drawSamples(model, data, method = "mcmc", initfunc = 0,
-                         iter_warmup = 2, iter_sampling = 2,
+                         iter_warmup = 400, iter_sampling = 600,
                          dirpath = file.path(modeldir, "Sim_ba_recovery", "Fits.nosync"), ...)
     })
   }
@@ -74,12 +74,16 @@ setupRecovery <- function(pars,
 #### Returns +- the true start values ----------------------
 getTrueInits <- function() {
   
-  isragged <- grepl("^ba-rag", modelname) || modelname == "ba"
+  isragged <- grepl("^ba-rag", modelname) # || modelname == "ba"
   
-  state_init <- if (isragged) data$y0[which(!duplicated(data$rep_init2y0))] else data$y[,1,1,]
+  state_init <- if (isragged) {
+      data$y0[which(!duplicated(data$rep_init2y0))]
+    } else if(modelname == "ba") {
+      data$state_init
+    } else { data$y[,1,1,] }
   
   truepars <- attr(data, "pars")
-  truepars <- truepars[sapply(truepars, is.numeric)]
+  truepars <- truepars[sapply(truepars, function(x) { is.numeric(x) && !anyNA(x) })]
   parnames <- names(truepars)
   names(truepars) <- ifelse(str_ends(parnames, "_loc"), str_to_lower(parnames), parnames)
   
@@ -87,6 +91,7 @@ getTrueInits <- function() {
     
     state_init = state_init,
     state_init_log = log(state_init),
+    sigma_l = rep(1e-16, truepars$n_species),
     
     u = replicate(truepars$n_locs, matrix(rnorm(truepars$n_species*3, 0, 0.001), nrow = truepars$n_species*3, ncol = data$timespan_max))
   )
@@ -231,10 +236,10 @@ plotPredictedVsTrue <- function(draws, data, modelname = "ba-rect") {
   }
   
   if(modelname %in% c("ba", "ba-rag", "ba-rag-ranef")) {
-    R <- data.frame(y_hat_rep = draws$y_hat_rep[1,], y = data$y,
-                    pops = data$pops[rep(data$rep_init2y0, each = data$n_reobs[1])])
+    R <- data.frame(y_hat_rep = draws$y_hat_rep[1,], y = data$Long$abundance,  y_sim = draws$y_sim[1,],
+                    pops = data$pops[rep(data$rep_init2y0, each = data$n_obs[1])])
     
-    R %>% ggformula::gf_point(y_hat_rep ~ y) %>%
+    R %>% ggformula::gf_point(y_sim ~ y) %>%
       gf_abline(gformula = NULL, slope = 1, intercept = 0)
     
     # plot(draws$state_init[1, data$rep_init2y0] ~ data$y0)

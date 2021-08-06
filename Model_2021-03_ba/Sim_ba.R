@@ -21,8 +21,7 @@ modeldir <- dir(pattern = glue("^(Model).*ba$"))
 # Source -------------------------------------------------------------
 source(file.path(modeldir, "Sim_ba_functions.R"))
 source(file.path(modeldir, "Sim_ba_recovery_functions.R"))
-source(file.path(modeldir, "Fit_ba_functions.R"))
-source(file.path(modeldir, "Fit_ba_test_functions.R"))
+source(file.path(modeldir, "Test_ba_functions.R"))
 
 
 # ————————————————————————————————————————————————————————————————————————————————— #
@@ -100,7 +99,7 @@ modelname <- c("ba",
                "ba-rect", # fully rectangular, without process error
                "ba-rag", # ragged, clusterwise-initialization
                "ba-rag-ranef" # like ba-rag but with random demographic pars
-               )[2]
+               )[1]
 
 modelpath <- file.path(modeldir, glue('Model_{modelname}.stan'))
 
@@ -118,8 +117,8 @@ Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
 
 
 envdependent_ba_rect <- c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
-envdependent_ba_rag <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
-envdependent_ba <- c(b = F, c_a = F, c_b = F, c_j = F, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
+envdependent_ba_rag <- c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
+envdependent_ba <- c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
 envdependent_ba_rag_ranef <- envdependent_ba_rag
 
 times <- c(2, 3, 4)
@@ -128,13 +127,13 @@ data <- simulateMultipleSeriesInEnv(pars, Env, times = times,
                                     logstate = F,
                                     modelstructure = modelname, # !!! this determines the data layout
                                     format = "stan", priorfactor = 10,
-                                    obserror = T, processerror = F, independentstart = F)
+                                    obserror = F, processerror = F, independentstart = F)
 
 ## just a data set with a long time span to check fix point (equilibrium) recovery
 pseudofixpointdata <- simulateMultipleSeriesInEnv(pars, Env, times = c(1, 500),
                                                    envdependent = get(paste0("envdependent_", sub("-", "_", modelname))),
                                                    logstate = F,
-                                                   modelstructure = modelname, # !!! this determines the data layout
+                                                   modelstructure = "ba-rect", # !!! always use rect here!
                                                    format = "stan",
                                                    obserror = F, processerror = F, independentstart = F)
 
@@ -153,6 +152,7 @@ Data_long %>%
 
 ## Draw from model --------------------------------------------------------------
 ## Model fit
+fit <- drawSamples(model, data, method = "sim", initfunc = getTrueInits)
 fit <- drawSamples(model, data, method = "mcmc", initfunc = 0)
 
 
@@ -228,7 +228,7 @@ pairs(stanfit, pars = varname[(length(varname)-1):length(varname)])
 ## lists (data frames of compatible-length variables)
 
 #### 0. Predicted vs. true
-plotPredictedVsTrue(draws, setup$data)
+plotPredictedVsTrue(draws, setup$data, modelname)
 
 ### 1. Estimates vs. priors
 n_draws <- length(draws$lp__)
@@ -293,7 +293,7 @@ table(draws$iterations_fix)
 
 
 ## 1. Compare fix point
-pseudofixpoint <- setup$pseudofixpointdata$y[, 2, 1,]
+pseudofixpoint <- pseudofixpointdata$y[, 2, 1,]
 drawfixpoint <- apply(draws$state_fix[,, 1:6], c(2, 3), mean)
 plot(drawfixpoint ~ pseudofixpoint, col = rowMeans(draws$iterations_fix))
 

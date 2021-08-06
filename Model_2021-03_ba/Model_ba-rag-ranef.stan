@@ -1,11 +1,10 @@
 functions {
   
-  //// Difference equations
+    //// Difference equations
   matrix simulate(vector initialstate, int time_max,
-                  vector g, vector m_j, vector r, vector s,
-                  vector b, vector c_j, vector c_a, vector c_b, vector h, vector m_a,
+                  vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector m_j, vector m_a, vector r, vector s, 
                   vector[] u,
-                  real ba_a_avg, real ba_a_upper,
+                  vector ba_a_avg, real ba_a_upper,
                   int N_spec, int N_pops,
                   int[] i_j, int[] i_a, int[] i_b) {
     
@@ -16,20 +15,19 @@ functions {
     for (t in 2:time_max) {
       // Structure of state[N_pops]: stage/species
       
-      vector[N_spec] J_log = State[i_j, t-1];
-      vector[N_spec] A_log = State[i_a, t-1];
+      vector[N_spec] J = State[i_j, t-1];
+      vector[N_spec] A = State[i_a, t-1];
+      vector[N_spec] B = State[i_b, t-1];
 
-      vector[N_spec] J = exp(J_log);
-      vector[N_spec] A = exp(A_log);
-      vector[N_spec] B = exp(State[i_b, t-1]);
-      
-      real BA = sum(A*ba_a_avg + B);
+      vector[N_spec] BA = A .* ba_a_avg + B;
+      real BA_sum = sum(BA);
       
       /// Ricker model: fill the log states
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b))
-      State[i_j, t]  =  log1p(expm1(J_log) + r) - c_j*sum(J) - s*BA - m_j - g + u[1, ]; // equivalent to … =  J + (r - (c_j*sum(J) + s*AB + g + m_j).*J + u[1, i_j]) * dt;
-      State[i_a, t]  =  log1p(A + expm1(J_log - g)) - c_a*BA - m_a - h + u[2, ];
-      State[i_b, t]  =  log1p(B + expm1(A_log - h) * ba_a_upper) + b - c_b*sum(B) + u[3, ]; // exp(A_log - h) * ba_a_upper is the input of new basal area through ingrowth of count A*exp(-h) from A
+      // CAUTION, MODEL HAS NOT BEEN ADOPTED TO LOG SCALE (ERROR U IS JUST ADDED)
+      State[i_j, t]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum + m_j)  +  u[1, ];
+      State[i_a, t]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum + m_a)  +  u[2, ];
+      State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum)  +  u[3, ];
     
     }
     
@@ -46,13 +44,13 @@ functions {
                 vector[] u,
                 real ba_a_avg, real ba_a_upper,
                 int[] n_species, int[] n_pops, int[] n_reobs, int[] n_yhat,
-                int N_yhat, int N_locs) {
+                int L_yhat, int N_locs) {
 
     int pos_species = 1;
     int pos_pops = 1;
-    int pos_times = 1; // segmenting times[N_y]
+    int pos_times = 1; // segmenting times[L_y]
     int pos_yhat = 1;
-    vector[N_yhat] y_hat;
+    vector[L_yhat] y_hat;
 
     for (l in 1:N_locs) {
       int n_s = n_species[l];
@@ -80,7 +78,7 @@ functions {
                                  i_j, i_a, i_b);
       
   
-      // Flattening the matrix into a vector for the location and append it to y_hat local vector yhat[m], and then into function-global vector y_hat[N_yhat].
+      // Flattening the matrix into a vector for the location and append it to y_hat local vector yhat[m], and then into function-global vector y_hat[L_yhat].
       // to_vector converts matrix to a column vector in column-major order.
       y_hat[pos_yhat:(pos_yhat - 1 + n_yhat[l])] =
                        to_vector(States[ , segment(times, pos_times, n_t)]); // only select columns with times in the data
@@ -112,7 +110,7 @@ functions {
 data {
   
   //// On assumed data structure
-  // The most comprehensive data set is N_y (resp. N_y0) with grouping.
+  // The most comprehensive data set is L_y (resp. L_y0) with grouping.
   // Everything is subset from the master subsets with these groupings (*_reobs, *_y0) and thus consistently sorted.
   // Ratio: "resurveys" includes "pops" due of the return structure in ode_*(); "pops" includes "plots" because of the loc == population assumption (randowm effect from location/resurvey/pop to .../plots).
   // (With population interactions and ODE integration, n_species, n_stages, and n_times have to be constant within the process model level, i.e. here location.)
@@ -120,16 +118,16 @@ data {
   
   //// N — number of observations/groups
   int<lower=0> N_locs; // overall number of locations. This is the major running variable to iterate over the model vectors.
-  int<lower=0> N_times; // locations/reobs
-  int<lower=0> N_init; // locations/pops
-  int<lower=0> N_yhat; // locations/resurveys/pops
-  int<lower=0> N_y0; // locations/pops/plots
-  int<lower=0> N_y; // locations/resurveys/pops/plots
-  int<lower=0> N_species; // locations/species — length of the vector species
-
-
-  int<lower=0> N_totalspecies; // overall number of unique species across plot and locations (not nested!)
+  int<lower=0> N_species; // overall number of unique species across plot and locations (not nested!)
   int<lower=0> N_beta;
+
+  int<lower=0> L_yhat; // locations/resurveys/pops
+  int<lower=0> L_y; // locations/resurveys/pops/plots
+  int<lower=0> L_init; // locations/pops
+  int<lower=0> L_y0; // locations/pops/plots
+  int<lower=0> L_species; // locations/species — length of the vector species
+  int<lower=0> L_times; // locations/reobs
+
 
   //// n - number of levels within locs
   int<lower=0> n_species[N_locs]; // n species within loc; this is the length of initial values!
@@ -138,42 +136,42 @@ data {
   int<lower=0> n_yhat[N_locs]; // n pops*reobs within locs
 
   //// rep - repeat indices within groups for broadcasting to the subsequent hierarchical levels
-  int<lower=1> rep_init2y0[N_y0]; // repeat predictions on level "locations/pops" n_plots times to "locations/pops/plots"
-  int<lower=1> rep_yhat2y[N_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
-  int<lower=1> rep_locs2times[N_times]; // repeat locations n_times per location to "locations/pops/resurveys/plots"
+  int<lower=1> rep_init2y0[L_y0]; // repeat predictions on level "locations/pops" n_plots times to "locations/pops/plots"
+  int<lower=1> rep_yhat2y[L_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  int<lower=1> rep_locs2times[L_times]; // repeat locations n_times per location to "locations/pops/resurveys/plots"
 
   
   //// actual data
-  int<lower=1> species[N_species]; // locations/species
-  int<lower=1> pops[N_init]; // locations/pops: just numbering, e.g 1:12 for indexing
+  int<lower=1> species[L_species]; // locations/species
+  int<lower=1> pops[L_init]; // locations/pops: just numbering, e.g 1:12 for indexing
 
   // obsmethod — factor (1, 2)
-  int<lower=1> obsmethod_y0[N_y0]; // repeat predictions on level "locations/pops" n_plots times to "locations/pops/plots"
-  int<lower=1> obsmethod_y[N_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  int<lower=1> rep_obsmethod2y0[L_y0]; // repeat predictions on level "locations/pops" n_plots times to "locations/pops/plots"
+  int<lower=1> rep_obsmethod2y[L_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
   
   real dbh_lower_a;
   real dbh_lower_b;
   
   int time_init[N_locs];
-  int time_max_data[N_locs];
-  int times_data[N_times]; // locations/resurveys // old: int times[N_y]; // locations/plots/pops/resurveys
+  int time_max[N_locs];
+  int times[L_times]; // locations/resurveys // old: int times[L_y]; // locations/plots/pops/resurveys
 
   matrix[N_locs, N_beta] X; // design matrix
   
-  vector[N_y0] y0_log;
-  vector[N_y] y_log;
+  vector[L_y0] y0_log;
+  vector[L_y] y_log;
   
 }
 
 transformed data {
   // Shift all times to start at 1.
   int time_max[N_locs];
-  int times[N_times];
+  int times[L_times];
   real ba_a_upper = pi() * (dbh_lower_b/2)^2 * 1e-6; // # pi*r^2, mm^2 to m^2
   real ba_a_avg = pi() * ((dbh_lower_a + dbh_lower_b)/2/2)^2 * 1e-6;
 
-  for (l in 1:N_locs) time_max[l] = time_max_data[l] - time_init[l] + 1; // no vector operations for arrays
-  for (t in 1:N_times) times[t] = times_data[t] - time_init[rep_locs2times[t]] + 1;
+  for (l in 1:N_locs) time_max[l] = time_max[l] - time_init[l] + 1; // no vector operations for arrays
+  for (t in 1:L_times) times[t] = times[t] - time_init[rep_locs2times[t]] + 1;
   
 }
 
@@ -181,36 +179,36 @@ transformed data {
 parameters {
   //// Level 1, (global, species): species-specific rates, indepndent of environment.
   // … dependent on environment.
-  matrix[N_beta, N_totalspecies] Beta_g; // (J-, A+) transition rate from J to A
-  matrix[N_beta, N_totalspecies] Beta_m_j; // (J-) density independent mortalitty
-  matrix[N_beta, N_totalspecies] Beta_r; // // (J+) flow into the system, dependent on env
-  matrix[N_beta, N_totalspecies] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
+  matrix[N_beta, N_species] Beta_g; // (J-, A+) transition rate from J to A
+  matrix[N_beta, N_species] Beta_m_j; // (J-) density independent mortalitty
+  matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
+  matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
 
   // … independent of environment
-  vector<lower=0>[N_totalspecies] b;
-  vector<lower=0>[N_totalspecies] c_j;
-  vector<lower=0>[N_totalspecies] c_a;
-  vector<lower=0>[N_totalspecies] c_b;
-  vector<lower=0>[N_totalspecies] h; // (A-, B+), here still unconstrained on log scale, flow out of the system, independent of environment ("intercept only")
-  vector<lower=0>[N_totalspecies] m_a;
+  vector<lower=0>[N_species] b;
+  vector<lower=0>[N_species] c_j;
+  vector<lower=0>[N_species] c_a;
+  vector<lower=0>[N_species] c_b;
+  vector<lower=0>[N_species] h; // (A-, B+), here still unconstrained on log scale, flow out of the system, independent of environment ("intercept only")
+  vector<lower=0>[N_species] m_a;
   
   vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
   vector<lower=0>[2] sigma_obs; // lognormal error for observations from predictions
   real<lower=0> shape_par; // normal error for time plot (plots) from locations
-  vector[N_totalspecies] u[3]; // normal error for time plot (plots) from locations
+  vector[N_species] u[3]; // normal error for time plot (plots) from locations
 
 
   //// Level 2 (locations):
   // "random effect" h rate
-  vector<lower=0>[N_totalspecies] b_loc[N_locs];
-  vector<lower=0>[N_totalspecies] c_j_loc[N_locs];
-  vector<lower=0>[N_totalspecies] c_a_loc[N_locs];
-  vector<lower=0>[N_totalspecies] c_b_loc[N_locs];
-  vector<lower=0>[N_totalspecies] h_loc[N_locs];
-  vector<lower=0>[N_totalspecies] m_a_loc[N_locs];
+  vector<lower=0>[N_species] b_loc[N_locs];
+  vector<lower=0>[N_species] c_j_loc[N_locs];
+  vector<lower=0>[N_species] c_a_loc[N_locs];
+  vector<lower=0>[N_species] c_b_loc[N_locs];
+  vector<lower=0>[N_species] h_loc[N_locs];
+  vector<lower=0>[N_species] m_a_loc[N_locs];
 
   
-  vector[N_init] state_init_log; // log scale
+  vector[L_init] state_init_log; // log scale
 }
 
 
@@ -218,10 +216,10 @@ transformed parameters {
 
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
   // Location level parameters (unconstrained because on log scale!)
-  matrix[N_locs, N_totalspecies] g_log = X * Beta_g;
-  matrix[N_locs, N_totalspecies] m_j_log = X * Beta_m_j;
-  matrix[N_locs, N_totalspecies] r_log = X * Beta_r;
-  matrix[N_locs, N_totalspecies] s_log = X * Beta_s;
+  matrix[N_locs, N_species] g_log = X * Beta_g;
+  matrix[N_locs, N_species] m_j_log = X * Beta_m_j;
+  matrix[N_locs, N_species] r_log = X * Beta_r;
+  matrix[N_locs, N_species] s_log = X * Beta_s;
 
 }
 
@@ -251,7 +249,7 @@ model {
   
   //// Level 2 (locs) to 3 (plots).
   // Separately fit initial state to feed to integrator.
-  y0_log ~ normal(state_init_log[rep_init2y0], sigma_obs[obsmethod_y0]); //  y0 ~ neg_binomial_0(state_init[rep_init2y0], theta, sigma_obs);
+  y0_log ~ normal(state_init_log[rep_init2y0], sigma_obs[rep_obsmethod2y0]); //  y0 ~ neg_binomial_0(state_init[rep_init2y0], theta, sigma_obs);
   
   // Process error
   for (stage in 1:3) {
@@ -259,15 +257,15 @@ model {
   }
   
   // Level 2 (locs).
-  vector[N_yhat] y_hat_log = unpack(state_init_log, time_max, times, species, pops,
-                                    g_log, m_j_log, r_log, s_log, // rates matrix[N_locs, N_totalspecies]; will have to be transformed
-                                    b_loc, c_j_loc, c_a_loc, c_b_loc, h_loc, m_a_loc, // rates vector[N_totalspecies][N_locs]
+  vector[L_yhat] y_hat_log = unpack(state_init_log, time_max, times, species, pops,
+                                    g_log, m_j_log, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
+                                    b_loc, c_j_loc, c_a_loc, c_b_loc, h_loc, m_a_loc, // rates vector[N_species][N_locs]
                                     u, // process error
                                     ba_a_avg, ba_a_upper,
                                     n_species, n_pops, n_reobs, n_yhat,
-                                    N_yhat, N_locs);
+                                    L_yhat, N_locs);
   
   
   // Fit predictions to data. (level: location/plot/resurvey/species)
-  y_log ~ normal(y_hat_log[rep_yhat2y], sigma_obs[obsmethod_y]); //   y ~ neg_binomial_0(y_hat[rep_yhat2y], theta, sigma_obs);
+  y_log ~ normal(y_hat_log[rep_yhat2y], sigma_obs[rep_obsmethod2y]); //   y ~ neg_binomial_0(y_hat[rep_yhat2y], theta, sigma_obs);
 }

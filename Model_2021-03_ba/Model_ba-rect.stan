@@ -2,15 +2,15 @@ functions {
   
   //// Difference equations
   vector[] simulate(vector initialstate, int time_max, int[] times,
-                  vector b, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
-                  real ba_a_avg, real ba_a_upper,
+                  vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
+                  vector ba_a_avg, real ba_a_upper,
                   int N_spec, int N_pops,
                   // matrix u, // a matrix[N_pops, time_max-1]
                   int[] i_j, int[] i_a, int[] i_b) {
     
     
-    // State matrix with [species, times].
-    vector[N_pops] State[time_max];
+    // State array
+    array[time_max] vector[N_pops] State;
     State[1,] = initialstate;
     // print("State 1 before: ", State[1,]);
 
@@ -22,11 +22,11 @@ functions {
       vector[N_spec] A = State[t-1, i_a];
       vector[N_spec] B = State[t-1, i_b];
 
-      vector[N_spec] BA = A*ba_a_avg + B;
+      vector[N_spec] BA = A .* ba_a_avg + B;
       real BA_sum = sum(BA);
 
       State[t, i_j]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      State[t, i_a]  =  (g .* J + (A - h .*A )) ./ (1 + c_b*BA_sum);
+      State[t, i_a]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
       State[t, i_b]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
       
     }
@@ -37,23 +37,24 @@ functions {
   }
   
   //// Gets the specific Jacobian, given states and parameters
-  matrix jacobian(real J1, real J2, real A1, real A2, real B1, real B2,
-                real b1, real b2, real c_b1, real c_b2, real c_j1, real c_j2, real g1, real g2, real h1, real h2, real l1, real l2, real r1, real r2, real s1, real s2,
-                real p, real q) {
-      
-      matrix[6, 6] J;
-      
-      J = [
-              [- (g1 - 1)/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1) - (c_j1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                             -(c_j1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2, (p*r1)/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1) - (p*s1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                         -(p*s1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2, r1/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1) - (s1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                     -(s1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2],
-              [                                                            -(c_j2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2, - (g2 - 1)/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1) - (c_j2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                         -(p*s2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2, (p*r2)/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1) - (p*s2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                     -(s2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2, r2/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1) - (s2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2],
-              [                                                                                                                    g1/(c_b1*(B1 + B2 + A1*p + A2*p) + 1),                                                                                                                                                       0,                                          - (h1 - 1)/(c_b1*(B1 + B2 + A1*p + A2*p) + 1) - (p*c_b1*(A1 - A1*h1 + J1*g1))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                       -(p*c_b1*(A1 - A1*h1 + J1*g1))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                   -(c_b1*(A1 - A1*h1 + J1*g1))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                   -(c_b1*(A1 - A1*h1 + J1*g1))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2],
-              [                                                                                                                                                      0,                                                                                                                     g2/(c_b2*(B1 + B2 + A1*p + A2*p) + 1),                                                                                       -(p*c_b2*(A2 - A2*h2 + J2*g2))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                          - (h2 - 1)/(c_b2*(B1 + B2 + A1*p + A2*p) + 1) - (p*c_b2*(A2 - A2*h2 + J2*g2))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                   -(c_b2*(A2 - A2*h2 + J2*g2))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                   -(c_b2*(A2 - A2*h2 + J2*g2))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2],
-              [                                                                                                                                                      0,                                                                                                                                                       0,                     (h1*q + b1*h1*q)/(c_b1*(B1 + B2 + A1*p + A2*p) + 1) - (p*c_b1*(B1 + B1*b1 + A1*h1*q + A1*b1*h1*q))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                        -(p*c_b1*(B1 + B1*b1 + A1*h1*q + A1*b1*h1*q))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                         (b1 + 1)/(c_b1*(B1 + B2 + A1*p + A2*p) + 1) - (c_b1*(B1 + B1*b1 + A1*h1*q + A1*b1*h1*q))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                    -(c_b1*(B1 + B1*b1 + A1*h1*q + A1*b1*h1*q))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2],
-              [                                                                                                                                                      0,                                                                                                                                                       0,                                                                        -(p*c_b2*(B2 + B2*b2 + A2*h2*q + A2*b2*h2*q))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                     (h2*q + b2*h2*q)/(c_b2*(B1 + B2 + A1*p + A2*p) + 1) - (p*c_b2*(B2 + B2*b2 + A2*h2*q + A2*b2*h2*q))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                    -(c_b2*(B2 + B2*b2 + A2*h2*q + A2*b2*h2*q))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                         (b2 + 1)/(c_b2*(B1 + B2 + A1*p + A2*p) + 1) - (c_b2*(B2 + B2*b2 + A2*h2*q + A2*b2*h2*q))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2]
-          ];
-      
-      return J;
-  }
+  // outdated: uses c_b not c_a for A
+  // matrix jacobian(real J1, real J2, real A1, real A2, real B1, real B2,
+  //               real b1, real b2, real c_b1, real c_b2, real c_j1, real c_j2, real g1, real g2, real h1, real h2, real l1, real l2, real r1, real r2, real s1, real s2,
+  //               real p, real q) {
+  //     
+  //     matrix[6, 6] J;
+  //     
+  //     J = [
+  //             [- (g1 - 1)/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1) - (c_j1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                             -(c_j1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2, (p*r1)/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1) - (p*s1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                         -(p*s1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2, r1/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1) - (s1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                     -(s1*(J1 + l1 - J1*g1 + B1*r1 + A1*p*r1))/(c_j1*(J1 + J2) + s1*(B1 + B2 + A1*p + A2*p) + 1)^2],
+  //             [                                                            -(c_j2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2, - (g2 - 1)/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1) - (c_j2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                         -(p*s2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2, (p*r2)/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1) - (p*s2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                     -(s2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2, r2/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1) - (s2*(J2 + l2 - J2*g2 + B2*r2 + A2*p*r2))/(c_j2*(J1 + J2) + s2*(B1 + B2 + A1*p + A2*p) + 1)^2],
+  //             [                                                                                                                    g1/(c_b1*(B1 + B2 + A1*p + A2*p) + 1),                                                                                                                                                       0,                                          - (h1 - 1)/(c_b1*(B1 + B2 + A1*p + A2*p) + 1) - (p*c_b1*(A1 - A1*h1 + J1*g1))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                       -(p*c_b1*(A1 - A1*h1 + J1*g1))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                   -(c_b1*(A1 - A1*h1 + J1*g1))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                   -(c_b1*(A1 - A1*h1 + J1*g1))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2],
+  //             [                                                                                                                                                      0,                                                                                                                     g2/(c_b2*(B1 + B2 + A1*p + A2*p) + 1),                                                                                       -(p*c_b2*(A2 - A2*h2 + J2*g2))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                          - (h2 - 1)/(c_b2*(B1 + B2 + A1*p + A2*p) + 1) - (p*c_b2*(A2 - A2*h2 + J2*g2))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                   -(c_b2*(A2 - A2*h2 + J2*g2))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                                   -(c_b2*(A2 - A2*h2 + J2*g2))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2],
+  //             [                                                                                                                                                      0,                                                                                                                                                       0,                     (h1*q + b1*h1*q)/(c_b1*(B1 + B2 + A1*p + A2*p) + 1) - (p*c_b1*(B1 + B1*b1 + A1*h1*q + A1*b1*h1*q))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                        -(p*c_b1*(B1 + B1*b1 + A1*h1*q + A1*b1*h1*q))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                         (b1 + 1)/(c_b1*(B1 + B2 + A1*p + A2*p) + 1) - (c_b1*(B1 + B1*b1 + A1*h1*q + A1*b1*h1*q))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                    -(c_b1*(B1 + B1*b1 + A1*h1*q + A1*b1*h1*q))/(c_b1*(B1 + B2 + A1*p + A2*p) + 1)^2],
+  //             [                                                                                                                                                      0,                                                                                                                                                       0,                                                                        -(p*c_b2*(B2 + B2*b2 + A2*h2*q + A2*b2*h2*q))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                     (h2*q + b2*h2*q)/(c_b2*(B1 + B2 + A1*p + A2*p) + 1) - (p*c_b2*(B2 + B2*b2 + A2*h2*q + A2*b2*h2*q))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                                                                    -(c_b2*(B2 + B2*b2 + A2*h2*q + A2*b2*h2*q))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2,                         (b2 + 1)/(c_b2*(B1 + B2 + A1*p + A2*p) + 1) - (c_b2*(B2 + B2*b2 + A2*h2*q + A2*b2*h2*q))/(c_b2*(B1 + B2 + A1*p + A2*p) + 1)^2]
+  //         ];
+  //     
+  //     return J;
+  // }
   
   
   //// Transforms the vertex form into normal polynomial.
@@ -116,8 +117,8 @@ functions {
   // Expects a state vector[N_pops]
   // returns a state vector of the form [J1, …, A1, …, B1, …, BA1, …, iterations]
   vector iterateFix(vector state_0,
-                    vector b, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
-                    real ba_a_avg, real ba_a_upper,
+                    vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
+                    vector ba_a_avg, real ba_a_upper,
                     int N_spec, int N_pops,
                     int[] i_j, int[] i_a, int[] i_b,
                     real tolerance_fix, int fixiter_max) {
@@ -141,15 +142,15 @@ functions {
       A = s_0[i_a];
       B = s_0[i_b];
       
-      vector[N_spec] BA = A*ba_a_avg + B;
+      vector[N_spec] BA = A .* ba_a_avg + B;
       vector[N_spec] BA_1;
       real BA_sum = sum(BA);
       
       s_1[i_j]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      s_1[i_a]  =  (g .* J + (A - h .*A )) ./ (1 + c_b*BA_sum);
+      s_1[i_a]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
       s_1[i_b]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
       
-      BA_1 =  s_1[i_a]*ba_a_avg + s_1[i_b]; // New BA as additional state.
+      BA_1 =  s_1[i_a] .* ba_a_avg + s_1[i_b]; // New BA as additional state.
       s_1[(N_pops+1):] = BA_1;
       
       // notconvergent = (1 <= norm(jacobian(s_1[i_j[1]], s_1[i_j[2]], s_1[i_a[1]], s_1[i_a[2]], s_1[i_b[1]], s_1[i_b[2]], b[1], b[2], c_b[1], c_b[2], c_j[1], c_j[2], g[1], g[2], h[1], h[2], l[1], l[2], r[1], r[2], s[1], s[2], ba_a_avg, ba_a_upper)) );
@@ -194,7 +195,7 @@ data {
   array[N_locs] vector<lower=0>[N_species] L_smooth;
 
   // The response.
-  array[N_locs] vector[N_pops] y0_loc;
+  // array[N_locs] vector[N_pops] y0_loc;
   array[N_locs, N_times, N_plots] vector[N_pops] y;
   
   //// Priors. The 2 reflect the two parameters mu and sigma
@@ -207,6 +208,7 @@ data {
   array[2] vector[N_beta] prior_Vertex_s;
   
   array[2] vector[N_species] prior_b_log;
+  array[2] vector[N_species] prior_c_a_log;
   array[2] vector[N_species] prior_c_b_log;
   array[2] vector[N_species] prior_h_logit;
   
@@ -214,19 +216,20 @@ data {
   
   // Settings
   real<upper=0.5> tolerance_fix;
-  real dbh_lower_a; // 100
-  real dbh_lower_b; // 200
-  
+  // real dbh_lower_a; // 100
+  // real dbh_lower_b; // 200
+  real ba_a_upper;
+  vector[N_species] ba_a_avg;
 }
 
 
 transformed data {
   
-  // Shift all times to start at 1.
-  real ba_a_upper = pi() * (dbh_lower_b/2)^2 * 1e-6; // / pi*r^2, mm^2 to m^2
-  real ba_a_avg = pi() * ((dbh_lower_a + dbh_lower_b)/2/2)^2 * 1e-6;
+  //// This is dealt with empirically in R
+  // real ba_a_upper = pi() * (dbh_lower_b/2)^2 * 1e-6; // / pi*r^2, mm^2 to m^2
+  // real ba_a_avg = pi() * ((dbh_lower_a + dbh_lower_b)/2/2)^2 * 1e-6;
   
-  array[N_locs] vector[N_pops] y0_loc_log = log(y0_loc);
+  // array[N_locs] vector[N_pops] y0_loc_log = log(y0_loc);
   
   // priors
   array[2] vector[N_beta] prior_Beta_c_j = transformToNormal(prior_Vertex_c_j);
@@ -247,6 +250,7 @@ parameters {
   
   // … independent of environment
   vector[N_species] b_log;
+  vector[N_species] c_a_log;
   vector[N_species] c_b_log;
   vector[N_species] h_logit;
   // vector[N_species] c_a_log;
@@ -270,7 +274,7 @@ parameters {
   
   // matrix[N_pops, timespan_max] u[N_locs];
   
-  vector[N_pops] state_init_log[N_locs];
+  array[N_locs] vector[N_pops] state_init_log;
     // vector[N_pops] state_init_log_raw[N_locs];
 }
 
@@ -302,7 +306,7 @@ transformed parameters {
     // state_init_log[loc] = y0_loc_log[loc] + sigma_obs[rep_obsmethod2pops] .* state_init_log_raw[loc];
     
     y_hat[loc, ] = simulate(exp(state_init_log[loc]), time_max[loc], times[loc, ],
-                            exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                            exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
                             ba_a_avg, ba_a_upper,
                             N_species, N_pops,
                             // u[loc],
@@ -333,6 +337,7 @@ model {
   //// Priors on Parameters
   // prior_*[2, N_species]
   b_log   ~ normal(prior_b_log[1,], prior_b_log[2,]);
+  c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
   c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
   h_logit ~ normal(prior_h_logit[1,], prior_c_b_log[2,]);
   
@@ -431,7 +436,7 @@ generated quantities {
     
     //// fix point, given parameters
     state_fix[loc] = iterateFix(y_hat[loc, N_times], // use the third time as initial value
-                                exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
                                 ba_a_avg, ba_a_upper,
                                 N_species, N_pops,
                                 i_j, i_a, i_b,
@@ -454,7 +459,7 @@ generated quantities {
       
       //// ... given g == 0.5*g
       state_fix_g_half[loc] = iterateFix(state_fix[loc, 1:N_pops], // use the fixed point as initial value
-                                          exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]') * 0.5, inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                          exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]') * 0.5, inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
                                           ba_a_avg, ba_a_upper,
                                           N_species, N_pops,
                                           i_j, i_a, i_b,
@@ -465,7 +470,7 @@ generated quantities {
       
       //// ... given r == 0
       state_fix_r_0[loc] = iterateFix(state_fix[loc, 1:N_pops], // use the fixed point as initial value
-                                      exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], [0.0, 0.0]', exp(S_log[loc,]'),
+                                      exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], [0.0, 0.0]', exp(S_log[loc,]'),
                                       ba_a_avg, ba_a_upper,
                                       N_species, N_pops,
                                       i_j, i_a, i_b,
@@ -476,7 +481,7 @@ generated quantities {
 
       //// ... given s == 0
       state_fix_s_0[loc] = iterateFix(state_fix[loc, 1:N_pops], // use the fixed point as initial value
-                                      exp(b_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), [0.0, 0.0]',
+                                      exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), [0.0, 0.0]',
                                       ba_a_avg, ba_a_upper,
                                       N_species, N_pops,
                                       i_j, i_a, i_b,
