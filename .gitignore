@@ -76,3 +76,4 @@ docs/
 */Model_*
 !*.stan
 Model_2021-03_ba/Sim_recovery_ba.html
+Inventory.nosync/

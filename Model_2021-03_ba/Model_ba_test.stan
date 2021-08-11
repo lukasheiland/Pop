@@ -35,7 +35,7 @@ functions {
   //// ODE integration and data assignment to one long vector is wrapped into a function here because
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
-  vector unpack(vector[] state_init, int[] time_max, int[] times,
+  vector unpack(vector[] state_init_log, int[] time_max, int[] times,
                 vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_logit, vector h_logit, vector[] L_loc, vector r_log, vector s_log,
                 // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_logit, vector h_logit, vector[] L_loc, matrix R_log, matrix S_log,
                 vector ba_a_avg, real ba_a_upper,
@@ -55,7 +55,7 @@ functions {
       // print("r", R_log);
       matrix[N_pops, time_max[loc]] States =
                         
-                        simulate(state_init[loc, ],
+                        simulate(exp(state_init_log[loc]),
                                  time_max[loc],
                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), inv_logit(g_logit), inv_logit(h_logit), L_loc[loc, ], exp(r_log), exp(s_log),
                                  ba_a_avg, ba_a_upper,
@@ -176,6 +176,25 @@ functions {
     }
     return V;
   }
+  
+  // Implementation of gamma probability density with zero hurdle model
+  real gamma_0_lpdf(vector y, vector y_hat_rep, vector alpha_rep, real theta, int L_y) {
+    
+    real t;
+    vector[L_y] beta_rep = alpha_rep ./ y_hat_rep;
+    for (l in 1:L_y) {
+      
+      if (y[l] == 0) {
+        // Likelihood of 0 coming from probability theta; synonymous to t += bernoulli_lpmf(1 | theta);
+        t = log(theta);
+      }
+      else {
+        t = log1m(theta) + // synonymous to bernoulli_lpmf(0 | theta)
+             gamma_lpdf(y[l] | alpha_rep[l], beta_rep[l]);
+      }
+    }
+    return t;
+  }
 
 }
 
@@ -292,7 +311,8 @@ parameters {
   vector[N_species] l_log;
   // matrix[N_locs, N_species] L_random; // array[N_locs] vector[N_species] L_random; // here real array is used for compatibility with to_vector
   // vector<lower=0>[N_species] sigma_l;
-
+  
+  real<lower=0, upper=1> theta;
   
   //// Errors
   vector<lower=0>[3] alpha_obs_inv; // observation error
@@ -302,7 +322,7 @@ parameters {
   // matrix[N_pops, timespan_max] u[N_locs];
   
   ///
-  array[N_locs] vector<lower=0>[N_pops] state_init;
+  array[N_locs] vector[N_pops] state_init_log;
 }
 
 
@@ -327,7 +347,7 @@ transformed parameters {
     
   }
   
-  vector[L_yhat] y_hat = unpack(state_init, time_max, times,
+  vector[L_yhat] y_hat = unpack(state_init_log, time_max, times,
                                 b_log, c_a_log, c_b_log, c_j_log, g_logit, h_logit, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 // b_log, c_a_log, c_b_log, C_j_log, G_logit, h_logit, L_loc,R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 ba_a_avg, ba_a_upper,
@@ -344,9 +364,11 @@ model {
   
   // sigma_process ~ normal(0, 0.01);
   // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
+
+
   
   //// Hyperpriors
-  // alpha_obs_inv ~ normal(0, [0.1, 0.01]); // Observation error
+  alpha_obs_inv ~ normal(0, 1); // Observation error
   
   // ... for special offset L
   // to_vector(L_random) ~ std_normal(); // Random part around slope for l
@@ -361,6 +383,16 @@ model {
   // c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
   // h_logit ~ normal(prior_h_logit[1,], prior_c_b_log[2,]);
   
+//  b_log   ~ normal(0, 2);
+//  c_a_log ~ normal(-3, 2);
+//  c_b_log ~ normal(-3, 2);
+//  c_j_log   ~ normal(-3, 2);
+//  g_logit ~ normal(-2, 2);
+//  h_logit ~ normal(-3, 2);
+//  r_log ~ normal(2, 3);
+//  s_log ~ normal(-2, 2);
+
+  
   // same priors for both species
   // for (spec in 1:N_species) {
   //   // prior_Beta_*[2, N_beta]
@@ -373,7 +405,7 @@ model {
   //---------- MODEL ---------------------------------
 
   // Fit predictions to data. (level: location/plot/resurvey/species)
-  y ~ gamma(alpha_obs[rep_obsmethod2y], alpha_obs[rep_obsmethod2y] ./ y_hat[rep_yhat2y]);
+  y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
   
   /// alternatively
   // y ~ neg_binomial_0(y_hat[rep_yhat2y], theta, sigma_obs);
@@ -405,7 +437,7 @@ generated quantities {
   for(loc in 1:N_locs) {
     
     //// fix point, given parameters
-    state_fix[loc] = iterateFix(state_init[loc],
+    state_fix[loc] = iterateFix(exp(state_init_log[loc]),
                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), inv_logit(g_logit), inv_logit(h_logit), L_loc[loc, ], exp(r_log), exp(s_log),
                                 // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
                                 ba_a_avg, ba_a_upper,

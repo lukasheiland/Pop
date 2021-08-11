@@ -176,6 +176,109 @@ formatInverse <- function(Stages, taxon_select, threshold_dbh) { # priors!
 }
 
 
+#### Returns viable start values ---------------------------
+getInits <- function() {
+  
+  responsescaleerror <- 0.1
+  data <- tar_read(stages_inverse) ## This is fine in this case, as getInits is only called inside targets that would be invalidated after change of stages_inverse
+  n_species <- data$N_species
+  n_beta <- data$N_beta
+  n_locs <- data$N_locs
+  
+  state_init <- matrix(rlnorm(data$L_yhat, log(0.01), 0.01), nrow = n_locs, ncol = data$N_pops) # array[N_locs] vector<lower=0>[N_pops] state_init;
+  
+  b_log <- rnorm(n_species, -1, 0.01)
+  c_a_log <- rnorm(n_species, -3.3, 0.2)
+  c_b_log <- rnorm(n_species, -3, 0.1)
+  c_j_log <- rnorm(n_species, -5, 0.5)
+  g_logit <- rnorm(n_species, -1, 0.2)
+  h_logit <- rnorm(n_species, -0.5, 0.3)
+  m_a_log <- rnorm(n_species, -1.5, 0.5)
+  m_j_log <- rnorm(n_species, -1.2, 0.1)
+  r_log <- rnorm(n_species, 1.5, 0.2)
+  l_log <- rnorm(n_species, -1, 0.2)
+  s_log <- rnorm(n_species, -2.9, 0.1)
+  
+  beta_null <- function() { matrix(c(-1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.001) }
+  
+  
+  inits <- list(
+    
+    # b_log = b_log,
+    # c_a_log = c_a_log,
+    # c_b_log = c_b_log,
+    # c_j_log = c_j_log,
+    # 
+    # g_logit = g_logit,
+    # h_logit = h_logit,
+    # 
+    # l_log = l_log,
+    # m_a_log = m_a_log,
+    # m_j_log = m_j_log,
+    # r_log = r_log,
+    # s_log = s_log,
+    
+    ## from global environment
+    Beta_b = matrix(c(1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species),
+    Beta_c_a = beta_null(),
+    Beta_c_b = beta_null(),
+    Beta_c_j = beta_null(),
+    Beta_g = matrix(c(1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
+    Beta_h = matrix(c(1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
+    Beta_l = matrix(c(1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
+    Beta_m_a = matrix(c(-4, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
+    Beta_m_j = matrix(c(-2, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
+    Beta_r = matrix(c(3, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
+    Beta_s = matrix(c(-3, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
+    
+    b = exp(b_log),
+    c_a = exp(c_a_log),
+    c_b = exp(c_b_log),
+    c_j = exp(c_j_log),
+    
+    g = plogis(g_logit),
+    h = plogis(h_logit),
+    
+    l = exp(l_log),
+    m_a = exp(m_a_log),
+    m_j = exp(m_j_log),
+    r = exp(r_log),
+    s = exp(s_log),
+    
+    # b_loc = matrix(rep(exp(b_log), n_locs), nrow = n_locs, byrow = T),
+    # c_a_loc =  matrix(rep(exp(c_a_log),n_locs), nrow = n_locs, byrow = T),
+    # c_b_loc =  matrix(rep(exp(c_b_log),n_locs), nrow = n_locs, byrow = T),
+    # c_j_loc =  matrix(rep(exp(c_j_log),n_locs), nrow = n_locs, byrow = T),
+    # g_loc =  matrix(rep(plogis(g_logit),n_locs), nrow = n_locs, byrow = T),
+    # h_loc =  matrix(rep(plogis(h_logit),n_locs), nrow = n_locs, byrow = T),
+    # l_loc =  matrix(rep(exp(l_log),n_locs), nrow = n_locs, byrow = T),
+    # m_a_loc =  matrix(rep(exp(m_a_log),n_locs), nrow = n_locs, byrow = T),
+    # m_j_loc =  matrix(rep(exp(m_j_log),n_locs), nrow = n_locs, byrow = T),
+    # r_loc =  matrix(rep(exp(r_log),n_locs), nrow = n_locs, byrow = T),
+    # s_loc =  matrix(rep(exp(s_log),n_locs), nrow = n_locs, byrow = T),
+    
+    shape_par      = c(10, 10, 10),
+    sigma_process  = c(0.01),
+    
+    sigma_obs      = c(1.1, 1.1, 1.1),
+    alpha_obs      = c(1, 1, 1),
+    alpha_obs_inv   = c(1, 1, 1),
+    phi_obs      = c(10, 20, 20),
+    
+    theta = 0.5
+    
+    # state_init = state_init,
+    # state_init_log = log(state_init)
+    
+    # u = replicate(n_locs, matrix(rnorm(n_species*3, 0, 0.001), nrow = pars$n_species*3, ncol = data$timespan_max))
+  )
+  
+  return(inits)
+}
+
+
+
+
 ## drawTestInverse --------------------------------
 # tar_make("stages_inverse")
 # stages_inverse <- tar_read("stages_inverse")
@@ -183,26 +286,24 @@ formatInverse <- function(Stages, taxon_select, threshold_dbh) { # priors!
 # model <- testmodel <- tar_read("testmodel")
 
 
-drawTestInverse <- function(testmodel, stages_inverse,
+drawTestInverse <- function(model, stages_inverse, initfunc = 0,
                             method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 200, iter_sampling = 300,
-                            fitpath = "Fits.nosync/", ...) {
+                            fitpath = "Fits.nosync/") {
   
-  model <- testmodel
+  require(cmdstanr)
   
   if (!dir.exists(fitpath)) {
     dir.create(fitpath)
   }
   
-  initfunc <- 0.01
-  
+
   if(match.arg(method) == "variational") {
     
     fit <- model$variational(data = stages_inverse,
                              output_dir = fitpath,
                              init = initfunc,
                              eta = 0.001,
-                             iter = 20**4,
-                             ...)
+                             iter = 20**4)
 
   } else if (match.arg(method) == "mcmc") {
 
@@ -213,8 +314,7 @@ drawTestInverse <- function(testmodel, stages_inverse,
                         iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                         adapt_delta = 0.99,
                         max_treedepth = 16,
-                        chains = n_chains, parallel_chains = getOption("mc.cores", n_chains),
-                        ...)
+                        chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
   }
   
   return(fit)

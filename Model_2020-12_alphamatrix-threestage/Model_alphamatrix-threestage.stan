@@ -79,21 +79,6 @@ functions {
   return y_hat; // Structure: locations/resurveys/pops(==stages/species)
   }
 
-  
-  //// Implementation of the negative binomial probability mass — including definition of support 0 (R style)
-  // real neg_binomial_0_lpmf(int[] y, vector mu, real theta, real phi) {
-  //   real t;
-  //   for (i in 1:size(mu)) {
-  //     if (y[i] == 0) {
-  //       t += log_sum_exp(bernoulli_lpmf(1 | theta),
-  //                        bernoulli_lpmf(0 | theta) + poisson_lpmf(y[i] | mu[i]));
-  //     }
-  //     else {
-  //       t += bernoulli_lpmf(0 | theta) + poisson_lpmf(y[i] | mu[i]);
-  //     }
-  //   }
-  //   return t;
-  // }
 }
 
 data {
