@@ -35,7 +35,7 @@ functions {
   //// ODE integration and data assignment to one long vector is wrapped into a function here because
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
-  vector unpack(vector[] state_init, int[] time_max, int[] times,
+  vector unpack(vector[] state_init_log, int[] time_max, int[] times,
                 vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_logit, vector h_logit, vector[] L_loc, matrix R_log, matrix S_log,
                 vector ba_a_avg, real ba_a_upper,
                 int[] n_obs, int[] n_yhat,
@@ -54,7 +54,7 @@ functions {
       // print("r", R_log);
       matrix[N_pops, time_max[loc]] States =
                         
-                        simulate(state_init[loc, ],
+                        simulate(exp(state_init_log[loc, ]),
                                  time_max[loc],
                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
                                  ba_a_avg, ba_a_upper,
@@ -297,7 +297,7 @@ parameters {
   // matrix[N_pops, timespan_max] u[N_locs];
   
   ///
-  array[N_locs] vector<lower=0>[N_pops] state_init;
+  array[N_locs] vector[N_pops] state_init_log;
 }
 
 
@@ -322,7 +322,7 @@ transformed parameters {
     
   }
   
-  vector[L_yhat] y_hat = unpack(state_init, time_max, times,
+  vector[L_yhat] y_hat = unpack(state_init_log, time_max, times,
                                 b_log, c_a_log, c_b_log, C_j_log, G_logit, h_logit, L_loc,R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat, // varying numbers per loc
@@ -372,7 +372,7 @@ generated quantities {
   for(loc in 1:N_locs) {
     
     //// fix point, given parameters
-    state_fix[loc] = iterateFix(state_init[loc],
+    state_fix[loc] = iterateFix(exp(state_init_log[loc]),
                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
                                 ba_a_avg, ba_a_upper,
                                 N_species, N_pops,

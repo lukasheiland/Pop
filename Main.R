@@ -4,10 +4,12 @@ library(magrittr)
 library(glue)
 library(dplyr)
 library(targets)
+library(visNetwork)
 library(future)
 
 library(sf)
-
+library(cmdstanr)
+library(rstan)
 
 # Orientation -------------------------------------------------------------
 setwd(here())
@@ -40,5 +42,8 @@ tar_make(c("testfit_inverse"))
 # tar_read("Stages_env") %>% View()
 
 # Inspect pipeline ----------------------------------------------------------------
-tar_visnetwork(targets_only = T, exclude = starts_with("file"))
+network <- tar_visnetwork(targets_only = T, exclude = contains(c("file_", "threshold_", "taxon_", "predictor_")))
+network %>%
+  visHierarchicalLayout(direction = "LR", levelSeparation = 100, nodeSpacing = 120, edgeMinimization = T, blockShifting = T, parentCentralization = T)
+
 tar_visnetwork(targets_only = F, exclude = starts_with("file"))

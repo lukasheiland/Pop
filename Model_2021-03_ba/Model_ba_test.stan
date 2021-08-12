@@ -183,7 +183,10 @@ functions {
     real t;
     vector[L_y] beta_rep = alpha_rep ./ y_hat_rep;
     for (l in 1:L_y) {
-      
+	
+	// From a process point of view:
+	// rbinom(100, 1, 0.2) * rgamma(100, 3, 2)
+    
       if (y[l] == 0) {
         // Likelihood of 0 coming from probability theta; synonymous to t += bernoulli_lpmf(1 | theta);
         t = log(theta);
@@ -238,7 +241,7 @@ data {
   array[N_locs] vector<lower=0>[N_species] L_smooth;
   
   //// The response.
-  vector[L_y] y;
+  int y[L_y];
   
   //// Settings
   real<upper=0.5> tolerance_fix;
@@ -315,7 +318,8 @@ parameters {
   real<lower=0, upper=1> theta;
   
   //// Errors
-  vector<lower=0>[3] alpha_obs_inv; // observation error
+  vector<lower=0>[3] phi_obs_inv; // observation error in neg_binomial
+    // vector<lower=0>[3] alpha_obs_inv; // observation error in gamma
     // vector<lower=0>[2] sigma_obs; // observation error
     // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
   
@@ -338,7 +342,8 @@ transformed parameters {
   // matrix[N_locs, N_species] R_log = X * Beta_r;
   // matrix[N_locs, N_species] S_log = X * Beta_s;
 
-  vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
+  vector<lower=0>[3] phi_obs = inv(phi_obs_inv);
+    // vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
   
   for(loc in 1:N_locs) {
     
@@ -368,7 +373,8 @@ model {
 
   
   //// Hyperpriors
-  alpha_obs_inv ~ normal(0, 1); // Observation error
+  // alpha_obs_inv ~ normal(0, 0.1); // Observation error for gamma
+  phi_obs_inv ~ normal(0, 1); // Observation error for neg_binomial
   
   // ... for special offset L
   // to_vector(L_random) ~ std_normal(); // Random part around slope for l
@@ -405,10 +411,9 @@ model {
   //---------- MODEL ---------------------------------
 
   // Fit predictions to data. (level: location/plot/resurvey/species)
-  y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
+  y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
   
-  /// alternatively
-  // y ~ neg_binomial_0(y_hat[rep_yhat2y], theta, sigma_obs);
+    // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
 }
 
 
@@ -430,7 +435,7 @@ generated quantities {
 
   //// Predictions
   y_hat_rep = y_hat[rep_yhat2y];
-  y_sim = gamma_rng(alpha_obs[rep_obsmethod2y], alpha_obs[rep_obsmethod2y] ./ y_hat[rep_yhat2y]);
+  // y_sim = gamma_rng(alpha_obs[rep_obsmethod2y], alpha_obs[rep_obsmethod2y] ./ y_hat[rep_yhat2y]);
   
   
   //// Fix point iteration

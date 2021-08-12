@@ -425,10 +425,18 @@ joinEnv <- function(Stages, E) {
 # Stages <- tar_read("Stages_select")
 # predictor_select <- tar_read("predictor_select")
 
-scalePredictors <- function(Stages,
-                            predictor_select
-                            ) {
+scaleData <- function(Stages,
+                      predictor_select
+                      ) {
   
+  #### Round counts and ba
+  if(any(Stages$count_ha < 0.5 & Stages$count_ha != 0, na.rm = T)) warning("scaleData(): There were values < 0.5 in count_ha (in addition to zeroes). They have still been rounded in variable count_ha_r.")
+  Stages$count_ha_r <- as.integer(round(Stages$count_ha))
+  
+  if(any(Stages$ba_ha < 0.5 & Stages$ba_ha != 0, na.rm = T)) warning("scaleData(): There were values < 0.5 in ba_ha (in addition to zeroes). They have still been rounded in variable ba_ha_r.")
+  Stages$ba_ha_r <- as.integer(round(Stages$ba_ha))
+  
+  #### Scale predictors
   scalecolumns <- c(predictor_select) # , names(Stages)[grepl("^s_", names(Stages))]
   M_stages <- scale(st_drop_geometry(Stages[scalecolumns]))
   colnames(M_stages) <- paste0(scalecolumns, "_s")

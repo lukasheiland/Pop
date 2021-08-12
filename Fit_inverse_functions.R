@@ -49,10 +49,10 @@ formatInverse <- function(Stages, taxon_select, threshold_dbh) { # priors!
     
     ## Stages are measured in different terms: ba or count
     mutate(y = case_when(
-      stage == "J" ~ count_ha,
-      stage == "A" ~ count_ha,
-      stage == "B" ~ ba_ha,
-      stage == "BA" ~ ba_ha
+      stage == "J" ~ count_ha_r,
+      stage == "A" ~ count_ha_r,
+      stage == "B" ~ ba_ha_r,
+      stage == "BA" ~ ba_ha_r
     )) %>%
     
     ## Different levels of observation error were assumed for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
@@ -286,7 +286,7 @@ getInits <- function() {
 # model <- testmodel <- tar_read("testmodel")
 
 
-drawTestInverse <- function(model, stages_inverse, initfunc = 0,
+drawTestInverse <- function(model, stages_inverse, initfunc = 0.5,
                             method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 200, iter_sampling = 300,
                             fitpath = "Fits.nosync/") {
   
@@ -330,10 +330,33 @@ drawInverse <- function(model, Stages_inverse) {
 }
 
 
+## summarizeInverse --------------------------------
+# fit_inverse  <- tar_read("fit_inverse")
+# fit_inverse  <- tar_read("testfit_inverse")
+
+drawInverse <- function(fit_inverse) {
+  
+  summary <- fit_inverse$summary()
+  
+  summarypath <- fit_inverse$output_files()[1] %>%
+    stringr::str_replace("-1-", "-x-") %>%
+    stringr::str_replace(".csv", "_summary.csv")
+  
+  write.csv(summary, summarypath)
+  
+  return(summary)
+}
+
+
 ## extractDrawsInverse --------------------------------
 # fit_inverse  <- tar_read("fit_inverse")
+# testfit_inverse  <- tar_read("testfit_inverse")
 
 extractDrawsInverse <- function(fit_inverse) {
+  
+  outputfile <- fit_inverse$output_files()
+  draws <- rstan::read_stan_csv(outputfile) %>%
+    rstan::extract()
   
   return(draws)
 }

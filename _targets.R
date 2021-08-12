@@ -117,7 +117,7 @@ list(
                selectClusters(Stages_splines, predictor_select)), # After smooth, so that smooth can be informed by all plots.
                ## there is some random sampling here. Note: a target's name determines its random number generator seed. 
     tar_target(Stages_scaled,
-               scalePredictors(Stages_select, predictor_select)) # After selection, so that scaling includes selected plots .
+               scaleData(Stages_select, predictor_select)) # After selection, so that scaling includes selected plots .
   ),
   
   
@@ -137,27 +137,33 @@ list(
   
   ## Inverse fit
   list(
-    tar_target(modelpath,
-               "Model_2021-03_ba/Model_ba.stan"),
-    tar_target(file_model,
-               modelpath,
-               format = "file"),
-    tar_target(file_testmodel,
-               gsub("\\.stan$", "_test.stan", modelpath),
-               format = "file"),
-    tar_target(model,
-               cmdstan_model(file_model)),
-    tar_target(testmodel,
-               cmdstan_model(file_testmodel),
-               packages = addPackage("cmdstanr")),
     tar_target(stages_inverse,
                formatInverse(Stages_scaled, taxon_select, threshold_dbh)), # priors
+    
+    tar_target(file_testmodel,
+               "Model_2021-03_ba/Model_ba_test.stan",
+               format = "file"),
+    tar_target(file_model,
+               "Model_2021-03_ba/Model_ba.stan",
+               format = "file"),
+    
+    tar_target(testmodel,
+               cmdstan_model(file_testmodel)),
+    tar_target(model,
+               cmdstan_model(file_model)),
+    
     tar_target(testfit_inverse,
-               drawTestInverse(model = testmodel, stages_inverse, initfunc = 1),
-               packages = addPackage("cmdstanr")),
+               drawTestInverse(model = testmodel, stages_inverse, initfunc = 1)),
     tar_target(fit_inverse,
-               drawInverse(model_stan, stages_inverse),
-               packages = addPackage("cmdstanr")),
+               drawInverse(model = model, stages_inverse, initfunc = 1)),
+    
+    tar_target(testsummary_inverse,
+               summarizeInverse(testfit_inverse)),
+    tar_target(summary_inverse,
+               summarizeInverse(fit_inverse)),
+    
+    tar_target(testdraws_inverse,
+               extractDrawsInverse(testfit_inverse)),
     tar_target(draws_inverse,
                extractDrawsInverse(fit_inverse))
   ),
@@ -165,7 +171,7 @@ list(
   
   ## Generated quantities
   list(
-    tar_target(gqmodel_stan,
+    tar_target(gqmodel,
                cmdstan_model(paste0(tools::file_path_sans_ext(modelpath_stan),"_gq.stan"))),
     tar_target(gqfit_inverse,
                draw(gqmodel_stan, draws_inverse)),
