@@ -30,7 +30,7 @@ tar_glimpse()
 M <- tar_manifest(fields = c("name", "command"))
 # M$name
 
-tar_make(c("testfit_inverse"))
+tar_make(c("data_stan"))
   ## alternatives
   # plan(multisession)
   # future(tar_make(names = "predict_splines")) # just as a future

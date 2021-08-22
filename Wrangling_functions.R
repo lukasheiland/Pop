@@ -1,7 +1,134 @@
 
 # ——————————————————————————————————————————————————————————————————————————————————#
-# Stage abundances functions -------------------------------------------------------
+# Tree data functions -------------------------------------------------------
 # ——————————————————————————————————————————————————————————————————————————————————#
+
+
+## calculateChanges --------------------------------
+# Data_big  <- tar_read("Data_big")
+# Data_big_status <- tar_read("Data_big_status")
+# Env_cluster <- tar_read(Env_cluster)
+# Stages_select <- tar_read("Stages_select")
+# taxon_select <- tar_read("taxon_select")
+# threshold_dbh <- tar_read("threshold_dbh")
+
+calculateChanges <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select, threshold_dbh) {
+  
+  ### local functions
+  selectTaxa <- function(Abundance, taxon_select) {
+    Abundance %>%
+      mutate(tax = forcats::fct_other(tax, !!!as.list(taxon_select), other_level = "other")) %>%
+      mutate(taxid = if_else(tax == "other", "other", as.character(taxid))) %>%
+      droplevels()
+  }
+  
+  diffTime <- function(time_first, time_second) {
+    timediff <- lubridate::year(time_second) - lubridate::year(time_first)
+    return(timediff)
+  }
+  
+  # followedAbyB <- function(stage) {
+  #   i <- zoo::rollapply(as.character(stage), width = 2, identical, c("A", "B"))
+  #   return(c(i, F)) # padding in the end for vector length
+  # }
+  
+  countNewInB <- function(idB_first, idB_second) {
+    count <- sum(!(idB_second %in% idB_first), na.rm = T)
+    return(count * count_trans)
+  }
+
+  
+  ### Pipes
+  D <- Data_big_status %>%
+    rename(count = count_ha) %>% # just temporarily for consistency with Data_big
+    mutate(excluded = dead | harvested) %>%
+    filter(excluded) # if necessary, plots with harvest will be excluded later. These added counts will only apply to a survey where the tree was valid and/or alive before!
+  
+  E <- Env_cluster[c('plotid', 'clusterid')] %>%
+    st_drop_geometry()
+  
+  clusterid_select <- unique(Stages_select$clusterid)
+  Changes_AB <- Data_big %>%
+    
+    ## add dead trees
+    bind_rows(select(D, -clusterid)) %>%
+    
+    ## add clusters via faster matching
+    bind_cols(clusterid = E$clusterid[match(.$plotid, E$plotid)]) %>%
+
+    ## select clusters
+    filter(clusterid %in% clusterid_select) %>%
+    
+    ### All trees on a plot have an id!
+    # group_by(plotid) %>%
+    # mutate(allid = all(!is.na(treeid)))
+    
+    ### Lump taxa first, to facilitate summarize() and complete() later
+    selectTaxa(taxon_select) %>%
+    
+    ### rename
+    rename(count_ha = count) %>% # count is already per hectare, countarea == 1
+    
+    ### make stages, including dead etc. trees in B!
+    mutate(stage = as.factor(if_else(dbh < threshold_dbh, "A", "B"))) %>%
+    
+    ### time differences
+    group_by(clusterid) %>%
+    mutate(timediff_2002 = diffTime(first(time[obsid == "DE_BWI_1987"]), first(time[obsid == "DE_BWI_2002"])),
+           timediff_2012 = diffTime(first(time[obsid == "DE_BWI_2002"]), first(time[obsid == "DE_BWI_2012"])))
+  
+  
+  Changes_A <- filter(Data_big) %>% ## use only living trees in A
+    filter(dbh < threshold_dbh & !is.na(dbh)) %>%
+    selectTaxa(taxon_select) %>%
+    group_by(plotid, taxid) %>%
+    summarize(count_ha_2002_plot = sum(count[obsid == "DE_BWI_2002"], na.rm = T))
+  
+  
+  rm(Stages_select, E, Env_cluster, Data_big)
+  gc()
+
+  #### New in B
+  
+  ## the count factor at stage transition
+  count_trans <- 10^10/(pi * 25^2 * threshold_dbh^2)
+  ## For count_ha formula:
+  # see: http://wiki.awf.forst.uni-goettingen.de/wiki/index.php/Bitterlich_sampling#Estimation_of_number_of_stems
+  # with Zählfaktor k = 4 and c = 50/sqrt(k): c == 50/sqrt(4) == 25
+  # expansion factor n_ha = 10000 * 1000^2/(pi * c^2 * dbh^2) [factor 1000^2 for dbh in mm instead of m]
+  
+  # cluster <- multidplyr::new_cluster(3)
+  # cluster_copy(cluster, c("countNewInB", "count_trans"))
+  Changes <- filter(Changes_AB, stage == "B") %>% ## keep excluded
+    
+    ## count new in B
+    mutate(obsid_1987 = obsid == "DE_BWI_1987", obsid_2002 = obsid == "DE_BWI_2002", obsid_2012 = obsid == "DE_BWI_2012") %>%
+    group_by(plotid, taxid) %>%
+    # multidplyr::partition(cluster) %>%
+    mutate(treeid_int = as.integer(factor(treeid))) %>% # integer %in% seems to be much faster
+    mutate(count_A2B_2002_plot = countNewInB(treeid_int[obsid_1987], treeid_int[obsid_2002]),
+           count_A2B_2012_plot = countNewInB(treeid_int[obsid_2002], treeid_int[obsid_2012])) %>% 
+    
+    ## count new in B ob cluster level
+    group_by(clusterid, taxid) %>%
+    mutate(count_A2B_2002_cluster = sum(count_A2B_2002_plot[match(unique(plotid), plotid)]),
+           count_A2B_2012_cluster = sum(count_A2B_2012_plot[match(unique(plotid), plotid)]),
+           n_plots_cluster = length(unique(plotid)),
+           count_A2B_2002_cluster_avg = count_A2B_2002_cluster/n_plots_cluster,
+           count_A2B_2012_cluster_avg = count_A2B_2012_cluster/n_plots_cluster) %>%
+    
+    ungroup() %>%
+    
+    ## calculate h for fun
+    bind_rows(Changes_A) %>%
+    group_by(plotid, taxid) %>%
+    mutate(h_plot_2012 = first(count_A2B_2012_plot[!is.na(count_A2B_2012_plot)]) / first(count_ha_2002_plot[!is.na(count_ha_2002_plot)])/ timediff_2012) %>%
+    filter(stage != "A")
+
+  return(Changes)
+}
+
+
 
 ## joinStages --------------------------------
 # B  <- tar_read("Data_big")
@@ -12,8 +139,8 @@ joinStages <- function(B, S,
                        taxon_select,
                        threshold_dbh,
                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
-) {
-  
+                       ) {
+
   id_select_S <- intersect(names(S), id_select)
   id_select_B <- intersect(names(B), id_select) %>% setdiff("treeid") ## make sure to always exclude treeid for good grouping
     ## B doesn't include clusterid!
@@ -43,11 +170,9 @@ joinStages <- function(B, S,
     dplyr::ungroup() %>%
     dplyr::mutate(stage = factor("J")) %>%
     droplevels()
-  ## S is alredy already completed!
+  ## S is already completed!
   
   gc()
-  
-  ## interesting stuff like age, height, will get dropped here
   
   B %<>%
     ### Lump taxa first, to facilitate summarize() and complete() later
@@ -64,6 +189,7 @@ joinStages <- function(B, S,
     mutate(stage = as.factor(if_else(dbh < threshold_dbh, "A", "B"))) %>%
     
     ## summarize per all ids, ... "plotobsid", "tax", "stage", being the fastest-varying
+    ## interesting stuff like age, height, will get dropped here
     group_by_at(c(id_select_B, "stage")) %>%
     dplyr::summarize(count_ha = sum(count_ha, na.rm = T), ba_ha = sum(ba_ha, na.rm = T)) %>% # in big trees, count is already per hectare
       ## this will yield NaN for stages which 
@@ -81,6 +207,8 @@ joinStages <- function(B, S,
     ## stage creation will yield NA stages for when dbh is NA (for completed species)
     ## but any(is.na(B$dbh) & (B$count != 0)) # so tha, after completiont:
     tidyr::drop_na(stage)
+  
+  
   
   BA <- B %>%
     group_by_at(id_select_B) %>% ## without stage -> summarizes across stages within plot and tax

@@ -31,17 +31,5 @@ extractDrawsDirect <- function(fit_direct) {
 }
 
 
-## constructPriors --------------------------------
-# draws_direct  <- tar_read("draws_direct")
 
-constructPriors <- function(draws_direct) {
-  
-  x <- log(rgamma(150,5))
-  df <- approxfun(density(x))
-  plot(density(x))
-  xnew <- seq(-1, 3, by = 0.1)
-  points(xnew,df(xnew),col=2)
-  
-  return(fit)
-}
 

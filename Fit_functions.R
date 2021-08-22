@@ -2,12 +2,28 @@
 # Functions for fitting  ----------------------------------------
 # ——————————————————————————————————————————————————————————————————————————————————#
 
-## formatInverse --------------------------------
+## constructPriors --------------------------------
+# draws_direct  <- tar_read("draws_direct")
+
+constructPriors <- function(draws_direct) {
+  
+  x <- log(rgamma(150,5))
+  df <- approxfun(density(x))
+  plot(density(x))
+  xnew <- seq(-1, 3, by = 0.1)
+  points(xnew,df(xnew),col=2)
+  
+  return(fit)
+}
+
+
+
+## formatStanData --------------------------------
 # Stages  <- tar_read("Stages_scaled")
 # taxon_select  <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
 
-formatInverse <- function(Stages, taxon_select, threshold_dbh) { # priors!
+formatStanData <- function(Stages, Rates, taxon_select, threshold_dbh) { # priors!
   
   taxon_selectother <- c(taxon_select, "other")
   
@@ -135,7 +151,7 @@ formatInverse <- function(Stages, taxon_select, threshold_dbh) { # priors!
   
   
   #### The stan-formatted list
-  stages_inverse <- list(
+  data <- list(
     
     L_times = nrow(S_times),
     L_yhat = L_yhat,
@@ -172,7 +188,7 @@ formatInverse <- function(Stages, taxon_select, threshold_dbh) { # priors!
     # Long = S
   )
   
-  return(stages_inverse)
+  return(data)
 }
 
 
@@ -180,7 +196,7 @@ formatInverse <- function(Stages, taxon_select, threshold_dbh) { # priors!
 getInits <- function() {
   
   responsescaleerror <- 0.1
-  data <- tar_read(stages_inverse) ## This is fine in this case, as getInits is only called inside targets that would be invalidated after change of stages_inverse
+  data <- tar_read(data_stan) ## This is fine in this case, as getInits is only called inside targets that would be invalidated after change of data_stan
   n_species <- data$N_species
   n_beta <- data$N_beta
   n_locs <- data$N_locs
@@ -279,16 +295,16 @@ getInits <- function() {
 
 
 
-## drawTestInverse --------------------------------
-# tar_make("stages_inverse")
-# stages_inverse <- tar_read("stages_inverse")
+## drawTest --------------------------------
+# tar_make("data_stan")
+# data_stan <- tar_read("data_stan")
 # tar_make("testmodel")
 # model <- testmodel <- tar_read("testmodel")
 
 
-drawTestInverse <- function(model, stages_inverse, initfunc = 0.5,
-                            method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 200, iter_sampling = 300,
-                            fitpath = "Fits.nosync/") {
+drawTest <- function(model, data_stan, initfunc = 0.5,
+                     method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 200, iter_sampling = 300,
+                     fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
   
@@ -299,7 +315,7 @@ drawTestInverse <- function(model, stages_inverse, initfunc = 0.5,
 
   if(match.arg(method) == "variational") {
     
-    fit <- model$variational(data = stages_inverse,
+    fit <- model$variational(data = data_stan,
                              output_dir = fitpath,
                              init = initfunc,
                              eta = 0.001,
@@ -307,7 +323,7 @@ drawTestInverse <- function(model, stages_inverse, initfunc = 0.5,
 
   } else if (match.arg(method) == "mcmc") {
 
-    fit <- model$sample(data = stages_inverse,
+    fit <- model$sample(data = data_stan,
                         output_dir = fitpath,
                         # output_basename = ,
                         init = initfunc,
@@ -321,24 +337,24 @@ drawTestInverse <- function(model, stages_inverse, initfunc = 0.5,
 }
 
 
-## drawInverse --------------------------------
-# Stages_inverse <- tar_read("Stages_inverse")
+## draw --------------------------------
+# data_stan <- tar_read("data_stan")
 
-drawInverse <- function(model, Stages_inverse) {
+draw <- function(model, data_stan) {
   
   return(fit)
 }
 
 
-## summarizeInverse --------------------------------
-# fit_inverse  <- tar_read("fit_inverse")
-# fit_inverse  <- tar_read("testfit_inverse")
+## summarizeDraws --------------------------------
+# fit  <- tar_read("fit")
+# fit  <- tar_read("testfit")
 
-drawInverse <- function(fit_inverse) {
+summarizeDraws <- function(fit) {
   
-  summary <- fit_inverse$summary()
+  summary <- fit$summary()
   
-  summarypath <- fit_inverse$output_files()[1] %>%
+  summarypath <- fit$output_files()[1] %>%
     stringr::str_replace("-1-", "-x-") %>%
     stringr::str_replace(".csv", "_summary.csv")
   
@@ -348,13 +364,13 @@ drawInverse <- function(fit_inverse) {
 }
 
 
-## extractDrawsInverse --------------------------------
-# fit_inverse  <- tar_read("fit_inverse")
-# testfit_inverse  <- tar_read("testfit_inverse")
+## extractDraws --------------------------------
+# fit  <- tar_read("fit")
+# testfit  <- tar_read("testfit")
 
-extractDrawsInverse <- function(fit_inverse) {
+extractDraws <- function(fit) {
   
-  outputfile <- fit_inverse$output_files()
+  outputfile <- fit$output_files()
   draws <- rstan::read_stan_csv(outputfile) %>%
     rstan::extract()
   

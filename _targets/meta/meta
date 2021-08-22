@@ -9,12 +9,10 @@ predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927|
 data_env|stem|faa90f41769cdc3f|9b5a1393dd591e71|923b9c1ac60275f8|-2092641161||t18809.8785336378s|9dc61a1f01cee8a2|5471696|rds|vector|||0.473||
 joinBigSmall|function|483c0b19e968a5b8||||||||||||||
 selectSpecies|function|48f09dd14d875a10||||||||||||||
-Data_small|stem|6a314f778e23d1f7|7ad74de1b1caac4c|c2862238ee7262c4|-1821452620||t18810.4368068482s|d1ea46e6f01b98ed|15258942|rds|vector|||47.846||
 threshold_dbh|stem|b1b40ad4f285cecb|9196226201acf742|ef46db3751d8e999|1977269053||t18810.7601461387s|ded833868582137a|50|rds|vector|||1.08||
 taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t18810.760146226s|425d385953b3c542|67|rds|vector|||0.001||
 addAbundanceSmooth|function|c2fd48c5c83ebffa||||||||||||||
 S_env|stem|6ad8fd4dc41f03d6|f77ba367cf3d8588|dec4878ce7579d25|379008817||t18810.8174957731s|8a2fe700c9a00b25|12617068|rds|vector|||20.162||
-Data_big|stem|a70d1717922d1ea0|56bebf0f0eab6c1e|d19aefc5f426b420|1222093926||t18811.6303604312s|7a3921ea31f89fe2|23325500|rds|vector|||12.634||
 fitSpline|function|241ff4ac6ffba79b||||||||||||||
 addSpline|function|e28d7925aa353805||||||||||||||
 taxon_splines|stem|99065f745c104405|7c823d68b07aa287|d3dabdfcfcf05b54|-1863036415||t18812.0116500305s|ff026697d66e9a9f|75|rds|vector||taxon_splines_13af37df*taxon_splines_aad96518|2.185||
@@ -29,47 +27,66 @@ selectGrid|function|8d5cad750744ad35||||||||||||||
 file_DE_geo|stem|fc11702de5751e68|60bce8164256a1d6|ef46db3751d8e999|-1810833906|Inventory.nosync/DE BWI/Data/DE_BWI_geo.rds|t18113.7914067473s|5f8cd763e5ac0a66|1266826|file|vector|||2.325||
 Data_geo|stem|1e11998b9af424de|a5740b3bcb5e0ba0|855c9f9a61208aa8|-1122140380||t18814.5877954704s|e60015ce142a6e82|1266824|rds|vector|||0.311||
 Stages_splines_0a42ac06|branch||f7a71fd6962f7159|ecf9a17bacaae9ad|-1600644831||||0|rds|vector|Stages_splines||3.636||nicht anwendbare Methode für predict auf Objekt der Klasse cinteger, numeric angewendet
-file_DE_small|stem|6a314f778e23d1f7|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18829.7718975102s|d1ea46e6f01b98ed|15258942|file|vector|||0.003||
-file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18829.9049113858s|e684589703d38eb9|5533814|file|vector|||1.968||
-file_DE_big|stem|a70d1717922d1ea0|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18829.9162231058s|7a3921ea31f89fe2|23325500|file|vector|||1.773||
 Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t18829.9185400108s|e684589703d38eb9|5533814|rds|vector|||0.388||
 Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t18829.9185465046s|102883cb8e914333|1060126|rds|vector|||0.013||
 Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|15f280e2b5debec0|-1840226744||t18829.9185701823s|9b01f5e608a77422|1022676|rds|vector|||1.543||
-constructPriors|function|a6b65e0492ce680d||||||||||||||
 formatDirect|function|ac28ecf575b1dbfc||||||||||||||
 extractDrawsDirect|function|0d9ee00112905c8f||||||||||||||
 formatSims|function|8d66dd66620da6d3||||||||||||||
 drawDirect|function|be7c9cc0e6e172fc||||||||||||||
 modelpath|stem|1ce772216b3a8c30|528f46330e6d2fc1|ef46db3751d8e999|-971198735||t18844.5373793006s|c852eab37a726e04|78|rds|vector|||3.426||
-Stages|stem|67da4b63c4422c77|8052e56c3d07b1ad|3037f0f626b47d13|-2131128411||t18845.4868426353s|68788e6853f25db1|11140800|rds|vector|||108.052||
-Stages_env|stem|483f80fb694badf2|f77ba367cf3d8588|324c79175c3c3951|818674129||t18845.487162735s|2df1b0c19278e84b|21496010|rds|vector|||18.338||
-BA_splines_8b27fc48|branch|82cf1b79099c0be4|b6787a099b0952c8|8bae5b1948f5bec4|1622992429||t18845.4899636155s|70ebc0e4f2bf139a|557840|rds|list|BA_splines||241.58|st_centroid assumes attributes are constant over geometries of x|
-BA_splines_8f91cb96|branch|197e967aa878a7d7|b6787a099b0952c8|38517595b1371577|1329551659||t18845.4930322596s|779498052ef9eda5|588506|rds|list|BA_splines||264.973|st_centroid assumes attributes are constant over geometries of x|
-BA_splines|pattern|1d097a9558dc8bbd|b6787a099b0952c8||-609085420||||1146346|rds|list||BA_splines_8b27fc48*BA_splines_8f91cb96|506.553||
-fits_splines_0ca4e81c|branch|40c21cd57b45d728|eb400811e4ce2b94|1e01978148119173|-835288051||t18845.4949207817s|ff99baedae8f0e4a|71937716|rds|list|fits_splines||159.418||
-fits_splines_7d954a1d|branch|8ce2200d6e5fa1e2|eb400811e4ce2b94|70de8b4c3a9d61e5|-1957033310||t18845.4966069301s|7164160f7d291dc8|72052837|rds|list|fits_splines||142.377||
-fits_splines|pattern|b2fcf79808b46c51|eb400811e4ce2b94||1779771359||||143990553|rds|list||fits_splines_0ca4e81c*fits_splines_7d954a1d|301.795||
-Stages_splines|stem|37b40dcbc0e736fe|f7a71fd6962f7159|2d17d77bc4f12342|-580962439||t18845.4967971812s|9bbfe9d805c8528c|25607528|rds|list|||6.713||
-Stages_select|stem|af23ef331b83a651|61dc2a384c112b9d|272865901e9b1e4d|-1427272822||t18845.4973743598s|22741b3abc45ff16|578080|rds|vector|||49.663||
 testfit_inverse|stem|b93b6ea262019b57|f1fd5cca93732be6|4b7961fd97442385|534562196||t18851.0951308694s|814ef5e9ee268411|149497|rds|vector|||43704.83||
 fit_inverse|stem||1c555f866f5731da|2a7e9e4861153793|-1291808624||||0|rds|vector|||2.651||unbenutztes Argument stages_inverse
 scalePredictors|function|bb487aa82094e20a||||||||||||||
-Stages_scaled|stem|c39dc13ae1aa8acb|4084417319dea073|ab4661bb5fca5f48|1092130661||t18851.6282184534s|617c80a19b6c6e51|613613|rds|vector|||2.531||
-stages_inverse|stem|6a82f9dba84672a2|f105d2bb637a226d|2276756d140d5174|1612002466||t18851.628239553s|66ee3a5822251b40|26845|rds|vector|||1.796||
-getInits|function|6b7adc1f1017612a||||||||||||||
+file_testmodel|stem|bdd96764ca71ccb0|e344941b51aafe21|ef46db3751d8e999|-546501342|Model_2021-03_ba/Model_ba_test.stan|t18851.6586584714s|65e74a4add201c42|18047|file|vector|||2.503||
+testmodel|stem|8fbf9baadf2f6b21|54f2323d684c4fa7|4584ae95ae3eaa3d|1558219038||t18851.6593366407s|7eb702857c4c6cf5|7437|rds|vector|||34.264||
+Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t18857.5695906611s|02e584d87ae1e0d3|23277361|rds|vector|||12.618||
 drawTestInverse|function|8696e1d3a9b1244f||||||||||||||
-addPackage|function|d45c347b66cce55c||||||||||||||
-drawInverse|function|e71438b1ce7c4579||||||||||||||
-joinEnv|function|2488b8203673870c||||||||||||||
+summarizeInverse|function|e71438b1ce7c4579||||||||||||||
+drawInverse|function|0a04879c351eeeae||||||||||||||
 extractDrawsInverse|function|83aa1bcb750a3ab3||||||||||||||
-summarizeEnvByCluster|function|c82eb6a80de9b3e7||||||||||||||
 formatInverse|function|b7bc66099196ccdc||||||||||||||
+Data_small|stem|2307d704c5a9a9b5|7ad74de1b1caac4c|db3a691ca8ffa423|-1821452620||t18857.5956333662s|2895e6fb9317973a|15170066|rds|vector|||38.821||
+Stages|stem|ddec1b966b4781fa|8052e56c3d07b1ad|4c4e87582ed7ef26|-2131128411||t18857.5970170792s|8200de242805a3cf|11140318|rds|vector|||105.578||
+Stages_env|stem|df096066ba13008d|f77ba367cf3d8588|ab0b4fcdc14406c6|818674129||t18857.5973479837s|ebadc2d282ddcdd8|21495044|rds|vector|||19.349||
+BA_splines_8b27fc48|branch|aa806c3493832656|b6787a099b0952c8|bb195a6f0d8aab79|1622992429||t18857.6001796947s|2f51bfa8f546068c|557838|rds|list|BA_splines||244.278|st_centroid assumes attributes are constant over geometries of x|
+BA_splines_8f91cb96|branch|faaeb35a7c6c6d56|b6787a099b0952c8|daa9a9d630aecdb7|1329551659||t18857.6031280285s|456a199c83850d40|588501|rds|list|BA_splines||254.558|st_centroid assumes attributes are constant over geometries of x|
+BA_splines|pattern|df0a9d7551c57a31|b6787a099b0952c8||-609085420||||1146339|rds|list||BA_splines_8b27fc48*BA_splines_8f91cb96|498.836||
+fits_splines_0ca4e81c|branch|0db4016fc7a3db36|eb400811e4ce2b94|ae36610d701de973|-835288051||t18857.6048961668s|a5dc4f37090f8acd|71937668|rds|list|fits_splines||149.538||
+fits_splines_7d954a1d|branch|4fb9fac2ead951cc|eb400811e4ce2b94|2d544f9660802a7d|-1957033310||t18857.6064005706s|253cfdf3253d3d6c|72054473|rds|list|fits_splines||126.623||
+fits_splines|pattern|578e3b60b76226d9|eb400811e4ce2b94||1779771359||||143992141|rds|list||fits_splines_0ca4e81c*fits_splines_7d954a1d|276.161||
+Stages_splines|stem|ab2e6d1a6cc27b7a|f7a71fd6962f7159|01c528a49172adb1|-580962439||t18857.6066426822s|e2e2eb80043085f4|25606026|rds|list|||10.16||
+Stages_select|stem|ed58e3706961937c|61dc2a384c112b9d|107ce15bfd764978|-1427272822||t18857.6072548181s|62559007bbc3c661|578076|rds|vector|||52.681||
+Stages_scaled|stem|9d20381e59f2c5e1|4084417319dea073|5c317ff280998bb4|1092130661||t18857.6072579889s|d79c5df59073d479|613610|rds|vector|||0.056||
+stages_inverse|stem|4a07de6449d47d5e|f105d2bb637a226d|861f4a371aad82fb|1612002466||t18857.6072739617s|d2baee3ce22793b3|26850|rds|vector|||1.359||
+stages_stan|stem|4a07de6449d47d5e|87c27e7264be7149|79f71e986f5b51bf|1539231592||t18858.867029134s|d2baee3ce22793b3|26850|rds|vector|||4.24||
+file_model_test|stem|1fe586aa728b45f1|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18858.8756473712s|0e18a711c95d1f6e|18514|file|vector|||2.33||
+model_test|stem|4d062bc025d88b55|a3aa00c06cce5e55|8ea6a04ae74c3484|-1162399619||t18858.8764906307s|89dea1b195f7b777|7438|rds|vector|||41.344||
+fit_test|stem|05f591e5776de528|6e0f87ab6467dd92|f4abcced55312000|-1560265059||t18858.8765001908s|36f26772b9ad3398|35106|rds|vector|||0.729|No chains finished successfully. Unable to retrieve the fit.|
+calculateIndividualIncrement|function|f26b9d7c7a276930||||||||||||||
+calculateRates|function|9f2080a84ce0510c||||||||||||||
+file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18860.9370923003s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
+file_DE_big_status|stem|65e7cd5711608b1d|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18860.9371642065s|25c530eb973e5948|14271333|file|vector|||3.891||
+Data_big_status|stem|65e7cd5711608b1d|eff25cb053505d95|816821d52043b69a|813772221||t18861.3748199369s|25c530eb973e5948|14271333|rds|vector|||2.812||
+getInits|function|247cb0068b001ce4||||||||||||||
+constructPriors|function|e9e9bc8208fcef52||||||||||||||
+addPackage|function|d45c347b66cce55c||||||||||||||
+draw|function|304cc761aa9d6d9e||||||||||||||
+joinEnv|function|2488b8203673870c||||||||||||||
+summarizeDraws|function|5e7992612ea96dd4||||||||||||||
+summarizeEnvByCluster|function|c82eb6a80de9b3e7||||||||||||||
 predictSplines|function|3a9471ea0b459e9a||||||||||||||
 selectClusters|function|a89fdc944b51e691||||||||||||||
 joinStages|function|da66eec8bf927220||||||||||||||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
+formatStanData|function|ffbfb3a51d202222||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
+drawTest|function|286f7cc4bb231ac2||||||||||||||
+calculateChanges|function|d875b7e6a029042a||||||||||||||
+extractDraws|function|452310beed6d171e||||||||||||||
 fitSplines|function|3923fc14ded03ec4||||||||||||||
 constructConstantGrid|function|68c401f1ba4d758b||||||||||||||
-file_testmodel|stem|bdd96764ca71ccb0|e344941b51aafe21|ef46db3751d8e999|-546501342|Model_2021-03_ba/Model_ba_test.stan|t18851.6586584714s|65e74a4add201c42|18047|file|vector|||2.503||
-testmodel|stem|8fbf9baadf2f6b21|54f2323d684c4fa7|4584ae95ae3eaa3d|1558219038||t18851.6593366407s|7eb702857c4c6cf5|7437|rds|vector|||34.264||
+file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18860.9265471074s|e684589703d38eb9|5533814|file|vector|||1.968||
+file_DE_small|stem|2307d704c5a9a9b5|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18860.9349071086s|2895e6fb9317973a|15170066|file|vector|||2.772||
+Changes|stem|08524551138676de|5b376742a58904ea|f3a96ef45d9a0dea|1733446405||t18861.8400542343s|30eeb12e549006ab|243821|rds|vector|||19.47||
+data_stan|stem|4a07de6449d47d5e|c5ec0cc3058cde2a|fcbb194950e4131a|1263995833||t18861.8400835813s|d2baee3ce22793b3|26850|rds|vector|||2.329||

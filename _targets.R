@@ -19,13 +19,13 @@ future::plan(future::multisession, workers = 3)
 ### Source the functions
 source("Wrangling_functions.R")
 # source("Fit_direct_functions.R")
-source("Fit_inverse_functions.R")
+source("Fit_functions.R")
 # source("Model_2021-03_ba/Fit_ba_functions.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
-tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", ## make the tidyverse explicit
-                            "lubridate",
+tar_option_set(packages = c("dplyr", "multidplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", ## extended tidyverse
+                            "lubridate", # "zoo",
                             "sf", "fields", ## for correct loading of environmental data
                             "cmdstanr"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
@@ -39,6 +39,9 @@ list(
   list(
     tar_target(file_DE_big,
                "Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds",
+               format = "file"),
+    tar_target(file_DE_big_status,
+               "Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds",
                format = "file"),
     tar_target(file_DE_small,
                "Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds",
@@ -59,6 +62,7 @@ list(
   # tar_load(starts_with("Data"))
   list(
     tar_target(Data_big, readRDS(file_DE_big)),
+    tar_target(Data_big_status, readRDS(file_DE_big_status)),
     tar_target(Data_small, readRDS(file_DE_small)),
     tar_target(Data_env, readRDS(file_DE_env)),
     tar_target(Data_geo, readRDS(file_DE_geo))
@@ -88,6 +92,10 @@ list(
     ## lower in the data is 100, so that: 100mm > A > 200mm > B
     tar_target(threshold_dbh, 200),
     tar_target(taxon_select, c("Fagus.sylvatica")),
+    
+    tar_target(Changes,
+               calculateChanges(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
+    
     tar_target(Stages,
                joinStages(Data_big, Data_small, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
     tar_target(Stages_env,
@@ -122,50 +130,50 @@ list(
   
   
   ## Direct calibration
-  list(
-    tar_target(Stages_direct,
-               formatDirect(Stages_scaled)),
-    tar_target(fit_direct,
-               drawDirect(Stages_direct, predictor_select),
-               packages = addPackage("brms")),
-    tar_target(draws_direct,
-               extractDrawsDirect(fit_direct)),
-    tar_target(priors,
-               constructPriors(draws_direct))
-  ),
+  # list(
+  #   tar_target(Stages_direct,
+  #              formatDirect(Stages_scaled)),
+  #   tar_target(fit_direct,
+  #              drawDirect(Stages_direct, predictor_select),
+  #              packages = addPackage("brms")),
+  #   tar_target(draws_direct,
+  #              extractDrawsDirect(fit_direct)),
+  #   tar_target(priors,
+  #              constructPriors(draws_direct))
+  # ),
   
   
-  ## Inverse fit
+  ## Model fit
   list(
-    tar_target(stages_inverse,
-               formatInverse(Stages_scaled, taxon_select, threshold_dbh)), # priors
+    tar_target(data_stan,
+               formatStanData(Stages_scaled, Changes, taxon_select, threshold_dbh)), # priors
     
-    tar_target(file_testmodel,
+    tar_target(file_model_test,
                "Model_2021-03_ba/Model_ba_test.stan",
                format = "file"),
     tar_target(file_model,
                "Model_2021-03_ba/Model_ba.stan",
                format = "file"),
     
-    tar_target(testmodel,
-               cmdstan_model(file_testmodel)),
+    tar_target(model_test,
+               cmdstan_model(file_model_test)),
     tar_target(model,
                cmdstan_model(file_model)),
     
-    tar_target(testfit_inverse,
-               drawTestInverse(model = testmodel, stages_inverse, initfunc = 1)),
-    tar_target(fit_inverse,
-               drawInverse(model = model, stages_inverse, initfunc = 1)),
+    tar_target(fit_test,
+               drawTest(model = model_test, data_stan, initfunc = 1)),
+    tar_target(fit,
+               draw(model = model, data_stan, initfunc = 1)),
     
-    tar_target(testsummary_inverse,
-               summarizeInverse(testfit_inverse)),
-    tar_target(summary_inverse,
-               summarizeInverse(fit_inverse)),
+    tar_target(summary_test,
+               summarizeDraws(fit_test)),
+    tar_target(summary,
+               summarizeDraws(fit)),
     
-    tar_target(testdraws_inverse,
-               extractDrawsInverse(testfit_inverse)),
-    tar_target(draws_inverse,
-               extractDrawsInverse(fit_inverse))
+    tar_target(draws_test,
+               extractDraws(fit_test)),
+    tar_target(draws,
+               extractDraws(fit))
   ),
   
   
@@ -173,14 +181,14 @@ list(
   list(
     tar_target(gqmodel,
                cmdstan_model(paste0(tools::file_path_sans_ext(modelpath_stan),"_gq.stan"))),
-    tar_target(gqfit_inverse,
-               draw(gqmodel_stan, draws_inverse)),
-    tar_target(gq_inverse,
-               extractDraws(gqfit_inverse))
-    # tar_stan_gq(gq_inverse,
+    tar_target(gqfit,
+               draw(gqmodel_stan, draws)),
+    tar_target(gq,
+               extractDraws(gqfit))
+    # tar_stan_gq(gq,
     #             stan_files = gqmodelpath_stan,
-    #             data = stages_inverse,
-    #             fitted_params = draws_inverse)
+    #             data = stages,
+    #             fitted_params = draws)
   )
 )
 
