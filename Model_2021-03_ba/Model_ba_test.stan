@@ -214,6 +214,8 @@ data {
   int<lower=0> L_times; // locations/obsid
   int<lower=0> L_yhat; // locations/surveys/pops
   int<lower=0> L_y; // locations/resurveys/pops/plots
+  // int<lower=0> L_plots; // locations/plots
+  int<lower=0> L_a2b; // locations/obsid-1/n_species
 
   int<lower=0> N_locs; // overall number of locations. This is the major running variable to iterate over the model vectors.
   int<lower=0> N_species; // overall number of unique species across plot and locations (not nested!)
@@ -232,16 +234,23 @@ data {
   //// rep - repeat indices within groups for broadcasting to the subsequent hierarchical levels
   int<lower=1> rep_yhat2y[L_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
   int<lower=1> rep_obsmethod2y[L_y]; // factor (1, 2), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  // int<lower=1> rep_locs2plots[L_plots]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  int<lower=1> rep_yhat2a2b[L_a2b];
+  int<lower=1> rep_species2a2b[L_a2b];
+
 
   //// actual data
   int time_max[N_locs];
   int times[L_times]; // locations/observations
+  vector<lower=1>[L_a2b] timediff;
   
   matrix[N_locs, N_beta] X; // design matrix
   array[N_locs] vector<lower=0>[N_species] L_smooth;
   
   //// The response.
-  int y[L_y];
+  array[L_y] int y;
+  array[L_a2b] int a2b;
+
   
   //// Settings
   real<upper=0.5> tolerance_fix;
@@ -264,7 +273,6 @@ data {
   // array[2] vector[N_species] prior_b_log;
   // array[2] vector[N_species] prior_c_a_log;
   // array[2] vector[N_species] prior_c_b_log;
-  // array[2] vector[N_species] prior_h_logit;
   
   // array[2] vector[N_species] prior_l_log;
   
@@ -319,6 +327,7 @@ parameters {
   
   //// Errors
   vector<lower=0>[3] phi_obs_inv; // observation error in neg_binomial
+	// real<lower=0> kappa_inv; // error in beta for h_logit
     // vector<lower=0>[3] alpha_obs_inv; // observation error in gamma
     // vector<lower=0>[2] sigma_obs; // observation error
     // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
@@ -332,7 +341,7 @@ parameters {
 
 transformed parameters {
 
-  array[N_locs] vector[N_species] L_loc;
+  array[N_locs] vector<lower=0>[N_species] L_loc;
   
   
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
@@ -348,11 +357,11 @@ transformed parameters {
   for(loc in 1:N_locs) {
     
     L_loc[loc, ] = exp(l_log) .* L_smooth[loc, ]; // + // Offset with fixed coefficient. "The smooth to real number coefficient"
-                 // sigma_l .* L_random[loc, ]'; // non-centered loc-level random effects
+                            // sigma_l .* L_random[loc, ]'; // non-centered loc-level random effects
     
   }
   
-  vector[L_yhat] y_hat = unpack(state_init_log, time_max, times,
+  vector<lower=0>[L_yhat] y_hat = unpack(state_init_log, time_max, times,
                                 b_log, c_a_log, c_b_log, c_j_log, g_logit, h_logit, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 // b_log, c_a_log, c_b_log, C_j_log, G_logit, h_logit, L_loc,R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 ba_a_avg, ba_a_upper,
@@ -375,7 +384,7 @@ model {
   //// Hyperpriors
   // alpha_obs_inv ~ normal(0, 0.1); // Observation error for gamma
   phi_obs_inv ~ normal(0, 1); // Observation error for neg_binomial
-  
+
   // ... for special offset L
   // to_vector(L_random) ~ std_normal(); // Random part around slope for l
   // sigma_l ~ cauchy(0, 2); // Regularizing half-normal on sigma for random slope for l
@@ -387,16 +396,14 @@ model {
   // b_log   ~ normal(prior_b_log[1,], prior_b_log[2,]);
   // c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
   // c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
-  // h_logit ~ normal(prior_h_logit[1,], prior_c_b_log[2,]);
   
-//  b_log   ~ normal(0, 2);
-//  c_a_log ~ normal(-3, 2);
-//  c_b_log ~ normal(-3, 2);
-//  c_j_log   ~ normal(-3, 2);
-//  g_logit ~ normal(-2, 2);
-//  h_logit ~ normal(-3, 2);
-//  r_log ~ normal(2, 3);
-//  s_log ~ normal(-2, 2);
+  b_log   ~ normal(-3, 3);
+  c_a_log ~ normal(-4, 3);
+  c_b_log ~ normal(-4, 3);
+  c_j_log   ~ normal(-4, 3);
+  g_logit ~ normal(-3, 2);
+  //  r_log ~ normal(2, 3);
+  s_log ~ normal(-3, 3);
 
   
   // same priors for both species
@@ -410,7 +417,8 @@ model {
 
   //---------- MODEL ---------------------------------
 
-  // Fit predictions to data. (level: location/plot/resurvey/species)
+  // Fit predictions to data.
+  a2b ~ poisson(y_hat[rep_yhat2a2b] .* inv_logit(h_logit)[rep_species2a2b] .* timediff);
   y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
   
     // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
@@ -423,7 +431,7 @@ generated quantities {
   
   //// Variables for prediction
   vector[L_y] y_hat_rep;
-  array[L_y] real y_sim;
+  // array[L_y] real y_sim;
   
   
   //// Variables for fix point conversion

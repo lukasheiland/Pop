@@ -5,7 +5,7 @@
 ## constructPriors --------------------------------
 # draws_direct  <- tar_read("draws_direct")
 
-constructPriors <- function(draws_direct) {
+constructPriors <- function() {
   
   x <- log(rgamma(150,5))
   df <- approxfun(density(x))
@@ -20,10 +20,11 @@ constructPriors <- function(draws_direct) {
 
 ## formatStanData --------------------------------
 # Stages  <- tar_read("Stages_scaled")
+# Changes  <- tar_read("Changes")
 # taxon_select  <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
 
-formatStanData <- function(Stages, Rates, taxon_select, threshold_dbh) { # priors!
+formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # priors!
   
   taxon_selectother <- c(taxon_select, "other")
   
@@ -50,7 +51,21 @@ formatStanData <- function(Stages, Rates, taxon_select, threshold_dbh) { # prior
   ## NOTE THAT plots HAS TO BE THE LAST GROUP IN SORTING
   ## Everything is subset from the master subsets with these groupings (*_reobs, *_y0) and thus consistently sorted.
   ## Factor "pops" is structured stages/species.
+  Changes %<>%
+    ungroup() %>%
+    select("plotid", "taxid",
+           "timediff_2002", "timediff_2012",
+           "count_A2B_2002_plot", "count_A2B_2012_plot", "count_A2B_2002_cluster", 
+           "count_A2B_2012_cluster", "n_plots_cluster", "count_A2B_2002_cluster_avg", 
+           "count_A2B_2012_cluster_avg", "count_ha_2002_plot") %>%
+    mutate_at(c("count_A2B_2002_plot", "count_A2B_2012_plot", "count_A2B_2002_cluster", 
+           "count_A2B_2012_cluster"), round) %>%
+    mutate(joinid = interaction(plotid, taxid)) %>%
+    select(-plotid, -taxid)
+  
   Stages %<>%
+    ## Join changes
+    bind_cols(Changes[match(interaction(.$plotid, .$taxid), Changes$joinid), ]) %>%
     
     ## Synonyms for consistency wiht model lingo
     group_by(clusterid) %>%
@@ -93,7 +108,8 @@ formatStanData <- function(Stages, Rates, taxon_select, threshold_dbh) { # prior
     filter(stage %in% c("J", "A", "B")) %>%
     mutate_at(c("stage", "pop"), droplevels) %>%
     arrange(loc, time, pop, stage, tax, plot) ## safety first
-  
+
+
   ## Format: [L_init] — locations/pops
   S_init <- filter(S, isy0) %>%
     st_drop_geometry() %>%
@@ -133,6 +149,21 @@ formatStanData <- function(Stages, Rates, taxon_select, threshold_dbh) { # prior
               clusterid = first(clusterid),
               .groups = "drop")
   
+  
+  ## Format: [L_init] — locations/pops
+  S_a2b <- S %>%
+    # st_drop_geometry() %>%
+    filter(stage == "B") %>%
+    mutate(a2b = case_when(obsid == "DE_BWI_2002" ~ count_A2B_2002_plot,
+                           obsid == "DE_BWI_2012" ~ count_A2B_2012_plot)) %>%
+    mutate(timediff = case_when(obsid == "DE_BWI_2002" ~ timediff_2002,
+                                obsid == "DE_BWI_2012" ~ timediff_2012)) %>%
+    drop_na(a2b, timediff) %>%
+    arrange(loc, time, pop, stage, tax, plot) %>% ## safety first
+    mutate(rep_yhat2a2b = match(interaction(loc, time, pop), with(S_yhat, interaction(loc, time, pop))),
+           rep_species2a2b = as.integer(factor(tax)))
+  
+  
   #### Prepare design matrix
   Env <- S_locs[c("phCaCl_esdacc_s", "waterLevel_loc_s")]
   polyformula <- as.formula(paste("~", paste("poly(", colnames(as.data.frame(Env)), ", 2)", collapse = "+")))
@@ -156,6 +187,7 @@ formatStanData <- function(Stages, Rates, taxon_select, threshold_dbh) { # prior
     L_times = nrow(S_times),
     L_yhat = L_yhat,
     L_y = nrow(S),
+    L_a2b = nrow(S_a2b),
     
     N_locs = nrow(S_locs),
     N_species = N_species,
@@ -171,14 +203,18 @@ formatStanData <- function(Stages, Rates, taxon_select, threshold_dbh) { # prior
     
     rep_yhat2y = vrep(1:L_yhat, S_yhat$n_plots), ## repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
     rep_obsmethod2y = as.integer(S$obsmethod),
+    rep_yhat2a2b = S_a2b$rep_yhat2a2b,
+    rep_species2a2b = S_a2b$rep_species2a2b,
     
     time_max = S_locs$time_max,
     times = S_times$t,
+    timediff = S_a2b$timediff,
 
     X = X,
     L_smooth = L_smooth, ## array[N_locs] vector<lower=0>[N_species] L_smooth;
     
     y = S$y,
+    a2b = S_a2b$a2b,
     
     ## Settings corner
     tolerance_fix = 0.001,
@@ -300,7 +336,6 @@ getInits <- function() {
 # data_stan <- tar_read("data_stan")
 # tar_make("testmodel")
 # model <- testmodel <- tar_read("testmodel")
-
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
                      method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 200, iter_sampling = 300,

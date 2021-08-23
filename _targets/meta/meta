@@ -60,16 +60,18 @@ Stages_select|stem|ed58e3706961937c|61dc2a384c112b9d|107ce15bfd764978|-142727282
 Stages_scaled|stem|9d20381e59f2c5e1|4084417319dea073|5c317ff280998bb4|1092130661||t18857.6072579889s|d79c5df59073d479|613610|rds|vector|||0.056||
 stages_inverse|stem|4a07de6449d47d5e|f105d2bb637a226d|861f4a371aad82fb|1612002466||t18857.6072739617s|d2baee3ce22793b3|26850|rds|vector|||1.359||
 stages_stan|stem|4a07de6449d47d5e|87c27e7264be7149|79f71e986f5b51bf|1539231592||t18858.867029134s|d2baee3ce22793b3|26850|rds|vector|||4.24||
-file_model_test|stem|1fe586aa728b45f1|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18858.8756473712s|0e18a711c95d1f6e|18514|file|vector|||2.33||
-model_test|stem|4d062bc025d88b55|a3aa00c06cce5e55|8ea6a04ae74c3484|-1162399619||t18858.8764906307s|89dea1b195f7b777|7438|rds|vector|||41.344||
-fit_test|stem|05f591e5776de528|6e0f87ab6467dd92|f4abcced55312000|-1560265059||t18858.8765001908s|36f26772b9ad3398|35106|rds|vector|||0.729|No chains finished successfully. Unable to retrieve the fit.|
 calculateIndividualIncrement|function|f26b9d7c7a276930||||||||||||||
 calculateRates|function|9f2080a84ce0510c||||||||||||||
 file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18860.9370923003s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
 file_DE_big_status|stem|65e7cd5711608b1d|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18860.9371642065s|25c530eb973e5948|14271333|file|vector|||3.891||
 Data_big_status|stem|65e7cd5711608b1d|eff25cb053505d95|816821d52043b69a|813772221||t18861.3748199369s|25c530eb973e5948|14271333|rds|vector|||2.812||
+file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18860.9265471074s|e684589703d38eb9|5533814|file|vector|||1.968||
+file_DE_small|stem|2307d704c5a9a9b5|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18860.9349071086s|2895e6fb9317973a|15170066|file|vector|||2.772||
+Changes|stem|08524551138676de|5b376742a58904ea|f3a96ef45d9a0dea|1733446405||t18861.8400542343s|30eeb12e549006ab|243821|rds|vector|||19.47||
+file_model_test|stem|3534828cb41a5669|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18862.3839191432s|73f8ceedb529048d|18430|file|vector|||2.357||
+model_test|stem|56c3112bfe07b19c|a3aa00c06cce5e55|c38d4ebdcfb29b82|-1162399619||t18862.384902634s|0bddb9a13bf20967|7439|rds|vector|||46.817||
 getInits|function|247cb0068b001ce4||||||||||||||
-constructPriors|function|e9e9bc8208fcef52||||||||||||||
+constructPriors|function|9e00a56ab35214b7||||||||||||||
 addPackage|function|d45c347b66cce55c||||||||||||||
 draw|function|304cc761aa9d6d9e||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
@@ -79,14 +81,31 @@ predictSplines|function|3a9471ea0b459e9a||||||||||||||
 selectClusters|function|a89fdc944b51e691||||||||||||||
 joinStages|function|da66eec8bf927220||||||||||||||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
-formatStanData|function|ffbfb3a51d202222||||||||||||||
+formatStanData|function|a26f926f882ed253||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 drawTest|function|286f7cc4bb231ac2||||||||||||||
 calculateChanges|function|d875b7e6a029042a||||||||||||||
 extractDraws|function|452310beed6d171e||||||||||||||
 fitSplines|function|3923fc14ded03ec4||||||||||||||
 constructConstantGrid|function|68c401f1ba4d758b||||||||||||||
-file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18860.9265471074s|e684589703d38eb9|5533814|file|vector|||1.968||
-file_DE_small|stem|2307d704c5a9a9b5|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18860.9349071086s|2895e6fb9317973a|15170066|file|vector|||2.772||
-Changes|stem|08524551138676de|5b376742a58904ea|f3a96ef45d9a0dea|1733446405||t18861.8400542343s|30eeb12e549006ab|243821|rds|vector|||19.47||
-data_stan|stem|4a07de6449d47d5e|c5ec0cc3058cde2a|fcbb194950e4131a|1263995833||t18861.8400835813s|d2baee3ce22793b3|26850|rds|vector|||2.329||
+data_stan|stem|b30533a8db908559|c5ec0cc3058cde2a|13e36a0ebf26435b|1263995833||t18862.3909286298s|c703b2ac8fad5c96|29025|rds|vector|||5.322||
+fit_test|stem|929b403e30dcf5d5|6c7d9e2433386a30|6b1c8c21a07070eb|-1560265059||t18862.3909387074s|3f16e126adcd6a40|35109|rds|vector|||0.773|No chains finished successfully. Unable to retrieve the fit.|
+getInits|function|247cb0068b001ce4
+constructPriors|function|9e00a56ab35214b7
+addPackage|function|d45c347b66cce55c
+draw|function|304cc761aa9d6d9e
+joinEnv|function|2488b8203673870c
+summarizeDraws|function|5e7992612ea96dd4
+summarizeEnvByCluster|function|c82eb6a80de9b3e7
+predictSplines|function|3a9471ea0b459e9a
+selectClusters|function|a89fdc944b51e691
+joinStages|function|da66eec8bf927220
+scaleData|function|0d0c01b1b3160a22
+formatStanData|function|fe00a3aa533aebfc
+cleanEnv|function|06a0767a0f88a954
+drawTest|function|286f7cc4bb231ac2
+calculateChanges|function|d875b7e6a029042a
+extractDraws|function|452310beed6d171e
+fitSplines|function|3923fc14ded03ec4
+constructConstantGrid|function|68c401f1ba4d758b
+data_stan|stem|2e8a1930029c2d32|c5ec0cc3058cde2a|85ec7e023a027923|1263995833||t18862.391625165s|a71fc9f70f28bf0d|30421|rds|vector|||5.126||
