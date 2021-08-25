@@ -75,8 +75,7 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
     
     ## factor ordering!!!
     mutate(stage = factor(stage, levels = c("J", "A", "B", "BA")),
-           tax = factor(tax, levels = taxon_selectother)
-                          ) %>%
+           tax = factor(tax, levels = taxon_selectother)) %>%
     
     ## Stages are measured in different terms: ba or count
     mutate(y = case_when(
@@ -153,11 +152,14 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
   ## Format: [L_init] — locations/pops
   S_a2b <- S %>%
     # st_drop_geometry() %>%
-    filter(stage == "B") %>%
-    mutate(a2b = case_when(obsid == "DE_BWI_2002" ~ count_A2B_2002_plot,
-                           obsid == "DE_BWI_2012" ~ count_A2B_2012_plot)) %>%
-    mutate(timediff = case_when(obsid == "DE_BWI_2002" ~ timediff_2002,
-                                obsid == "DE_BWI_2012" ~ timediff_2012)) %>%
+    ## !!! sic! Use A for matching in S_yhat later.
+    filter(stage == "A") %>% 
+    
+    ## !!! sic! Assign to preceding state for matching in S_yhat later.
+    mutate(a2b = case_when(obsid == "DE_BWI_1987" ~ count_A2B_2002_plot,
+                           obsid == "DE_BWI_2002" ~ count_A2B_2012_plot)) %>%
+    mutate(timediff = case_when(obsid == "DE_BWI_1987" ~ timediff_2002,
+                                obsid == "DE_BWI_2002" ~ timediff_2012)) %>%
     drop_na(a2b, timediff) %>%
     arrange(loc, time, pop, stage, tax, plot) %>% ## safety first
     mutate(rep_yhat2a2b = match(interaction(loc, time, pop), with(S_yhat, interaction(loc, time, pop))),

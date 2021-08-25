@@ -54,7 +54,7 @@ functions {
       // print("r", R_log);
       matrix[N_pops, time_max[loc]] States =
                         
-                        simulate(state_init[loc, ],
+                        simulate(exp(state_init_log[loc, ]),
                                  time_max[loc],
                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
                                  ba_a_avg, ba_a_upper,
@@ -175,6 +175,26 @@ functions {
     }
     return V;
   }
+  
+
+  // Implementation of gamma probability density with zero hurdle model
+  real gamma_0_lpdf(vector y, vector y_hat_rep, vector alpha_rep, real theta, int L_y) {
+    
+    real t;
+    vector[L_y] beta_rep = alpha_rep ./ y_hat_rep;
+    for (l in 1:L_y) {
+      
+      if (y[l] == 0) {
+        // Likelihood of 0 coming from probability theta; synonymous to t += bernoulli_lpmf(1 | theta);
+        t = log(theta);
+      }
+      else {
+        t = log1m(theta) + // synonymous to bernoulli_lpmf(0 | theta)
+             gamma_lpdf(y[l] | alpha_rep[l], beta_rep[l]);
+      }
+    }
+    return t;
+  }
 
 }
 
@@ -191,6 +211,8 @@ data {
   int<lower=0> L_times; // locations/obsid
   int<lower=0> L_yhat; // locations/surveys/pops
   int<lower=0> L_y; // locations/resurveys/pops/plots
+  int<lower=0> L_plots; // locations/plots
+
 
   int<lower=0> N_locs; // overall number of locations. This is the major running variable to iterate over the model vectors.
   int<lower=0> N_species; // overall number of unique species across plot and locations (not nested!)
@@ -209,6 +231,8 @@ data {
   //// rep - repeat indices within groups for broadcasting to the subsequent hierarchical levels
   int<lower=1> rep_yhat2y[L_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
   int<lower=1> rep_obsmethod2y[L_y]; // factor (1, 2), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  int<lower=1> rep_locs2plots[L_plots]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+
 
   //// actual data
   int time_max[N_locs];
@@ -219,6 +243,8 @@ data {
   
   //// The response.
   vector[L_y] y;
+  vector[L_plots] h;
+
   
   //// Settings
   real<upper=0.5> tolerance_fix;
@@ -288,22 +314,27 @@ parameters {
   // matrix[N_locs, N_species] L_random; // array[N_locs] vector[N_species] L_random; // here real array is used for compatibility with to_vector
   // vector<lower=0>[N_species] sigma_l;
 
+  // real<lower=0, upper=1> theta;
+  
   
   //// Errors
-  vector<lower=0>[3] alpha_obs_inv; // observation error
+  vector<lower=0>[3] phi_obs_inv; // observation error in neg_binomial
+  real<lower=0> kappa_inv; // error in beta for h_logit
+    // vector<lower=0>[3] alpha_obs_inv; // observation error in gamma
     // vector<lower=0>[2] sigma_obs; // observation error
     // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
   
   // matrix[N_pops, timespan_max] u[N_locs];
   
   ///
-  array[N_locs] vector<lower=0>[N_pops] state_init;
+  // array[N_locs] vector<lower=0>[N_pops] state_init;
+  array[N_locs] vector[N_pops] state_init_log;
 }
 
 
 transformed parameters {
 
-  array[N_locs] vector[N_species] L_loc;
+  array[N_locs] vector<lower=0>[N_species] L_loc;
   
   
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
@@ -313,8 +344,10 @@ transformed parameters {
   matrix[N_locs, N_species] R_log = X * Beta_r;
   matrix[N_locs, N_species] S_log = X * Beta_s;
 
-  vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
-  
+  vector<lower=0>[3] phi_obs = inv(phi_obs_inv);
+  real<lower=0> kappa = inv(kappa_inv);
+    // vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
+
   for(loc in 1:N_locs) {
     
     L_loc[loc, ] = exp(l_log) .* L_smooth[loc, ]; // + // Offset with fixed coefficient. "The smooth to real number coefficient"
@@ -322,7 +355,7 @@ transformed parameters {
     
   }
   
-  vector[L_yhat] y_hat = unpack(state_init, time_max, times,
+  vector[L_yhat] y_hat = unpack(state_init_log, time_max, times,
                                 b_log, c_a_log, c_b_log, C_j_log, G_logit, h_logit, L_loc,R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat, // varying numbers per loc
@@ -336,11 +369,14 @@ model {
 
   //---------- PRIORS ---------------------------------
   
+  
   // sigma_pr ocess ~ normal(0, 0.01);
   // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
   
   //// Hyperpriors
-  alpha_obs_inv ~ normal(0, 0.1); // Observation error
+  // alpha_obs_inv ~ normal(0, 0.1); // Observation error for gamma
+  phi_obs_inv ~ normal(0, 1); // Observation error for neg_binomial
+  kappa_inv ~ normal(0, 1);
   
   // ... for special offset L
   // to_vector(L_random) ~ std_normal(); // Random part around slope for l
@@ -367,8 +403,9 @@ model {
   //---------- MODEL ---------------------------------
 
   // Fit predictions to data. (level: location/plot/resurvey/species)
-  y ~ gamma(alpha_obs[rep_obsmethod2y], alpha_obs[rep_obsmethod2y] ./ y_hat[rep_yhat2y]);
+  h ~ beta_proportion(inv_logit(h_logit[rep_locs2plots]), kappa);
+  y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
+  // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
+  // y ~ gamma(alpha_obs[rep_obsmethod2y], alpha_obs[rep_obsmethod2y] ./ y_hat[rep_yhat2y]);
   
-  /// alternatively
-  // y ~ neg_binomial_0(y_hat[rep_yhat2y], theta, sigma_obs);
 }

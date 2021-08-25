@@ -4,7 +4,7 @@
 # ——————————————————————————————————————————————————————————————————————————————————#
 
 
-## calculateChanges --------------------------------
+## countA2B --------------------------------
 # Data_big  <- tar_read("Data_big")
 # Data_big_status <- tar_read("Data_big_status")
 # Env_cluster <- tar_read(Env_cluster)
@@ -12,7 +12,7 @@
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
 
-calculateChanges <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select, threshold_dbh) {
+countA2B <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select, threshold_dbh) {
   
   ### local functions
   selectTaxa <- function(Abundance, taxon_select) {
@@ -33,27 +33,55 @@ calculateChanges <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
   # }
   
   countNewInB <- function(idB_first, idB_second) {
+    idB_first <- c(NA, idB_first) ## include NAs so they can be matched and NOT counted
     count <- sum(!(idB_second %in% idB_first), na.rm = T)
     return(count * count_trans)
   }
 
   
-  ### Pipes
-  D <- Data_big_status %>%
+  #### Prepare joining data sets
+  S <- Data_big_status %>%
     rename(count = count_ha) %>% # just temporarily for consistency with Data_big
     mutate(excluded = dead | harvested) %>%
-    filter(excluded) # if necessary, plots with harvest will be excluded later. These added counts will only apply to a survey where the tree was valid and/or alive before!
+    mutate(treejoinid = interaction(obsid, treeid))
+    
   
   E <- Env_cluster[c('plotid', 'clusterid')] %>%
     st_drop_geometry()
   
   clusterid_select <- unique(Stages_select$clusterid)
-  Changes_AB <- Data_big %>%
+  
+  ##### Stages with plot level A2B
+  
+  ## the count factor at stage transition
+  count_trans <- 10^10/(pi * 25^2 * threshold_dbh^2)
+  ## For count_ha formula:
+  # see: http://wiki.awf.forst.uni-goettingen.de/wiki/index.php/Bitterlich_sampling#Estimation_of_number_of_stems
+  # with Zählfaktor k = 4 and c = 50/sqrt(k): c == 50/sqrt(4) == 25
+  # expansion factor n_ha = 10000 * 1000^2/(pi * c^2 * dbh^2) [factor 1000^2 for dbh in mm instead of m]
+  
+  ## the threshold distance (plot radius) at stage transition
+  ## i.e. the raius within which trees in A are counted
+  distance_threshold <- 25 * threshold_dbh/10 # [mm] to [cm conversion] with 1/10
+  
+  ## For multidply parallelization
+  # cluster <- multidplyr::new_cluster(3)
+  # cluster_copy(cluster, c("countNewInB", "count_trans"))
+  
+  Stages_A2B <- Data_big %>%
+    filter(!is.na(dbh)) %>% # drop non-sample/completed trees
     
-    ## add dead trees
-    bind_rows(select(D, -clusterid)) %>%
+    ## add radii of all trees via matching
+    mutate(treejoinid = interaction(obsid, treeid)) %>%
+    bind_cols(distance = S$distance[match(.$treejoinid, S$treejoinid)]) %>%
+      ## all trees in 2002, and 2012 have a radius
+      ## Stages_A2B$distance[Stages_A2B$obsid != "DE_BWI_1987"] %>% anyNA
     
-    ## add clusters via faster matching
+    ## add dead/excluded trees
+    # if necessary, plots with harvest will be excluded later.
+    bind_rows(select(filter(S, excluded), -clusterid)) %>%
+    
+    ## add clusters via matching
     bind_cols(clusterid = E$clusterid[match(.$plotid, E$plotid)]) %>%
 
     ## select clusters
@@ -75,39 +103,22 @@ calculateChanges <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
     ### time differences
     group_by(clusterid) %>%
     mutate(timediff_2002 = diffTime(first(time[obsid == "DE_BWI_1987"]), first(time[obsid == "DE_BWI_2002"])),
-           timediff_2012 = diffTime(first(time[obsid == "DE_BWI_2002"]), first(time[obsid == "DE_BWI_2012"])))
+           timediff_2012 = diffTime(first(time[obsid == "DE_BWI_2002"]), first(time[obsid == "DE_BWI_2012"]))) %>%
+    ungroup()
   
-  
-  Changes_A <- filter(Data_big) %>% ## use only living trees in A
-    filter(dbh < threshold_dbh & !is.na(dbh)) %>%
-    selectTaxa(taxon_select) %>%
-    group_by(plotid, taxid) %>%
-    summarize(count_ha_2002_plot = sum(count[obsid == "DE_BWI_2002"], na.rm = T))
-  
-  
-  rm(Stages_select, E, Env_cluster, Data_big)
-  gc()
 
-  #### New in B
-  
-  ## the count factor at stage transition
-  count_trans <- 10^10/(pi * 25^2 * threshold_dbh^2)
-  ## For count_ha formula:
-  # see: http://wiki.awf.forst.uni-goettingen.de/wiki/index.php/Bitterlich_sampling#Estimation_of_number_of_stems
-  # with Zählfaktor k = 4 and c = 50/sqrt(k): c == 50/sqrt(4) == 25
-  # expansion factor n_ha = 10000 * 1000^2/(pi * c^2 * dbh^2) [factor 1000^2 for dbh in mm instead of m]
-  
-  # cluster <- multidplyr::new_cluster(3)
-  # cluster_copy(cluster, c("countNewInB", "count_trans"))
-  Changes <- filter(Changes_AB, stage == "B") %>% ## keep excluded
+  Stages_A2B <- filter(Stages_A2B, stage == "B") %>% ## drop trees in A for the following methods (this keeps the excluded trees in B)
     
-    ## count new in B
+    ## Count new trees in B, that are within the sampling radius of A
+    # (preparing some booleans to improve speed? of the groupwise counting)
     mutate(obsid_1987 = obsid == "DE_BWI_1987", obsid_2002 = obsid == "DE_BWI_2002", obsid_2012 = obsid == "DE_BWI_2012") %>%
     group_by(plotid, taxid) %>%
     # multidplyr::partition(cluster) %>%
-    mutate(treeid_int = as.integer(factor(treeid))) %>% # integer %in% seems to be much faster
-    mutate(count_A2B_2002_plot = countNewInB(treeid_int[obsid_1987], treeid_int[obsid_2002]),
-           count_A2B_2012_plot = countNewInB(treeid_int[obsid_2002], treeid_int[obsid_2012])) %>% 
+    mutate(treeid_int = as.integer(factor(treeid))) %>% ## integer %in% seems to be much faster, no NAs in treeid
+    mutate(treeid_A2B = replace(treeid_int, distance > distance_threshold, NA)) %>% ## introducing a lot of NAs: table(is.na(Stages_A2B$treeid_A2B))
+    ## NOTE: treeidA2B (including NAs for trees outside the radius for A), will be matched in treeid_int
+    mutate(count_A2B_2002_plot = countNewInB(treeid_int[obsid_1987], treeid_A2B[obsid_2002]),
+           count_A2B_2012_plot = countNewInB(treeid_int[obsid_2002], treeid_A2B[obsid_2012])) %>% 
     
     ## count new in B ob cluster level
     group_by(clusterid, taxid) %>%
@@ -117,15 +128,23 @@ calculateChanges <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
            count_A2B_2002_cluster_avg = count_A2B_2002_cluster/n_plots_cluster,
            count_A2B_2012_cluster_avg = count_A2B_2012_cluster/n_plots_cluster) %>%
     
-    ungroup() %>%
+    ungroup()
     
-    ## calculate h for fun
-    bind_rows(Changes_A) %>%
-    group_by(plotid, taxid) %>%
-    mutate(h_plot_2012 = first(count_A2B_2012_plot[!is.na(count_A2B_2012_plot)]) / first(count_ha_2002_plot[!is.na(count_ha_2002_plot)])/ timediff_2012) %>%
-    filter(stage != "A")
+    ### calculate h
+    
+    # Changes_A <- filter(Data_big) %>% ## use only living trees in A
+    #   filter(dbh < threshold_dbh & !is.na(dbh)) %>%
+    #   selectTaxa(taxon_select) %>%
+    #   group_by(plotid, taxid) %>%
+    #   summarize(count_ha_2002_plot = sum(count[obsid == "DE_BWI_2002"], na.rm = T))
+    
+    # Stages_A2B %<>% 
+    # bind_rows(Changes_A) %>%
+    # group_by(plotid, taxid) %>%
+    # mutate(h_plot_2012 = first(count_A2B_2012_plot[!is.na(count_A2B_2012_plot)]) / first(count_ha_2002_plot[!is.na(count_ha_2002_plot)])/ timediff_2012) %>%
+    # filter(stage != "A")
 
-  return(Changes)
+  return(Stages_A2B)
 }
 
 

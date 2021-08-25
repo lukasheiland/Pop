@@ -24,7 +24,7 @@ source("Fit_functions.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
-tar_option_set(packages = c("dplyr", "multidplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", ## extended tidyverse
+tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", # "multidplyr" ## extended tidyverse
                             "lubridate", # "zoo",
                             "sf", "fields", ## for correct loading of environmental data
                             "cmdstanr"))
@@ -93,8 +93,8 @@ list(
     tar_target(threshold_dbh, 200),
     tar_target(taxon_select, c("Fagus.sylvatica")),
     
-    tar_target(Changes,
-               calculateChanges(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
+    tar_target(Stages_A2B,
+               countA2B(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
     
     tar_target(Stages,
                joinStages(Data_big, Data_small, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
@@ -118,7 +118,10 @@ list(
                  predictSplines(fits_splines, Stages_env),
                  # pattern = map(fits_splines),
                  iteration = "list",
-                 packages = addPackage("fields"))
+                 packages = addPackage("fields")),
+      tar_target(surfaces_splines,
+                 predictSurfaces(fits_splines),
+                 iteration = "list")
     ),
     
     tar_target(Stages_select,
@@ -146,7 +149,7 @@ list(
   ## Model fit
   list(
     tar_target(data_stan,
-               formatStanData(Stages_scaled, Changes, taxon_select, threshold_dbh)), # priors
+               formatStanData(Stages_scaled, Stages_A2B, taxon_select, threshold_dbh)), # priors
     
     tar_target(file_model_test,
                "Model_2021-03_ba/Model_ba_test.stan",

@@ -63,49 +63,32 @@ stages_stan|stem|4a07de6449d47d5e|87c27e7264be7149|79f71e986f5b51bf|1539231592||
 calculateIndividualIncrement|function|f26b9d7c7a276930||||||||||||||
 calculateRates|function|9f2080a84ce0510c||||||||||||||
 file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18860.9370923003s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
-file_DE_big_status|stem|65e7cd5711608b1d|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18860.9371642065s|25c530eb973e5948|14271333|file|vector|||3.891||
-Data_big_status|stem|65e7cd5711608b1d|eff25cb053505d95|816821d52043b69a|813772221||t18861.3748199369s|25c530eb973e5948|14271333|rds|vector|||2.812||
-file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18860.9265471074s|e684589703d38eb9|5533814|file|vector|||1.968||
 file_DE_small|stem|2307d704c5a9a9b5|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18860.9349071086s|2895e6fb9317973a|15170066|file|vector|||2.772||
 Changes|stem|08524551138676de|5b376742a58904ea|f3a96ef45d9a0dea|1733446405||t18861.8400542343s|30eeb12e549006ab|243821|rds|vector|||19.47||
 file_model_test|stem|3534828cb41a5669|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18862.3839191432s|73f8ceedb529048d|18430|file|vector|||2.357||
 model_test|stem|56c3112bfe07b19c|a3aa00c06cce5e55|c38d4ebdcfb29b82|-1162399619||t18862.384902634s|0bddb9a13bf20967|7439|rds|vector|||46.817||
+fit_test|stem|929b403e30dcf5d5|6c7d9e2433386a30|6b1c8c21a07070eb|-1560265059||t18862.3909387074s|3f16e126adcd6a40|35109|rds|vector|||0.773|No chains finished successfully. Unable to retrieve the fit.|
+calculateChanges|function|d875b7e6a029042a||||||||||||||
+file_DE_big_status|stem|55aa33929c1d8299|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18864.6342493399s|43b54c47aef0da48|12960096|file|vector|||2.52||
+Data_big_status|stem|55aa33929c1d8299|eff25cb053505d95|bb67aed14f1a82fd|813772221||t18864.6374041453s|43b54c47aef0da48|12960096|rds|vector|||4.256||
 getInits|function|247cb0068b001ce4||||||||||||||
 constructPriors|function|9e00a56ab35214b7||||||||||||||
 addPackage|function|d45c347b66cce55c||||||||||||||
 draw|function|304cc761aa9d6d9e||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
 summarizeDraws|function|5e7992612ea96dd4||||||||||||||
+countA2B|function|0fe74b31d92ee78d||||||||||||||
 summarizeEnvByCluster|function|c82eb6a80de9b3e7||||||||||||||
 predictSplines|function|3a9471ea0b459e9a||||||||||||||
 selectClusters|function|a89fdc944b51e691||||||||||||||
 joinStages|function|da66eec8bf927220||||||||||||||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
-formatStanData|function|a26f926f882ed253||||||||||||||
+formatStanData|function|9e2ad33bb32cfa0b||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 drawTest|function|286f7cc4bb231ac2||||||||||||||
-calculateChanges|function|d875b7e6a029042a||||||||||||||
 extractDraws|function|452310beed6d171e||||||||||||||
 fitSplines|function|3923fc14ded03ec4||||||||||||||
 constructConstantGrid|function|68c401f1ba4d758b||||||||||||||
-data_stan|stem|b30533a8db908559|c5ec0cc3058cde2a|13e36a0ebf26435b|1263995833||t18862.3909286298s|c703b2ac8fad5c96|29025|rds|vector|||5.322||
-fit_test|stem|929b403e30dcf5d5|6c7d9e2433386a30|6b1c8c21a07070eb|-1560265059||t18862.3909387074s|3f16e126adcd6a40|35109|rds|vector|||0.773|No chains finished successfully. Unable to retrieve the fit.|
-getInits|function|247cb0068b001ce4
-constructPriors|function|9e00a56ab35214b7
-addPackage|function|d45c347b66cce55c
-draw|function|304cc761aa9d6d9e
-joinEnv|function|2488b8203673870c
-summarizeDraws|function|5e7992612ea96dd4
-summarizeEnvByCluster|function|c82eb6a80de9b3e7
-predictSplines|function|3a9471ea0b459e9a
-selectClusters|function|a89fdc944b51e691
-joinStages|function|da66eec8bf927220
-scaleData|function|0d0c01b1b3160a22
-formatStanData|function|fe00a3aa533aebfc
-cleanEnv|function|06a0767a0f88a954
-drawTest|function|286f7cc4bb231ac2
-calculateChanges|function|d875b7e6a029042a
-extractDraws|function|452310beed6d171e
-fitSplines|function|3923fc14ded03ec4
-constructConstantGrid|function|68c401f1ba4d758b
-data_stan|stem|2e8a1930029c2d32|c5ec0cc3058cde2a|85ec7e023a027923|1263995833||t18862.391625165s|a71fc9f70f28bf0d|30421|rds|vector|||5.126||
+file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18864.6338114132s|e684589703d38eb9|5533814|file|vector|||1.968||
+Stages_A2B|stem|849bee5b89800e4c|afaf624ae514afbe|a3ca2c7e740f3f50|942671410||t18864.6535042431s|0c0ed69cf6d1a333|291349|rds|vector|||25.867||
+data_stan|stem|65ea9675514f109c|7f558108bcda7a69|b9627fa220e8c0ac|1263995833||t18862.5121630112s||30398|rds|vector|||0.738||Cant subset columns that dont exist.31mx39m Column count_ha_2002_plot doesnt exist.
