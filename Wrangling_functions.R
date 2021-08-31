@@ -1,4 +1,3 @@
-
 # ——————————————————————————————————————————————————————————————————————————————————#
 # Tree data functions -------------------------------------------------------
 # ——————————————————————————————————————————————————————————————————————————————————#
@@ -79,7 +78,7 @@ countA2B <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxo
     
     ## add dead/excluded trees
     # if necessary, plots with harvest will be excluded later.
-    bind_rows(select(filter(S, excluded), -clusterid)) %>%
+    bind_rows(dplyr::select(filter(S, excluded), -clusterid)) %>%
     
     ## add clusters via matching
     bind_cols(clusterid = E$clusterid[match(.$plotid, E$plotid)]) %>%
@@ -220,7 +219,7 @@ joinStages <- function(B, S,
     mutate(accountfortaxamethods = obsid) %>%
     tidyr::complete(nesting(accountfortaxamethods, taxid, tax), stage, nesting(obsid, plotid, plotobsid, methodid, time), fill = list(count_ha = 0, ba_ha = 0)) %>%
     filter(accountfortaxamethods == obsid) %>%
-    select(-accountfortaxamethods) %>%
+    dplyr::select(-accountfortaxamethods) %>%
     droplevels() %>%
     
     ## stage creation will yield NA stages for when dbh is NA (for completed species)
@@ -407,7 +406,7 @@ selectClusters <- function(Stages, predictor_select,
   Stages_select <- bind_rows(Stages_other, Stages_Fagus)
   
   Stages_select %<>%
-    select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
+    dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
   
   if(anyNA(Stages_select$time)) warning("selectClusters(): There are missing values in variable `time`.")
   
@@ -497,7 +496,7 @@ constructConstantGrid <- function(taxon, Stages_env, Data_geo) {
   Coords <- Data_geo %>%
     mutate(clusterid = paste0("DE_BWI_", Tnr)) %>%
     filter(Netz == 16) %>%  # 16 = 4km x 4 km grid, subset of the net (structure of four), used in all of the Länder in 2012 (see BMEL_BWI_Methodenband_Web_BWI3.pdf), readRDS("Inventory.nosync/DE BWI/Data/DE_BWI_meta.rds")$x_netz
-    select(clusterid) # plot(Coords)
+    dplyr::select(clusterid) # plot(Coords)
   
   ## Basal area of both stages combined ("BA") were averaged by the same location
   S <- dplyr::filter(Stages_env, tax == taxon &
@@ -513,7 +512,7 @@ constructConstantGrid <- function(taxon, Stages_env, Data_geo) {
   
   BA_fullgrid <-
     merge(Coords, S, by = "clusterid", all.x = T, all.y = F) %>% # only merge at locations of the constant grid
-    select(clusterid, ba_ha) %>%
+    dplyr::select(clusterid, ba_ha) %>%
     st_centroid() %>%
     ## transformed for consistency with other data
     st_transform(crs = st_crs('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')) %>% # transform to lon/lat after centroid (important for spatial methods)
@@ -588,7 +587,7 @@ summarizeEnvByCluster <- function(E,
   if (is.null(predictor_select)) predictor_select <- setdiff(names(E), c(id_select, disturbance_select, "geometry"))
   
   E %<>%
-    select(any_of(c(id_select, disturbance_select, predictor_select))) %>%
+    dplyr::select(any_of(c(id_select, disturbance_select, predictor_select))) %>%
     dplyr::group_by(clusterid) %>%
     dplyr::mutate_at(predictor_select, function(x) mean(x, na.rm = T)) %>% # mean(NA, na.rm = T) produces NaN for only NAs
     dplyr::mutate_at(predictor_select, function(x) replace(x, is.nan(x), NA)) %>% # that's why ... ## na_if doesn't work with NaNs
