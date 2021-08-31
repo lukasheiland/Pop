@@ -242,34 +242,56 @@ joinStages <- function(B, S,
 
 
 
-## addAbundanceSmooth --------------------------------
-# BA_splines <- tar_read("BA_splines")
-# BA <- BA_splines[[1]]
-fitSplines <- function(BA) {
+## fitS --------------------------------
+# BA_s <- tar_read("BA_s")
+# BA <- BA_s[[1]]
+fitS <- function(BA) {
   
+  BA_coordinates <- cbind(BA, st_coordinates(BA))
+  attr(BA_coordinates, "taxon") <- attr(BA, "taxon") ## cbind drops attr somehow
   
-  X <- st_coordinates(BA)
+  ## Get measures for
+  # box <- st_bbox(BA) %>%
+  #   st_as_sfc() %>%
+  #   st_as_sf() %>%
+  #   st_cast(to = "POINT")
+  # 
+  # dist_lon <- st_distance(box[3:4,])[1,2] %>% # distance between the two points at the top of the box in meters ()
+  #   as.numeric()
+  # dist_lat <- st_distance(box[c(1, 4),])[1,2] %>% # distance between the two points at the left of the box
+  #   as.numeric()
+  # 
+  # 
+  # Grid <- st_bbox(BA) %>%
+  #   st_make_grid(n = c(100, 200), what = "centers") %>%
+  #   st_coordinates()
+  # 
+  # k_Y <- Grid[,"Y"] %>% unique()
+  # k_X <- Grid[,"X"] %>% unique()
+  # 
+  # n_k_lon <- round(dist_lon / 8000)
+  # n_k_lat <- round(dist_lat / 8000)
   
-  ## Thin plate spline regression with the coordinates as prediictors
-  require(fields)
-  fit <- fields::fastTps(X, BA$ba_ha, aRange = 20, lon.lat = T) # aRange = 30
+  ### mgcv
+  fit <- mgcv::gam(ba_ha ~ s(Y, X, bs = "sos", k = 600), family = gaussian, data = BA_coordinates) ## The first argument is taken to be latitude (in degrees) and the second longitude (in degrees).
+  
   attr(fit, "taxon") <- attr(BA, "taxon")
-  
+
   return(fit)
 }
 
 
+## predictS --------------------------------
 # Stages_env  <- tar_read("Stages_env")
-# fits  <- tar_read("fits_splines")
-predictSplines <- function(fits, Stages_env) {
+# fits  <- tar_read("fits_s"); fit <- fits[[1]]
+predictS <- function(fits, Stages_env) {
   
   pred <- function(fit) {
     
-    require("fields")
-
-    Predicted <- predict(fit, xnew = X_unique) %>% # ?predict.fastTps
-      as.data.frame() ## one column
-    
+    predicted <- predict(fit, newdata = X_unique)
+    predicted[predicted < 0] <- 0
+      
+    Predicted <- as.data.frame(predicted) ## one column
     Predicted <- Predicted[X_df$id, , drop = F] ## through order, this has the right nrows
     
     colnames(Predicted) <- paste0("s_", attr(fit, "taxon"))
@@ -281,10 +303,9 @@ predictSplines <- function(fits, Stages_env) {
     mutate(id = vctrs::vec_group_id(.))
   
   X_unique <- filter(X_df, !duplicated(id)) %>%
-    select(1:2) %>%
-    as.matrix()
+    dplyr::select(1:2)
   
-  predictions <- lapply(fits, pred) ## list of data_frames
+  predictions <- lapply(fits, pred) ## list[N_taxa] of data_frames
   
   S <- bind_cols(Stages_env, predictions)
 
@@ -292,9 +313,33 @@ predictSplines <- function(fits, Stages_env) {
 }
 
 
+## predictS --------------------------------
+# BA_s  <- tar_read("BA_s")
+# fits  <- tar_read("fits_s")
+predictSurfaces <- function(fits, BA_s) {
+
+  require(raster)
+  
+  Ger <- raster::getData("GADM", country = "DE", level = 0, path = "Data/")
+  R <- raster::raster(raster::extent(bbox(Ger)), resolution = c(0.01, 0.01))
+  crs(R) <- crs(Ger)
+  Coords <- rasterToPoints(R, spatial = TRUE) %>%
+    as.data.frame()
+  R$X <- Coords$x
+  R$Y <- Coords$y
+  R <- raster::mask(R, Ger) # plot(R)
+  
+  # P <- raster::predict(R, fit); plot(P, col = viridis::viridis(255))
+  surfaces <- lapply(fits, function(f) raster::predict(R, f))
+  names(surfaces) <- sapply(fits, function(f) attr(f, "taxon"))
+  
+  return(surfaces)
+}
+
+
 
 ## selectClusters --------------------------------
-# Stages <- tar_read("Stages_splines")
+# Stages <- tar_read("Stages_s")
 # predictor_select <- tar_read("predictor_select")
 selectClusters <- function(Stages, predictor_select,
                            id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
@@ -456,10 +501,10 @@ constructConstantGrid <- function(taxon, Stages_env, Data_geo) {
   
   ## Basal area of both stages combined ("BA") were averaged by the same location
   S <- dplyr::filter(Stages_env, tax == taxon &
-                                 stage == "BA" &
-                                 obsid == "DE_BWI_2012") %>% # only use the latest obsid because there was consistent sampling
+                       stage == "BA" &
+                       obsid == "DE_BWI_2012") %>% # only use the latest obsid because there was consistent sampling
     st_drop_geometry()
-    
+  
   expandMean <- function(x) {
     expanded <- rep(0, 4) # has only zeroes
     expanded[1:length(x)] <- x
@@ -470,24 +515,25 @@ constructConstantGrid <- function(taxon, Stages_env, Data_geo) {
     merge(Coords, S, by = "clusterid", all.x = T, all.y = F) %>% # only merge at locations of the constant grid
     select(clusterid, ba_ha) %>%
     st_centroid() %>%
+    ## transformed for consistency with other data
     st_transform(crs = st_crs('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')) %>% # transform to lon/lat after centroid (important for spatial methods)
     mutate(ba_ha = tidyr::replace_na(ba_ha, 0)) %>%
-  
+    
     group_by(clusterid) %>%
     summarize(ba_ha = expandMean(ba_ha)) %>% # within clusterid, expand plots to 4 and fills with 0 before averaging
     
     mutate(coord = paste(geometry)) %>%
     group_by(coord) %>%
     summarize(ba_ha = mean(ba_ha))
-    
-    ## plot(S_fullgrid["ba_ha"])
+  
+  ## plot(S_fullgrid["ba_ha"])
   
   attr(BA_fullgrid, "taxon") <- taxon
-
+  
   ## Return average ba_a per cluster with NA plots == 0 and NA clusters == 0, but only of the clusters with proptery 16
   ## Also subset to abundance from 2012
   ## Check whether the grid is really complete
-
+  
   return(BA_fullgrid)
 }
 

@@ -26,7 +26,8 @@ source("Fit_functions.R")
 options(tidyverse.quiet = TRUE)
 tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", # "multidplyr" ## extended tidyverse
                             "lubridate", # "zoo",
-                            "sf", "fields", ## for correct loading of environmental data
+                            "sf", "raster", ## for correct loading of environmental data
+                            "mgcv",
                             "cmdstanr"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
@@ -102,30 +103,29 @@ list(
                joinEnv(Stages, Env_cluster)),
     
     list(
-      tar_target(taxon_splines,
+      tar_target(taxon_s,
                  c(taxon_select, "other")),
-      tar_target(BA_splines,
-                 constructConstantGrid(taxon_splines, Stages_env, Data_geo),
-                 pattern = map(taxon_splines),
+      tar_target(BA_s,
+                 constructConstantGrid(taxon_s, Stages_env, Data_geo),
+                 pattern = map(taxon_s),
                  iteration = "list"),
-      tar_target(fits_splines,
-                 fitSplines(BA_splines),
-                 pattern = map(BA_splines),
-                 iteration = "list",
-                 packages = addPackage("fields")),
-        ## fits_splines each have an attribute "taxon"
-      tar_target(Stages_splines,
-                 predictSplines(fits_splines, Stages_env),
-                 # pattern = map(fits_splines),
-                 iteration = "list",
-                 packages = addPackage("fields")),
-      tar_target(surfaces_splines,
-                 predictSurfaces(fits_splines),
+      tar_target(fits_s,
+                 fitS(BA_s),
+                 pattern = map(BA_s),
+                 iteration = "list"),
+        ## fits_s each have an attribute "taxon"
+      tar_target(Stages_s,
+                 predictS(fits_s, Stages_env),
+                 # pattern = map(fits_s),
+                 iteration = "list"),
+      tar_target(surfaces_s,
+                 predictSurfaces(fits_s),
                  iteration = "list")
-    ),
+        ## plot(surfaces_s[[1]], col = viridis::viridis(255))
+      ),
     
     tar_target(Stages_select,
-               selectClusters(Stages_splines, predictor_select)), # After smooth, so that smooth can be informed by all plots.
+               selectClusters(Stages_s, predictor_select)), # After smooth, so that smooth can be informed by all plots.
                ## there is some random sampling here. Note: a target's name determines its random number generator seed. 
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)) # After selection, so that scaling includes selected plots .
