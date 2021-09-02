@@ -3,18 +3,16 @@
 # ——————————————————————————————————————————————————————————————————————————————————#
 
 ## constructPriors --------------------------------
-# draws_direct  <- tar_read("draws_direct")
+# Stages <- tar_read("Stages_scaled")
 
-constructPriors <- function() {
+# constructPriors <- function(Stages) {
   
-  x <- log(rgamma(150,5))
-  df <- approxfun(density(x))
-  plot(density(x))
-  xnew <- seq(-1, 3, by = 0.1)
-  points(xnew,df(xnew),col=2)
-  
-  return(fit)
-}
+  # x <- log(rgamma(150,5))
+  # df <- approxfun(density(x))
+  # plot(density(x))
+  # xnew <- seq(-1, 3, by = 0.1)
+  # points(xnew,df(xnew),col=2)
+# }
 
 
 
@@ -53,15 +51,15 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
   ## Factor "pops" is structured stages/species.
   Changes %<>%
     ungroup() %>%
-    select("plotid", "taxid",
+    dplyr::select("plotid", "taxid",
            "timediff_2002", "timediff_2012",
            "count_A2B_2002_plot", "count_A2B_2012_plot", "count_A2B_2002_cluster", 
            "count_A2B_2012_cluster", "n_plots_cluster", "count_A2B_2002_cluster_avg", 
-           "count_A2B_2012_cluster_avg", "count_ha_2002_plot") %>%
+           "count_A2B_2012_cluster_avg") %>% # count_ha_2002_plot
     mutate_at(c("count_A2B_2002_plot", "count_A2B_2012_plot", "count_A2B_2002_cluster", 
            "count_A2B_2012_cluster"), round) %>%
     mutate(joinid = interaction(plotid, taxid)) %>%
-    select(-plotid, -taxid)
+    dplyr::select(-plotid, -taxid)
   
   Stages %<>%
     ## Join changes
@@ -112,11 +110,11 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
   ## Format: [L_init] — locations/pops
   S_init <- filter(S, isy0) %>%
     st_drop_geometry() %>%
-    select(-isy0) %>%
+    dplyr::select(-isy0) %>%
     group_by(loc, pop, stage, tax) %>%
     summarize(n_plots = n_distinct(plot), .groups = "drop")
   
-  S <- select(S, -isy0) %>%
+  S <- dplyr::select(S, -isy0) %>%
     st_drop_geometry()
   
   ## Format: [L_yhat] — locations/obs/pops
@@ -171,8 +169,8 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
   polyformula <- as.formula(paste("~", paste("poly(", colnames(as.data.frame(Env)), ", 2)", collapse = "+")))
   X <- model.matrix(polyformula, data = as.data.frame(Env))
   
-  #### Prepare ldd smooth
-  L_smooth <- S %>%
+  #### Prepare ldd smooth. Predicted with log-link 
+  L_smooth_log <- S %>%
     group_by(loc) %>%
     summarize_at(paste("s", taxon_selectother, sep = "_"), first) %>%
     column_to_rownames(var = "loc") %>%
@@ -183,11 +181,21 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
   L_yhat <- nrow(S_yhat)
   
   
+  #### Prepare priors
+  prior_state_init_log <- Stages %>%
+    st_drop_geometry() %>%
+    filter(stage %in% c("J", "A", "B")) %>%
+    group_by(pop) %>%
+    summarize(y = log(mean(y, na.rm = T))) %>% ## log(mean()) is imperfect and itroduces a small bias, but median won't work because of the many zeroes
+    pull(y)
+  
+  
   #### The stan-formatted list
   data <- list(
     
     L_times = nrow(S_times),
     L_yhat = L_yhat,
+    L_init = nrow(S_init),
     L_y = nrow(S),
     L_a2b = nrow(S_a2b),
     
@@ -207,13 +215,14 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
     rep_obsmethod2y = as.integer(S$obsmethod),
     rep_yhat2a2b = S_a2b$rep_yhat2a2b,
     rep_species2a2b = S_a2b$rep_species2a2b,
+    rep_pops2init =  as.integer(S_init$pop),
     
     time_max = S_locs$time_max,
     times = S_times$t,
     timediff = S_a2b$timediff,
 
     X = X,
-    L_smooth = L_smooth, ## array[N_locs] vector<lower=0>[N_species] L_smooth;
+    L_smooth_log = L_smooth_log, ## array[N_locs] vector<lower=0>[N_species] L_smooth_log;
     
     y = S$y,
     a2b = S_a2b$a2b,
@@ -221,9 +230,10 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
     ## Settings corner
     tolerance_fix = 0.001,
     ba_a_upper = ba_a_upper,
-    ba_a_avg = ba_a_avg
+    ba_a_avg = ba_a_avg,
     
-    # Long = S
+    #### priors
+    prior_state_init_log = prior_state_init_log
   )
   
   return(data)
@@ -340,7 +350,7 @@ getInits <- function() {
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 200, iter_sampling = 300,
+                     method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 500, iter_sampling = 400,
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
@@ -365,8 +375,8 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
                         # output_basename = ,
                         init = initfunc,
                         iter_warmup = iter_warmup, iter_sampling = iter_sampling,
-                        adapt_delta = 0.99,
-                        max_treedepth = 16,
+                        # adapt_delta = 0.99,
+                        # max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
   }
   
@@ -383,11 +393,11 @@ draw <- function(model, data_stan) {
 }
 
 
-## summarizeDraws --------------------------------
-# fit  <- tar_read("fit")
-# fit  <- tar_read("testfit")
+## summarizeFit --------------------------------
+# fit <- tar_read("fit")
+# fit <- tar_read("fit_test")
 
-summarizeDraws <- function(fit) {
+summarizeFit <- function(fit) {
   
   summary <- fit$summary()
   
@@ -401,17 +411,48 @@ summarizeDraws <- function(fit) {
 }
 
 
-## extractDraws --------------------------------
+## readStanfit --------------------------------
 # fit  <- tar_read("fit")
-# testfit  <- tar_read("testfit")
+# fit  <- tar_read("fit_test")
 
-extractDraws <- function(fit) {
+readStanfit <- function(fit) {
   
   outputfile <- fit$output_files()
-  draws <- rstan::read_stan_csv(outputfile) %>%
-    rstan::extract()
+  stanfit <- rstan::read_stan_csv(outputfile)
+  
+  return(stanfit)
+}
+
+
+## extractDraws --------------------------------
+# stanfit  <- tar_read("stanfit")
+# stanfit  <- tar_read("stanfit_test")
+
+extractDraws <- function(stanfit) {
+  
+  draws <- rstan::extract(stanfit)
   
   return(draws)
+}
+
+
+
+## plotStanfit --------------------------------
+# stanfit  <- tar_read("stanfit")
+# stanfit  <- tar_read("stanfit_test")
+# exclude <- tar_read("pars_exclude)
+
+plotStanfit <- function(stanfit, exclude) {
+  
+  basename <- attr(stanfit, "model_name") %>%
+    str_replace("-[1-9]-", "-x-")
+
+  traceplot <- rstan::traceplot(stanfit, pars = c("y_hat", "L_loc_log", "state_init_log"), include = F)
+  
+  plots <- list(traceplot = traceplot)
+  mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), plots, names(plots))
+  
+  return(plots)
 }
 
 

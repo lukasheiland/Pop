@@ -3,6 +3,7 @@ library(here)
 library(magrittr)
 library(glue)
 library(dplyr)
+library(stringr)
 library(targets)
 library(visNetwork)
 library(future)
@@ -10,7 +11,7 @@ library(future)
 library(sf)
 library(cmdstanr)
 library(rstan)
-
+library(mgcv)
 
 # Orientation -------------------------------------------------------------
 setwd(here())
@@ -31,16 +32,25 @@ tar_make(c("Stages_s", "surfaces_s"))
   # plan(multisession)
   # future(tar_make(names = "predict_splines")) # just as a future
   
-  # tar_make_future(names = "Stages_splines") # parallel
+  # tar_make_future(names = "Stages_s") # parallel
 
-# tar_load("Stages_splines")
+# tar_load("Stages_s")
 # Stages %>% View()
 # tar_read("Stages_env") %>% View()
 
 
 # Inspect pipeline ----------------------------------------------------------------
-network <- tar_visnetwork(targets_only = T, exclude = contains(c("file_", "threshold_", "taxon_", "predictor_")))
+network <- tar_visnetwork(targets_only = T, exclude = contains(c("file_", "threshold_", "taxon_", "predictor_", "pars_")))
 network %>%
   visHierarchicalLayout(direction = "LR", levelSeparation = 100, nodeSpacing = 120, edgeMinimization = T, blockShifting = T, parentCentralization = T)
 
-tar_visnetwork(targets_only = F, exclude = starts_with("file"))
+## More
+# tar_visnetwork(targets_only = F, exclude = starts_with("file"))
+
+
+# Inspect results ----------------------------------------------------------------
+tar_make(stanfit_test)
+tar_load(stanfit_test)
+shinystan::launch_shinystan(stanfit_test)
+
+

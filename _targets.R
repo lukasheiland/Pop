@@ -11,11 +11,6 @@ library(targets)
 library(tarchetypes)
 # library(stantargets)
 
-
-### Future
-library(future)
-future::plan(future::multisession, workers = 3)
-
 ### Source the functions
 source("Wrangling_functions.R")
 # source("Fit_direct_functions.R")
@@ -24,12 +19,17 @@ source("Fit_functions.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
-tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", # "multidplyr" ## extended tidyverse
+tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
                             "lubridate", # "zoo",
                             "sf", "raster", ## for correct loading of environmental data
                             "mgcv",
-                            "cmdstanr"))
+                            "cmdstanr", "rstan"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
+
+### Future
+library(future)
+future::plan(future::multisession, workers = 6)
+
 
 # Pipeline ----------------------------------------------------------------
 
@@ -113,19 +113,25 @@ list(
                  fitS(BA_s),
                  pattern = map(BA_s),
                  iteration = "list"),
-        ## fits_s each have an attribute "taxon"
+      ## fits_s each have an attribute "taxon"
       tar_target(Stages_s,
                  predictS(fits_s, Stages_env),
                  # pattern = map(fits_s),
                  iteration = "list"),
+      tar_target(Stages_s_file,
+                 saveStages_s(Stages_s),
+                 format = "file"),
+          ## explicit side effect for later use on other machines
       tar_target(surfaces_s,
                  predictSurfaces(fits_s),
+                 iteration = "list"),
+      tar_target(surfaceplots_s,
+                 plotSurfaces(surfaces),
                  iteration = "list")
-        ## plot(surfaces_s[[1]], col = viridis::viridis(255))
       ),
     
     tar_target(Stages_select,
-               selectClusters(Stages_s, predictor_select)), # After smooth, so that smooth can be informed by all plots.
+               selectClusters(Stages_s, predictor_select)), # Stages_s_file, After smooth, so that smooth can be informed by all plots.
                ## there is some random sampling here. Note: a target's name determines its random number generator seed. 
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)) # After selection, so that scaling includes selected plots .
@@ -164,19 +170,34 @@ list(
                cmdstan_model(file_model)),
     
     tar_target(fit_test,
-               drawTest(model = model_test, data_stan, initfunc = 1)),
+               drawTest(model = model_test, data_stan, method = "variational", initfunc = 0.5)),
     tar_target(fit,
-               draw(model = model, data_stan, initfunc = 1)),
+               draw(model = model, data_stan, initfunc = 0.5)),
+    
     
     tar_target(summary_test,
-               summarizeDraws(fit_test)),
+               summarizeFit(fit_test)),
     tar_target(summary,
-               summarizeDraws(fit)),
+               summarizeFit(fit)),
+    
+    tar_target(stanfit_test,
+               readStanfit(fit_test)),
+    tar_target(stanfit,
+               readStanfit(fit)),
+    
+    tar_target(pars_exclude,
+               c("y_hat", "L_loc_log", "state_init_log")),
     
     tar_target(draws_test,
-               extractDraws(fit_test)),
+               extractDraws(stanfit_test)),
     tar_target(draws,
-               extractDraws(fit))
+               extractDraws(stanfit)),
+    
+    tar_target(plots_test,
+               plotStanfit(stanfit_test, exclude = pars_exclude)),
+    tar_target(plots,
+               plotStanfit(stanfit, exclude = pars_exclude))
+
   ),
   
   
