@@ -118,10 +118,14 @@ list(
                  predictS(fits_s, Stages_env),
                  # pattern = map(fits_s),
                  iteration = "list"),
-      tar_target(Stages_s_file,
-                 saveStages_s(Stages_s),
+      
+      tar_target(file_Stages_s,
+                 "Data/Stages_s.rds",
                  format = "file"),
+      tar_target(Data_Stages_s,
+                 readRDS(file_Stages_s)),
           ## explicit side effect for later use on other machines
+      
       tar_target(surfaces_s,
                  predictSurfaces(fits_s),
                  iteration = "list"),
@@ -131,7 +135,7 @@ list(
       ),
     
     tar_target(Stages_select,
-               selectClusters(Stages_s, predictor_select)), # Stages_s_file, After smooth, so that smooth can be informed by all plots.
+               selectClusters(Stages_s, predictor_select)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
                ## there is some random sampling here. Note: a target's name determines its random number generator seed. 
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)) # After selection, so that scaling includes selected plots .
