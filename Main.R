@@ -23,11 +23,11 @@ setwd(here())
 
 
 # Make targets pipeline -----------------------------------------------------------------
-tar_glimpse()
+# tar_glimpse()
 M <- tar_manifest(fields = c("name", "command"))
 # M$name
 
-tar_make(c("Stages_s", "surfaces_s"))
+tar_make(c("summary_test"))
   ## alternatives
   # plan(multisession)
   # future(tar_make(names = "predict_splines")) # just as a future
@@ -49,7 +49,9 @@ network %>%
 
 
 # Inspect results ----------------------------------------------------------------
-tar_make(stanfit_test)
+tar_make(summary_test)
+tar_make(plots_test)
+tar_load(summary_test)
 tar_load(stanfit_test)
 shinystan::launch_shinystan(stanfit_test)
 
