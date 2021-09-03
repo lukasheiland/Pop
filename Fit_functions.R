@@ -441,16 +441,30 @@ extractDraws <- function(stanfit) {
 ## plotStanfit --------------------------------
 # stanfit  <- tar_read("stanfit")
 # stanfit  <- tar_read("stanfit_test")
-# exclude <- tar_read("pars_exclude)
+# exclude <- tar_read("pars_exclude")
 
 plotStanfit <- function(stanfit, exclude) {
+  
+  usedmcmc <- "mcmc" == attr(stanfit, "stan_args")[[1]]$method
   
   basename <- attr(stanfit, "model_name") %>%
     str_replace("-[1-9]-", "-x-")
 
-  traceplot <- rstan::traceplot(stanfit, pars = c("y_hat", "L_loc_log", "state_init_log"), include = F)
+  traceplot <- rstan::traceplot(stanfit, pars = exclude, include = F)
+  parallelplot_c <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with("c_")))
+  parallelplot_s <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with("s_")))
+  parallelplot_others <- bayesplot::mcmc_parcoord(stanfit, pars = vars(!matches(c(exclude, "c_", "log_", "phi_", "lp_", "s_"))))
   
-  plots <- list(traceplot = traceplot)
+  plots <- list(traceplot = traceplot,
+                parallelplot_c = parallelplot_c,
+                parallelplot_others = parallelplot_others)
+
+  if(usedmcmc) {
+    pairsplot <- pairs(stanfit, pars = exclude, include = F)
+    
+    plots <- c(plots, pairsplot = pairsplot)
+  }
+
   mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), plots, names(plots))
   
   return(plots)
