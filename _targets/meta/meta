@@ -84,7 +84,6 @@ Stages_A2B|stem|849bee5b89800e4c|afaf624ae514afbe|e0de902236cbe18a|942671410||t1
 Stages_scaled|stem|ff3d58c23618ac44|4084417319dea073|e3c625c92e45a9e1|1092130661||t18871.5219810842s|74bbd56e0c11aede|613578|rds|vector|||0.068||
 summarizeDraws|function|5e7992612ea96dd4||||||||||||||
 plotDraws|function|7c606957f692f95e||||||||||||||
-stanfit_test|stem|70ca37c738ab8126|402ccdae6f1a90c3|bf161c1f649933fd|-1726047245||t18872.3910672366s|373596264c99126c|29715012|rds|vector|||27.406||
 excludepars|stem|8d3959a7b57d44f1|18951b5cc32135da|a3dad144c40657ed|710241102||t18872.4054692122s|8619def19bb20a44|79|rds|vector|||5.469||
 constructPriors|function|9e00a56ab35214b7||||||||||||||
 pars_exclude|stem|8d3959a7b57d44f1|18951b5cc32135da|a3dad144c40657ed|-2058683567||t18872.4085884934s|8619def19bb20a44|79|rds|vector|||7.479||
@@ -117,3 +116,4 @@ readStanfit|function|7cf3081888caae5f||||||||||||||
 extractDraws|function|da77913875315873||||||||||||||
 constructConstantGrid|function|b2cee6aa156ec29a||||||||||||||
 plotStanfit|function|24b217bb814f7f28||||||||||||||
+stanfit_test|stem|fca425d3377c2035|402ccdae6f1a90c3|ac91be4e1827a5d5|-1726047245||t18873.3280556977s|3c8544cd098d0b74|22847931|rds|vector|||13.897|line with Elapsed Time not found|
