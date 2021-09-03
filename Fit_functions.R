@@ -223,6 +223,7 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
 
     X = X,
     L_smooth_log = L_smooth_log, ## array[N_locs] vector<lower=0>[N_species] L_smooth_log;
+    L_smooth = exp(L_smooth_log),
     
     y = S$y,
     a2b = S_a2b$a2b,

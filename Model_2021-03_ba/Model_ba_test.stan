@@ -247,7 +247,7 @@ data {
   vector<lower=1>[L_a2b] timediff;
   
   matrix[N_locs, N_beta] X; // design matrix
-  array[N_locs] vector[N_species] L_smooth_log;
+  array[N_locs] vector[N_species] L_smooth;
   
   //// The response.
   array[L_y] int y;
@@ -314,8 +314,8 @@ parameters {
   vector[N_species] h_logit;
   vector[N_species] s_log;
   
-  vector<lower=0>[N_species] r_log; // assumed to be > 1
-  vector[N_species] l_log;
+  vector[N_species] r_log;
+  vector<lower=0>[N_species] l;
 
   
   
@@ -362,7 +362,7 @@ transformed parameters {
   
   for(loc in 1:N_locs) {
     
-    L_loc_log[loc, ] = l_log + L_smooth_log[loc, ]; // + // Offset with fixed coefficient. "The smooth to real number coefficient"
+    L_loc_log[loc, ] = l .* L_smooth[loc, ]; // + // Offset with fixed coefficient. "The smooth to real number coefficient"
                             // sigma_l .* L_random[loc, ]'; // non-centered loc-level random effects
     
   }
@@ -403,16 +403,16 @@ model {
   // c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
   // c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
   
-  b_log   ~ normal(-3, 3);
-  c_a_log ~ normal(-4, 3);
-  c_b_log ~ normal(-4, 3);
-  c_j_log   ~ normal(-4, 3);
+  b_log   ~ normal(-3, 2);
+  c_a_log ~ normal(-4, 2);
+  c_b_log ~ normal(-4, 2);
+  c_j_log   ~ normal(-2, 2);
   g_logit ~ normal(-3, 2);
   
-  l_log ~ normal(0, 1);
-  r_log ~ normal(2, 3);
+  l ~ normal(0, 0.1);
+  r_log ~ normal(3, 2);
   
-  s_log ~ normal(-3, 3);
+  s_log ~ normal(-2, 2);
 
   
   // same priors for both species
