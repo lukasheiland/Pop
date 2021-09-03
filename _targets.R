@@ -131,7 +131,7 @@ list(
       ),
     
     tar_target(Stages_select,
-               selectClusters(Stages_s, predictor_select)), # Stages_s_file, After smooth, so that smooth can be informed by all plots.
+               selectClusters(Stages_s_file, predictor_select)), # Stages_s_file, After smooth, so that smooth can be informed by all plots.
                ## there is some random sampling here. Note: a target's name determines its random number generator seed. 
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)) # After selection, so that scaling includes selected plots .
@@ -170,7 +170,7 @@ list(
                cmdstan_model(file_model)),
     
     tar_target(fit_test,
-               drawTest(model = model_test, data_stan, method = "variational", initfunc = 0.5)),
+               drawTest(model = model_test, data_stan, method = "mcmc", initfunc = 0.5)),
     tar_target(fit,
                draw(model = model, data_stan, initfunc = 0.5)),
     

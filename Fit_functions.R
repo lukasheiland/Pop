@@ -350,7 +350,7 @@ getInits <- function() {
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 500, iter_sampling = 400,
+                     method = c("mcmc", "variational"), n_chains = 6, iter_warmup = 1000, iter_sampling = 400,
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
@@ -376,7 +376,7 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
                         init = initfunc,
                         iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                         # adapt_delta = 0.99,
-                        # max_treedepth = 16,
+                        max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
   }
   
