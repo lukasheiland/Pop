@@ -114,7 +114,7 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
     group_by(loc, pop, stage, tax) %>%
     summarize(n_plots = n_distinct(plot), .groups = "drop")
   
-  S <- dplyr::select(S, -isy0) %>%
+  S <- S %>%
     st_drop_geometry()
   
   ## Format: [L_yhat] — locations/obs/pops
