@@ -117,3 +117,26 @@ constructConstantGrid|function|b2cee6aa156ec29a||||||||||||||
 plotStanfit|function|24b217bb814f7f28||||||||||||||
 stanfit_test|stem|65c3bc860dcd1706|402ccdae6f1a90c3|795537675b2ab0e5|-1726047245||t18873.358440902s|63864eecb2e47f86|24738252|rds|vector|||14.459|line with Elapsed Time not found|
 plots_test|stem|af8ec9eaa8aadb8a|e2937ee648800482|ed36217c470fe846|1637481436||t18873.3585527909s|392ae5067b822cd8|50103893|rds|vector|||2.697||
+getInits|function|247cb0068b001ce4
+predictSurfaces|function|e08447bd71c3e5fe
+predictS|function|77bcabfef1d8569c
+plotSurfaces|function|8e8bee5493cb7ccd
+addPackage|function|d45c347b66cce55c
+draw|function|304cc761aa9d6d9e
+joinEnv|function|2488b8203673870c
+countA2B|function|b4a7e88d03d15924
+summarizeEnvByCluster|function|5fcaa758babda781
+selectClusters|function|f53d686244bf484d
+fitS|function|b1d146216eef03f2
+joinStages|function|e77d9690659bf401
+scaleData|function|0d0c01b1b3160a22
+formatStanData|function|0f2a98df5d98f33c
+cleanEnv|function|06a0767a0f88a954
+summarizeFit|function|5e7992612ea96dd4
+saveStages_s|function|fd5024a4e717b197
+drawTest|function|fc31fd737587452d
+readStanfit|function|7cf3081888caae5f
+extractDraws|function|da77913875315873
+constructConstantGrid|function|b2cee6aa156ec29a
+plotStanfit|function|eff6c5e2be1b2358
+file_model_test|stem|00846a8df580faf6|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18874.5666851154s|866d671a0f5acffe|18730|file|vector|||7.802||

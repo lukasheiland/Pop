@@ -350,7 +350,7 @@ getInits <- function() {
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 500, iter_sampling = 400,
+                     method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 400, iter_sampling = 300,
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)

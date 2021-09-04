@@ -34,10 +34,7 @@ tar_make(c("summary_test"))
   
   # tar_make_future(names = "Stages_s") # parallel
 
-# tar_load("Stages_s")
-# Stages %>% View()
-# tar_read("Stages_env") %>% View()
-
+tar_make(c("plots_test"))
 
 # Inspect pipeline ----------------------------------------------------------------
 network <- tar_visnetwork(targets_only = T, exclude = contains(c("file_", "threshold_", "taxon_", "predictor_", "pars_")))
@@ -49,7 +46,6 @@ network %>%
 
 
 # Inspect results ----------------------------------------------------------------
-tar_make(stanfit_test)
 tar_load(stanfit_test)
 shinystan::launch_shinystan(stanfit_test)
 
