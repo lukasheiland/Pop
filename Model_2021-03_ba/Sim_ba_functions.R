@@ -141,7 +141,7 @@ simulateMultipleSeriesInEnv <- function(pars,
                                         times = 2:22, # internal model will still start at 1
                                         envdependent = c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, l = F, m_a  = F, m_j = F, r = F, s = F),
                                         logstate = F,
-                                        modelstructure = c("ba", "ba-rect", "ba-rag", "ba-rag-ranef"),
+                                        modelstructure = c("ba", "ba_test", "ba-rect", "ba-rag", "ba-rag-ranef"),
                                         format = c("long", "stan"), priorfactor = 10,
                                         obserror = T, processerror = NULL, ranef = NULL, independentstart = F) {
   
@@ -261,7 +261,7 @@ generateParameters <- function(seed = 1,
                                c_j_log = rnorm(n_species, -3, 0.5),
                                g_logit = rnorm(n_species, -0.5, 0.5),
                                h_logit = rnorm(n_species, 0.2, 0.5),
-                               l_log = rnorm(n_species, 3, 0.8),
+                               l_log = rnorm(n_species, 0, 0),
                                m_a_log = rnorm(n_species, -1.5, 0.5),
                                m_j_log = rnorm(n_species, -1, 0.5),
                                r_log = rnorm(n_species, 2, 0.5),
@@ -574,7 +574,7 @@ generatePriors <- function(truepars, factor = 10) {
     set_names(paste0("prior_", names(.)))
 
   ## Special case l
-  globalpriors$prior_l_log[2,] <- 10
+  globalpriors$prior_l_log[2,] <- 1
   
   ## purge empty list items that got created
   priors <- c(vertexpriors, globalpriors)
@@ -590,6 +590,7 @@ generatePriors <- function(truepars, factor = 10) {
 formatSims <- function() {
   
   isrectangular <- grepl("rect$", modelstructure)
+  isintegerresponse <- pars$obsprocess == "negbinomial"
 
   #### DECISION structure for formatting
   ## 0. Do general long casting
@@ -651,6 +652,11 @@ formatSims <- function() {
       select(-isy0) %>%
       arrange(loc, time, pop, stage, species, plot)
     
+    prior_state_init_log <- Sims_y0 %>%
+      group_by(pop) %>%
+      summarize(y = log(mean(abundance, na.rm = T))) %>% ## log(mean()) is imperfect and itroduces a small bias, but median won't work because of the many zeroes
+      pull(y)
+    
     ## Format: [L_y_reobs] — locations/resurveys/pops(/stage/species)/plots
     Sims_reobs <- filter(Sims, !isy0) %>%
       select(-isy0) %>%
@@ -673,6 +679,13 @@ formatSims <- function() {
     Sims_yhat <- Sims %>%
       group_by(loc, time, pop, stage, species) %>%
       summarize(n_plots = n_distinct(plot), .groups = "drop")
+    
+    ## Just a placeholder for simulations, with the right dimensions, but without the right data values
+    Sims_a2b <- Sims_reobs %>%
+      filter(stage == "B") %>%
+      arrange(loc, time, pop, species, plot) %>%
+      mutate(rep_yhat2a2b = match(interaction(loc, time, pop), with(Sims_yhat, interaction(loc, time, pop))),
+             rep_species2a2b = as.integer(factor(species)))
     
     ## Format: [L_times_reobs] — locations/resurveys
     Sims_times_reobs <- Sims_reobs %>% # reobs to  count all times
@@ -762,9 +775,7 @@ formatSims <- function() {
     }
     
     ######### (1b) ##########
-    else if (modelstructure %in% c("ba-rag-ranef", "ba-rag", "ba")) {
-      
-      ## commented out are former versions with separate fitting of initials
+    else if (modelstructure %in% c("ba-rag-ranef", "ba-rag", "ba", "ba_test")) {
       
       Sims_species <- Sims_init[c("loc", "species")] %>% unique()
       L_init <- nrow(Sims_init)
@@ -785,7 +796,8 @@ formatSims <- function() {
         L_yhat = L_yhat,
         L_y0 = nrow(Sims_y0),
         L_y = nrow(Sims),
-        L_species = nrow(Sims_species), 
+        L_species = nrow(Sims_species),
+        L_a2b = nrow(Sims_a2b),
         
         N_species = length(unique(Sims$species)),
         N_pops = length(unique(Sims$pop)),
@@ -808,6 +820,8 @@ formatSims <- function() {
         ## repeat locations on level "locations" n_reobs times to "locations/pops/resurveys"
         rep_locs2times = vrep(1:N_locs, Sims_locs$n_obs),
         rep_locs2times_reobs = vrep(1:N_locs, Sims_locs_reobs$n_reobs),
+        rep_yhat2a2b = Sims_a2b$rep_yhat2a2b,
+        rep_species2a2b = Sims_a2b$rep_species2a2b,
         
         rep_obsmethod2y0 = Sims_y0$obsmethod,
         rep_obsmethod2y = Sims$obsmethod,
@@ -821,6 +835,7 @@ formatSims <- function() {
         pops = Sims_init$pop,
         
         time_init = time_init,
+        timediff = Sims_a2b$time, ## just a placeholder!!!
         
         times = Sims_times$time,
         time_max = Sims_locs$time_max,
@@ -828,12 +843,15 @@ formatSims <- function() {
         
         X = X,
         
-        y0 = Sims_y0$abundance,
-        y = Sims$abundance,
+        y0 = if(isintegerresponse) round(Sims_y0$abundance) else Sims_y0$abundance,
+        y = if(isintegerresponse) round(Sims$abundance) else Sims$abundance,
+        a2b = if(isintegerresponse) round(Sims_a2b$abundance) else Sims_a2b$abundance,
         
         ## rectangular inits for parameter recovery
         state_init = apply(sims_rect, c(1, 2, 4), mean)[, 1, ],
-        state_init_log = apply(exp(sims_rect), c(1, 2, 4), mean)[, 1, ] %>% log() # only for cases with log response
+        state_init_log = apply(exp(sims_rect), c(1, 2, 4), mean)[, 1, ] %>% log(), # only for cases with log response
+        
+        prior_state_init_log = prior_state_init_log
 
       )
       

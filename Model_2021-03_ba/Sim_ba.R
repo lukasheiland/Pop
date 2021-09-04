@@ -88,18 +88,20 @@ ggplot(filter(P_env_demo, parameter == "s_loc"),
 
 
 # ————————————————————————————————————————————————————————————————————————————————— #
-# Fit simulated data with stan    --------------------------------------------------
+# <- simulated data with stan    --------------------------------------------------
 # ————————————————————————————————————————————————————————————————————————————————— #
 
 ## Orient and compile model. -------------------------------------------------------
 
 modeldir <- dir(pattern = glue("^(Model).*ba$"))
 
-modelname <- c("ba",
+modelname <- c("ba_test",
+               "ba",
                "ba-rect", # fully rectangular, without process error
                "ba-rag", # ragged, clusterwise-initialization
                "ba-rag-ranef" # like ba-rag but with random demographic pars
                )[1]
+process <- c("gamma", "normal", "negbinomial")[3]
 
 modelpath <- file.path(modeldir, glue('Model_{modelname}.stan'))
 
@@ -110,12 +112,15 @@ model <- cmdstan_model(modelpath)
 
 
 ## Simulate stan model data --------------------------------------------------------
-parseed <- 1
+parseed <- 2
 
-pars <- generateParameters(seed = parseed, n_locs = 100, n_species = 2, n_plotsperloc = 4, knockoutparname = c("m_a", "m_j"))
+pars <- generateParameters(seed = parseed, n_locs = 100, n_species = 2, n_plotsperloc = 4,
+                           obsprocess = process, knockoutparname = c("m_a", "m_j"))
+  ## for consistent recovery, set l == 0 for now!
+
 Env <- simulateEnv(n_env = pars$n_env, n_locs = pars$n_locs)
 
-
+envdependent_ba_test <- c(b = F, c_a = F, c_b = F, c_j = F, g = F, h = F, l = T, m_a = F, m_j = F, r = F, s = F)
 envdependent_ba_rect <- c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
 envdependent_ba_rag <- c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
 envdependent_ba <- c(b = F, c_a = F, c_b = F, c_j = T, g = T, h = F, l = T, m_a = F, m_j = F, r = T, s = T)
@@ -126,7 +131,7 @@ data <- simulateMultipleSeriesInEnv(pars, Env, times = times,
                                     envdependent = get(paste0("envdependent_", sub("-", "_", modelname))),
                                     logstate = F,
                                     modelstructure = modelname, # !!! this determines the data layout
-                                    format = "stan", priorfactor = 10,
+                                    format = "stan", priorfactor = 3,
                                     obserror = F, processerror = F, independentstart = F)
 
 ## just a data set with a long time span to check fix point (equilibrium) recovery
@@ -153,7 +158,7 @@ Data_long %>%
 ## Draw from model --------------------------------------------------------------
 ## Model fit
 fit <- drawSamples(model, data, method = "sim", initfunc = getTrueInits)
-fit <- drawSamples(model, data, method = "mcmc", initfunc = 0)
+fit <- drawSamples(model, data, method = "mcmc", initfunc = 0.1)
 
 
 ## Other diagnostics
