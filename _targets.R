@@ -190,7 +190,8 @@ list(
                readStanfit(fit)),
     
     tar_target(pars_exclude,
-               c("y_hat", "L_loc_log", "L_loc", "state_init_log")),
+               c("y_hat", "L_loc_log", "L_loc", "state_init_log",
+                 "y_hat_rep", "converged", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "fixiter_max")),
     
     tar_target(draws_test,
                extractDraws(stanfit_test)),
