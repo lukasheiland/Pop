@@ -78,7 +78,7 @@ getTrueInits <- function() {
   
   state_init <- if (isragged) {
       data$y0[which(!duplicated(data$rep_init2y0))]
-    } else if(modelname == "ba") {
+    } else if(modelname %in% c("ba", "ba_test")) {
       data$state_init
     } else { data$y[,1,1,] }
   
@@ -235,11 +235,11 @@ plotPredictedVsTrue <- function(draws, data, modelname = "ba-rect") {
         
   }
   
-  if(modelname %in% c("ba", "ba-rag", "ba-rag-ranef")) {
-    R <- data.frame(y_hat_rep = draws$y_hat_rep[1,], y = data$Long$abundance,  y_sim = draws$y_sim[1,],
+  if(modelname %in% c("ba", "ba-rag", "ba-rag-ranef", "ba_test")) {
+    R <- data.frame(y_hat_rep = draws$y_hat_rep[1,], y = data$Long$abundance, # y_sim = draws$y_sim[1,],
                     pops = data$pops[rep(data$rep_init2y0, each = data$n_obs[1])])
     
-    R %>% ggformula::gf_point(y_sim ~ y) %>%
+    R %>% ggformula::gf_point(y_hat_rep ~ y) %>%
       gf_abline(gformula = NULL, slope = 1, intercept = 0)
     
     # plot(draws$state_init[1, data$rep_init2y0] ~ data$y0)
