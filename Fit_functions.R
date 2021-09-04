@@ -183,7 +183,6 @@ formatStanData <- function(Stages, Changes, taxon_select, threshold_dbh) { # pri
   
   #### Prepare priors
   prior_state_init_log <- filter(S, isy0) %>%
-    st_drop_geometry() %>%
     filter(stage %in% c("J", "A", "B")) %>%
     group_by(pop) %>%
     summarize(y = log(mean(y, na.rm = T))) %>% ## log(mean()) is imperfect and itroduces a small bias, but median won't work because of the many zeroes
