@@ -34,6 +34,8 @@ tar_make(c("summary_test"))
   
   # tar_make_future(names = "Stages_s") # parallel
 
+tar_make(plots_test)
+
 # tar_load("Stages_s")
 # Stages %>% View()
 # tar_read("Stages_env") %>% View()
@@ -49,8 +51,6 @@ network %>%
 
 
 # Inspect results ----------------------------------------------------------------
-tar_make(summary_test)
-tar_make(plots_test)
 tar_load(summary_test)
 tar_load(stanfit_test)
 shinystan::launch_shinystan(stanfit_test)

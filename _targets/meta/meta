@@ -95,6 +95,7 @@ fit_test|stem|0dd951cf63fadc16|89b4e6a4506517d6|43e199d3d54d0465|-1560265059||t1
 summary_test|stem|9eb516251d1a915a|9e7a83797e3557cf|cf54fc1ae6bdd176|-908423816||t18874.3707120195s|0d34d351540e4c11|302102|rds|vector|||38.628||
 file_model_test|stem|b9a5579e395c9f37|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18874.873696778s|24b8e65f248d09a2|18699|file|vector|||2.97||
 model_test|stem|e8c672509d7a1092|a3aa00c06cce5e55|e08e757a064004a6|-1162399619||t18874.8762344169s|ad70be90f0f1252f|7503|rds|vector|||15.95||
+pars_exclude|stem|62b76bd583ee00f9|22a51c343c9996d9|a3dad144c40657ed|-2058683567||t18874.8763347872s|0e696b453c03de61|85|rds|vector|||3.044||
 getInits|function|247cb0068b001ce4||||||||||||||
 predictSurfaces|function|e08447bd71c3e5fe||||||||||||||
 predictS|function|77bcabfef1d8569c||||||||||||||
@@ -108,7 +109,7 @@ selectClusters|function|f53d686244bf484d||||||||||||||
 fitS|function|b1d146216eef03f2||||||||||||||
 joinStages|function|e77d9690659bf401||||||||||||||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
-formatStanData|function|d430b2a7c8bc496c||||||||||||||
+formatStanData|function|f00bda1d035baf7f||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 summarizeFit|function|5e7992612ea96dd4||||||||||||||
 saveStages_s|function|fd5024a4e717b197||||||||||||||
@@ -117,5 +118,4 @@ readStanfit|function|7cf3081888caae5f||||||||||||||
 extractDraws|function|da77913875315873||||||||||||||
 constructConstantGrid|function|b2cee6aa156ec29a||||||||||||||
 plotStanfit|function|eff6c5e2be1b2358||||||||||||||
-pars_exclude|stem|62b76bd583ee00f9|22a51c343c9996d9|a3dad144c40657ed|-2058683567||t18874.8763347872s|0e696b453c03de61|85|rds|vector|||3.044||
-data_stan|stem|2249e99d5d2740c9|7f558108bcda7a69|7857e243eb017d0d|1263995833||t18874.3710236862s||33313|rds|vector|||2.871||Problem with filter input ..1.34mℹ39m Input ..1 is isy0.31mx39m object isy0 not found
+data_stan|stem|2249e99d5d2740c9|7f558108bcda7a69|aadb8c01c15ed8a9|1263995833||t18874.3710236862s||33313|rds|vector|||5.637||st_drop_geometry only works with objects of class sf
