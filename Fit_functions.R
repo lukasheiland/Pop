@@ -350,7 +350,7 @@ getInits <- function() {
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 400, iter_sampling = 300,
+                     method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 800, iter_sampling = 400,
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
@@ -442,30 +442,34 @@ extractDraws <- function(stanfit) {
 # stanfit  <- tar_read("stanfit_test")
 # exclude <- tar_read("pars_exclude")
 
+# plotStanfit(stanfit, exclude)
+
 plotStanfit <- function(stanfit, exclude) {
   
-  usedmcmc <- "mcmc" == attr(stanfit, "stan_args")[[1]]$method
+  usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
   
   basename <- attr(stanfit, "model_name") %>%
     str_replace("-[1-9]-", "-x-")
 
   traceplot <- rstan::traceplot(stanfit, pars = exclude, include = F)
-  parallelplot_c <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with("c_")))
-  parallelplot_s <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with("s_")))
+  parallelplot_c <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with(c("c_", "s_"))))
   parallelplot_others <- bayesplot::mcmc_parcoord(stanfit, pars = vars(!matches(c(exclude, "c_", "log_", "phi_", "lp_", "s_"))))
+  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "phi_obs"))))
   
   plots <- list(traceplot = traceplot,
                 parallelplot_c = parallelplot_c,
-                parallelplot_others = parallelplot_others)
+                parallelplot_others = parallelplot_others,
+                areasplot = areasplot)
+  mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), plots, names(plots))
 
   if(usedmcmc) {
-    pairsplot <- pairs(stanfit, pars = exclude, include = F)
     
-    plots <- c(plots, pairsplot = pairsplot)
+    png(paste0("Fits.nosync/", basename, "_", "pairsplot", ".png"), width = 2600, height = 2600) # width in inches, default = 7
+    pairs(stanfit, pars = c(exclude, "l", "phi_obs_inv", "phi_obs", "log_", "lp_"), include = F)
+    dev.off()
+    
   }
 
-  mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), plots, names(plots))
-  
   return(plots)
 }
 

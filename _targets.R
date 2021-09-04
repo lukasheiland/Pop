@@ -174,7 +174,7 @@ list(
                cmdstan_model(file_model)),
     
     tar_target(fit_test,
-               drawTest(model = model_test, data_stan, method = "variational", initfunc = 0.5)),
+               drawTest(model = model_test, data_stan, method = "mcmc", initfunc = 0.5)),
     tar_target(fit,
                draw(model = model, data_stan, initfunc = 0.5)),
     
@@ -190,7 +190,8 @@ list(
                readStanfit(fit)),
     
     tar_target(pars_exclude,
-               c("y_hat", "L_loc_log", "L_loc", "state_init_log")),
+               c("y_hat", "L_loc_log", "L_loc", "state_init_log",
+                 "y_hat_rep", "converged", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "fixiter_max")),
     
     tar_target(draws_test,
                extractDraws(stanfit_test)),

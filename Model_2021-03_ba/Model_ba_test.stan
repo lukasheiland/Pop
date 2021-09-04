@@ -406,13 +406,15 @@ model {
   b_log   ~ normal(-3, 2);
   c_a_log ~ normal(-4, 2);
   c_b_log ~ normal(-4, 2);
-  c_j_log   ~ normal(-2, 2);
+  c_j_log   ~ normal(-2, 1); // strong believe that c is smaller than s in trees
   g_logit ~ normal(-3, 2);
+  h_logit ~ normal(-4, 1);
+
   
   l ~ normal(0, 0.1);
-  r_log ~ normal(3, 2);
+  r_log ~ normal(5, 1); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
   
-  s_log ~ normal(-2, 2);
+  s_log ~ normal(-1, 2);
 
   
   // same priors for both species
@@ -431,7 +433,7 @@ model {
   //---------- MODEL ---------------------------------
 
   // Fit predictions to data.
-  a2b ~ poisson(y_hat[rep_yhat2a2b] .* inv_logit(h_logit)[rep_species2a2b] .* timediff);
+  // a2b ~ poisson(y_hat[rep_yhat2a2b] .* inv_logit(h_logit)[rep_species2a2b] .* timediff);
   y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
   
     // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
