@@ -22,7 +22,7 @@ options(tidyverse.quiet = TRUE)
 tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
                             "lubridate", # "zoo",
                             "sf", "raster", ## for correct loading of environmental data
-                            "mgcv",
+                            "MASS",
                             "cmdstanr", "rstan", "bayesplot"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
@@ -94,8 +94,8 @@ list(
     tar_target(threshold_dbh, 200),
     tar_target(taxon_select, c("Fagus.sylvatica")),
     
-    tar_target(Stages_A2B,
-               countA2B(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
+    tar_target(Stages_transitions,
+               countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
     
     tar_target(Stages,
                joinStages(Data_big, Data_small, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
@@ -116,7 +116,6 @@ list(
       ## fits_s each have an attribute "taxon"
       tar_target(Stages_s,
                  predictS(fits_s, Stages_env),
-                 # pattern = map(fits_s),
                  iteration = "list"),
       
       tar_target(file_Stages_s,
@@ -130,7 +129,7 @@ list(
                  predictSurfaces(fits_s),
                  iteration = "list"),
       tar_target(surfaceplots_s,
-                 plotSurfaces(surfaces),
+                 plotSurfaces(surfaces_s),
                  iteration = "list")
       ),
     
@@ -158,8 +157,25 @@ list(
   
   ## Model fit
   list(
+    
     tar_target(data_stan,
-               formatStanData(Stages_scaled, Stages_A2B, taxon_select, threshold_dbh)), # priors
+               formatStanData(Stages_scaled, Stages_transitions, taxon_select, threshold_dbh)),
+    
+    tar_target(file_model_transitions,
+               "Model_2021-03_ba/Model_transitions.stan",
+               format = "file"),
+    
+    tar_target(model_transitions,
+               cmdstan_model(file_model_transitions)),
+    
+    tar_target(fit_g,
+               fitTransition(data_stan, which = "g", model_transitions)),
+
+    tar_target(fit_h,
+               fitTransition(data_stan, which = "h", model_transitions)),
+    
+    tar_target(data_stan_priors,
+               formatPriors(data_stan, fit_g, fit_h)), # priors
     
     tar_target(file_model_test,
                "Model_2021-03_ba/Model_ba_test.stan",
@@ -174,9 +190,9 @@ list(
                cmdstan_model(file_model)),
     
     tar_target(fit_test,
-               drawTest(model = model_test, data_stan, method = "mcmc", initfunc = 0.5)),
+               drawTest(model = model_test, data_stan_priors, method = "mcmc", initfunc = 0.5)),
     tar_target(fit,
-               draw(model = model, data_stan, initfunc = 0.5)),
+               draw(model = model, data_stan_priors, initfunc = 0.5)),
     
     
     tar_target(summary_test,

@@ -211,6 +211,8 @@ selectClusters <- function(Stages, predictor_select,
                            id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
                            ) {
 
+  message(paste(Stages %>% pull(clusterid) %>% unique() %>% length(), "clusters before selectClusters()."))
+  
   ## for reference
   disturbance_select = c("standage_DE_BWI_1",
                          "allNatRegen_DE_BWI_2", "allNatRegen_DE_BWI_3", "anyUnnatRegen_DE_BWI_3", "anyUnnatRegen_DE_BWI_2",
@@ -237,11 +239,23 @@ selectClusters <- function(Stages, predictor_select,
     ## Any damage through forestry
     filter( !(anyForestryDamage_DE_BWI_2 | anyForestryDamage_DE_BWI_3))
     
-    ## unique(Stages_select$clusterid) %>% length()
+    # unique(Stages_select$clusterid) %>% length() ## 5236
     
   
   ## Filter clusters based on tree observations
   Stages_select %<>%
+    
+    group_by(plotid, obsid) %>%
+    
+    ## subset to plots without any clear cut, i.e. only zero observations or NA after there had been observations
+    mutate(isclear = sum(count_ha, na.rm = T) == 0) %>% ## sum will replace vectors with exclusively NAs with 0
+    
+    group_by(plotid) %>%
+    mutate(isclearcut_2002 = any(!isclear[obsid == "DE_BWI_1987"] & isclear[obsid == "DE_BWI_2002"]),
+           isclearcut_2012 = any(!isclear[obsid == "DE_BWI_2002"] & isclear[obsid == "DE_BWI_2012"]),
+           isclearcut = isclearcut_2002 | isclearcut_2012) %>%
+    filter(!isclearcut) %>%
+      ## dropping 37 plots; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
     
     group_by(clusterid) %>%
     
@@ -257,24 +271,29 @@ selectClusters <- function(Stages, predictor_select,
     
     ## get clusters with at least some Fagus
     mutate(anyFagus = any(count_ha > 0 && tax == "Fagus.sylvatica")) %>%
-    
     ungroup()
+  
+    # unique(Stages_select$clusterid) %>% length() ## 456
+  
+  
   
   ## Subsample
   Stages_Fagus <- Stages_select %>%
     filter(anyFagus)
   
-  n_Fagus <- length(unique(Stages_Fagus$clusterid))
+  n_Fagus <- length(unique(Stages_Fagus$clusterid)) # 95
   
   Stages_other <- Stages_select %>%
     filter(!anyFagus) %>%
     filter(clusterid %in% base::sample(unique(.$clusterid), n_Fagus))
   
   Stages_select <- bind_rows(Stages_other, Stages_Fagus)
+  # unique(Stages_select$clusterid) %>% length() ## 190
   
   Stages_select %<>%
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
   
+  message(paste(Stages_select %>% pull(clusterid) %>% unique() %>% length(), "clusters after selectClusters()."))
   if(anyNA(Stages_select$time)) warning("selectClusters(): There are missing values in variable `time`.")
   
   ## Filter clusters based on succession
@@ -319,7 +338,7 @@ selectClusters <- function(Stages, predictor_select,
 
 
 
-## countA2B --------------------------------
+## countTransitions --------------------------------
 # Data_big  <- tar_read("Data_big")
 # Data_big_status <- tar_read("Data_big_status")
 # Env_cluster <- tar_read(Env_cluster)
@@ -327,7 +346,7 @@ selectClusters <- function(Stages, predictor_select,
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
 
-countA2B <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select, threshold_dbh) {
+countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select, threshold_dbh) {
   
   ### local functions
   selectTaxa <- function(Abundance, taxon_select) {
@@ -342,18 +361,58 @@ countA2B <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxo
     return(timediff)
   }
   
+  findPrecedingTime <- function(time) {
+    timeseq <- sort(unique(time))
+    i <- match(time, timeseq)-1
+    i[i == 0] <- NA
+    time <- timeseq[i]
+    return(time)
+  }
+  
+  matchSucceedingTime <- function(time) {
+    timeseq <- sort(unique(time))
+    i <- match(time, timeseq)+1
+    i[i > length(timeseq)] <- NA
+    return(i)
+  }
+  
+  integrateCounts <- function(count_first, count_second, timediff) {
+    
+    ## handle case: no timediff because the prior date does not exist
+    if(is.na(timediff)) {
+      
+      return(as.numeric(NA))
+      
+    } else {
+      time <- 0:(timediff-1)
+      slope <- (count_second - count_first) / timediff
+      count <- time * slope + count_first
+      return(sum(count))
+    }
+  }
+  
   # followedAbyB <- function(stage) {
   #   i <- zoo::rollapply(as.character(stage), width = 2, identical, c("A", "B"))
   #   return(c(i, F)) # padding in the end for vector length
   # }
   
-  countNewInB <- function(idB_first, idB_second) {
+  countNew <- function(idB_first, idB_second, count_trans) {
     idB_first <- c(NA, idB_first) ## include NAs so they can be matched and NOT counted
     count <- sum(!(idB_second %in% idB_first), na.rm = T)
     return(count * count_trans)
   }
   
-  
+  ## Make explicit that I drop all values where there is a 0 in the base population. 0 in the transitioning pop get 0 results
+  divide <- function(trans, base) {
+    prop <- case_when(
+      trans == 0 ~ 0,
+      is.na(trans) ~ as.numeric(NA), ## also includes NaNs
+      base == 0 | is.na(base) ~ as.numeric(NA),
+      TRUE ~ trans/base
+    )
+    return(prop)
+  }
+
   #### Prepare joining data sets
   S <- Data_big_status %>%
     rename(count = count_ha) %>% # just temporarily for consistency with Data_big
@@ -369,21 +428,43 @@ countA2B <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxo
   ##### Stages with plot level A2B
   
   ## the count factor at stage transition
-  count_trans <- 10^10/(pi * 25^2 * threshold_dbh^2)
+  countfactor_A2B <- 10^10/(pi * 25^2 * threshold_dbh^2)
+  kluppschwelle <- 100 # [mm]
+  countfactor_J2A <- 10^10/(pi * 25^2 * kluppschwelle^2)
+  
   ## For count_ha formula:
   # see: http://wiki.awf.forst.uni-goettingen.de/wiki/index.php/Bitterlich_sampling#Estimation_of_number_of_stems
   # with Zählfaktor k = 4 and c = 50/sqrt(k): c == 50/sqrt(4) == 25
   # expansion factor n_ha = 10000 * 1000^2/(pi * c^2 * dbh^2) [factor 1000^2 for dbh in mm instead of m]
   
   ## the threshold distance (plot radius) at stage transition
-  ## i.e. the raius within which trees in A are counted
+  ## i.e. the radius within which trees in A are counted
   distance_threshold <- 25 * threshold_dbh/10 # [mm] to [cm conversion] with 1/10
+  distance_kluppschwelle <- 25 * kluppschwelle/10
   
   ## For multidply parallelization
   # cluster <- multidplyr::new_cluster(3)
-  # cluster_copy(cluster, c("countNewInB", "count_trans"))
+  # cluster_copy(cluster, c("countNew"))
   
-  Stages_A2B <- Data_big %>%
+  J <- Stages_select %>%
+    st_drop_geometry() %>%
+    mutate(obsid_1987 = obsid == "DE_BWI_1987", obsid_2002 = obsid == "DE_BWI_2002", obsid_2012 = obsid == "DE_BWI_2012") %>%
+    mutate(year = lubridate::year(time)) %>%
+    
+    group_by(plotid) %>%
+    mutate(yearbefore_plot = findPrecedingTime(year), timediff_plot = year - yearbefore_plot) %>% # table(Stages_transitions$timediff_plot, Stages_transitions$year)
+    
+    group_by(plotid, taxid) %>%
+    filter(stage == "J") %>%
+    mutate(count_J_sum_before = case_when(obsid_2002 ~ sum(count_ha[first(yearbefore_plot[obsid_2002]) == year & stage == "A"], na.rm = T),
+                                          obsid_2012 ~ sum(count_ha[first(yearbefore_plot[obsid_2012]) == year & stage == "A"], na.rm = T))) %>%
+    group_by(plotid, taxid, obsid) %>%
+    mutate(count_J_integr_plot = integrateCounts(first(count_J_sum_before), sum(count_ha, na.rm = T), first(timediff_plot))) %>%
+    ungroup()
+    
+    
+  
+  Stages_transitions <- Data_big %>%
     filter(!is.na(dbh)) %>% # drop non-sample/completed trees
     
     ## add radii of all trees via matching
@@ -415,35 +496,62 @@ countA2B <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxo
     ### make stages, including dead etc. trees in B!
     mutate(stage = as.factor(if_else(dbh < threshold_dbh, "A", "B"))) %>%
     
-    ### time differences
+    ### time differences.
+    ## times are equal among clusterids, but different plots have different no of observations
+    mutate(year = lubridate::year(time)) %>%
+    
+    group_by(plotid) %>%
+    mutate(yearbefore_plot = findPrecedingTime(year), timediff_plot = year - yearbefore_plot) %>% # table(Stages_transitions$timediff_plot, Stages_transitions$year)
+    
     group_by(clusterid) %>%
-    mutate(timediff_2002 = diffTime(first(time[obsid == "DE_BWI_1987"]), first(time[obsid == "DE_BWI_2002"])),
-           timediff_2012 = diffTime(first(time[obsid == "DE_BWI_2002"]), first(time[obsid == "DE_BWI_2012"]))) %>%
+    ## some clusters have been more times than singular plots on them: table(Stages_transitions$timediff_cluster, Stages_transitions$timediff_plot)
+    mutate(yearbefore_cluster = findPrecedingTime(year), timediff_cluster = year - yearbefore_cluster) %>% # 
     ungroup()
   
   
-  Stages_A2B <- filter(Stages_A2B, stage == "B") %>% ## drop trees in A for the following methods (this keeps the excluded trees in B)
+  Stages_transitions %<>%
     
     ## Count new trees in B, that are within the sampling radius of A
     # (preparing some booleans to improve speed? of the groupwise counting)
     mutate(obsid_1987 = obsid == "DE_BWI_1987", obsid_2002 = obsid == "DE_BWI_2002", obsid_2012 = obsid == "DE_BWI_2012") %>%
     group_by(plotid, taxid) %>%
     # multidplyr::partition(cluster) %>%
-    mutate(treeid_int = as.integer(factor(treeid))) %>% ## integer %in% seems to be much faster, no NAs in treeid
-    mutate(treeid_A2B = replace(treeid_int, distance > distance_threshold, NA)) %>% ## introducing a lot of NAs: table(is.na(Stages_A2B$treeid_A2B))
-    ## NOTE: treeidA2B (including NAs for trees outside the radius for A), will be matched in treeid_int
-    mutate(count_A2B_2002_plot = countNewInB(treeid_int[obsid_1987], treeid_A2B[obsid_2002]),
-           count_A2B_2012_plot = countNewInB(treeid_int[obsid_2002], treeid_A2B[obsid_2012])) %>% 
     
-    ## count new in B ob cluster level
-    group_by(clusterid, taxid) %>%
-    mutate(count_A2B_2002_cluster = sum(count_A2B_2002_plot[match(unique(plotid), plotid)]),
-           count_A2B_2012_cluster = sum(count_A2B_2012_plot[match(unique(plotid), plotid)]),
-           n_plots_cluster = length(unique(plotid)),
-           count_A2B_2002_cluster_avg = count_A2B_2002_cluster/n_plots_cluster,
-           count_A2B_2012_cluster_avg = count_A2B_2012_cluster/n_plots_cluster) %>%
+    ## Introduce new treeids that have NAs, depending on whether they are excluded based on them being outside the virtual fixed plot
+    mutate(treeid_int = as.integer(factor(treeid))) %>% ## integer %in% seems to be much faster, no NAs in treeid
+    mutate(treeid_B = replace(treeid_int, stage != "B", NA)) %>% ## integer %in% seems to be much faster, no NAs in treeid
+    mutate(treeid_A = replace(treeid_int, stage != "A", NA)) %>%
+    
+    mutate(treeid_A2B = replace(treeid_B, distance > distance_threshold, NA)) %>% ## introducing a lot of NAs: table(is.na(Stages_A2B$treeid_A2B))
+    mutate(treeid_J2A = replace(treeid_A, distance > distance_kluppschwelle, NA)) %>% ## introducing a lot of NAs: table(is.na(Stages_A2B$treeid_A2B))
+      
+    ## These treeids will only be counted as newly appearing, when they hadnt been in the prior survey AND NOT NA!
+    ## countNew(): treeid_A2B/J2A (including NAs for trees outside the radius for A, minimal), will be matched in treeid_int of the former survey
+    ## Some plots have the observations 1987 and 2002.
+    
+    mutate(count_A2B_plot = case_when(obsid_2002 ~ countNew(treeid_A2B[obsid_1987], treeid_A2B[obsid_2002], countfactor_A2B),
+                                      obsid_2012 ~ countNew(treeid_A2B[obsid_2002 | obsid_1987], treeid_A2B[obsid_2012], countfactor_A2B))) %>%
+
+    mutate(count_J2A_plot = case_when(obsid_2002 ~ countNew(treeid_J2A[obsid_1987], treeid_J2A[obsid_2002], countfactor_J2A),
+                                      obsid_2012 ~ countNew(treeid_J2A[obsid_2002 | obsid_1987], treeid_J2A[obsid_2012], countfactor_J2A))) %>%
+    
+    mutate(count_A_sum_before = case_when(obsid_2002 ~ sum(count_ha[first(yearbefore_plot[obsid_2002]) == year & stage == "A"], na.rm = T),
+                                          obsid_2012 ~ sum(count_ha[first(yearbefore_plot[obsid_2012]) == year & stage == "A"], na.rm = T))) %>%
+    
+    left_join(J[c("count_J_integr_plot", "count_J_sum_before", "plotid", "taxid", "obsid")], by = c("plotid", "taxid", "obsid")) %>%
+    
+    group_by(plotid, taxid, obsid) %>%
+    mutate(count_A_integr_plot = integrateCounts(first(count_A_sum_before), sum(count_ha[stage == "A"], na.rm = T), first(timediff_plot))) %>%
+    mutate(h_plot = divide(count_A2B_plot, count_A_integr_plot)) %>%
+      ## NAs come from NAs in count_A_integr_plot, where if(is.na(timediff)) NA, i.e. no observation before.
+      ## NaNs come from 0 in count_A_integr_plot
+    
+    mutate(g_plot = divide(count_J2A_plot, count_J_integr_plot)) %>%
     
     ungroup()
+    
+
+  
   
   ### calculate h
   
@@ -459,7 +567,7 @@ countA2B <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxo
   # mutate(h_plot_2012 = first(count_A2B_2012_plot[!is.na(count_A2B_2012_plot)]) / first(count_ha_2002_plot[!is.na(count_ha_2002_plot)])/ timediff_2012) %>%
   # filter(stage != "A")
   
-  return(Stages_A2B)
+  return(Stages_transitions)
 }
 
 

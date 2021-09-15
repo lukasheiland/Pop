@@ -268,6 +268,9 @@ data {
   // and parameters vector[z, p, q, a_1, a_2]
   
   vector[N_pops] prior_state_init_log;
+  array[2] vector[N_species] prior_g_logit;
+  array[2] vector[N_species] prior_h_logit;
+
   
   // array[2] vector[N_beta] prior_Vertex_c_j;
   // array[2] vector[N_beta] prior_Vertex_g;
@@ -406,9 +409,10 @@ model {
   b_log   ~ normal(-3, 2);
   c_a_log ~ normal(-4, 2);
   c_b_log ~ normal(-4, 2);
-  c_j_log   ~ normal(-2, 1); // strong believe that c is smaller than s in trees
-  g_logit ~ normal(-3, 2);
-  h_logit ~ normal(-4, 1);
+  c_j_log ~ normal(-2, 1); // strong believe that c is smaller than s in trees
+  
+  g_logit ~ normal(prior_g_logit[1,], prior_g_logit[2,]);
+  h_logit ~ normal(prior_h_logit[1,], prior_h_logit[2,]);
 
   
   l ~ normal(0, 0.1);
@@ -440,48 +444,48 @@ model {
 }
 
 
-generated quantities {
- 
- int fixiter_max = 5000;
- 
- //// Variables for prediction
- vector[L_y] y_hat_rep;
- // array[L_y] real y_sim;
- 
- 
- //// Variables for fix point conversion
- array[N_locs] int converged; // tolerance has been reached
- array[N_locs] real iterations_fix;
- array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
- array[N_locs] int dominant_fix;
- array[N_locs] int major_fix;
-
- //// Predictions
- y_hat_rep = y_hat[rep_yhat2y];
- // y_sim = gamma_rng(alpha_obs[rep_obsmethod2y], alpha_obs[rep_obsmethod2y] ./ y_hat[rep_yhat2y]);
- 
- 
- //// Fix point iteration
- for(loc in 1:N_locs) {
-   
-   //// fix point, given parameters
-   state_fix[loc] = iterateFix(exp(state_init_log[loc]),
-                               exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), inv_logit(g_logit), inv_logit(h_logit), L_loc[loc, ], exp(r_log), exp(s_log),
-                               // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
-                               ba_a_avg, ba_a_upper,
-                               N_species, N_pops,
-                               i_j, i_a, i_b,
-                               tolerance_fix, fixiter_max);
-                                  
-   iterations_fix[loc] = state_fix[loc, N_genstates+N_species+1];
-   converged[loc] = iterations_fix[loc] < fixiter_max;
-   
-   if (converged[loc]) { // && convergent[loc]
-     
-     dominant_fix[loc] = state_fix[loc, N_pops+1]/state_fix[loc, N_genstates] > 3; // BA_1 > 75%
-     major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
-   }
- }
-
-}
+//generated quantities {
+// 
+// int fixiter_max = 5000;
+// 
+// //// Variables for prediction
+// vector[L_y] y_hat_rep;
+// // array[L_y] real y_sim;
+// 
+// 
+// //// Variables for fix point conversion
+// array[N_locs] int converged; // tolerance has been reached
+// array[N_locs] real iterations_fix;
+// array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
+// array[N_locs] int dominant_fix;
+// array[N_locs] int major_fix;
+//
+// //// Predictions
+// y_hat_rep = y_hat[rep_yhat2y];
+// // y_sim = gamma_rng(alpha_obs[rep_obsmethod2y], alpha_obs[rep_obsmethod2y] ./ y_hat[rep_yhat2y]);
+// 
+// 
+// //// Fix point iteration
+// for(loc in 1:N_locs) {
+//   
+//   //// fix point, given parameters
+//   state_fix[loc] = iterateFix(exp(state_init_log[loc]),
+//                               exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), inv_logit(g_logit), inv_logit(h_logit), L_loc[loc, ], exp(r_log), exp(s_log),
+//                               // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
+//                               ba_a_avg, ba_a_upper,
+//                               N_species, N_pops,
+//                               i_j, i_a, i_b,
+//                               tolerance_fix, fixiter_max);
+//                                  
+//   iterations_fix[loc] = state_fix[loc, N_genstates+N_species+1];
+//   converged[loc] = iterations_fix[loc] < fixiter_max;
+//   
+//   if (converged[loc]) { // && convergent[loc]
+//     
+//     dominant_fix[loc] = state_fix[loc, N_pops+1]/state_fix[loc, N_genstates] > 3; // BA_1 > 75%
+//     major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
+//   }
+// }
+//
+//}
 

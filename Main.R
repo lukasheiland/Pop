@@ -9,6 +9,7 @@ library(visNetwork)
 library(future)
 
 library(sf)
+library(MASS)
 library(cmdstanr)
 library(rstan)
 library(mgcv)
@@ -23,18 +24,17 @@ setwd(here())
 
 
 # Make targets pipeline -----------------------------------------------------------------
-tar_glimpse()
-M <- tar_manifest(fields = c("name", "command"))
+# tar_glimpse()
+# M <- tar_manifest(fields = c("name", "command"))
 # M$name
 
-tar_make(c("summary_test", "plots_test"))
+tar_make(c("summary_test", "plots_test", "stanfit_test"))
   ## alternatives
   # plan(multisession)
   # future(tar_make(names = "predict_splines")) # just as a future
   
   # tar_make_future(names = "Stages_s") # parallel
 
-tar_make(c("plots_test"))
 
 # Inspect pipeline ----------------------------------------------------------------
 network <- tar_visnetwork(targets_only = T, exclude = contains(c("file_", "threshold_", "taxon_", "predictor_", "pars_")))
@@ -46,7 +46,7 @@ network %>%
 
 
 # Inspect results ----------------------------------------------------------------
-tar_load(stanfit_test)
+tar_load(c("summary_test", "stanfit_test"))
 shinystan::launch_shinystan(stanfit_test)
 
 
