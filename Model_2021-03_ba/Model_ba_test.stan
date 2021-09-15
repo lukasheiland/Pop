@@ -216,7 +216,7 @@ data {
   int<lower=0> L_y; // locations/resurveys/pops/plots
   // int<lower=0> L_plots; // locations/plots
   // int<lower=0> L_init;
-  int<lower=0> L_a2b; // locations/obsid-1/n_species
+  // int<lower=0> L_a2b; // locations/obsid-1/n_species
 
   int<lower=0> N_locs; // overall number of locations. This is the major running variable to iterate over the model vectors.
   int<lower=0> N_species; // overall number of unique species across plot and locations (not nested!)
@@ -236,22 +236,22 @@ data {
   int<lower=1> rep_yhat2y[L_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
   int<lower=1> rep_obsmethod2y[L_y]; // factor (1, 2), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
   // int<lower=1> rep_locs2plots[L_plots]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
-  int<lower=1> rep_yhat2a2b[L_a2b];
-  int<lower=1> rep_species2a2b[L_a2b];
+  // int<lower=1> rep_yhat2a2b[L_a2b];
+  // int<lower=1> rep_species2a2b[L_a2b];
   // int<lower=1> rep_pops2init[L_init];
 
 
   //// actual data
   int time_max[N_locs];
   int times[L_times]; // locations/observations
-  vector<lower=1>[L_a2b] timediff;
+  // vector<lower=1>[L_a2b] timediff;
   
   matrix[N_locs, N_beta] X; // design matrix
   array[N_locs] vector[N_species] L_smooth;
   
   //// The response.
   array[L_y] int y;
-  array[L_a2b] int a2b;
+  //  array[L_a2b] int a2b;
 
   
   //// Settings
