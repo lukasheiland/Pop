@@ -335,7 +335,7 @@ parameters {
   // real<lower=0, upper=1> theta;
   
   //// Errors
-  vector<lower=0>[3] phi_obs_inv; // observation error in neg_binomial
+  vector<lower=0>[3] phi_obs_inv_sqrt; // observation error in neg_binomial
 	// real<lower=0> kappa_inv; // error in beta for h_logit
     // vector<lower=0>[3] alpha_obs_inv; // observation error in gamma
     // vector<lower=0>[2] sigma_obs; // observation error
@@ -360,12 +360,12 @@ transformed parameters {
   // matrix[N_locs, N_species] R_log = X * Beta_r;
   // matrix[N_locs, N_species] S_log = X * Beta_s;
 
-  vector<lower=0>[3] phi_obs = inv(phi_obs_inv);
+  vector<lower=0>[3] phi_obs = inv_square(phi_obs_inv_sqrt); // inv_square == square_inv
     // vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
   
   for(loc in 1:N_locs) {
     
-    L_loc[loc, ] = l .* L_smooth[loc, ]; // + // Offset with fixed coefficient. "The smooth to real number coefficient"
+    L_loc[loc, ] = exp(l_log) .* L_smooth[loc, ]; // + // Offset with fixed coefficient. "The smooth to real number coefficient"
                             // sigma_l .* L_random[loc, ]'; // non-centered loc-level random effects
     
   }
@@ -392,7 +392,8 @@ model {
   
   //// Hyperpriors
   // alpha_obs_inv ~ normal(0, 0.1); // Observation error for gamma
-  phi_obs_inv ~ normal(0, 0.01); // Observation error for neg_binomial
+  phi_obs_inv_sqrt ~ normal(0, 1); // Observation error for neg_binomial
+  	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
 
   // ... for special offset L
   // to_vector(L_random) ~ std_normal(); // Random part around slope for l
@@ -406,16 +407,16 @@ model {
   // c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
   // c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
   
-  b_log   ~ normal(-3, 2);
-  c_a_log ~ normal(-4, 2);
-  c_b_log ~ normal(-4, 2);
-  c_j_log ~ normal(-2, 1); // strong believe that c is smaller than s in trees
+  b_log   ~ normal(-3, 1);
+  c_a_log ~ normal(-5, 1);
+  c_b_log ~ normal(-5, 1);
+  c_j_log ~ normal(-5, 1); // strong believe that c is smaller than s in trees
   
   g_logit ~ normal(prior_g_logit[1,], prior_g_logit[2,]);
   h_logit ~ normal(prior_h_logit[1,], prior_h_logit[2,]);
 
   
-  l ~ normal(0, 0.1);
+  l_log ~ normal(-5, 1);
   r_log ~ normal(5, 1); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
   
   s_log ~ normal(-1, 2);
