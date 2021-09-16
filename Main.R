@@ -11,7 +11,7 @@ library(future)
 library(sf)
 library(cmdstanr)
 library(rstan)
-library(mgcv)
+library(MASS)
 
 # Orientation -------------------------------------------------------------
 setwd(here())
@@ -33,12 +33,6 @@ tar_make(c("summary_test", "plots_test"))
   # future(tar_make(names = "predict_splines")) # just as a future
   
   # tar_make_future(names = "Stages_s") # parallel
-
-tar_make(plots_test)
-
-# tar_load("Stages_s")
-# Stages %>% View()
-# tar_read("Stages_env") %>% View()
 
 
 # Inspect pipeline ----------------------------------------------------------------

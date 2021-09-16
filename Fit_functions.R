@@ -430,7 +430,7 @@ formatPriors <- function(data_stan, fit_g, fit_h) {
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational"), n_chains = 4, iter_warmup = 600, iter_sampling = 300,
+                     method = c("mcmc", "variational"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500,
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
