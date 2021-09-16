@@ -318,7 +318,7 @@ parameters {
   vector[N_species] s_log;
   
   vector[N_species] r_log;
-  vector<lower=0>[N_species] l_log;
+  vector[N_species] l_log;
 
   
   
@@ -407,10 +407,10 @@ model {
   // c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
   // c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
   
-  b_log   ~ normal(-3, 1);
+  b_log   ~ normal(-2, 1);
   c_a_log ~ normal(-5, 1);
   c_b_log ~ normal(-5, 1);
-  c_j_log ~ normal(-5, 1); // strong believe that c is smaller than s in trees
+  c_j_log ~ normal(-6, 1); // strong believe that c is smaller than s in trees
   
   g_logit ~ normal(prior_g_logit[1,], prior_g_logit[2,]);
   h_logit ~ normal(prior_h_logit[1,], prior_h_logit[2,]);
@@ -419,7 +419,7 @@ model {
   l_log ~ normal(-5, 1);
   r_log ~ normal(5, 1); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
   
-  s_log ~ normal(-1, 2);
+  s_log ~ normal(-2, 1);
 
   
   // same priors for both species

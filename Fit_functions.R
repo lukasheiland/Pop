@@ -293,7 +293,7 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
 # fit_g  <- tar_read("fit_g")
 # fit_h  <- tar_read("fit_h")
 
-formatPriors <- function(data_stan, fit_g, fit_h) {
+formatPriors <- function(data_stan, fit_g, fit_h, doublewidth = T) {
   
   ## Matrices[draws, species]
   Draws_g <- fit_g$draws(variables = "prop_logit", format = "draws_matrix") %>% as.data.frame()
@@ -302,6 +302,10 @@ formatPriors <- function(data_stan, fit_g, fit_h) {
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
   
+  if(doublewidth) {
+    pars_g <- lapply(pars_g, function(p) c(p["mean"], 2*p["sd"]))
+    pars_h <- lapply(pars_h, function(p) c(p["mean"], 2*p["sd"]))
+  }
   
   ## The model assumes array[2] vector[N_species] prior_*; which means that the vectors stretch over rows!
   
