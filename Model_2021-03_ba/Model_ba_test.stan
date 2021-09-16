@@ -318,7 +318,7 @@ parameters {
   vector[N_species] s_log;
   
   vector[N_species] r_log;
-  vector<lower=0>[N_species] l;
+  vector<lower=0>[N_species] l_log;
 
   
   
