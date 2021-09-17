@@ -178,7 +178,8 @@ list(
                format = "file"),
     
     tar_target(model_test,
-               cmdstan_model(file_model_test)),
+               cmdstan_model(file_model_test) #, cpp_options = list(stan_opencl = TRUE)
+               ),
     tar_target(model,
                cmdstan_model(file_model)),
     

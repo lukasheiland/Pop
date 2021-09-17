@@ -434,7 +434,7 @@ formatPriors <- function(data_stan, fit_g, fit_h, doublewidth = T) {
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational"), n_chains = 3, iter_warmup = 800, iter_sampling = 400,
+                     method = c("mcmc", "variational"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
@@ -443,7 +443,7 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
     dir.create(fitpath)
   }
   
-
+  
   if(match.arg(method) == "variational") {
     
     fit <- model$variational(data = data_stan,
@@ -451,14 +451,18 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
                              init = initfunc,
                              eta = 0.001,
                              iter = 20**4)
-
+    
   } else if (match.arg(method) == "mcmc") {
-
+    
+    ## https://mc-stan.org/cmdstanr/articles/opencl.html
+    ## system("clinfo -l")
+    
     fit <- model$sample(data = data_stan,
                         output_dir = fitpath,
                         # output_basename = ,
                         init = initfunc,
                         iter_warmup = iter_warmup, iter_sampling = iter_sampling,
+                        # opencl_ids = openclid,
                         # adapt_delta = 0.99,
                         # max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
