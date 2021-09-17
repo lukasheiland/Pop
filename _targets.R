@@ -175,7 +175,7 @@ list(
                fitTransition(data_stan, which = "h", model_transitions)),
     
     tar_target(data_stan_priors,
-               formatPriors(data_stan, fit_g, fit_h)), # priors
+               formatPriors(data_stan, fit_g, fit_h, doublewidth = T)), # priors
     
     tar_target(file_model_test,
                "Model_2021-03_ba/Model_ba_test.stan",
