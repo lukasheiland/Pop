@@ -120,9 +120,9 @@ saveStages_s|function|fd5024a4e717b197||||||||||||||
 drawTest|function|bc08f08807499680||||||||||||||
 readStanfit|function|7cf3081888caae5f||||||||||||||
 extractDraws|function|da77913875315873||||||||||||||
-formatPriors|function|e2cbc68e6c7807b1||||||||||||||
+formatPriors|function|300db45d6da6d0a1||||||||||||||
 countTransitions|function|3ed0ea15a11c5e77||||||||||||||
 constructConstantGrid|function|b2cee6aa156ec29a||||||||||||||
 plotStanfit|function|889cb3c0d7b8399c||||||||||||||
-file_model_transitions|stem|b3602797424095d0|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18885.6973651744s|938fc0a6010d13b8|756|file|vector|||3.93||
-data_stan_priors|stem|c4b557e371a24906|0c3a25978f53e323|4631ae16a7246437|1623270232||t18885.7124437211s|6cfe1b51a5a0f4fd|37618|rds|vector|||4.802||
+file_model_transitions|stem|b3602797424095d0|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18885.7142105049s|938fc0a6010d13b8|756|file|vector|||3.93||
+data_stan_priors|stem|cef2fc62a83e6dc0|f87faa0e668d0fe4|833857784588eb86|1623270232||t18887.3527789963s|6cfe1b51a5a0f4fd|37618|rds|vector|||5.258||
