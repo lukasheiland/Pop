@@ -134,26 +134,19 @@ list(
       ),
     
     tar_target(Stages_select,
-               selectClusters(Stages_s, predictor_select)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
-               ## there is some random sampling here. Note: a target's name determines its random number generator seed. 
+               selectClusters(Stages_s, predictor_select, selectpred = F)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
+               ## there is some random sampling here. Note: a target's name determines its random number generator seed.
+    
+    tar_target(Stages_select_pred,
+               selectClusters(Stages_s, predictor_select, selectpred = T)), ## Selection based on whether environmental variables are there
+    
     tar_target(Stages_scaled,
-               scaleData(Stages_select, predictor_select)) # After selection, so that scaling includes selected plots .
+               scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
+    
+    tar_target(Stages_scaled_pred,
+               scaleData(Stages_select_env, predictor_select)) # After selection, so that scaling includes selected plots .
   ),
-  
-  
-  ## Direct calibration
-  # list(
-  #   tar_target(Stages_direct,
-  #              formatDirect(Stages_scaled)),
-  #   tar_target(fit_direct,
-  #              drawDirect(Stages_direct, predictor_select),
-  #              packages = addPackage("brms")),
-  #   tar_target(draws_direct,
-  #              extractDrawsDirect(fit_direct)),
-  #   tar_target(priors,
-  #              constructPriors(draws_direct))
-  # ),
-  
+
   
   ## Model fit
   list(

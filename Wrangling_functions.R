@@ -207,7 +207,7 @@ saveStages_s <- function(Stages_s) {
 ## selectClusters --------------------------------
 # Stages <- tar_read("Stages_s")
 # predictor_select <- tar_read("predictor_select")
-selectClusters <- function(Stages, predictor_select,
+selectClusters <- function(Stages, predictor_select, selectpred = F,
                            id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
                            ) {
 
@@ -222,11 +222,15 @@ selectClusters <- function(Stages, predictor_select,
   # Stages[predictor_select] %>% is.na() %>% colSums()
   
   ## Filter based environment
+  if (selectpred) {
+    Stages  %<>% 
+      filter(!is.na(waterLevel_loc)) %>%
+      filter(!is.na(alt_loc)) %>%
+      filter(!is.na(phCaCl_esdacc))
+  }
+  
+  ## Filter based on management etc.
   Stages_select <- Stages %>%
-    
-    filter(!is.na(waterLevel_loc)) %>%
-    filter(!is.na(alt_loc)) %>%
-    filter(!is.na(phCaCl_esdacc)) %>%
     
     ## Plots were excluded that had any record of unnatural regeneration in DE_BWI_2 or 3
     mutate(anyUnnatRegen_DE_BWI_2 = tidyr::replace_na(anyUnnatRegen_DE_BWI_2, FALSE),
@@ -275,20 +279,22 @@ selectClusters <- function(Stages, predictor_select,
   
     # unique(Stages_select$clusterid) %>% length() ## 456
   
+  # ## Selecting an equal no. of plots with and without Fagus
+  # Stages_Fagus <- Stages_select %>%
+  #   filter(anyFagus)
+  # 
+  # n_Fagus <- length(unique(Stages_Fagus$clusterid)) # 95
+  # 
+  # Stages_other <- Stages_select %>%
+  #   filter(!anyFagus) %>%
+  #   filter(clusterid %in% base::sample(unique(.$clusterid), n_Fagus))
+  # 
+  # Stages_select <- bind_rows(Stages_other, Stages_Fagus)
+  # # unique(Stages_select$clusterid) %>% length() ## 190
   
-  
-  ## Subsample
-  Stages_Fagus <- Stages_select %>%
+  ## Confine to plots that have Fagus 
+  Stages_select %<>%
     filter(anyFagus)
-  
-  n_Fagus <- length(unique(Stages_Fagus$clusterid)) # 95
-  
-  Stages_other <- Stages_select %>%
-    filter(!anyFagus) %>%
-    filter(clusterid %in% base::sample(unique(.$clusterid), n_Fagus))
-  
-  Stages_select <- bind_rows(Stages_other, Stages_Fagus)
-  # unique(Stages_select$clusterid) %>% length() ## 190
   
   Stages_select %<>%
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))

@@ -27,7 +27,7 @@ setwd(here())
 # tar_glimpse()
 # M <- tar_manifest(fields = c("name", "command"))
 # M$name
-
+# tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
 tar_make(c("summary_test", "plots_test", "stanfit_test"))
   ## alternatives
   # plan(multisession)
