@@ -119,7 +119,7 @@ list(
                  iteration = "list"),
       
       tar_target(file_Stages_s,
-                 "Data/Stages_s.rds",
+                 saveStages_s(Stages_s),
                  format = "file"),
       tar_target(Data_Stages_s,
                  readRDS(file_Stages_s)),
@@ -134,26 +134,19 @@ list(
       ),
     
     tar_target(Stages_select,
-               selectClusters(Data_Stages_s, predictor_select)), # Stages_s, After smooth, so that smooth can be informed by all plots.
-               ## there is some random sampling here. Note: a target's name determines its random number generator seed. 
+               selectClusters(Stages_s, predictor_select, selectpred = F)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
+               ## there is some random sampling here. Note: a target's name determines its random number generator seed.
+    
+    tar_target(Stages_select_pred,
+               selectClusters(Stages_s, predictor_select, selectpred = T)), ## Selection based on whether environmental variables are there
+    
     tar_target(Stages_scaled,
-               scaleData(Stages_select, predictor_select)) # After selection, so that scaling includes selected plots .
+               scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
+    
+    tar_target(Stages_scaled_pred,
+               scaleData(Stages_select_env, predictor_select)) # After selection, so that scaling includes selected plots .
   ),
-  
-  
-  ## Direct calibration
-  # list(
-  #   tar_target(Stages_direct,
-  #              formatDirect(Stages_scaled)),
-  #   tar_target(fit_direct,
-  #              drawDirect(Stages_direct, predictor_select),
-  #              packages = addPackage("brms")),
-  #   tar_target(draws_direct,
-  #              extractDrawsDirect(fit_direct)),
-  #   tar_target(priors,
-  #              constructPriors(draws_direct))
-  # ),
-  
+
   
   ## Model fit
   list(
@@ -185,8 +178,7 @@ list(
                format = "file"),
     
     tar_target(model_test,
-               cmdstan_model(file_model_test,
-                             cpp_options = list(stan_opencl = TRUE))
+               cmdstan_model(file_model_test) #, cpp_options = list(stan_opencl = TRUE)
                ),
     tar_target(model,
                cmdstan_model(file_model)),

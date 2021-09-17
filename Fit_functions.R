@@ -434,7 +434,7 @@ formatPriors <- function(data_stan, fit_g, fit_h, doublewidth = T) {
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, openclid = c(0, 0),
+                     method = c("mcmc", "variational"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
@@ -443,7 +443,7 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
     dir.create(fitpath)
   }
   
-
+  
   if(match.arg(method) == "variational") {
     
     fit <- model$variational(data = data_stan,
@@ -451,9 +451,9 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
                              init = initfunc,
                              eta = 0.001,
                              iter = 20**4)
-
+    
   } else if (match.arg(method) == "mcmc") {
-
+    
     ## https://mc-stan.org/cmdstanr/articles/opencl.html
     ## system("clinfo -l")
     
@@ -462,7 +462,7 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
                         # output_basename = ,
                         init = initfunc,
                         iter_warmup = iter_warmup, iter_sampling = iter_sampling,
-                        opencl_ids = openclid,
+                        # opencl_ids = openclid,
                         # adapt_delta = 0.99,
                         # max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
@@ -538,7 +538,7 @@ plotStanfit <- function(stanfit, exclude) {
   
   basename <- attr(stanfit, "model_name") %>%
     str_replace("-[1-9]-", "-x-")
-  
+
   traceplot <- rstan::traceplot(stanfit, pars = exclude, include = F)
   parallelplot_c <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with(c("c_", "s_"))))
   parallelplot_others <- bayesplot::mcmc_parcoord(stanfit, pars = vars(!matches(c(exclude, "c_", "log_", "phi_", "lp_", "s_"))))
@@ -549,7 +549,7 @@ plotStanfit <- function(stanfit, exclude) {
                 parallelplot_others = parallelplot_others,
                 areasplot = areasplot)
   mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), plots, names(plots))
-  
+
   if(usedmcmc) {
     
     png(paste0("Fits.nosync/", basename, "_", "pairsplot", ".png"), width = 2600, height = 2600) # width in inches, default = 7
@@ -557,7 +557,7 @@ plotStanfit <- function(stanfit, exclude) {
     dev.off()
     
   }
-  
+
   return(plots)
 }
 
