@@ -12,7 +12,7 @@ library(sf)
 library(MASS)
 library(cmdstanr)
 library(rstan)
-library(mgcv)
+library(bayesplot)
 
 # Orientation -------------------------------------------------------------
 setwd(here())
