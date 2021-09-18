@@ -8,7 +8,7 @@
 # taxon_select  <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
 
-formatStanData <- function(Stages, Stages_transitions, taxon_select, threshold_dbh) { # priors!
+formatStanData <- function(Stages, Stages_transitions, taxon_select, threshold_dbh) {
   
   taxon_selectother <- c(taxon_select, "other")
   
@@ -164,8 +164,14 @@ formatStanData <- function(Stages, Stages_transitions, taxon_select, threshold_d
   
   #### Prepare design matrix
   Env <- S_locs[c("phCaCl_esdacc_s", "waterLevel_loc_s")]
-  polyformula <- as.formula(paste("~", paste("poly(", colnames(as.data.frame(Env)), ", 2)", collapse = "+")))
-  X <- model.matrix(polyformula, data = as.data.frame(Env))
+  if (anyNA(Env)) {
+    X <- matrix(0, nrow = nrow(Env), ncol = ncol(Env))
+    message("With Env having NAs, an empty design matrix was produced.")
+  } else {
+    polyformula <- as.formula(paste("~", paste("poly(", colnames(as.data.frame(Env)), ", 2)", collapse = "+")))
+    X <- model.matrix(polyformula, data = as.data.frame(Env))
+  }
+  
   
   #### Prepare ldd smooth. Predicted with log-link 
   L_smooth_log <- S %>%
@@ -281,7 +287,7 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
   # bayesplot::mcmc_pairs(fit_transition$draws())
   # bayesplot::mcmc_areas(fit_transition$draws(variables = c("prop_logit")), area_method = "scaled height")
   
-  message("Summary of the the fit for parameter", which, ":")
+  message("Summary of the the fit for parameter ", which, ":")
   print(fit_transition$summary())
   
   return(fit_transition)
