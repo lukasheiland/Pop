@@ -9,6 +9,7 @@ library(visNetwork)
 library(future)
 
 library(sf)
+library(mgcv)
 library(MASS)
 library(cmdstanr)
 library(rstan)
