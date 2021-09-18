@@ -618,6 +618,8 @@ countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
 
 constructConstantGrid <- function(taxon, Stages_env, Data_geo) {
   
+  taxon <- as.character(taxon)
+  
   ## All the clusters on the consistently sampled 4x4 km grid.
   Coords <- Data_geo %>%
     mutate(clusterid = paste0("DE_BWI_", Tnr)) %>%

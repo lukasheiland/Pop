@@ -22,7 +22,7 @@ options(tidyverse.quiet = TRUE)
 tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
                             "lubridate", # "zoo",
                             "sf", "raster", ## for correct loading of environmental data
-                            "MASS",
+                            "mgcv", "MASS",
                             "cmdstanr", "rstan", "bayesplot"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
@@ -104,7 +104,7 @@ list(
     
     list(
       tar_target(taxon_s,
-                 c(taxon_select, "other")),
+                 factor(c(sort(taxon_select), "other"))),
       tar_target(BA_s,
                  constructConstantGrid(taxon_s, Stages_env, Data_geo),
                  pattern = map(taxon_s),
@@ -144,7 +144,7 @@ list(
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
     
     tar_target(Stages_scaled_pred,
-               scaleData(Stages_select_env, predictor_select)) # After selection, so that scaling includes selected plots .
+               scaleData(Stages_select_pred, predictor_select)) # After selection, so that scaling includes selected plots .
   ),
 
   
@@ -152,7 +152,7 @@ list(
   list(
     
     tar_target(data_stan,
-               formatStanData(Stages_scaled, Stages_transitions, taxon_select, threshold_dbh)),
+               formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh)),
     
     tar_target(file_model_transitions,
                "Model_2021-03_ba/Model_transitions.stan",
