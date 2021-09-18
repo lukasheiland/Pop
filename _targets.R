@@ -119,7 +119,7 @@ list(
                  iteration = "list"),
       
       tar_target(file_Stages_s,
-                 saveStages_s(Stages_s),
+                 "Data/Stages_s.rds",
                  format = "file"),
       tar_target(Data_Stages_s,
                  readRDS(file_Stages_s)),
@@ -134,11 +134,11 @@ list(
       ),
     
     tar_target(Stages_select,
-               selectClusters(Stages_s, predictor_select, selectpred = F)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
+               selectClusters(Data_Stages_s, predictor_select, selectpred = F)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
                ## there is some random sampling here. Note: a target's name determines its random number generator seed.
     
     tar_target(Stages_select_pred,
-               selectClusters(Stages_s, predictor_select, selectpred = T)), ## Selection based on whether environmental variables are there
+               selectClusters(Data_Stages_s, predictor_select, selectpred = T)), ## Selection based on whether environmental variables are there
     
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
