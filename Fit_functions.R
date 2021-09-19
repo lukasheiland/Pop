@@ -5,12 +5,10 @@
 ## formatStanData --------------------------------
 # Stages  <- tar_read("Stages_scaled")
 # Stages_transitions  <- tar_read("Stages_transitions")
-# taxon_select  <- tar_read("taxon_select")
+# taxon_s  <- tar_read("taxon_s")
 # threshold_dbh <- tar_read("threshold_dbh")
 
-formatStanData <- function(Stages, Stages_transitions, taxon_select, threshold_dbh) {
-  
-  taxon_selectother <- c(taxon_select, "other")
+formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
   
   #### Essential worker
   ## reps each element of the first vector by the corresponding number in the second vector (c and unlist make sure that a vector is returned)
@@ -38,16 +36,16 @@ formatStanData <- function(Stages, Stages_transitions, taxon_select, threshold_d
   
   Stages_transitions %<>%
     ungroup() %>%
-    dplyr::select("plotid", "taxid", "obsid",
+    dplyr::select("plotid", "tax", "obsid",
                   "timediff_plot",
                   "count_A2B_plot", "count_J2A_plot",
                   "count_A_sum_before", "count_J_integr_plot", "count_J_sum_before", "count_A_integr_plot",
                   "h_plot", "g_plot") %>%
     # mutate_at(c("count_A2B_plot", "count_J2A_plot", "count_J_integr_plot", "count_A_integr_plot"), round) %>%
-    # mutate(joinid = interaction(plotid, taxid)) %>%
-    # dplyr::select(-plotid, -taxid) %>%
+    # mutate(joinid = interaction(plotid, tax)) %>%
+    # dplyr::select(-plotid, -tax) %>%
     
-    group_by(plotid, obsid, taxid) %>%
+    group_by(plotid, obsid, tax) %>%
     slice(1)
   
   G <- Stages_transitions %>%
@@ -61,7 +59,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_select, threshold_d
   Stages %<>%
     
     ## Join Stages_transitions
-    # bind_cols(Stages_transitions[match(interaction(.$plotid, .$taxid), Stages_transitions$joinid), ]) %>%
+    # bind_cols(Stages_transitions[match(interaction(.$plotid, .$tax), Stages_transitions$joinid), ]) %>%
     
     ## Synonyms for consistency wiht model lingo
     group_by(clusterid) %>%
@@ -71,7 +69,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_select, threshold_d
     
     ## factor ordering!!!
     mutate(stage = factor(stage, levels = c("J", "A", "B", "BA")),
-           tax = factor(tax, levels = taxon_selectother)) %>%
+           tax = factor(tax, levels = levels(taxon_s))) %>%
     
     ## Stages are measured in different terms: ba or count
     mutate(y = case_when(
@@ -176,7 +174,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_select, threshold_d
   #### Prepare ldd smooth. Predicted with log-link 
   L_smooth_log <- S %>%
     group_by(loc) %>%
-    summarize_at(paste("s", taxon_selectother, sep = "_"), first) %>%
+    summarize_at(paste("s", taxon_s, sep = "_"), first) %>%
     column_to_rownames(var = "loc") %>%
     as.matrix()
   
@@ -249,8 +247,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_select, threshold_d
     y_a = round(H$count_A_integr_plot),
     # y_g = G$g_plot,
     # y_h = H$h_plot,
-    species_g = as.integer(factor(G$taxid)),
-    species_h = as.integer(factor(H$taxid))
+    species_g = as.integer(factor(G$tax, levels = levels(taxon_s))),
+    species_h = as.integer(factor(H$tax, levels = levels(taxon_s)))
   )
   
   return(data)
