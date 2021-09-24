@@ -297,7 +297,7 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
 # fit_g  <- tar_read("fit_g")
 # fit_h  <- tar_read("fit_h")
 
-formatPriors <- function(data_stan, fit_g, fit_h, doublewidth = T) {
+formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, doublewidth = T) {
   
   ## Matrices[draws, species]
   Draws_g <- fit_g$draws(variables = "prop_logit", format = "draws_matrix") %>% as.data.frame()
@@ -318,7 +318,7 @@ formatPriors <- function(data_stan, fit_g, fit_h, doublewidth = T) {
     prior_h_logit = bind_cols(pars_h)
   )
   
-  return(c(data_stan, priors))
+  return(c(data_stan, priors, weakpriors))
 }
 
 
@@ -538,20 +538,28 @@ extractDraws <- function(stanfit) {
 
 plotStanfit <- function(stanfit, exclude) {
   
-  usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
+  plotRidges <- function(startswith, fit = stanfit) {
+    bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith)))
+  }
   
+  usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
   basename <- attr(stanfit, "model_name") %>%
     str_replace("-[1-9]-", "-x-")
+  parname <- setdiff(stanfit_test@model_pars, c(exclude, "lp__", "phi_obs_inv", "phi_obs"))
+  parnamestart <- unique(str_extract(parname, "^[a-zA-Z]*")) # c("b", "c", "g", "h", "s", "r", "l")
 
-  traceplot <- rstan::traceplot(stanfit, pars = exclude, include = F)
-  parallelplot_c <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with(c("c_", "s_"))))
-  parallelplot_others <- bayesplot::mcmc_parcoord(stanfit, pars = vars(!matches(c(exclude, "c_", "log_", "phi_", "lp_", "s_"))))
-  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "phi_obs"))))
+  traceplot <- rstan::traceplot(stanfit, pars = vars(matches(c(exclude, "_prior"), include = F)))
+  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "phi_obs", "prior"))))
+  ridgeplots <- lapply(parnamestart[1], plotRidges)
+  ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots)
+  
+  # parallelplot_c <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with(c("c_", "s_"))))
+  # parallelplot_others <- bayesplot::mcmc_parcoord(stanfit, pars = vars(!matches(c(exclude, "c_", "log_", "phi_", "lp_", "s_", "_prior"))))
   
   plots <- list(traceplot = traceplot,
-                parallelplot_c = parallelplot_c,
-                parallelplot_others = parallelplot_others,
-                areasplot = areasplot)
+                ridgeplotgrid = ridgeplotgrid,
+                areasplot = areasplot) # parallelplot_c = parallelplot_c, parallelplot_others = parallelplot_others,
+  
   mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), plots, names(plots))
 
   if(usedmcmc) {

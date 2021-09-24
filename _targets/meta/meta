@@ -34,7 +34,10 @@ file_DE_big_status|stem|55aa33929c1d8299|4afe50c6c7015484|ef46db3751d8e999|74220
 Data_big_status|stem|55aa33929c1d8299|eff25cb053505d95|bb67aed14f1a82fd|813772221||t18864.6374041453s|43b54c47aef0da48|12960096|rds|vector|||4.256||
 predictSplines|function|3a9471ea0b459e9a||||||||||||||
 fitSplines|function|3923fc14ded03ec4||||||||||||||
+<<<<<<< Updated upstream
 file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18864.6338114132s|e684589703d38eb9|5533814|file|vector|||1.968||
+=======
+>>>>>>> Stashed changes
 predictSurface|function|b3befed79cbcdd9b||||||||||||||
 Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|04617d440238533a|-1840226744||t18871.4277988667s|9b01f5e608a77422|1022676|rds|vector|||4.891||
 Stages|stem|ddec1b966b4781fa|8052e56c3d07b1ad|4d4440df09d9d6dc|-2131128411||t18871.4310687204s|8200de242805a3cf|11140318|rds|vector|||123.461||
@@ -55,6 +58,7 @@ fit_test|stem|378165a45612a7c7|89b4e6a4506517d6|8c755472bd2ee9d0|-1560265059||t1
 stanfit_test|stem|1450c5c4e54e0712|402ccdae6f1a90c3|80ae4aed962fe6ee|-1726047245||t18875.229805774s|21bb2373d5c092b9|69841623|rds|vector|||32.051||
 summary_test|stem|f4382dc808f2357e|9e7a83797e3557cf|65f055c5e45b68ba|-908423816||t18875.231508229s|cdb7a6d7a31097b2|745128|rds|vector|||146.995||
 plots_test|stem|683e083619f58927|e2937ee648800482|6ef9f6b2402407ba|1637481436||t18875.2323612606s|d520ce276796ba2e|430339267|rds|vector|||37.918||
+<<<<<<< Updated upstream
 Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t18887.8905583143s|e684589703d38eb9|5533814|rds|vector|||4.625||
 file_Stages_s|stem|63cb81b2af3052a7|e81b897de9ff3795|ef46db3751d8e999|-1399817009|Data/Stages_s.rds|t18872.6605614481s|a6460d9034942304|25505892|file|vector|||8.889||
 Data_Stages_s|stem|63cb81b2af3052a7|62bcc9c51377714f|d34dcefaae0b31ad|964763136||t18887.9100676955s|a6460d9034942304|25505892|rds|vector|||17.169||
@@ -75,6 +79,25 @@ fits_s|pattern|74d99c4f0bf838a7|badd00396212d798||-1896541871||||57361272|rds|li
 Stages_s|stem|63cb81b2af3052a7|4551afc129106b1b|d0552d3a8636d871|152872581||t18888.5647633552s|a6460d9034942304|25505892|rds|list|||77.664||
 Stages_select_pred|stem|b7ecb5f2c7a3cbcf|597a7d085e3ff252|8c207764f1ae2b45|-265150016||t18888.5653403934s|d1dd277f5fd511aa|505466|rds|vector|||49.664||
 Stages_scaled_pred|stem|67a3bdb777a14807|2a65d1f85d1a52bf|43df975aa6dc1664|421170714||t18888.5653436072s|cd151968bda47478|523685|rds|vector|||0.039||
+=======
+pars_exclude|stem|ed26af21d252edd2|ae1f8aa411ecf493|a3dad144c40657ed|-2058683567||t18888.2397077624s|2f4c0f199b39241a|151|rds|vector|||0.001||
+file_model_test|stem|ae5328925d22ab80|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18886.9694127876s|d9f3011b3ca53d51|19401|file|vector|||0.001||
+model_test|stem|249cef476825c30c|a3aa00c06cce5e55|ac3558381051319a|-1162399619||t18888.2398332254s|13b77fac2feefdc4|7464|rds|vector|||0.001||
+fit_test|stem|378165a45612a7c7|583572f64db46ecb|6405f66c7c639e2b|-1560265059||t18875.2293685134s||118253|rds|vector|||0.091||Variable X is of invalid type.
+file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18860.9370923003s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
+predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927||t18809.8784997507s|0e696b453c03de61|85|rds|vector|||1.703||
+file_Stages_s|stem|63cb81b2af3052a7|e81b897de9ff3795|ef46db3751d8e999|-1399817009|Data/Stages_s.rds|t18872.6605614481s|a6460d9034942304|25505892|file|vector|||2.296||
+taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t18810.760146226s|425d385953b3c542|67|rds|vector|||0.001||
+file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18864.6338114132s|e684589703d38eb9|5533814|file|vector|||1.968||
+threshold_dbh|stem|b1b40ad4f285cecb|9196226201acf742|ef46db3751d8e999|1977269053||t18810.7601461387s|ded833868582137a|50|rds|vector|||1.08||
+file_model_transitions|stem|9da302b96390370c|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18888.5201444743s|cf49a5ca8aaf392a|971|file|vector|||5.548||
+weakpriors|stem|a6300b68776d2887|7a65c621010099ed|9ee3ac5a8444da29|-1879221107||t18894.610263332s|2caa9f84a7ad3d6c|138|rds|vector|||0.001||
+file_DE_big_status|stem|55aa33929c1d8299|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18864.6342493399s|43b54c47aef0da48|12960096|file|vector|||2.52||
+Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t18857.5695906611s|02e584d87ae1e0d3|23277361|rds|vector|||12.618||
+Data_Stages_s|stem|63cb81b2af3052a7|62bcc9c51377714f|d34dcefaae0b31ad|964763136||t18894.6105670513s|a6460d9034942304|25505892|rds|vector|||9.204||
+taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t18894.6105710486s|e3871644244b3637|115|rds|vector|||0.002||
+Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t18887.8905583143s|e684589703d38eb9|5533814|rds|vector|||4.625||
+>>>>>>> Stashed changes
 predictSurfaces|function|e08447bd71c3e5fe||||||||||||||
 predictS|function|77bcabfef1d8569c||||||||||||||
 plotSurfaces|function|8e8bee5493cb7ccd||||||||||||||
@@ -94,9 +117,23 @@ saveStages_s|function|fd5024a4e717b197||||||||||||||
 drawTest|function|0ce3c40598643ea3||||||||||||||
 readStanfit|function|7cf3081888caae5f||||||||||||||
 extractDraws|function|da77913875315873||||||||||||||
-formatPriors|function|300db45d6da6d0a1||||||||||||||
+formatPriors|function|cc4c2d2c1be564f2||||||||||||||
 countTransitions|function|3ed0ea15a11c5e77||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 plotStanfit|function|889cb3c0d7b8399c||||||||||||||
+<<<<<<< Updated upstream
 file_model_transitions|stem|9da302b96390370c|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18888.5201444743s|cf49a5ca8aaf392a|971|file|vector|||4.994||
 data_stan|stem|469da4df52862dab|d18a2fb7bd18372c|8fd01a319e706c6c|1263995833||t18888.5717749624s|b40a3a52cc223974|22767|rds|vector|||7.104||
+=======
+model_transitions|stem|c0594904a9ff5610|6f5288cead19f3b4|cf35b89aaff51159|-1275860683||t18894.6425407313s|a592704eb6d472e5|7441|rds|vector|||33.994||
+Data_big_status|stem|55aa33929c1d8299|eff25cb053505d95|bb67aed14f1a82fd|813772221||t18864.6374041453s|43b54c47aef0da48|12960096|rds|vector|||4.256||
+Stages_select|stem|9e7ee8299ae0acf6|8615338ec219976c|7ada93bfcf579a2d|-1427272822||t18894.6432716227s|cbb9725b571ceb06|531132|rds|vector|||50.723||
+Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t18829.9185465046s|102883cb8e914333|1060126|rds|vector|||0.013||
+Stages_scaled|stem|db9c3db7a10de4d7|4084417319dea073|05e5cc0f52783876|1092130661||t18894.6432744392s|10c05cf2dddfe4b3|556632|rds|vector|||0.039||
+Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|04617d440238533a|-1840226744||t18894.6432949871s|9b01f5e608a77422|1022676|rds|vector|||1.056||
+Stages_transitions|stem|c0c1bf5bcb6c4eda|78ee3c6a24f5010a|46beb30844f061c2|-173363864||t18894.6438286122s|a518b0fbb84aac2b|269621|rds|vector|||29.861||
+data_stan|stem|469da4df52862dab|d18a2fb7bd18372c|8fd01a319e706c6c|1263995833||t18894.6439310008s|b40a3a52cc223974|22767|rds|vector|||8.804||
+fit_g|stem|db55d5a9daeca516|255e3515660b75a6|617d5f4fcd5d5730|128175024||t18894.6440198916s|90edff75317d0528|168309|rds|vector|||7.605||
+fit_h|stem|1332de7250b3d43f|ca8b86a90da6d4a5|617d5f4fcd5d5730|468382782||t18894.6441818835s|8445dcb496e03627|159914|rds|vector|||13.909||
+data_stan_priors|stem|23f687a8f3131547|0dfae18f9d02ba17|fd24911dfda0a900|1623270232||t18894.6441835427s|9809bc91ba1c9d1a|23025|rds|vector|||0.12||
+>>>>>>> Stashed changes

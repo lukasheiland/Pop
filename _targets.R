@@ -23,7 +23,7 @@ tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "fo
                             "lubridate", # "zoo",
                             "sf", "raster", ## for correct loading of environmental data
                             "mgcv", "MASS",
-                            "cmdstanr", "rstan", "bayesplot"))
+                            "cmdstanr", "rstan", "bayesplot", "cowplot"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
 ### Future
@@ -167,8 +167,23 @@ list(
     tar_target(fit_h,
                fitTransition(data_stan, which = "h", model_transitions)),
     
+    tar_target(weakpriors,
+               ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
+               list(
+                 prior_b_log = c(-2, 1),
+                 prior_c_a_log = c(-5, 1),
+                 prior_c_b_log = c(-5, 1),
+                 prior_c_j_log = c(-6, 1),
+                 ## prior_g_logit,
+                 ## prior_h_logit,
+                 prior_l_log = c(-5, 1),
+                 prior_r_log = c(5, 1),
+                 prior_s_log = c(-2, 1)
+                 )
+               ),
+    
     tar_target(data_stan_priors,
-               formatPriors(data_stan, fit_g, fit_h, doublewidth = T)), # priors
+               formatPriors(data_stan, weakpriors, fit_g, fit_h, doublewidth = T)), # priors
     
     tar_target(file_model_test,
                "Model_2021-03_ba/Model_ba_test.stan",
