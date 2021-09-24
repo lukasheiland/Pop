@@ -265,7 +265,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     
     ## subset to clusters with at least two surveys
     mutate(n_surveys = n_distinct(obsid)) %>%
-    filter(n_surveys == 3) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
+    filter(n_surveys >= 2) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
     dplyr::select(-n_surveys) %>%
     
     ## subset to clusters with at least two plots
