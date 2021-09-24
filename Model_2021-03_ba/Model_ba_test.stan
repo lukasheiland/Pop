@@ -268,9 +268,19 @@ data {
   // and parameters vector[z, p, q, a_1, a_2]
   
   vector[N_pops] prior_state_init_log;
+
+  vector[2] prior_b_log;
+  vector[2] prior_c_a_log;
+  vector[2] prior_c_b_log;
+  vector[2] prior_c_j_log;
+
   array[2] vector[N_species] prior_g_logit;
   array[2] vector[N_species] prior_h_logit;
-
+  
+  vector[2] l_log;
+  vector[2] r_log;
+  
+  vector[2] s_log;
   
   // array[2] vector[N_beta] prior_Vertex_c_j;
   // array[2] vector[N_beta] prior_Vertex_g;
@@ -407,19 +417,19 @@ model {
   // c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
   // c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
   
-  b_log   ~ normal(-2, 1);
-  c_a_log ~ normal(-5, 1);
-  c_b_log ~ normal(-5, 1);
-  c_j_log ~ normal(-6, 1); // strong believe that c is smaller than s in trees
+  b_log   ~ normal(prior_b_log[1], prior_b_log[2]);
+  c_a_log ~ normal(prior_c_a_log[1], prior_c_a_log[2]);
+  c_b_log ~ normal(prior_c_b_log[1], prior_c_b_log[2]);
+  c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]); // strong believe that c is smaller than s in trees
   
   g_logit ~ normal(prior_g_logit[1,], prior_g_logit[2,]);
   h_logit ~ normal(prior_h_logit[1,], prior_h_logit[2,]);
 
   
-  l_log ~ normal(-5, 1);
-  r_log ~ normal(5, 1); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
+  l_log ~ normal(prior_l_log[1], prior_l_log[2]);
+  r_log ~ normal(prior_r_log[1], prior_r_log[2]); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
   
-  s_log ~ normal(-2, 1);
+  s_log ~ normal(prior_s_log[1], prior_s_log[2]);
 
   
   // same priors for both species
@@ -443,6 +453,26 @@ model {
   
     // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
 }
+
+
+generated quantities {
+	
+  real b_log_prior = normal_rng(prior_b_log[1], prior_b_log[2]);
+  real c_a_log_prior = normal_rng(prior_c_a_log[1], prior_c_a_log[2]);
+  real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]);
+  real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]); // strong believe that c is smaller than s in trees
+  
+  vector[2] g_logit_prior = normal_rng(prior_g_logit[1,], prior_g_logit[2,]);
+  vector[2] h_logit_prior = normal_rng(prior_h_logit[1,], prior_h_logit[2,]);
+  
+  real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
+  real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
+  
+  real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
+	
+	
+}
+
 
 
 //generated quantities {
