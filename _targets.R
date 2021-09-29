@@ -23,7 +23,7 @@ tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "fo
                             "lubridate", # "zoo",
                             "sf", "raster", ## for correct loading of environmental data
                             "mgcv", "MASS",
-                            "cmdstanr", "rstan", "bayesplot", "cowplot"))
+                            "cmdstanr", "rstan", "bayesplot", "cowplot", "parallel"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
 ### Future
