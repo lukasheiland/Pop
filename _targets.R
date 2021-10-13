@@ -23,7 +23,7 @@ tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "fo
                             "lubridate", # "zoo",
                             "sf", "raster", ## for correct loading of environmental data
                             "mgcv", "MASS",
-                            "cmdstanr", "rstan", "bayesplot", "cowplot"))
+                            "cmdstanr", "rstan", "bayesplot", "cowplot", "parallel"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
 ### Future
@@ -215,7 +215,7 @@ list(
                readStanfit(fit)),
     
     tar_target(pars_exclude,
-               c("y_hat", "L_loc_log", "L_loc", "state_init_log",
+               c("y_hat", "L_loc_log", "L_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt",
                  "y_hat_rep", "converged", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "fixiter_max")),
     
     tar_target(draws_test,

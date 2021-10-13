@@ -15,6 +15,7 @@ library(cmdstanr)
 library(rstan)
 library(bayesplot)
 library(cowplot)
+library(parallel)
 
 
 # Orientation -------------------------------------------------------------
