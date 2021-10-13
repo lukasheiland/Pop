@@ -539,18 +539,20 @@ extractDraws <- function(stanfit) {
 plotStanfit <- function(stanfit, exclude) {
   
   plotRidges <- function(startswith, fit = stanfit) {
-    bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith)))
+    bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith, ignore.case = F)))
   }
   
   usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
   basename <- attr(stanfit, "model_name") %>%
     str_replace("-[1-9]-", "-x-")
-  parname <- setdiff(stanfit_test@model_pars, c(exclude, "lp__", "phi_obs_inv", "phi_obs"))
-  parnamestart <- unique(str_extract(parname, "^[a-zA-Z]*")) # c("b", "c", "g", "h", "s", "r", "l")
+  excludeplus <- c("lp__", "phi_obs")
+  parname <- setdiff(stanfit@model_pars, c(exclude, excludeplus))
+  parnamestart <- unique(str_extract(parname, "^[a-z]_[ljab]")) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter.
+  parname_sansprior <- parname[!grepl("prior$", parname)]
 
-  traceplot <- rstan::traceplot(stanfit, pars = vars(matches(c(exclude, "_prior"), include = F)))
-  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "phi_obs", "prior"))))
-  ridgeplots <- lapply(parnamestart[1], plotRidges)
+  traceplot <- rstan::traceplot(stanfit, pars = parname_sansprior, include = T)
+  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior"))))
+  ridgeplots <- parallel::mclapply(parnamestart, plotRidges, mc.cores = getOption("mc.cores", 7L))
   ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots)
   
   # parallelplot_c <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with(c("c_", "s_"))))
@@ -564,7 +566,7 @@ plotStanfit <- function(stanfit, exclude) {
 
   if(usedmcmc) {
     
-    png(paste0("Fits.nosync/", basename, "_", "pairsplot", ".png"), width = 2600, height = 2600) # width in inches, default = 7
+    png(paste0("Fits.nosync/", basename, "_", "pairsplot", ".png"), width = 2600, height = 2600)
     pairs(stanfit, pars = c(exclude, "l", "phi_obs_inv", "phi_obs", "log_", "lp_"), include = F)
     dev.off()
     
