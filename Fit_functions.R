@@ -217,6 +217,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     # rep_yhat2a2b = S_a2b$rep_yhat2a2b,
     # rep_species2a2b = S_a2b$rep_species2a2b,
     rep_pops2init =  as.integer(S_init$pop),
+    rep_pops2y =  as.integer(S$pop), # for posterior/prior predictive checks
     
     time_max = S_locs$time_max,
     times = S_times$t,
@@ -438,7 +439,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, doublewidth = T) {
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
+                     method = c("mcmc", "variational", "sim"),
+                     n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
@@ -470,6 +472,13 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
                         # adapt_delta = 0.99,
                         # max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
+
+  } else if (match.arg(method) == "sim") {
+    
+    fit <- model$sample(data = data_stan,
+                        output_dir = fitpath,
+                        iter_sampling = iter_sampling,
+                        fixed_param = TRUE)
   }
   
   return(fit)
@@ -573,6 +582,33 @@ plotStanfit <- function(stanfit, exclude) {
   }
 
   return(plots)
+}
+
+## plotDensCheck --------------------------------
+# cmdstanfit  <- tar_read("priorsim_test")
+# cmdstanfit  <- tar_read("stanfit_test")
+# data_stan_priors <- tar_read("data_stan_priors")
+
+plotDensCheck <- function(cmdstanfit, data_stan_priors, check = c("prior", "posterior")) {
+  
+  data <- data_stan_priors$y
+  pop <- data_stan_priors$rep_pops2y
+  
+  if(match.arg(check) == "prior") {
+    sim <- cmdstanfit$draws(variables = "y_prior_sim", format = "draws_matrix")
+  } else if (match.arg(check) == "posterior") {
+    sim <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix")
+  }
+  
+  
+  hist <- bayesplot::ppc_dens_overlay_grouped(log(data), log(sim), group = pop)
+  
+  basename <- cmdstanfit$metadata()$model_name %>%
+    str_replace("-[1-9]-", "-x-")
+  name <- paste0("hist_", check)
+  ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), hist)
+
+  return(hist)
 }
 
 
