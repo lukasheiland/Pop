@@ -163,7 +163,7 @@ list(
     
     tar_target(fit_g,
                fitTransition(data_stan, which = "g", model_transitions)),
-
+    
     tar_target(fit_h,
                fitTransition(data_stan, which = "h", model_transitions)),
     
@@ -171,13 +171,13 @@ list(
                ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
                list(
                  prior_b_log = c(-2, 1),
-                 prior_c_a_log = c(-5, 1),
-                 prior_c_b_log = c(-5, 1),
-                 prior_c_j_log = c(-6, 1),
+                 prior_c_a_log = c(-5, 2),
+                 prior_c_b_log = c(-5, 2),
+                 prior_c_j_log = c(-6, 2),
                  ## prior_g_logit,
                  ## prior_h_logit,
                  prior_l_log = c(-5, 1),
-                 prior_r_log = c(5, 1),
+                 prior_r_log = c(7, 2),
                  prior_s_log = c(-2, 1)
                )
     ),
@@ -194,14 +194,20 @@ list(
     
     tar_target(model_test,
                cmdstan_model(file_model_test) #, cpp_options = list(stan_opencl = TRUE)
-               ),
+    ),
     tar_target(model,
                cmdstan_model(file_model)),
+    
+    tar_target(priorsim_test,
+               drawTest(model = model_test, data_stan_priors, method = "sim", initfunc = 0.5)),
+    tar_target(plot_denscheck_priorsim_test,
+               plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
+    
     
     tar_target(fit_test,
                drawTest(model = model_test, data_stan_priors, method = "mcmc", initfunc = 0.5)),
     tar_target(fit,
-               draw(model = model, data_stan_priors, initfunc = 0.5)),
+               draw(model = model, data_stan_priors, method = "mcmc", initfunc = 0.5)),
     
     
     tar_target(summary_test,
@@ -225,9 +231,13 @@ list(
     
     tar_target(plots_test,
                plotStanfit(stanfit_test, exclude = pars_exclude)),
+    tar_target(plot_denscheck_prior_test,
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
+    tar_target(plot_denscheck_posterior_test,
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior")),
     tar_target(plots,
                plotStanfit(stanfit, exclude = pars_exclude))
-
+    
   ),
   
   
@@ -245,4 +255,5 @@ list(
     #             fitted_params = draws)
   )
 )
+
 
