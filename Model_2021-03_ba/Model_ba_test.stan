@@ -457,66 +457,88 @@ model {
 
 generated quantities {
 	
+	
+  //// Variables for prediction/simulation
+  vector[L_y] y_hat_rep;
+  array[L_y] real y_sim;
+
+  
+  //// Predictions
+  y_hat_rep = y_hat[rep_yhat2y];
+  y_sim = neg_binomial_2_rng(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
+
+  
+  // Possibility to set an option in data for prior generation or not 
+  // Priors
   real b_log_prior = normal_rng(prior_b_log[1], prior_b_log[2]);
   real c_a_log_prior = normal_rng(prior_c_a_log[1], prior_c_a_log[2]);
   real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]);
   real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]); // strong believe that c is smaller than s in trees
   
-  array[2] real g_logit_prior = normal_rng(prior_g_logit[1,], prior_g_logit[2,]);
-  array[2] real h_logit_prior = normal_rng(prior_h_logit[1,], prior_h_logit[2,]);
+  vector[N_species] g_logit_prior = to_vector(normal_rng(prior_g_logit[1,], prior_g_logit[2,]));
+  vector[N_species] h_logit_prior = to_vector(normal_rng(prior_h_logit[1,], prior_h_logit[2,]));
   
   real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
   real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
-  
   real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
-	
-	
+  
+  vector[N_species] vector_b_log_prior = to_vector(normal_rng(rep_array(prior_b_log[1], N_species), rep_array(prior_b_log[2], N_species)));
+  vector[N_species] vector_c_a_log_prior = to_vector(normal_rng(rep_array(prior_c_a_log[1], N_species), rep_array(prior_c_a_log[2], N_species)));
+  vector[N_species] vector_c_b_log_prior = to_vector(normal_rng(rep_array(prior_c_b_log[1], N_species), rep_array(prior_c_b_log[2], N_species)));
+  vector[N_species] vector_c_j_log_prior = to_vector(normal_rng(rep_array(prior_c_j_log[1], N_species), rep_array(prior_c_j_log[2], N_species)));
+  vector[N_species] vector_l_log_prior = to_vector(normal_rng(rep_array(prior_l_log[1], N_species), rep_array(prior_l_log[2], N_species)));
+  vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
+  vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_array(prior_s_log[1], N_species), rep_array(prior_s_log[2], N_species)));
+  
+  array[3] real phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), rep_array(1.0, 3)));
+  
+  
+  // Variables for simulation
+  vector[L_yhat] y_hat_prior;
+  vector[L_y] y_hat_prior_rep;
+  array[L_y] real y_prior_sim;
+  
+  y_hat_prior = unpack(rep_array(prior_state_init_log, N_locs), time_max, times,
+                   vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_logit_prior, h_logit_prior, rep_array(exp(vector_l_log_prior), N_locs), vector_r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
+                   ba_a_avg, ba_a_upper,
+                   n_obs, n_yhat, // varying numbers per loc
+                   N_species, N_pops, L_yhat, N_locs, // fixed numbers
+                   i_j, i_a, i_b);
+                   
+  y_hat_prior_rep = y_hat_prior[rep_yhat2y];
+  y_prior_sim = neg_binomial_2_rng(y_hat_prior[rep_yhat2y], phi_obs_prior[rep_obsmethod2y]);
+
+
+  //// Variables for fix point iteration
+  int fixiter_max = 5000;
+
+  array[N_locs] int converged; // tolerance has been reached
+  array[N_locs] real iterations_fix;
+  array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
+  array[N_locs] int dominant_fix;
+  array[N_locs] int major_fix;
+  
+  
+  //// Fix point iteration
+  for(loc in 1:N_locs) {
+    
+    //// fix point, given parameters
+    state_fix[loc] = iterateFix(exp(state_init_log[loc]),
+                                exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), inv_logit(g_logit), inv_logit(h_logit), L_loc[loc, ], exp(r_log), exp(s_log),
+                                // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                ba_a_avg, ba_a_upper,
+                                N_species, N_pops,
+                                i_j, i_a, i_b,
+                                tolerance_fix, fixiter_max);
+                                   
+    iterations_fix[loc] = state_fix[loc, N_genstates+N_species+1];
+    converged[loc] = iterations_fix[loc] < fixiter_max;
+    
+    if (converged[loc]) { // && convergent[loc]
+      
+      dominant_fix[loc] = state_fix[loc, N_pops+1]/state_fix[loc, N_genstates] > 3; // BA_1 > 75%
+      major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
+      
+    }
+  }
 }
-
-
-
-//generated quantities {
-// 
-// int fixiter_max = 5000;
-// 
-// //// Variables for prediction
-// vector[L_y] y_hat_rep;
-// // array[L_y] real y_sim;
-// 
-// 
-// //// Variables for fix point conversion
-// array[N_locs] int converged; // tolerance has been reached
-// array[N_locs] real iterations_fix;
-// array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
-// array[N_locs] int dominant_fix;
-// array[N_locs] int major_fix;
-//
-// //// Predictions
-// y_hat_rep = y_hat[rep_yhat2y];
-// // y_sim = gamma_rng(alpha_obs[rep_obsmethod2y], alpha_obs[rep_obsmethod2y] ./ y_hat[rep_yhat2y]);
-// 
-// 
-// //// Fix point iteration
-// for(loc in 1:N_locs) {
-//   
-//   //// fix point, given parameters
-//   state_fix[loc] = iterateFix(exp(state_init_log[loc]),
-//                               exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), inv_logit(g_logit), inv_logit(h_logit), L_loc[loc, ], exp(r_log), exp(s_log),
-//                               // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), inv_logit(G_logit[loc,]'), inv_logit(h_logit), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
-//                               ba_a_avg, ba_a_upper,
-//                               N_species, N_pops,
-//                               i_j, i_a, i_b,
-//                               tolerance_fix, fixiter_max);
-//                                  
-//   iterations_fix[loc] = state_fix[loc, N_genstates+N_species+1];
-//   converged[loc] = iterations_fix[loc] < fixiter_max;
-//   
-//   if (converged[loc]) { // && convergent[loc]
-//     
-//     dominant_fix[loc] = state_fix[loc, N_pops+1]/state_fix[loc, N_genstates] > 3; // BA_1 > 75%
-//     major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
-//   }
-// }
-//
-//}
-
