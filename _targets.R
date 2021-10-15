@@ -242,9 +242,9 @@ list(
                c(pars_exclude, helpers_exclude, simnames_prior, simnames_posterior)),
     
     tar_target(draws_test,
-               extractDraws(stanfit_test)),
+               extractDraws(stanfit_test, eclude = helpers_exclude)),
     tar_target(draws,
-               extractDraws(stanfit)),
+               extractDraws(stanfit = exclude = helpers_exclude)),
     
     ## Posterior plots
     tar_target(plots_test,
@@ -254,7 +254,7 @@ list(
     
     ## Posterior predictive tests
     tar_target(residuals_test,
-               scaleResiduals(draws_test, data_stan_priors)),
+               scaleResiduals(cmdstanfit = fit_test, data_stan_priors)),
     tar_target(plot_denscheck_prior_test,
                plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
     tar_target(plot_denscheck_posterior_test,

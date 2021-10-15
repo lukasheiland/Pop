@@ -520,10 +520,12 @@ readStanfit <- function(fit) {
 ## extractDraws --------------------------------
 # stanfit  <- tar_read("stanfit")
 # stanfit  <- tar_read("stanfit_test")
+# helpers_exclude  <- tar_read("helpers_exclude")
 
-extractDraws <- function(stanfit) {
+
+extractDraws <- function(stanfit, exclude = helpers_exclude) {
   
-  draws <- rstan::extract(stanfit)
+  draws <- rstan::extract(stanfit, pars = exclude, include = F)
   
   return(draws)
 }
@@ -602,23 +604,22 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, check = c("prior", "post
 }
 
 ## scaleResiduals --------------------------------
-# draws  <- tar_read("draws")
-# draws  <- tar_read("draws_test")
+# cmdstanfit  <- tar_read("fit_test")
+# cmdstanfit  <- tar_read("fit")
 # data_stan_priors  <- tar_read("data_stan_priors")
 
-scaleResiduals <- function(draws, data_stan_priors) {
+scaleResiduals <- function(cmdstanfit, data_stan_priors) {
   
-  Sim <- draws$sim_rep # matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
+  Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix")  # matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
   y <- data_stan$y
-  Y_hat <- draws$y_hat_rep
+  Y_hat <- draws$draws(variables = "y_hat_rep", format = "draws_matrix")
   
   residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = Y_hat, integerResponse = T)
 
   basename <- cmdstanfit$metadata()$model_name %>%
     str_replace("-[1-9]-", "-x-")
-  name <- paste0("hist_", check)
   
-  png(paste0("Fits.nosync/", basename, "_", "pairsplot", ".png"), width = 2000, height = 1200)
+  png(paste0("Fits.nosync/", basename, "_", "DHARMa", ".png"), width = 2000, height = 1200)
   DHARMa::plotResiduals(residuals)
   dev.off()
   
