@@ -246,7 +246,7 @@ list(
     
     ## Posterior predictive tests
     tar_target(residuals_test,
-               scaleResiduals(draws_test)),
+               scaleResiduals(draws_test, data_stan_priors)),
     tar_target(plot_denscheck_prior_test,
                plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
     tar_target(plot_denscheck_posterior_test,
