@@ -23,7 +23,7 @@ tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "fo
                             "lubridate", # "zoo",
                             "sf", "raster", ## for correct loading of environmental data
                             "mgcv", "MASS",
-                            "cmdstanr", "rstan", "brms", "bayesplot", "cowplot", "parallel"))
+                            "cmdstanr", "rstan", "brms", "bayesplot", "cowplot", "parallel", "DHARMa"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
 ### Future
@@ -239,14 +239,19 @@ list(
     tar_target(draws,
                extractDraws(stanfit)),
     
+    ## Posterior plots
     tar_target(plots_test,
                plotStanfit(stanfit_test, exclude = pars_exclude)),
+    tar_target(plots,
+               plotStanfit(stanfit, exclude = pars_exclude)),
+    
+    ## Posterior predictive tests
+    tar_target(residuals_test,
+               scaleResiduals(draws_test, data_stan_priors)),
     tar_target(plot_denscheck_prior_test,
                plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
     tar_target(plot_denscheck_posterior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior")),
-    tar_target(plots,
-               plotStanfit(stanfit, exclude = pars_exclude))
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior"))
     
   ),
   
