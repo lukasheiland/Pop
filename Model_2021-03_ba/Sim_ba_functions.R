@@ -22,7 +22,7 @@ library(bayesplot)
 calcModel <- function(times,
                       initialstate, # A vector of species states.
                       pars # internal number of discrete time steps within a unit of time
-) {
+                      ) {
   
   ## Just unpacking for readability.
   
