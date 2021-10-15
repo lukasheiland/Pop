@@ -230,8 +230,16 @@ list(
                readStanfit(fit)),
     
     tar_target(pars_exclude,
-               c("y_hat", "L_loc_log", "L_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt",
-                 "y_hat_rep", "converged", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "fixiter_max")),
+               c("y_hat", "L_loc_log", "L_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
+    tar_target(helpers_exclude,
+               c("vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior")),
+    tar_target(simnames_prior,
+               c("y_hat_prior", "y_hat_prior_rep", "y_prior_sim")),
+    tar_target(simnames_posterior,
+               c("y_hat_rep", "y_sim", "y_hat_prior",
+                 "converged", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "fixiter_max")),
+    tar_target(exclude,
+               c(pars_exclude, helpers_exclude, simnames_prior, simnames_posterior)),
     
     tar_target(draws_test,
                extractDraws(stanfit_test)),
