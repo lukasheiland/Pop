@@ -23,7 +23,7 @@ tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "fo
                             "lubridate", # "zoo",
                             "sf", "raster", ## for correct loading of environmental data
                             "mgcv", "MASS",
-                            "cmdstanr", "rstan", "bayesplot", "cowplot", "parallel"))
+                            "cmdstanr", "rstan", "brms", "bayesplot", "cowplot", "parallel"))
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
 ### Future
@@ -52,8 +52,10 @@ list(
                format = "file"),
     tar_target(file_DE_geo,
                'Inventory.nosync/DE BWI/Data/DE_BWI_geo.rds',
+               format = "file"),
+    tar_target(file_SK,
+               "Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds",
                format = "file")
-    
     # tar_target(file_Taxa,
     #            'Inventory.nosync/Taxa/Taxa.csv',
     #            format = "file")
@@ -66,7 +68,9 @@ list(
     tar_target(Data_big_status, readRDS(file_DE_big_status)),
     tar_target(Data_small, readRDS(file_DE_small)),
     tar_target(Data_env, readRDS(file_DE_env)),
-    tar_target(Data_geo, readRDS(file_DE_geo))
+    tar_target(Data_geo, readRDS(file_DE_geo)),
+    
+    tar_target(Data_seedlings, readRDS(file_SK))
     
     # tar_target(Taxa, read.csv(file = file_Taxa, colClasses = c('factor')) %>% filter(!duplicated(tax.id)))
     ## tax.id is not unique in Taxa! Unique is however needed for left_join by tax.id (not by inventory specific ids)!
@@ -133,10 +137,16 @@ list(
                  iteration = "list")
       ),
     
+    list(
+      tar_target(Seedlings,
+                 wrangleSeedlings(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
+      tar_target(fits_seedlings,
+                 fitSeedlings(Seedlings))
+      ),
+  
     tar_target(Stages_select,
                selectClusters(Stages_s, predictor_select, selectpred = F)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
-               ## there is some random sampling here. Note: a target's name determines its random number generator seed.
-    
+
     tar_target(Stages_select_pred,
                selectClusters(Stages_s, predictor_select, selectpred = T)), ## Selection based on whether environmental variables are there
     
@@ -146,7 +156,6 @@ list(
     tar_target(Stages_scaled_pred,
                scaleData(Stages_select_pred, predictor_select)) # After selection, so that scaling includes selected plots .
   ),
-
   
   ## Model fit
   list(
@@ -176,14 +185,14 @@ list(
                  prior_c_j_log = c(-6, 2),
                  ## prior_g_logit,
                  ## prior_h_logit,
-                 prior_l_log = c(-5, 1),
-                 prior_r_log = c(7, 2),
+                 # prior_l_log = c(5, 2),
+                 # prior_r_log = c(1, 2),
                  prior_s_log = c(-2, 1)
-                 )
-               ),
-    
+               )
+             ),
+
     tar_target(data_stan_priors,
-               formatPriors(data_stan, weakpriors, fit_g, fit_h, doublewidth = T)), # priors
+               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_seedlings, widthfactor = 2)), # priors
     
     tar_target(file_model_test,
                "Model_2021-03_ba/Model_ba_test.stan",

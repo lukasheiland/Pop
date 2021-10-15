@@ -277,8 +277,11 @@ data {
   array[2] vector[N_species] prior_g_logit;
   array[2] vector[N_species] prior_h_logit;
   
-  vector[2] prior_l_log;
-  vector[2] prior_r_log;
+  array[2] vector[N_species] prior_l_log;
+  array[2] vector[N_species] prior_r_log;
+  
+  // vector[2] prior_l_log;
+  // vector[2] prior_r_log;
   
   vector[2] prior_s_log;
   
@@ -478,16 +481,20 @@ generated quantities {
   vector[N_species] g_logit_prior = to_vector(normal_rng(prior_g_logit[1,], prior_g_logit[2,]));
   vector[N_species] h_logit_prior = to_vector(normal_rng(prior_h_logit[1,], prior_h_logit[2,]));
   
-  real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
-  real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
+  vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
+  vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));
+  
+  // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
+  // real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]);
+  
   real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
   
   vector[N_species] vector_b_log_prior = to_vector(normal_rng(rep_array(prior_b_log[1], N_species), rep_array(prior_b_log[2], N_species)));
   vector[N_species] vector_c_a_log_prior = to_vector(normal_rng(rep_array(prior_c_a_log[1], N_species), rep_array(prior_c_a_log[2], N_species)));
   vector[N_species] vector_c_b_log_prior = to_vector(normal_rng(rep_array(prior_c_b_log[1], N_species), rep_array(prior_c_b_log[2], N_species)));
   vector[N_species] vector_c_j_log_prior = to_vector(normal_rng(rep_array(prior_c_j_log[1], N_species), rep_array(prior_c_j_log[2], N_species)));
-  vector[N_species] vector_l_log_prior = to_vector(normal_rng(rep_array(prior_l_log[1], N_species), rep_array(prior_l_log[2], N_species)));
-  vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
+  // vector[N_species] vector_l_log_prior = to_vector(normal_rng(rep_array(prior_l_log[1], N_species), rep_array(prior_l_log[2], N_species)));
+  // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_array(prior_s_log[1], N_species), rep_array(prior_s_log[2], N_species)));
   
   array[3] real phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), rep_array(1.0, 3)));
@@ -499,7 +506,7 @@ generated quantities {
   array[L_y] real y_prior_sim;
   
   y_hat_prior = unpack(rep_array(prior_state_init_log, N_locs), time_max, times,
-                   vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_logit_prior, h_logit_prior, rep_array(exp(vector_l_log_prior), N_locs), vector_r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
+                   vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_logit_prior, h_logit_prior, rep_array(exp(l_log_prior), N_locs), r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
                    ba_a_avg, ba_a_upper,
                    n_obs, n_yhat, // varying numbers per loc
                    N_species, N_pops, L_yhat, N_locs, // fixed numbers

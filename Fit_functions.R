@@ -217,7 +217,6 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     # rep_yhat2a2b = S_a2b$rep_yhat2a2b,
     # rep_species2a2b = S_a2b$rep_species2a2b,
     rep_pops2init =  as.integer(S_init$pop),
-    rep_pops2y =  as.integer(S$pop), # for posterior/prior predictive checks
     
     time_max = S_locs$time_max,
     times = S_times$t,
@@ -297,35 +296,36 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
 # data_stan  <- tar_read("data_stan")
 # fit_g  <- tar_read("fit_g")
 # fit_h  <- tar_read("fit_h")
+# fits_seedlings  <- tar_read("fits_seedlings")
 
-formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, doublewidth = T) {
+formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_seedlings, widthfactor = 1) {
   
   ## Matrices[draws, species]
   Draws_g <- fit_g$draws(variables = "prop_logit", format = "draws_matrix") %>% as.data.frame()
   Draws_h <- fit_h$draws(variables = "prop_logit", format = "draws_matrix") %>% as.data.frame()
+  Draws_seedlings <- posterior_samples(fits_seedlings, fixed = F, pars = c("Intercept$", "b_ba_ha$"))
   
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
+  pars_seedlings <- lapply(Draws_seedlings, function(d) MASS::fitdistr(d, "normal")$estimate)
   
-  if(doublewidth) {
-    pars_g <- lapply(pars_g, function(p) c(p["mean"], 2*p["sd"]))
-    pars_h <- lapply(pars_h, function(p) c(p["mean"], 2*p["sd"]))
+  if(widthfactor != 1) {
+    pars_g <- lapply(pars_g, function(p) c(p["mean"], widthfactor*p["sd"]))
+    pars_h <- lapply(pars_h, function(p) c(p["mean"], widthfactor*p["sd"]))
+    pars_seedlings <- lapply(pars_seedlings, function(p) c(p["mean"], widthfactor*p["sd"]))
   }
   
   ## The model assumes array[2] vector[N_species] prior_*; which means that the vectors stretch over rows!
   
   priors <- list(
     prior_g_logit = bind_cols(pars_g), ## Matrix[N_species, (mu, sigma)]
-    prior_h_logit = bind_cols(pars_h)
+    prior_h_logit = bind_cols(pars_h),
+    prior_l_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), ends_with("Intercept"))),
+    prior_r_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), ends_with("b_ba_ha")))
   )
   
-  return(c(data_stan, priors, weakpriors))
+  return(c(data_stan, weakpriors, priors))
 }
-
-
-
-
-
 
 
 
@@ -439,8 +439,7 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, doublewidth = T) {
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational", "sim"),
-                     n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
+                     method = c("mcmc", "variational"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
@@ -472,13 +471,6 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
                         # adapt_delta = 0.99,
                         # max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
-
-  } else if (match.arg(method) == "sim") {
-    
-    fit <- model$sample(data = data_stan,
-                        output_dir = fitpath,
-                        iter_sampling = iter_sampling,
-                        fixed_param = TRUE)
   }
   
   return(fit)
@@ -584,32 +576,80 @@ plotStanfit <- function(stanfit, exclude) {
   return(plots)
 }
 
-## plotDensCheck --------------------------------
-# cmdstanfit  <- tar_read("priorsim_test")
-# cmdstanfit  <- tar_read("stanfit_test")
-# data_stan_priors <- tar_read("data_stan_priors")
 
-plotDensCheck <- function(cmdstanfit, data_stan_priors, check = c("prior", "posterior")) {
-  
-  data <- data_stan_priors$y
-  pop <- data_stan_priors$rep_pops2y
-  
-  if(match.arg(check) == "prior") {
-    sim <- cmdstanfit$draws(variables = "y_prior_sim", format = "draws_matrix")
-  } else if (match.arg(check) == "posterior") {
-    sim <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix")
-  }
-  
-  
-  hist <- bayesplot::ppc_dens_overlay_grouped(log(data), log(sim), group = pop)
-  
-  basename <- cmdstanfit$metadata()$model_name %>%
-    str_replace("-[1-9]-", "-x-")
-  name <- paste0("hist_", check)
-  ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), hist)
+# ——————————————————————————————————————————————————————————————————————————————————#
+# Seedlings: Functions for fitting a regeneration model to SK seedling data --------
+# ——————————————————————————————————————————————————————————————————————————————————#
 
-  return(hist)
+## wrangleSeedlings --------------------------------
+# Data_seedlings  <- tar_read("Data_seedlings")
+# taxon_select <- tar_read("taxon_select")
+# threshold_dbh <- tar_read("threshold_dbh")
+
+wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh) {
+  
+  if (taxon_select != "Fagus.sylvatica") stop("Prior for seedling regeneration rate r is only implemented for Fagus.sylvatica!")
+
+  Data_seedlings <- Data_seedlings %>%
+    mutate(tax = str_replace_all(taxon, " ", replacement = ".")) %>%
+    mutate(tax = forcats::fct_other(tax, !!!as.list(taxon_select), other_level = "other")) %>%
+    mutate(taxid = if_else(tax == "Fagus.sylvatica", "kew.83891", "other")) %>%
+    
+    # mutate(taxid = if_else(tax == "other", "other", as.character(taxid))) %>% ## if not only Fagus would be used
+    droplevels()
+    
+  D_select <- Data_seedlings %>%
+    group_by(plotid, year) %>%
+    mutate(drop = any(regeneration == "Artificial", na.rm = T)) %>%
+    ungroup() %>%
+    filter(!drop)
+    ## Any observations on plots were removed that had unnatural regeneration.
+  
+  D_filtered <- D_select %>%
+    filter((sizeclass == "big" & dbh >= 100) |
+           (sizeclass == "small" & height < 0.2) |
+            is.na(sizeclass)) %>%
+    filter(status != "Dead tree" | is.na(status)) %>%
+    filter(!is.na(tax))
+    ## The species-specific basal area of a plot was confined to living trees above the dbh >= 100mm.
+    ## Only small trees with size class [10cm, 20cm), were included in the seedling counts.
+  
+  
+  D_count <- D_filtered %>%
+    group_by(plotid, year, tax, taxid) %>%
+    dplyr::summarize(count_ha = sum(count_ha, na.rm = T),
+                     ba_ha = sum(ba_ha, na.rm = T)) %>%
+    mutate(count_ha = as.integer(round(count_ha)))
+    
+  
+  # library(glmmTMB)
+  # m <- glmmTMB::glmmTMB(count_ha ~ ba_ha * tax + 0, data = D_count, family = nbinom2)
+  # summary(m)
+  # res <- DHARMa::simulateResiduals(m)
+  # plot(res)
+  
+  return(D_count)
 }
 
 
+## fitSeedlings --------------------------------
+# Seedlings  <- tar_read("Seedlings")
+
+fitSeedlings <- function(Seedlings) {
+  
+  fit_seedlings <- brms::brm(count_ha ~ ba_ha, data = Seedlings[Seedlings$tax == "Fagus.sylvatica",], family = negbinomial,
+                             cores = getOption("mc.cores", 4))
+  
+  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha, data = Seedlings[Seedlings$tax == "other",], family = negbinomial,
+                             cores = getOption("mc.cores", 4))
+
+  message("Summary of the the fit for Fagus seedlings:")
+  print(summary(fit_seedlings))
+  
+  message("Summary of the the fit for other seedlings:")
+  print(summary(fit_seedlings_other))
+  
+  return(list(Fagus.sylvatica = fit_seedlings, other = fit_seedlings_other))
+  
+}
 
