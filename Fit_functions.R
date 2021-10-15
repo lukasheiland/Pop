@@ -604,8 +604,9 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, check = c("prior", "post
 ## scaleResiduals --------------------------------
 # draws  <- tar_read("draws")
 # draws  <- tar_read("draws_test")
+# data_stan_priors  <- tar_read("data_stan_priors")
 
-scaleResiduals <- function(draws, data_stan) {
+scaleResiduals <- function(draws, data_stan_priors) {
   
   Sim <- draws$sim_rep # matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
   y <- data_stan$y
