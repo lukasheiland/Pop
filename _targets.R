@@ -245,7 +245,7 @@ list(
     tar_target(draws_test,
                extractDraws(stanfit_test, eclude = helpers_exclude)),
     tar_target(draws,
-               extractDraws(stanfit = exclude = helpers_exclude)),
+               extractDraws(stanfit, exclude = helpers_exclude)),
     
     ## Posterior plots
     tar_target(plots_test,

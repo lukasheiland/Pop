@@ -580,7 +580,7 @@ plotStanfit <- function(stanfit, exclude) {
 
 ## plotDensCheck --------------------------------
 # cmdstanfit  <- tar_read("priorsim_test")
-# cmdstanfit  <- tar_read("stanfit_test")
+# cmdstanfit  <- tar_read("fit_test")
 # data_stan_priors <- tar_read("data_stan_priors")
 plotDensCheck <- function(cmdstanfit, data_stan_priors, check = c("prior", "posterior")) {
   
@@ -610,17 +610,19 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, check = c("prior", "post
 
 scaleResiduals <- function(cmdstanfit, data_stan_priors) {
   
-  Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix")  # matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
-  y <- data_stan$y
-  Y_hat <- draws$draws(variables = "y_hat_rep", format = "draws_matrix")
+  Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
+  Sim[is.na(Sim)] <- 0
+  y <- data_stan_priors$y
+  y_hat <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix") %>% apply(2, median, na.rm = T)
+  y_hat[is.na(y_hat)] <- 0
   
-  residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = Y_hat, integerResponse = T)
+  residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = y_hat, integerResponse = T)
 
   basename <- cmdstanfit$metadata()$model_name %>%
     str_replace("-[1-9]-", "-x-")
   
   png(paste0("Fits.nosync/", basename, "_", "DHARMa", ".png"), width = 2000, height = 1200)
-  DHARMa::plotResiduals(residuals)
+  plotResiduals(residuals, quantreg = T, smoothScatter = F)
   dev.off()
   
   return(residuals)
