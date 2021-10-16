@@ -34,12 +34,12 @@ setwd(here())
 # M <- tar_manifest(fields = c("name", "command"))
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
-tar_make(c("summary_test", "plots_test", "stanfit_test"))
-  ## alternatives
-  # plan(multisession)
-  # future(tar_make(names = "predict_splines")) # just as a future
-  
-  # tar_make_future(names = "Stages_s") # parallel
+tar_make(c("summary_test", "plots_test", "draws_test"))
+## alternatives
+# plan(multisession)
+# future(tar_make(names = "predict_splines")) # just as a future
+
+# tar_make_future(names = "Stages_s") # parallel
 
 
 # Inspect pipeline ----------------------------------------------------------------

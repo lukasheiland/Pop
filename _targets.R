@@ -248,9 +248,9 @@ list(
     
     ## Posterior plots
     tar_target(plots_test,
-               plotStanfit(stanfit_test, exclude = pars_exclude)),
+               plotStanfit(stanfit_test, exclude = exclude)),
     tar_target(plots,
-               plotStanfit(stanfit, exclude = pars_exclude)),
+               plotStanfit(stanfit, exclude = exclude)),
     
     ## Posterior predictive tests
     tar_target(residuals_test,
