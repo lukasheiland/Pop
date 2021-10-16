@@ -532,7 +532,7 @@ extractDraws <- function(stanfit) {
 ## plotStanfit --------------------------------
 # stanfit  <- tar_read("stanfit")
 # stanfit  <- tar_read("stanfit_test")
-# exclude <- tar_read("pars_exclude")
+# exclude <- tar_read("exclude")
 
 # plotStanfit(stanfit, exclude)
 
@@ -547,7 +547,7 @@ plotStanfit <- function(stanfit, exclude) {
     str_replace("-[1-9]-", "-x-")
   excludeplus <- c("lp__", "phi_obs")
   parname <- setdiff(stanfit@model_pars, c(exclude, excludeplus))
-  parnamestart <- unique(str_extract(parname, "^[a-z]_[ljab]")) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter.
+  parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]"))) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter.
   parname_sansprior <- parname[!grepl("prior$", parname)]
 
   traceplot <- rstan::traceplot(stanfit, pars = parname_sansprior, include = T)
