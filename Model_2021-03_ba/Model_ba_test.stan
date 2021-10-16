@@ -465,12 +465,7 @@ generated quantities {
   vector[L_y] y_hat_rep;
   array[L_y] real y_sim;
 
-  
-  //// Predictions
-  y_hat_rep = y_hat[rep_yhat2y];
-  y_sim = neg_binomial_2_rng(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
-
-  
+    
   // Possibility to set an option in data for prior generation or not 
   // Priors
   real b_log_prior = normal_rng(prior_b_log[1], prior_b_log[2]);
@@ -548,4 +543,9 @@ generated quantities {
       
     }
   }
+  
+  //// Predictions
+  y_hat_rep = y_hat[rep_yhat2y];
+  y_sim = neg_binomial_2_rng(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
+  
 }
