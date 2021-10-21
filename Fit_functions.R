@@ -622,7 +622,7 @@ scaleResiduals <- function(cmdstanfit, data_stan_priors) {
     str_replace("-[1-9]-", "-x-")
   
   png(paste0("Fits.nosync/", basename, "_", "DHARMa", ".png"), width = 2000, height = 1200)
-  plotResiduals(residuals, quantreg = T, smoothScatter = F)
+  plot(residuals, quantreg = T, smoothScatter = F)
   dev.off()
   
   return(residuals)

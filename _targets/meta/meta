@@ -27,64 +27,33 @@ calculateChanges|function|d875b7e6a029042a||||||||||||||
 predictSplines|function|3a9471ea0b459e9a||||||||||||||
 fitSplines|function|3923fc14ded03ec4||||||||||||||
 predictSurface|function|b3befed79cbcdd9b||||||||||||||
-BA_s|pattern|2415e8274abce231|24e1b38fab4a0ba5||-1199808003||||1146339|rds|list||BA_s_307fbae7*BA_s_5effb928|496.566||
 Stages|stem|ddec1b966b4781fa|8052e56c3d07b1ad|4d4440df09d9d6dc|-2131128411||t18871.4310687204s|8200de242805a3cf|11140318|rds|vector|||123.461||
 BA_s_307fbae7|branch|aa806c3493832656|24e1b38fab4a0ba5|c66f40a84981ac98|1980238543||t18871.433392069s|2f51bfa8f546068c|557838|rds|list|BA_s||178.055|st_centroid assumes attributes are constant over geometries of x|
 BA_s_5effb928|branch|faaeb35a7c6c6d56|24e1b38fab4a0ba5|e916c041f7e7e033|684589038||t18871.4359754704s|456a199c83850d40|588501|rds|list|BA_s||208.936|st_centroid assumes attributes are constant over geometries of x|
 fits_s_2870fb84|branch|eb309d6f260f6b8d|badd00396212d798|18baa78c7d6b4458|-1360090083||t18871.4952421045s|b9d876677038b874|28663784|rds|list|fits_s||596.499||
 fits_s_fabb58ee|branch|e2ca430d8b96bd0a|badd00396212d798|82362e9dd4b35622|-642256659||t18871.5018594539s|b67527aa7ac48543|28697488|rds|list|fits_s||570.198||
-fits_s|pattern|87678c67eb99e995|badd00396212d798||-1896541871||||57361272|rds|list||fits_s_2870fb84*fits_s_fabb58ee|1166.697||
-Stages_s|stem|63cb81b2af3052a7|4551afc129106b1b|71fc388d2c8037ef|152872581||t18871.5029773728s|a6460d9034942304|25505892|rds|list|||81.923||
 surfaces_s|stem|d4902e7253cf6ba0|9c323e9d6cce4fa7|49d0e8b9ad000475|1427561905||t18871.5210848849s|05ffbc04e5e6268e|6963541|rds|list|||1564.002||
 summarizeDraws|function|5e7992612ea96dd4||||||||||||||
 plotDraws|function|7c606957f692f95e||||||||||||||
 constructPriors|function|9e00a56ab35214b7||||||||||||||
 getInits|function|247cb0068b001ce4||||||||||||||
 countA2B|function|b4a7e88d03d15924||||||||||||||
-file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18871.4396850407s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
-predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927||t18871.4624494384s|0e696b453c03de61|85|rds|vector|||1.703||
 file_Stages_s|stem|63cb81b2af3052a7|e81b897de9ff3795|ef46db3751d8e999|-1399817009|Data/Stages_s.rds|t18873.0105876947s|a6460d9034942304|25505892|file|vector|||2.296||
-taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t18871.4549705497s|425d385953b3c542|67|rds|vector|||0.001||
-file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18871.4406192074s|e684589703d38eb9|5533814|file|vector|||1.968||
-threshold_dbh|stem|b1b40ad4f285cecb|9196226201acf742|ef46db3751d8e999|1977269053||t18871.4578824478s|ded833868582137a|50|rds|vector|||1.08||
-file_model_transitions|stem|9da302b96390370c|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18888.904623814s|cf49a5ca8aaf392a|971|file|vector|||9.308||
-file_DE_big_status|stem|55aa33929c1d8299|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18871.4343640223s|43b54c47aef0da48|12960096|file|vector|||2.52||
-Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t18871.445383698s|02e584d87ae1e0d3|23277361|rds|vector|||12.618||
 Data_Stages_s|stem|4d516ef30af76a40|62bcc9c51377714f|d34dcefaae0b31ad|964763136||t18895.0635482286s|2682e9fda042405e|25505891|rds|vector|||4.681||
-taxon_s|stem|84ed734a80032fe3|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t18895.0635485064s|758d7d51407f572d|117|rds|vector|||0.002||
-Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t18871.4578818459s|e684589703d38eb9|5533814|rds|vector|||4.625||
-model_transitions|stem|55147cb3e6be1d0d|6f5288cead19f3b4|cf35b89aaff51159|-1275860683||t18895.0637500342s|b2dd8ae5824b713a|7466|rds|vector|||0.002||
-Data_big_status|stem|55aa33929c1d8299|eff25cb053505d95|bb67aed14f1a82fd|813772221||t18871.4629050865s|43b54c47aef0da48|12960096|rds|vector|||4.256||
-Stages_select|stem|0f0f8ba54f8f5740|8615338ec219976c|8fcc69cfa638ee21|-1427272822||t18895.0641147101s|93b869013eaea375|609542|rds|vector|||31.369||
-Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t18871.462437494s|102883cb8e914333|1060126|rds|vector|||0.013||
-Stages_scaled|stem|bef6cbba8720c7dc|4084417319dea073|006dce48ed1efb31|1092130661||t18895.0641176268s|ac6a406509dd0a67|1061839|rds|vector|||0.036||
-Env_cluster|stem|92fc7364fa2a8c6e|d9de533c708aefa0|04617d440238533a|-1840226744||t18895.0641297101s|63473c199f594128|1022675|rds|vector|||0.648||
-Stages_transitions|stem|1b6c6cdfbb5c52a2|78ee3c6a24f5010a|fd4f0443ab33051d|-173363864||t18895.0644041082s|c06ec8e6174baaf8|386340|rds|vector|||13.532||
-data_stan|stem|55e4b09fe4d8efe6|d18a2fb7bd18372c|ab68e08bd2924c94|1263995833||t18895.0644283675s|3caf51172131b16d|32561|rds|vector|||2.086||
-fit_g|stem|3bef9c3ccceaadda|255e3515660b75a6|3cc6396077851130|128175024||t18895.0644631823s|72abd99e09513dad|158208|rds|vector|||2.981||
-fit_h|stem|ba41941e66cf966b|ca8b86a90da6d4a5|3cc6396077851130|468382782||t18895.0645097564s|ecd58c4d503dfe69|159042|rds|vector|||3.998||
-file_SK|stem|cfcc708af6c1044c|813dfca83fca4164|ef46db3751d8e999|236759130|Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds|t18915.9970300348s|f5abf14db05ef090|1393240|file|vector|||3.887||
-weakpriors|stem|97215d43ee984f4f|39cf10a880d85cc3|9ee3ac5a8444da29|-1879221107||t18916.0042715625s|083ed7cd5fdca87c|132|rds|vector|||0.001||
-Data_seedlings|stem|f0b779a9e2a63506|81db27c755665335|792b74af501c76b2|-396571518||t18916.0043062847s|eb736e9d6b92b894|1393250|rds|vector|||1.62||
-Seedlings|stem|e2e8c7ae75932ba8|e366b261bd7792c2|d7dbf9fe706ecb84|-185150805||t18916.0045509143s|c49cc8cafdcee538|57049|rds|vector|||2.165||
-fits_seedlings|stem|0ff8c2076d8cc866|3df0e9bfc4ef7fe5|be78d1779befe625|-1272551412||t18916.005466655s|e7b9585acc88ec2e|50012568|rds|vector|||72.626||
-data_stan_priors|stem|c7851be4ebbdee1f|9a6d32bab19a1df7|9ee2059e275bda83|1623270232||t18916.0054681828s|b51fc56ae16d5e62|32979|rds|vector|||0.075|Method posterior_samples is deprecated. Please see as_draws for recommended alternatives.|
-summary_test|stem|419099f1dfdfdd1e|9e7a83797e3557cf|5c534c49e2ec0fde|-908423816||t18916.0293926268s|4be1801a24c8a6ee|469179|rds|vector|||208.553||
 draws_test|stem|2e1b896070249149|4af6635bed639714|cdcde16a295d116e|-1956291274||t18916.0297470249s|7c44ed07d8f87cbf|207584170|rds|vector|||2.248||
-plots_test|stem|4ebc5515ef036ff9|e2937ee648800482|3d46faa2d8ed3bd2|1637481436||t18913.8836233639s||2.22072801367204e-308|rds|vector|||12.816||NAs not allowed in x.
+plots_test|stem|4ebc5515ef036ff9|e2937ee648800482|3d46faa2d8ed3bd2|1637481436||t18913.8836233639s||2.22453062790281e-308|rds|vector|||12.816||NAs not allowed in x.
 simnames_prior|stem|fdada6e2d9ef554f|85ae6cfa4e2cf5cb|a3dad144c40657ed|-1993142823||t18916.1340685506s|abbdb7fe746336f0|76|rds|vector|||3.938||
 simnames_posterior|stem|5094b2bf83bcd627|bb6a60918d4581bb|a3dad144c40657ed|618692093||t18916.1340687358s|aa4b28cd19784daa|145|rds|vector|||0.001||
 helpers_exclude|stem|45a72d2f3478f671|bdd33c268d5abfac|a3dad144c40657ed|1133870334||t18916.1474632726s|a3c4b57a6f0085ec|90|rds|vector|||3.801||
 pars_exclude|stem|8a715e27a4b4f9ab|58cb4d1232bb8bd1|a3dad144c40657ed|-2058683567||t18916.1474633652s|4ff05336d644dae2|106|rds|vector|||0.001||
 exclude|stem|c657fc83c016b07f|1acb8a0c4fc8cc4a|e6ba8eb531bd4395|405431231||t18916.1474634115s|587244a041bd164a|227|rds|vector|||0.001||
-file_model_test|stem|38314137aada7823|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18916.1591185964s|b40a3a52cc223974|22767|file|vector|||4.05||
-model_test|stem|c7045f2009a13116|a3aa00c06cce5e55|796bcf5695554a6c|-1162399619||t18916.1619578093s|a00d98f8f91cf9a7|7498|rds|vector|||18.786||
-fit_test|stem|7468421ee628a345|583572f64db46ecb|3698702d169daad5|-1560265059||t18916.1829569293s|7a7edb1fb34e5c54|219054|rds|vector|||1814.251||
+stanfit_test|stem|25231b0bde232647|402ccdae6f1a90c3|fdc5b1e39f739f14|-1726047245||t18916.1873370218s|9aec92f2effe8b75|216266797|rds|vector|||91.484|The following variables have undefined values  y_hat_rep.1,The following variables have undefined values  y_hat_rep.2,The following variables have undefined values  y_hat_rep.3,The following variables have undefined values  y_hat_rep.4,The following variables have undefined values  y_hat_rep.5,The following variables have undefined values  y_hat_rep.6,The following variables have undefined values  y_hat_rep.7,The following variables have undefined values  y_hat_rep.8,The following variables have undefined values  y_hat_rep.9,The following variables have undefined values  y_hat_rep.10,The following variables have undefined values  y_hat_rep.11,The following variables have undefined values  y_hat_rep.12,The following variables have undefined values  y_hat_rep.13,The following variables have undefined values  y_hat_rep.14,The following variables have undefined values  y_hat_rep.15,The following variables have undefined values  y_hat_rep.16,The following variables have undefined values  y_hat_rep.17,The following variables have undefined values  y_hat_rep.18,The following variables have undefined values  y_hat_rep.19,The following variables have undefined values  y_hat_rep.20,The following variables have undefined values  y_hat_rep.21,The following variables have undefined values  y_hat_rep.22,The following variables have undefined values  y_hat_rep.23,The following variables have undefined values  y_hat_rep.24,The following variables have undefined values  y_hat_rep.25,The following variables have undefined values  y_hat_rep.26,The following variables have undefined values  y_hat_rep.27,The following variables have undefined values  y_hat_rep.28,The following variables have undefined values  y_hat_rep.29,The following variables have undefined values  y_hat_rep.30,The following variables have undefined values  y_hat_rep.31,The following variables have undefined values  y_hat_rep.32,The following variables have undefined values  y_hat_rep.33,The following variables have undefined value|
+residuals_test|stem|59b6d42920563eb1|b188cb154da95fa6|efc0aa1045268b3a|-1334224030||t18915.9910915593s|f98b791e8fbbd876|28475713|rds|vector|||141.974||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 fitTransition|function|44bc0d5310fdbeda||||||||||||||
-scaleResiduals|function|d8bc4b064d16f4e7||||||||||||||
+scaleResiduals|function|405d2039910d17ef||||||||||||||
 plotSurfaces|function|8e8bee5493cb7ccd||||||||||||||
 fitSeedlings|function|6fb3c3e58d1f444a||||||||||||||
 predictS|function|77bcabfef1d8569c||||||||||||||
@@ -107,4 +76,40 @@ summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 drawTest|function|0ce3c40598643ea3||||||||||||||
-stanfit_test|stem|25231b0bde232647|402ccdae6f1a90c3|fdc5b1e39f739f14|-1726047245||t18916.1873370218s|9aec92f2effe8b75|216266797|rds|vector|||91.484|The following variables have undefined values  y_hat_rep.1,The following variables have undefined values  y_hat_rep.2,The following variables have undefined values  y_hat_rep.3,The following variables have undefined values  y_hat_rep.4,The following variables have undefined values  y_hat_rep.5,The following variables have undefined values  y_hat_rep.6,The following variables have undefined values  y_hat_rep.7,The following variables have undefined values  y_hat_rep.8,The following variables have undefined values  y_hat_rep.9,The following variables have undefined values  y_hat_rep.10,The following variables have undefined values  y_hat_rep.11,The following variables have undefined values  y_hat_rep.12,The following variables have undefined values  y_hat_rep.13,The following variables have undefined values  y_hat_rep.14,The following variables have undefined values  y_hat_rep.15,The following variables have undefined values  y_hat_rep.16,The following variables have undefined values  y_hat_rep.17,The following variables have undefined values  y_hat_rep.18,The following variables have undefined values  y_hat_rep.19,The following variables have undefined values  y_hat_rep.20,The following variables have undefined values  y_hat_rep.21,The following variables have undefined values  y_hat_rep.22,The following variables have undefined values  y_hat_rep.23,The following variables have undefined values  y_hat_rep.24,The following variables have undefined values  y_hat_rep.25,The following variables have undefined values  y_hat_rep.26,The following variables have undefined values  y_hat_rep.27,The following variables have undefined values  y_hat_rep.28,The following variables have undefined values  y_hat_rep.29,The following variables have undefined values  y_hat_rep.30,The following variables have undefined values  y_hat_rep.31,The following variables have undefined values  y_hat_rep.32,The following variables have undefined values  y_hat_rep.33,The following variables have undefined value|
+file_model_transitions|stem|9da302b96390370c|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18888.5201444743s|cf49a5ca8aaf392a|971|file|vector|||9.308||
+file_SK|stem|cfcc708af6c1044c|813dfca83fca4164|ef46db3751d8e999|236759130|Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds|t18914.7677951312s|f5abf14db05ef090|1393240|file|vector|||3.887||
+file_DE_big_status|stem|55aa33929c1d8299|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18864.6342493399s|43b54c47aef0da48|12960096|file|vector|||2.52||
+taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t18810.760146226s|425d385953b3c542|67|rds|vector|||0.001||
+threshold_dbh|stem|b1b40ad4f285cecb|9196226201acf742|ef46db3751d8e999|1977269053||t18810.7601461387s|ded833868582137a|50|rds|vector|||1.08||
+predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927||t18809.8784997507s|0e696b453c03de61|85|rds|vector|||1.703||
+weakpriors|stem|0cbea5737dd5fea3|39cf10a880d85cc3|9ee3ac5a8444da29|-1879221107||t18916.4211879536s|6aac70ce59868a33|131|rds|vector|||8.206||
+file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18860.9370923003s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
+file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18864.6338114132s|e684589703d38eb9|5533814|file|vector|||1.968||
+file_model_test|stem|38314137aada7823|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18915.8279698435s|b40a3a52cc223974|22767|file|vector|||4.05||
+model_transitions|stem|aed63dd5e7fd392b|6f5288cead19f3b4|cf35b89aaff51159|-1275860683||t18916.4211929287s|67db5bef274e9bb6|7366|rds|vector|||0.051||
+Data_seedlings|stem|cfcc708af6c1044c|81db27c755665335|792b74af501c76b2|-396571518||t18916.4212558476s|f5abf14db05ef090|1393240|rds|vector|||3.233||
+Data_big_status|stem|55aa33929c1d8299|eff25cb053505d95|bb67aed14f1a82fd|813772221||t18864.6374041453s|43b54c47aef0da48|12960096|rds|vector|||4.256||
+taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t18916.4212570038s|e3871644244b3637|115|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|0.001||
+Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t18857.5695906611s|02e584d87ae1e0d3|23277361|rds|vector|||12.618||
+Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t18887.8905583143s|e684589703d38eb9|5533814|rds|vector|||4.625||
+model_test|stem|c45152a29830c9f5|a3aa00c06cce5e55|796bcf5695554a6c|-1162399619||t18916.4212593367s|0e242913a828491e|7363|rds|vector|||0.002||
+Seedlings|stem|f8c61d99794a5653|e366b261bd7792c2|9ee54e88c0c0002e|-185150805||t18916.421300237s|3096193a90a8c87e|57043|rds|vector|||3.51||
+Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t18829.9185465046s|102883cb8e914333|1060126|rds|vector|||0.013||
+fits_seedlings|stem|3340454e35ec41fc|3df0e9bfc4ef7fe5|70df9c9d9eb2b9cf|-1272551412||t18916.4223707235s|fd6bc218e92e9001|4692695|rds|vector|||91.04||
+Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|04617d440238533a|-1840226744||t18916.4224001128s|9b01f5e608a77422|1022676|rds|vector|||1.754||
+BA_s_0f9992e0|branch|aa806c3493832656|24e1b38fab4a0ba5|c846b07d5f1f7a62|-855161044||t18916.4257080541s|2f51bfa8f546068c|557838|rds|list|BA_s||278.989|st_centroid assumes attributes are constant over geometries of x|
+BA_s_1a16fe79|branch|faaeb35a7c6c6d56|24e1b38fab4a0ba5|8c0f6e62c9cb775f|767687437||t18916.4285149918s|456a199c83850d40|588501|rds|list|BA_s||242.362|st_centroid assumes attributes are constant over geometries of x|
+BA_s|pattern|ce4abedbe60639cc|24e1b38fab4a0ba5||-1199808003||||1146339|rds|list||BA_s_0f9992e0*BA_s_1a16fe79|521.351||
+fits_s_fa4d3b1b|branch|eb309d6f260f6b8d|badd00396212d798|636b14cfb0a5d148|-1643923995||t18916.43545094s|b9d876677038b874|28663784|rds|list|fits_s||597.552||
+fits_s_bcc40201|branch|e2ca430d8b96bd0a|badd00396212d798|f7878ee05d5bb037|-430164398||t18916.4420885338s|b67527aa7ac48543|28697488|rds|list|fits_s||571.999||
+fits_s|pattern|74d99c4f0bf838a7|badd00396212d798||-1896541871||||57361272|rds|list||fits_s_fa4d3b1b*fits_s_bcc40201|1169.551||
+Stages_s|stem|63cb81b2af3052a7|4551afc129106b1b|d0552d3a8636d871|152872581||t18916.4430302048s|a6460d9034942304|25505892|rds|list|||72.284||
+Stages_select|stem|47f683c1c54ee20c|85bbba690b341a1b|4d9817078ab178e9|-1427272822||t18916.4435318371s|93b869013eaea375|609542|rds|vector|||43.132||
+Stages_scaled|stem|ed3851272c0a4614|4084417319dea073|b9eb152b981251b8|1092130661||t18916.4435348017s|b8a9b6751c9911e6|646789|rds|vector|||0.058||
+Stages_transitions|stem|cd2d0227f03b3e6f|78ee3c6a24f5010a|16cff78ed871b8da|-173363864||t18916.4439477825s|373e14ea6ba5a096|386343|rds|vector|||24.264||
+data_stan|stem|db9956359a9e7435|d18a2fb7bd18372c|b55425ef24bd04e4|1263995833||t18916.4439654752s|3caf51172131b16d|32561|rds|vector|||1.502||
+fit_g|stem|7124114f2ff0c68c|255e3515660b75a6|eee81176f6bdf363|128175024||t18916.4440486955s|0a72236eae10081f|157618|rds|vector|||7.152||
+fit_h|stem|182265ad51f839d3|ca8b86a90da6d4a5|eee81176f6bdf363|468382782||t18916.4441641903s|9ad5247534596d30|159624|rds|vector|||9.931||
+data_stan_priors|stem|2261289bf02efa7e|9a6d32bab19a1df7|c7eccff425eb5e3f|1623270232||t18916.444166006s|1e5dc65ea1660c56|32982|rds|vector|||0.117||
+fit_test|stem|b0fba3320afb227b|583572f64db46ecb|e745a68c919ee3bd|-1560265059||t18916.5118789077s|78ac8188deaabec1|219077|rds|vector|||5850.317||
+summary_test|stem|2f7d4d079c1941ba|9e7a83797e3557cf|e89029e7e7366706|-908423816||t18916.5169033032s|47c900c982fdba6a|468922|rds|vector|||434.008||

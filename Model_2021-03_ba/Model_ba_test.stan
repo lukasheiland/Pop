@@ -542,10 +542,16 @@ generated quantities {
       major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
       
     }
+    
+    if (y_hat[loc] > 1e+08) {
+	  	// Catching this bug: "neg_binomial_2_rng: Random number that came from gamma distribution is 1.44489e+09, but must be less than 1.07374e+09.
+		y_hat = 1e+09
+	} 
+  
   }
   
   //// Predictions
   y_hat_rep = y_hat[rep_yhat2y];
   y_sim = neg_binomial_2_rng(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
-  
+
 }
