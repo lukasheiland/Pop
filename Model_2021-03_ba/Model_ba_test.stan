@@ -462,6 +462,8 @@ generated quantities {
 	
 	
   //// Variables for prediction/simulation
+  vector[N_locs] y_hat_temp;
+  y_hat_temp = y_hat;
   vector[L_y] y_hat_rep;
   array[L_y] real y_sim;
 
@@ -492,7 +494,7 @@ generated quantities {
   // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_array(prior_s_log[1], N_species), rep_array(prior_s_log[2], N_species)));
   
-  array[3] real phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), rep_array(1.0, 3)));
+  array[3] real phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), [3, 2, 1]));
   
   
   // Variables for simulation
@@ -542,10 +544,16 @@ generated quantities {
       major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
       
     }
+    
+    if (y_hat_temp[loc] > 1e+08) {
+	  	// Catching this bug: "neg_binomial_2_rng: Random number that came from gamma distribution is 1.44489e+09, but must be less than 1.07374e+09.
+		y_hat_temp[loc] = 1e+09;
+	} 
+  
   }
   
   //// Predictions
   y_hat_rep = y_hat[rep_yhat2y];
-  y_sim = neg_binomial_2_rng(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
-  
+  y_sim = neg_binomial_2_rng(y_hat_temp[rep_yhat2y], phi_obs[rep_obsmethod2y]);
+
 }
