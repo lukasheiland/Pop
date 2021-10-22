@@ -633,7 +633,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   basename <- cmdstanfit$metadata()$model_name %>%
     str_replace("-[1-9]-", "-x-")
   name <- paste0("dens_", check)
-  ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), hist)
+  ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), densplot)
   
   return(densplot)
 }
