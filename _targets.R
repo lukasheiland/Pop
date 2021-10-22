@@ -218,11 +218,6 @@ list(
     tar_target(fit,
                draw(model = model, data_stan_priors, method = "mcmc", initfunc = 0.5)),
     
-    tar_target(fit_test,
-               purgeFit(fit_test_raw)),
-    tar_target(fit,
-               purgeFit(fit_raw)),
-    
     tar_target(summary_test,
                summarizeFit(fit_test)),
     tar_target(summary,
@@ -246,7 +241,7 @@ list(
                c(pars_exclude, helpers_exclude, simnames_prior, simnames_posterior)),
     
     tar_target(draws_test,
-               extractDraws(stanfit_test, eclude = helpers_exclude)),
+               extractDraws(stanfit_test, exclude = helpers_exclude)),
     tar_target(draws,
                extractDraws(stanfit, exclude = helpers_exclude)),
     
@@ -260,9 +255,9 @@ list(
     tar_target(residuals_test,
                scaleResiduals(cmdstanfit = fit_test, data_stan_priors)),
     tar_target(plot_denscheck_prior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, draws = draws_test, check = "prior")),
     tar_target(plot_denscheck_posterior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior"))
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, draws = draws_test, check = "posterior"))
 
   ),
   

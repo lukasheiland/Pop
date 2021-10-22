@@ -598,17 +598,29 @@ plotStanfit <- function(stanfit, exclude) {
 # cmdstanfit  <- tar_read("priorsim_test")
 # cmdstanfit  <- tar_read("fit_test")
 # data_stan_priors <- tar_read("data_stan_priors")
-plotDensCheck <- function(cmdstanfit, data_stan_priors, check = c("prior", "posterior")) {
+# draws <- tar_read("draws_test") ## this is here as an option for plotting draw objects if the fit has NaNs in generated quantities
+
+plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c("prior", "posterior")) {
   
   data <- data_stan_priors$y
   pop <- data_stan_priors$rep_pops2y
   
   if(match.arg(check) == "prior") {
-    sim <- cmdstanfit$draws(variables = "y_prior_sim", format = "draws_matrix")
+    
+    if (is.null(draws)) {
+      sim <- cmdstanfit$draws(variables = "y_prior_sim", format = "draws_matrix")
+    } else {
+      sim <- draws$y_prior_sim
+    }
+    
   } else if (match.arg(check) == "posterior") {
-    sim <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix")
+    
+    if (is.null(draws)) {
+      sim <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix")
+    } else {
+      sim <- draws$y_hat_rep
+    }
   }
-  
   
   hist <- bayesplot::ppc_dens_overlay_grouped(log(data), log(sim), group = pop)
   
@@ -618,6 +630,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, check = c("prior", "post
   ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), hist)
   return(hist)
 }
+
 
 ## scaleResiduals --------------------------------
 # cmdstanfit  <- tar_read("fit_test")
