@@ -486,6 +486,7 @@ draw <- function(model, data_stan, initfunc) {
 }
 
 
+
 ## summarizeFit --------------------------------
 # fit <- tar_read("fit")
 # fit <- tar_read("fit_test")
@@ -507,11 +508,26 @@ summarizeFit <- function(fit) {
 ## readStanfit --------------------------------
 # fit  <- tar_read("fit")
 # fit  <- tar_read("fit_test")
+## stanfit <- readStanfit(fit, purge = T)
 
-readStanfit <- function(fit) {
+readStanfit <- function(fit, purge = FALSE) {
   
   outputfile <- fit$output_files()
   stanfit <- rstan::read_stan_csv(outputfile)
+  
+  ## This is to purge draws with NaN values from the model for plotting. NaNs can arise in generated quantities ...
+  if (purge) {
+    draws <- stanfit@sim$samples
+    completerow <- apply(sapply(draws, complete.cases), 1, all)
+    stanfit@sim$samples <- lapply(draws, function(D) {attr(D, "sampler_params") <-  attr(D, "sampler_params")[completerow,]; D[completerow,] })
+    
+    n_draws_complete <- sum(completerow)
+    n_draws <- stanfit@sim$n_save
+    diff_complete <- stanfit@sim$n_save - n_draws_complete
+    stanfit@sim$n_save <- rep(n_draws_complete, stanfit@sim$chains)
+    stanfit@sim$iter <- stanfit@sim$iter - diff_complete
+    message("There were ", diff_complete[1], " draws with NaNs, that were purged from the fit.")
+  }
   
   return(stanfit)
 }
@@ -622,7 +638,7 @@ scaleResiduals <- function(cmdstanfit, data_stan_priors) {
     str_replace("-[1-9]-", "-x-")
   
   png(paste0("Fits.nosync/", basename, "_", "DHARMa", ".png"), width = 2000, height = 1200)
-  plot(residuals, quantreg = T, smoothScatter = F)
+  plotResiduals(residuals, quantreg = T, smoothScatter = F)
   dev.off()
   
   return(residuals)
