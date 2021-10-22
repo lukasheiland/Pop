@@ -81,7 +81,7 @@ model_test|stem|d9b32bd69bb27457|a3aa00c06cce5e55|0a51db8000148985|-1162399619||
 fit_test|stem|235e07b110d1cf06|583572f64db46ecb|0bde8cb63330c07d|-1560265059||t18922.7691860128s|849d41ccd92da1d0|219108|rds|vector|||5732.212||
 stanfit_test|stem|2278b0ce18def789|ee1360819d2916ad|2b6353138106a188|-1726047245||t18922.7714968795s|4ff858d1bdc57e30|204908092|rds|vector|||167.269|The following variables have undefined values  y_hat_rep.1,The following variables have undefined values  y_hat_rep.2,The following variables have undefined values  y_hat_rep.3,The following variables have undefined values  y_hat_rep.4,The following variables have undefined values  y_hat_rep.5,The following variables have undefined values  y_hat_rep.6,The following variables have undefined values  y_hat_rep.7,The following variables have undefined values  y_hat_rep.8,The following variables have undefined values  y_hat_rep.9,The following variables have undefined values  y_hat_rep.10,The following variables have undefined values  y_hat_rep.11,The following variables have undefined values  y_hat_rep.12,The following variables have undefined values  y_hat_rep.13,The following variables have undefined values  y_hat_rep.14,The following variables have undefined values  y_hat_rep.15,The following variables have undefined values  y_hat_rep.16,The following variables have undefined values  y_hat_rep.17,The following variables have undefined values  y_hat_rep.18,The following variables have undefined values  y_hat_rep.19,The following variables have undefined values  y_hat_rep.20,The following variables have undefined values  y_hat_rep.21,The following variables have undefined values  y_hat_rep.22,The following variables have undefined values  y_hat_rep.23,The following variables have undefined values  y_hat_rep.24,The following variables have undefined values  y_hat_rep.25,The following variables have undefined values  y_hat_rep.26,The following variables have undefined values  y_hat_rep.27,The following variables have undefined values  y_hat_rep.28,The following variables have undefined values  y_hat_rep.29,The following variables have undefined values  y_hat_rep.30,The following variables have undefined values  y_hat_rep.31,The following variables have undefined values  y_hat_rep.32,The following variables have undefined values  y_hat_rep.33,The following variables have undefined value|
 summary_test|stem|8e68bce18cc17104|9e7a83797e3557cf|41f038fae35d9c1a|-908423816||t18922.7761322774s|31264a448e092178|468572|rds|vector|||400.03||
-plots_test|stem|4ebc5515ef036ff9|52681de5f1f04b6b|b5fc072bbb2e6354|1637481436||t18913.8836233639s||2.22507384192912e-308|rds|vector|||1327.199|scheduled cores 1, 2, 3, 4, 5, 6, 7 did not deliver results, all values of the jobs will be affected|ignoring SIGPIPE signal
+plots_test|stem|4ebc5515ef036ff9|52681de5f1f04b6b|b5fc072bbb2e6354|1637481436||t18913.8836233639s||2.22507385021816e-308|rds|vector|||1327.199|scheduled cores 1, 2, 3, 4, 5, 6, 7 did not deliver results, all values of the jobs will be affected|ignoring SIGPIPE signal
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
@@ -113,3 +113,30 @@ data_stan|stem|6df59abbe396134f|d18a2fb7bd18372c|949a2a038c6ccb31|1263995833||t1
 fit_g|stem|4426e75470de9d0d|255e3515660b75a6|b2e90fe8f1db71df|128175024||t18922.929656644s|6dafbe0502189362|157604|rds|vector|||6.741||
 fit_h|stem|e5775b76df327911|ca8b86a90da6d4a5|b2e90fe8f1db71df|468382782||t18922.929775398s|861c493c0d329356|159620|rds|vector|||10.204||
 data_stan_priors|stem|0beb42a229847f4c|9a6d32bab19a1df7|0b8ddf45a83aba16|1623270232||t18922.9297924648s|7711e02b6036e4eb|33477|rds|vector|||0.814||
+scaleData|function|0d0c01b1b3160a22
+cleanEnv|function|06a0767a0f88a954
+extractDraws|function|3dff977b003c47b4
+fitTransition|function|44bc0d5310fdbeda
+scaleResiduals|function|405d2039910d17ef
+plotSurfaces|function|8e8bee5493cb7ccd
+fitSeedlings|function|6fb3c3e58d1f444a
+predictS|function|77bcabfef1d8569c
+predictSurfaces|function|e08447bd71c3e5fe
+countTransitions|function|3ed0ea15a11c5e77
+plotStanfit|function|197db1c5754d428b
+saveStages_s|function|fd5024a4e717b197
+plotDensCheck|function|8f97cb627c55a9d0
+summarizeFit|function|5e7992612ea96dd4
+wrangleSeedlings|function|810e15398fb558c5
+selectClusters|function|e84b8a94cea77208
+formatPriors|function|f6558aef6421e0d9
+joinStages|function|e77d9690659bf401
+draw|function|eec54dbfa7152637
+fitS|function|b1d146216eef03f2
+readStanfit|function|5fb977364933b1e8
+addPackage|function|d45c347b66cce55c
+formatStanData|function|3f0b01ea7f6ba1af
+summarizeEnvByCluster|function|5fcaa758babda781
+joinEnv|function|2488b8203673870c
+constructConstantGrid|function|33d54800694377c7
+drawTest|function|0ce3c40598643ea3
