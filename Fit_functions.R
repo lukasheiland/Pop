@@ -217,6 +217,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     # rep_yhat2a2b = S_a2b$rep_yhat2a2b,
     # rep_species2a2b = S_a2b$rep_species2a2b,
     rep_pops2init =  as.integer(S_init$pop),
+    rep_pops2y =  as.integer(S$pop),
     
     time_max = S_locs$time_max,
     times = S_times$t,
@@ -518,14 +519,16 @@ readStanfit <- function(fit, purge = FALSE) {
   ## This is to purge draws with NaN values from the model for plotting. NaNs can arise in generated quantities ...
   if (purge) {
     draws <- stanfit@sim$samples
-    completerow <- apply(sapply(draws, complete.cases), 1, all)
+    completerow <- lapply(draws, function(d) complete.cases(d)) %>% as.data.frame() %>% apply(1, all)
     stanfit@sim$samples <- lapply(draws, function(D) {attr(D, "sampler_params") <-  attr(D, "sampler_params")[completerow,]; D[completerow,] })
     
     n_draws_complete <- sum(completerow)
     n_draws <- stanfit@sim$n_save
     diff_complete <- stanfit@sim$n_save - n_draws_complete
     stanfit@sim$n_save <- rep(n_draws_complete, stanfit@sim$chains)
-    stanfit@sim$iter <- stanfit@sim$iter - diff_complete
+    stanfit@sim$iter <- stanfit@sim$iter - diff_complete[1]
+    stanfit@sim$permutation <- lapply(stanfit@sim$permutation, function(p) p[!(p %in% n_draws[1]:n_draws_complete)])
+    
     message("There were ", diff_complete[1], " draws with NaNs, that were purged from the fit.")
   }
   
@@ -548,11 +551,11 @@ extractDraws <- function(stanfit, exclude = helpers_exclude) {
 
 
 ## plotStanfit --------------------------------
-# stanfit  <- tar_read("stanfit")
-# stanfit  <- tar_read("stanfit_test")
+# stanfit  <- tar_read("stanfit_plotting")
+# stanfit  <- tar_read("stanfit_test_plotting")
 # exclude <- tar_read("exclude")
 
-# plotStanfit(stanfit, exclude)
+## plotStanfit(stanfit, exclude)
 
 plotStanfit <- function(stanfit, exclude) {
   
@@ -608,27 +611,31 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   if(match.arg(check) == "prior") {
     
     if (is.null(draws)) {
-      sim <- cmdstanfit$draws(variables = "y_prior_sim", format = "draws_matrix")
+      Sim <- cmdstanfit$draws(variables = "y_prior_sim", format = "draws_matrix")
     } else {
-      sim <- draws$y_prior_sim
+      Sim <- draws$y_prior_sim
     }
     
   } else if (match.arg(check) == "posterior") {
     
     if (is.null(draws)) {
-      sim <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix")
+      Sim <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix")
     } else {
-      sim <- draws$y_hat_rep
+      Sim <- draws$y_hat_rep
     }
   }
   
-  hist <- bayesplot::ppc_dens_overlay_grouped(log(data), log(sim), group = pop)
+  completerows <- complete.cases(Sim)
+  Sim <- Sim[completerows,]
+  attr(Sim, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
+  densplot <- bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = pop)
   
   basename <- cmdstanfit$metadata()$model_name %>%
     str_replace("-[1-9]-", "-x-")
-  name <- paste0("hist_", check)
+  name <- paste0("dens_", check)
   ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), hist)
-  return(hist)
+  
+  return(densplot)
 }
 
 
