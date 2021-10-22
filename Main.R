@@ -35,8 +35,8 @@ setwd(here())
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
 tar_make(c("summary_test",
-           "draws_test,
-           residuals_test",
+           # "draws_test",
+           "residuals_test",
            "plots_test",
            "plot_denscheck_posterior_test"))
 ## alternatives
