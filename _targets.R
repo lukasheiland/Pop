@@ -217,15 +217,19 @@ list(
                drawTest(model = model_test, data_stan_priors, method = "mcmc", initfunc = 0.5)),
     tar_target(fit,
                draw(model = model, data_stan_priors, method = "mcmc", initfunc = 0.5)),
-
-        
+    
+    tar_target(fit_test,
+               purgeFit(fit_test_raw)),
+    tar_target(fit,
+               purgeFit(fit_raw)),
+    
     tar_target(summary_test,
                summarizeFit(fit_test)),
     tar_target(summary,
                summarizeFit(fit)),
     
     tar_target(stanfit_test,
-               readStanfit(fit_test)),
+               readStanfit(fit_test, purge = TRUE)),
     tar_target(stanfit,
                readStanfit(fit)),
     
