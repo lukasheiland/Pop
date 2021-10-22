@@ -462,8 +462,8 @@ generated quantities {
 	
 	
   //// Variables for prediction/simulation
-  vector[N_locs] y_hat_temp;
-  y_hat_temp = y_hat;
+  // vector[N_locs] y_hat_temp;
+  // y_hat_temp = y_hat;
   vector[L_y] y_hat_rep;
   array[L_y] real y_sim;
 
@@ -545,14 +545,14 @@ generated quantities {
       
     }
     
-    if (y_hat_temp[loc] > 1e+07) {
-    	y_hat_temp[loc] = 1e+07;
-    } 
+//    if (y_hat_temp[loc] > 1e+07) {
+//    	y_hat_temp[loc] = 1e+07;
+//    } 
 
   }
   
   //// Predictions
   y_hat_rep = y_hat[rep_yhat2y];
-  y_sim = neg_binomial_2_rng(y_hat_temp[rep_yhat2y], phi_obs[rep_obsmethod2y]); // A small value is added to phi_obs for catching this bug: "neg_binomial_2_rng: Random number that came from gamma distribution is 1.44489e+09, but must be less than 1.07374e+09.
+  y_sim = neg_binomial_2_rng(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]); // A small value is added to phi_obs for catching this bug: "neg_binomial_2_rng: Random number that came from gamma distribution is 1.44489e+09, but must be less than 1.07374e+09.
 
 }
