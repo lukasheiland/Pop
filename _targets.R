@@ -225,9 +225,14 @@ list(
                summarizeFit(fit)),
     
     tar_target(stanfit_test,
-               readStanfit(fit_test, purge = TRUE)),
+               readStanfit(fit_test)),
     tar_target(stanfit,
                readStanfit(fit)),
+    
+    tar_target(stanfit_test_plotting,
+               readStanfit(fit_test, purge = TRUE)),
+    tar_target(stanfit_plotting,
+               readStanfit(fit, purge = TRUE)),
     
     tar_target(pars_exclude,
                c("y_hat", "L_loc_log", "L_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
@@ -248,17 +253,17 @@ list(
     
     ## Posterior plots
     tar_target(plots_test,
-               plotStanfit(stanfit_test, exclude = exclude)),
+               plotStanfit(stanfit_test_plotting, exclude = exclude)),
     tar_target(plots,
-               plotStanfit(stanfit, exclude = exclude)),
+               plotStanfit(stanfit_plotting, exclude = exclude)),
     
     ## Posterior predictive tests
     tar_target(residuals_test,
                scaleResiduals(cmdstanfit = fit_test, data_stan_priors)),
     tar_target(plot_denscheck_prior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, draws = draws_test, check = "prior")),
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
     tar_target(plot_denscheck_posterior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, draws = draws_test, check = "posterior"))
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior"))
     
   ),
   
@@ -277,5 +282,4 @@ list(
     #             fitted_params = draws)
   )
 )
-
 
