@@ -405,7 +405,7 @@ model {
   
   //// Hyperpriors
   // alpha_obs_inv ~ normal(0, 0.1); // Observation error for gamma
-  phi_obs_inv_sqrt ~ normal(0, 1); // Observation error for neg_binomial
+  phi_obs_inv_sqrt ~ normal(rep_array(0.0, 3), [3, 2, 1]); // Observation error for neg_binomial
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
 
   // ... for special offset L
