@@ -81,7 +81,11 @@ model_test|stem|d9b32bd69bb27457|a3aa00c06cce5e55|0a51db8000148985|-1162399619||
 fit_test|stem|235e07b110d1cf06|583572f64db46ecb|0bde8cb63330c07d|-1560265059||t18922.7691860128s|849d41ccd92da1d0|219108|rds|vector|||5732.212||
 stanfit_test|stem|2278b0ce18def789|ee1360819d2916ad|2b6353138106a188|-1726047245||t18922.7714968795s|4ff858d1bdc57e30|204908092|rds|vector|||167.269|The following variables have undefined values  y_hat_rep.1,The following variables have undefined values  y_hat_rep.2,The following variables have undefined values  y_hat_rep.3,The following variables have undefined values  y_hat_rep.4,The following variables have undefined values  y_hat_rep.5,The following variables have undefined values  y_hat_rep.6,The following variables have undefined values  y_hat_rep.7,The following variables have undefined values  y_hat_rep.8,The following variables have undefined values  y_hat_rep.9,The following variables have undefined values  y_hat_rep.10,The following variables have undefined values  y_hat_rep.11,The following variables have undefined values  y_hat_rep.12,The following variables have undefined values  y_hat_rep.13,The following variables have undefined values  y_hat_rep.14,The following variables have undefined values  y_hat_rep.15,The following variables have undefined values  y_hat_rep.16,The following variables have undefined values  y_hat_rep.17,The following variables have undefined values  y_hat_rep.18,The following variables have undefined values  y_hat_rep.19,The following variables have undefined values  y_hat_rep.20,The following variables have undefined values  y_hat_rep.21,The following variables have undefined values  y_hat_rep.22,The following variables have undefined values  y_hat_rep.23,The following variables have undefined values  y_hat_rep.24,The following variables have undefined values  y_hat_rep.25,The following variables have undefined values  y_hat_rep.26,The following variables have undefined values  y_hat_rep.27,The following variables have undefined values  y_hat_rep.28,The following variables have undefined values  y_hat_rep.29,The following variables have undefined values  y_hat_rep.30,The following variables have undefined values  y_hat_rep.31,The following variables have undefined values  y_hat_rep.32,The following variables have undefined values  y_hat_rep.33,The following variables have undefined value|
 summary_test|stem|8e68bce18cc17104|9e7a83797e3557cf|41f038fae35d9c1a|-908423816||t18922.7761322774s|31264a448e092178|468572|rds|vector|||400.03||
-plots_test|stem|4ebc5515ef036ff9|52681de5f1f04b6b|b5fc072bbb2e6354|1637481436||t18913.8836233639s||2.22507385021816e-308|rds|vector|||1327.199|scheduled cores 1, 2, 3, 4, 5, 6, 7 did not deliver results, all values of the jobs will be affected|ignoring SIGPIPE signal
+plots_test|stem|4ebc5515ef036ff9|52681de5f1f04b6b|b5fc072bbb2e6354|1637481436||t18913.8836233639s||2.22507385436268e-308|rds|vector|||1327.199|scheduled cores 1, 2, 3, 4, 5, 6, 7 did not deliver results, all values of the jobs will be affected|ignoring SIGPIPE signal
+data_stan|stem|6df59abbe396134f|d18a2fb7bd18372c|949a2a038c6ccb31|1263995833||t18922.9295773122s|1b105718b544c164|33059|rds|vector|||8.038||
+fit_g|stem|4426e75470de9d0d|255e3515660b75a6|b2e90fe8f1db71df|128175024||t18922.929656644s|6dafbe0502189362|157604|rds|vector|||6.741||
+fit_h|stem|e5775b76df327911|ca8b86a90da6d4a5|b2e90fe8f1db71df|468382782||t18922.929775398s|861c493c0d329356|159620|rds|vector|||10.204||
+data_stan_priors|stem|0beb42a229847f4c|9a6d32bab19a1df7|0b8ddf45a83aba16|1623270232||t18922.9297924648s|7711e02b6036e4eb|33477|rds|vector|||0.814||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
@@ -94,7 +98,7 @@ predictSurfaces|function|e08447bd71c3e5fe||||||||||||||
 countTransitions|function|3ed0ea15a11c5e77||||||||||||||
 plotStanfit|function|197db1c5754d428b||||||||||||||
 saveStages_s|function|fd5024a4e717b197||||||||||||||
-plotDensCheck|function|56d73fef9b864e8f||||||||||||||
+plotDensCheck|function|8f97cb627c55a9d0||||||||||||||
 summarizeFit|function|5e7992612ea96dd4||||||||||||||
 wrangleSeedlings|function|810e15398fb558c5||||||||||||||
 selectClusters|function|e84b8a94cea77208||||||||||||||
@@ -109,10 +113,6 @@ summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 drawTest|function|0ce3c40598643ea3||||||||||||||
-data_stan|stem|6df59abbe396134f|d18a2fb7bd18372c|949a2a038c6ccb31|1263995833||t18922.9295773122s|1b105718b544c164|33059|rds|vector|||8.038||
-fit_g|stem|4426e75470de9d0d|255e3515660b75a6|b2e90fe8f1db71df|128175024||t18922.929656644s|6dafbe0502189362|157604|rds|vector|||6.741||
-fit_h|stem|e5775b76df327911|ca8b86a90da6d4a5|b2e90fe8f1db71df|468382782||t18922.929775398s|861c493c0d329356|159620|rds|vector|||10.204||
-data_stan_priors|stem|0beb42a229847f4c|9a6d32bab19a1df7|0b8ddf45a83aba16|1623270232||t18922.9297924648s|7711e02b6036e4eb|33477|rds|vector|||0.814||
 scaleData|function|0d0c01b1b3160a22
 cleanEnv|function|06a0767a0f88a954
 extractDraws|function|3dff977b003c47b4
@@ -123,9 +123,9 @@ fitSeedlings|function|6fb3c3e58d1f444a
 predictS|function|77bcabfef1d8569c
 predictSurfaces|function|e08447bd71c3e5fe
 countTransitions|function|3ed0ea15a11c5e77
-plotStanfit|function|197db1c5754d428b
+plotStanfit|function|0a4a70d948b8b2ee
 saveStages_s|function|fd5024a4e717b197
-plotDensCheck|function|8f97cb627c55a9d0
+plotDensCheck|function|76b308e08c5439eb
 summarizeFit|function|5e7992612ea96dd4
 wrangleSeedlings|function|810e15398fb558c5
 selectClusters|function|e84b8a94cea77208
@@ -140,3 +140,14 @@ summarizeEnvByCluster|function|5fcaa758babda781
 joinEnv|function|2488b8203673870c
 constructConstantGrid|function|33d54800694377c7
 drawTest|function|0ce3c40598643ea3
+simnames_prior|stem|2150acb00bfdfc4b|85ae6cfa4e2cf5cb|a3dad144c40657ed|-1993142823||t18923.3352000201s|abbdb7fe746336f0|76|rds|vector|||6.243||
+helpers_exclude|stem|e82548cc7da52209|bdd33c268d5abfac|a3dad144c40657ed|1133870334||t18923.3352004397s|1701aa42bd45be76|89|rds|vector|||0.001||
+pars_exclude|stem|850be3ad58418e7c|58cb4d1232bb8bd1|a3dad144c40657ed|-2058683567||t18923.3352024523s|4ff05336d644dae2|106|rds|vector|||0.001||
+weakpriors|stem|0cbea5737dd5fea3|39cf10a880d85cc3|9ee3ac5a8444da29|-1879221107||t18923.3352025328s|6aac70ce59868a33|131|rds|vector|||8.206||
+simnames_posterior|stem|ee413c6891d16071|bb6a60918d4581bb|a3dad144c40657ed|618692093||t18923.335202615s|aa4b28cd19784daa|145|rds|vector|||0.001||
+Data_seedlings|stem|cfcc708af6c1044c|81db27c755665335|792b74af501c76b2|-396571518||t18923.3352597251s|f5abf14db05ef090|1393240|rds|vector|||3.233||
+taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t18923.3352598513s|e3871644244b3637|115|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|0.001||
+model_transitions|stem|aed63dd5e7fd392b|6f5288cead19f3b4|cf35b89aaff51159|-1275860683||t18923.33526195s|67db5bef274e9bb6|7366|rds|vector|||0.051||
+model_test|stem|c45152a29830c9f5|a3aa00c06cce5e55|0a51db8000148985|-1162399619||t18923.3480964675s|0e242913a828491e|7363|rds|vector|||15.805||
+exclude|stem|58266a11015a302c|1acb8a0c4fc8cc4a|6623efd9c421c7bb|405431231||t18923.0041080229s|d34faae1f346fb15|226|rds|vector|||0.002||
+Seedlings|stem|f8c61d99794a5653|e366b261bd7792c2|9ee54e88c0c0002e|-185150805||t18923.0041406047s|3096193a90a8c87e|57043|rds|vector|||3.51||

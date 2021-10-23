@@ -1,7 +1,5 @@
 # Directories
 _targets/objects/*
-_targets/meta/*
-_targets/meta/meta
 Data/
 Fits/*
 /Fits.nosync/*
