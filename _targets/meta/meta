@@ -79,6 +79,11 @@ fit_g|stem|b850429259bf7bd6|255e3515660b75a6|f7f03db06cbe4d86|128175024||t18922.
 fit_h|stem|993d9a2bb93fcbac|ca8b86a90da6d4a5|f7f03db06cbe4d86|468382782||t18922.9376048181s|b1388e4f0e55b0d8|159040|rds|vector|||3.779||
 data_stan_priors|stem|3c856a2b455425f5|9a6d32bab19a1df7|e21342acc083a465|1623270232||t18922.9376338924s|a28a5053d3f56de1|33474|rds|vector|||0.415|Method posterior_samples is deprecated. Please see as_draws for recommended alternatives.|
 fit_test|stem|665b7fcdac47ea35|583572f64db46ecb|a1bdb4a2c4d07921|-1560265059||t18922.9605391393s|f5c4609f24fb47cb|219010|rds|vector|||1978.97||
+residuals_test|stem|6ace1bdd93f85ae8|b188cb154da95fa6|106035a4bd330bfc|-1334224030||t18922.9654741461s|146da9cec46d375f|28590703|rds|vector|||66.789||
+plot_denscheck_posterior_test|stem|392db0334fb4f5b0|bbc638bd0648ce7b|d7b86b3a9b8ff905|917631247||t18922.967139164s|b868c7f8c27e061d|154351128|rds|vector|||128.433|Removed 5616 rows containing nonfinite values stat_density.|
+stanfit_test_plotting|stem|19ed32df8de4d8bb|ee1360819d2916ad|273777af3d22da7f|553033643||t18922.9682711207s|b3b8861a02f97ec4|211319439|rds|vector|||69.52|The following variables have undefined values  y_hat_rep.1,The following variables have undefined values  y_hat_rep.2,The following variables have undefined values  y_hat_rep.3,The following variables have undefined values  y_hat_rep.4,The following variables have undefined values  y_hat_rep.5,The following variables have undefined values  y_hat_rep.6,The following variables have undefined values  y_hat_rep.7,The following variables have undefined values  y_hat_rep.8,The following variables have undefined values  y_hat_rep.9,The following variables have undefined values  y_hat_rep.10,The following variables have undefined values  y_hat_rep.11,The following variables have undefined values  y_hat_rep.12,The following variables have undefined values  y_hat_rep.13,The following variables have undefined values  y_hat_rep.14,The following variables have undefined values  y_hat_rep.15,The following variables have undefined values  y_hat_rep.16,The following variables have undefined values  y_hat_rep.17,The following variables have undefined values  y_hat_rep.18,The following variables have undefined values  y_hat_rep.19,The following variables have undefined values  y_hat_rep.20,The following variables have undefined values  y_hat_rep.21,The following variables have undefined values  y_hat_rep.22,The following variables have undefined values  y_hat_rep.23,The following variables have undefined values  y_hat_rep.24,The following variables have undefined values  y_hat_rep.25,The following variables have undefined values  y_hat_rep.26,The following variables have undefined values  y_hat_rep.27,The following variables have undefined values  y_hat_rep.28,The following variables have undefined values  y_hat_rep.29,The following variables have undefined values  y_hat_rep.30,The following variables have undefined values  y_hat_rep.31,The following variables have undefined values  y_hat_rep.32,The following variables have undefined values  y_hat_rep.33,The following variables have undefined value|
+summary_test|stem|e60e41f51529e283|9e7a83797e3557cf|5e33943e726a972b|-908423816||t18922.970387486s|91b60da88b348cb0|468970|rds|vector|||182.74||
+plots_test|stem|396c2e168e406ea4|d6be4756121ac20b|cbda00b3b223867b|1637481436||t18922.988457495s|756b71f30f8f5ec2|10685673501|rds|vector|||135.559|Binning grid too coarse for current small bandwidth consider increasing gridsize|
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
@@ -89,7 +94,7 @@ fitSeedlings|function|6fb3c3e58d1f444a||||||||||||||
 predictS|function|77bcabfef1d8569c||||||||||||||
 predictSurfaces|function|e08447bd71c3e5fe||||||||||||||
 countTransitions|function|3ed0ea15a11c5e77||||||||||||||
-plotStanfit|function|197db1c5754d428b||||||||||||||
+plotStanfit|function|0a4a70d948b8b2ee||||||||||||||
 saveStages_s|function|fd5024a4e717b197||||||||||||||
 plotDensCheck|function|76b308e08c5439eb||||||||||||||
 summarizeFit|function|5e7992612ea96dd4||||||||||||||
@@ -106,8 +111,30 @@ summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 drawTest|function|0ce3c40598643ea3||||||||||||||
-residuals_test|stem|6ace1bdd93f85ae8|b188cb154da95fa6|106035a4bd330bfc|-1334224030||t18922.9654741461s|146da9cec46d375f|28590703|rds|vector|||66.789||
-plot_denscheck_posterior_test|stem|392db0334fb4f5b0|bbc638bd0648ce7b|d7b86b3a9b8ff905|917631247||t18922.967139164s|b868c7f8c27e061d|154351128|rds|vector|||128.433|Removed 5616 rows containing nonfinite values stat_density.|
-stanfit_test_plotting|stem|19ed32df8de4d8bb|ee1360819d2916ad|273777af3d22da7f|553033643||t18922.9682711207s|b3b8861a02f97ec4|211319439|rds|vector|||69.52|The following variables have undefined values  y_hat_rep.1,The following variables have undefined values  y_hat_rep.2,The following variables have undefined values  y_hat_rep.3,The following variables have undefined values  y_hat_rep.4,The following variables have undefined values  y_hat_rep.5,The following variables have undefined values  y_hat_rep.6,The following variables have undefined values  y_hat_rep.7,The following variables have undefined values  y_hat_rep.8,The following variables have undefined values  y_hat_rep.9,The following variables have undefined values  y_hat_rep.10,The following variables have undefined values  y_hat_rep.11,The following variables have undefined values  y_hat_rep.12,The following variables have undefined values  y_hat_rep.13,The following variables have undefined values  y_hat_rep.14,The following variables have undefined values  y_hat_rep.15,The following variables have undefined values  y_hat_rep.16,The following variables have undefined values  y_hat_rep.17,The following variables have undefined values  y_hat_rep.18,The following variables have undefined values  y_hat_rep.19,The following variables have undefined values  y_hat_rep.20,The following variables have undefined values  y_hat_rep.21,The following variables have undefined values  y_hat_rep.22,The following variables have undefined values  y_hat_rep.23,The following variables have undefined values  y_hat_rep.24,The following variables have undefined values  y_hat_rep.25,The following variables have undefined values  y_hat_rep.26,The following variables have undefined values  y_hat_rep.27,The following variables have undefined values  y_hat_rep.28,The following variables have undefined values  y_hat_rep.29,The following variables have undefined values  y_hat_rep.30,The following variables have undefined values  y_hat_rep.31,The following variables have undefined values  y_hat_rep.32,The following variables have undefined values  y_hat_rep.33,The following variables have undefined value|
-summary_test|stem|e60e41f51529e283|9e7a83797e3557cf|5e33943e726a972b|-908423816||t18922.970387486s|91b60da88b348cb0|468970|rds|vector|||182.74||
-plots_test|stem|396c2e168e406ea4|d6be4756121ac20b|cbda00b3b223867b|1637481436||t18922.988457495s|756b71f30f8f5ec2|10685673501|rds|vector|||135.559|Binning grid too coarse for current small bandwidth consider increasing gridsize|
+scaleData|function|0d0c01b1b3160a22
+cleanEnv|function|06a0767a0f88a954
+extractDraws|function|3dff977b003c47b4
+fitTransition|function|44bc0d5310fdbeda
+scaleResiduals|function|405d2039910d17ef
+plotSurfaces|function|8e8bee5493cb7ccd
+fitSeedlings|function|6fb3c3e58d1f444a
+predictS|function|77bcabfef1d8569c
+predictSurfaces|function|e08447bd71c3e5fe
+countTransitions|function|3ed0ea15a11c5e77
+plotStanfit|function|0a4a70d948b8b2ee
+saveStages_s|function|fd5024a4e717b197
+plotDensCheck|function|76b308e08c5439eb
+summarizeFit|function|5e7992612ea96dd4
+wrangleSeedlings|function|810e15398fb558c5
+selectClusters|function|e84b8a94cea77208
+formatPriors|function|f6558aef6421e0d9
+joinStages|function|e77d9690659bf401
+draw|function|eec54dbfa7152637
+fitS|function|b1d146216eef03f2
+readStanfit|function|5fb977364933b1e8
+addPackage|function|d45c347b66cce55c
+formatStanData|function|3f0b01ea7f6ba1af
+summarizeEnvByCluster|function|5fcaa758babda781
+joinEnv|function|2488b8203673870c
+constructConstantGrid|function|33d54800694377c7
+drawTest|function|0ce3c40598643ea3
