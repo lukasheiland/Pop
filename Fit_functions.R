@@ -588,7 +588,7 @@ plotStanfit <- function(stanfit, exclude) {
   if(usedmcmc) {
     
     png(paste0("Fits.nosync/", basename, "_", "pairsplot", ".png"), width = 2600, height = 2600)
-    pairs(stanfit, pars = c(exclude, "l", "phi_obs_inv", "phi_obs", "log_", "lp_"), include = F)
+    pairs(stanfit, pars = c(parname_sansprior, "phi_obs_inv", "phi_obs", "lp__"), include = F)
     dev.off()
     
   }
