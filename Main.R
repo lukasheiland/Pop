@@ -55,6 +55,10 @@ network %>%
 # tar_visnetwork(targets_only = F, exclude = starts_with("file"))
 
 
+# Commit target meta to current branch ---------------------------------------------
+system("git branch --show-current")
+system("git commit -m 'targets meta' _targets/meta/meta")
+
 # Inspect results ----------------------------------------------------------------
 tar_load(c("summary_test", "stanfit_test"))
 shinystan::launch_shinystan(stanfit_test)
