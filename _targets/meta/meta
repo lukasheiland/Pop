@@ -83,7 +83,7 @@ residuals_test|stem|6ace1bdd93f85ae8|b188cb154da95fa6|106035a4bd330bfc|-13342240
 plot_denscheck_posterior_test|stem|392db0334fb4f5b0|bbc638bd0648ce7b|d7b86b3a9b8ff905|917631247||t18922.967139164s|b868c7f8c27e061d|154351128|rds|vector|||128.433|Removed 5616 rows containing nonfinite values stat_density.|
 stanfit_test_plotting|stem|19ed32df8de4d8bb|ee1360819d2916ad|273777af3d22da7f|553033643||t18922.9682711207s|b3b8861a02f97ec4|211319439|rds|vector|||69.52|The following variables have undefined values  y_hat_rep.1,The following variables have undefined values  y_hat_rep.2,The following variables have undefined values  y_hat_rep.3,The following variables have undefined values  y_hat_rep.4,The following variables have undefined values  y_hat_rep.5,The following variables have undefined values  y_hat_rep.6,The following variables have undefined values  y_hat_rep.7,The following variables have undefined values  y_hat_rep.8,The following variables have undefined values  y_hat_rep.9,The following variables have undefined values  y_hat_rep.10,The following variables have undefined values  y_hat_rep.11,The following variables have undefined values  y_hat_rep.12,The following variables have undefined values  y_hat_rep.13,The following variables have undefined values  y_hat_rep.14,The following variables have undefined values  y_hat_rep.15,The following variables have undefined values  y_hat_rep.16,The following variables have undefined values  y_hat_rep.17,The following variables have undefined values  y_hat_rep.18,The following variables have undefined values  y_hat_rep.19,The following variables have undefined values  y_hat_rep.20,The following variables have undefined values  y_hat_rep.21,The following variables have undefined values  y_hat_rep.22,The following variables have undefined values  y_hat_rep.23,The following variables have undefined values  y_hat_rep.24,The following variables have undefined values  y_hat_rep.25,The following variables have undefined values  y_hat_rep.26,The following variables have undefined values  y_hat_rep.27,The following variables have undefined values  y_hat_rep.28,The following variables have undefined values  y_hat_rep.29,The following variables have undefined values  y_hat_rep.30,The following variables have undefined values  y_hat_rep.31,The following variables have undefined values  y_hat_rep.32,The following variables have undefined values  y_hat_rep.33,The following variables have undefined value|
 summary_test|stem|e60e41f51529e283|9e7a83797e3557cf|5e33943e726a972b|-908423816||t18922.970387486s|91b60da88b348cb0|468970|rds|vector|||182.74||
-plots_test|stem|396c2e168e406ea4|d6be4756121ac20b|55d6e520d81d47b8|1637481436||t18922.988457495s||2.08600707231452e-308|rds|vector|||115.429||no parameter phi_obs_inv
+plots_test|stem|396c2e168e406ea4|d6be4756121ac20b|55d6e520d81d47b8|1637481436||t18922.988457495s||2.15554046541086e-308|rds|vector|||115.429||no parameter phi_obs_inv
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
@@ -111,3 +111,30 @@ summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 drawTest|function|0ce3c40598643ea3||||||||||||||
+scaleData|function|0d0c01b1b3160a22
+cleanEnv|function|06a0767a0f88a954
+extractDraws|function|3dff977b003c47b4
+fitTransition|function|44bc0d5310fdbeda
+scaleResiduals|function|405d2039910d17ef
+plotSurfaces|function|8e8bee5493cb7ccd
+fitSeedlings|function|6fb3c3e58d1f444a
+predictS|function|77bcabfef1d8569c
+predictSurfaces|function|e08447bd71c3e5fe
+countTransitions|function|3ed0ea15a11c5e77
+plotStanfit|function|2c919a70fc0875fe
+saveStages_s|function|fd5024a4e717b197
+plotDensCheck|function|76b308e08c5439eb
+summarizeFit|function|5e7992612ea96dd4
+wrangleSeedlings|function|810e15398fb558c5
+selectClusters|function|e84b8a94cea77208
+formatPriors|function|f6558aef6421e0d9
+joinStages|function|e77d9690659bf401
+draw|function|eec54dbfa7152637
+fitS|function|b1d146216eef03f2
+readStanfit|function|5fb977364933b1e8
+addPackage|function|d45c347b66cce55c
+formatStanData|function|3f0b01ea7f6ba1af
+summarizeEnvByCluster|function|5fcaa758babda781
+joinEnv|function|2488b8203673870c
+constructConstantGrid|function|33d54800694377c7
+drawTest|function|0ce3c40598643ea3
