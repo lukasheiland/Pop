@@ -51,7 +51,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
   G <- Stages_transitions %>%
     # filter(!is.na(g_plot))
     filter(!is.na(count_J2A_plot) & isTRUE(count_J_integr_plot > 0)) ## also drops NAs
-
+  
   H <- Stages_transitions %>%
     # filter(!is.na(h_plot))
     filter(!is.na(count_A2B_plot) & isTRUE(count_A_integr_plot > 0)) ## also drops NAs
@@ -274,7 +274,7 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
     rep_species = if(isg) species_g else species_h,
     N_species = N_species
   ))
-    
+  
   n_chains <- 3
   fit_transition <- model_transitions$sample(data = d,
                                              output_dir = fitpath,
@@ -570,7 +570,7 @@ plotStanfit <- function(stanfit, exclude) {
   parname <- setdiff(stanfit@model_pars, c(exclude, excludeplus))
   parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]"))) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter.
   parname_sansprior <- parname[!grepl("prior$", parname)]
-
+  
   traceplot <- rstan::traceplot(stanfit, pars = parname_sansprior, include = T)
   areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior"))))
   ridgeplots <- parallel::mclapply(parnamestart, plotRidges, mc.cores = getOption("mc.cores", 7L))
@@ -584,15 +584,15 @@ plotStanfit <- function(stanfit, exclude) {
                 areasplot = areasplot) # parallelplot_c = parallelplot_c, parallelplot_others = parallelplot_others,
   
   mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), plots, names(plots))
-
+  
   if(usedmcmc) {
     
     png(paste0("Fits.nosync/", basename, "_", "pairsplot", ".png"), width = 2600, height = 2600)
-    pairs(stanfit, pars = c(parname_sansprior, "phi_obs_inv", "phi_obs", "lp__"), include = T)
+    pairs(stanfit, pars = c(parname_sansprior, "phi_obs_inv_sqrt", "lp__"), include = T)
     dev.off()
     
   }
-
+  
   return(plots)
 }
 
@@ -649,7 +649,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
     fixdensplot <- bayesplot::mcmc_areas_ridges(log(Fixpoint))
     densplot <- cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria")) # , ncol = 1, axis = "b", align = "h"
   }
-
+  
   
   basename <- cmdstanfit$metadata()$model_name %>%
     str_replace("-[1-9]-", "-x-")
@@ -674,7 +674,7 @@ scaleResiduals <- function(cmdstanfit, data_stan_priors) {
   y_hat[is.na(y_hat)] <- 0
   
   residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = y_hat, integerResponse = T)
-
+  
   basename <- cmdstanfit$metadata()$model_name %>%
     str_replace("-[1-9]-", "-x-")
   
@@ -698,7 +698,7 @@ scaleResiduals <- function(cmdstanfit, data_stan_priors) {
 wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh) {
   
   if (taxon_select != "Fagus.sylvatica") stop("Prior for seedling regeneration rate r is only implemented for Fagus.sylvatica!")
-
+  
   Data_seedlings <- Data_seedlings %>%
     mutate(tax = str_replace_all(taxon, " ", replacement = ".")) %>%
     mutate(tax = forcats::fct_other(tax, !!!as.list(taxon_select), other_level = "other")) %>%
@@ -706,22 +706,22 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     
     # mutate(taxid = if_else(tax == "other", "other", as.character(taxid))) %>% ## if not only Fagus would be used
     droplevels()
-    
+  
   D_select <- Data_seedlings %>%
     group_by(plotid, year) %>%
     mutate(drop = any(regeneration == "Artificial", na.rm = T)) %>%
     ungroup() %>%
     filter(!drop)
-    ## Any observations on plots were removed that had unnatural regeneration.
+  ## Any observations on plots were removed that had unnatural regeneration.
   
   D_filtered <- D_select %>%
     filter((sizeclass == "big" & dbh >= 100) |
-           (sizeclass == "small" & height < 0.2) |
-            is.na(sizeclass)) %>%
+             (sizeclass == "small" & height < 0.2) |
+             is.na(sizeclass)) %>%
     filter(status != "Dead tree" | is.na(status)) %>%
     filter(!is.na(tax))
-    ## The species-specific basal area of a plot was confined to living trees above the dbh >= 100mm.
-    ## Only small trees with size class [10cm, 20cm), were included in the seedling counts.
+  ## The species-specific basal area of a plot was confined to living trees above the dbh >= 100mm.
+  ## Only small trees with size class [10cm, 20cm), were included in the seedling counts.
   
   
   D_count <- D_filtered %>%
@@ -729,7 +729,7 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     dplyr::summarize(count_ha = sum(count_ha, na.rm = T),
                      ba_ha = sum(ba_ha, na.rm = T)) %>%
     mutate(count_ha = as.integer(round(count_ha)))
-    
+  
   
   # library(glmmTMB)
   # m <- glmmTMB::glmmTMB(count_ha ~ ba_ha * tax + 0, data = D_count, family = nbinom2)
@@ -750,8 +750,8 @@ fitSeedlings <- function(Seedlings) {
                              cores = getOption("mc.cores", 4))
   
   fit_seedlings_other <- brms::brm(count_ha ~ ba_ha, data = Seedlings[Seedlings$tax == "other",], family = negbinomial,
-                             cores = getOption("mc.cores", 4))
-
+                                   cores = getOption("mc.cores", 4))
+  
   message("Summary of the the fit for Fagus seedlings:")
   print(summary(fit_seedlings))
   
