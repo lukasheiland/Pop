@@ -637,7 +637,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   attr(Sim, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
   densplot <- bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = pop)
   
-  if (posterior) {
+  if (match.arg(check) == "posterior") {
     Fixpoint <- Fixpoint[completerows,]
     attr(Fixpoint, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
     # fixpointconverged <- fixpointconverged[completerows,]
