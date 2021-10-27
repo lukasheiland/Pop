@@ -647,7 +647,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
     attr(Fixpoint, "dimnames")$variable <- rep(c(paste("log pop", 1:data_stan_priors$N_pops), paste("log ba", 1:data_stan_priors$N_species)), data_stan_priors$N_locs)
     
     fixdensplot <- bayesplot::mcmc_areas_ridges(log(Fixpoint))
-    densplot <- cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria")) # , ncol = 1, axis = "b", align = "h"
+    densplot <- cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria"), ncol = 1) #  axis = "b", align = "h"
   }
   
   
