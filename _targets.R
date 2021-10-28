@@ -13,9 +13,8 @@ library(tarchetypes)
 
 ### Source the functions
 source("Wrangling_functions.R")
-# source("Fit_direct_functions.R")
+source("Seedlings_functions.R")
 source("Fit_functions.R")
-# source("Model_2021-03_ba/Fit_ba_functions.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
@@ -137,12 +136,36 @@ list(
                  iteration = "list")
       ),
 
+    ## The seedlings pipeline
     list(
       tar_target(Seedlings,
                  wrangleSeedlings(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
-      tar_target(fits_seedlings,
+      tar_target(Seedlings_BA_s,
+                 constructConstantGrid_SK(taxon_s, Seedlings),
+                 pattern = map(taxon_s),
+                 iteration = "list"),
+      tar_target(fits_Seedlings_s, ## fits_s each have an attribute "taxon"
+                 fitS(Seedlings_BA_s),
+                 pattern = map(Seedlings_BA_s),
+                 iteration = "list"),
+      tar_target(Seedlings_s,
+                 predictS(fits_Seedlings_s, Seedlings),
+                 iteration = "list"),
+      tar_target(file_Seedlings_s,
+                 saveStages_s(Seedlings_s),
+                 format = "file"),
+      tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
+                 readRDS(file_Seedlings_s)),
+      tar_target(surfaces_Seedlings_s,
+                 predictSurfaces(fits_Seedlings_s),
+                 iteration = "list"),
+      tar_target(surfaceplots_Seedlings_s,
+                 plotSurfaces(surfaces_Seedlings_s),
+                 iteration = "list"),
+      tar_target(fits_Seedlings,
                  fitSeedlings(Seedlings))
     ),
+    
     
     tar_target(Stages_select,
                selectClusters(Data_Stages_s, predictor_select, selectpred = F)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
@@ -193,7 +216,7 @@ list(
     ),
     
     tar_target(data_stan_priors,
-               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_seedlings, widthfactor = 2)), # priors
+               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor = 2)), # priors
     
     tar_target(file_model_test,
                "Model_2021-03_ba/Model_ba_test.stan",
