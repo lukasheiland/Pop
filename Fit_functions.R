@@ -578,6 +578,7 @@ plotStanfit <- function(stanfit, exclude) {
   parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]"))) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
   parname_sansprior <- parname[!grepl("prior$", parname)]
 
+  
   traceplot <- rstan::traceplot(stanfit, pars = parname_sansprior, include = T)
   areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior"))))
   ridgeplots <- parallel::mclapply(parnamestart, plotRidges, mc.cores = getOption("mc.cores", 7L))
