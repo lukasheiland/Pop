@@ -297,14 +297,14 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
 # data_stan  <- tar_read("data_stan")
 # fit_g  <- tar_read("fit_g")
 # fit_h  <- tar_read("fit_h")
-# fits_seedlings  <- tar_read("fits_seedlings")
+# fits_Seedlings  <- tar_read("fits_Seedlings")
 
-formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_seedlings, widthfactor = 1) {
+formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor = 1) {
   
   ## Matrices[draws, species]
   Draws_g <- fit_g$draws(variables = "prop_logit", format = "draws_matrix") %>% as.data.frame()
   Draws_h <- fit_h$draws(variables = "prop_logit", format = "draws_matrix") %>% as.data.frame()
-  Draws_seedlings <- posterior_samples(fits_seedlings, fixed = F, pars = c("Intercept$", "b_ba_ha$"))
+  Draws_seedlings <- posterior_samples(fits_Seedlings, fixed = F, pars = c("Intercept$", "b_ba_ha$"))
   
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
@@ -321,7 +321,7 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_seedlings, wi
   priors <- list(
     prior_g_logit = bind_cols(pars_g), ## Matrix[N_species, (mu, sigma)]
     prior_h_logit = bind_cols(pars_h),
-    prior_l_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), ends_with("Intercept"))),
+    prior_l_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("b_Intercept"))), ## prelimary hack!
     prior_r_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), ends_with("b_ba_ha")))
   )
   
@@ -440,7 +440,7 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_seedlings, wi
 # model <- testmodel <- tar_read("testmodel")
 
 drawTest <- function(model, data_stan, initfunc = 0.5,
-                     method = c("mcmc", "variational"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
+                     method = c("mcmc", "variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
@@ -472,6 +472,13 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
                         # adapt_delta = 0.99,
                         # max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
+  
+  } else if (match.arg(method) == "sim") {
+    fit <- model$sample(data = data,
+                        fixed_param = TRUE,
+                        output_dir = fitpath,
+                        # output_basename = ,
+                        init = initfunc, iter_sampling = iter_sampling)
   }
   
   return(fit)
@@ -568,7 +575,7 @@ plotStanfit <- function(stanfit, exclude) {
     str_replace("-[1-9]-", "-x-")
   excludeplus <- c("lp__", "phi_obs")
   parname <- setdiff(stanfit@model_pars, c(exclude, excludeplus))
-  parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]"))) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter.
+  parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]"))) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
   parname_sansprior <- parname[!grepl("prior$", parname)]
 
   traceplot <- rstan::traceplot(stanfit, pars = parname_sansprior, include = T)
@@ -679,86 +686,9 @@ scaleResiduals <- function(cmdstanfit, data_stan_priors) {
     str_replace("-[1-9]-", "-x-")
   
   png(paste0("Fits.nosync/", basename, "_", "DHARMa", ".png"), width = 2000, height = 1200)
-  plotResiduals(residuals, quantreg = T, smoothScatter = F)
+  plot(residuals, quantreg = T, smoothScatter = F)
   dev.off()
   
   return(residuals)
-}
-
-
-# ——————————————————————————————————————————————————————————————————————————————————#
-# Seedlings: Functions for fitting a regeneration model to SK seedling data --------
-# ——————————————————————————————————————————————————————————————————————————————————#
-
-## wrangleSeedlings --------------------------------
-# Data_seedlings  <- tar_read("Data_seedlings")
-# taxon_select <- tar_read("taxon_select")
-# threshold_dbh <- tar_read("threshold_dbh")
-
-wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh) {
-  
-  if (taxon_select != "Fagus.sylvatica") stop("Prior for seedling regeneration rate r is only implemented for Fagus.sylvatica!")
-
-  Data_seedlings <- Data_seedlings %>%
-    mutate(tax = str_replace_all(taxon, " ", replacement = ".")) %>%
-    mutate(tax = forcats::fct_other(tax, !!!as.list(taxon_select), other_level = "other")) %>%
-    mutate(taxid = if_else(tax == "Fagus.sylvatica", "kew.83891", "other")) %>%
-    
-    # mutate(taxid = if_else(tax == "other", "other", as.character(taxid))) %>% ## if not only Fagus would be used
-    droplevels()
-    
-  D_select <- Data_seedlings %>%
-    group_by(plotid, year) %>%
-    mutate(drop = any(regeneration == "Artificial", na.rm = T)) %>%
-    ungroup() %>%
-    filter(!drop)
-    ## Any observations on plots were removed that had unnatural regeneration.
-  
-  D_filtered <- D_select %>%
-    filter((sizeclass == "big" & dbh >= 100) |
-           (sizeclass == "small" & height < 0.2) |
-            is.na(sizeclass)) %>%
-    filter(status != "Dead tree" | is.na(status)) %>%
-    filter(!is.na(tax))
-    ## The species-specific basal area of a plot was confined to living trees above the dbh >= 100mm.
-    ## Only small trees with size class [10cm, 20cm), were included in the seedling counts.
-  
-  
-  D_count <- D_filtered %>%
-    group_by(plotid, year, tax, taxid) %>%
-    dplyr::summarize(count_ha = sum(count_ha, na.rm = T),
-                     ba_ha = sum(ba_ha, na.rm = T)) %>%
-    mutate(count_ha = as.integer(round(count_ha)))
-    
-  
-  # library(glmmTMB)
-  # m <- glmmTMB::glmmTMB(count_ha ~ ba_ha * tax + 0, data = D_count, family = nbinom2)
-  # summary(m)
-  # res <- DHARMa::simulateResiduals(m)
-  # plot(res)
-  
-  return(D_count)
-}
-
-
-## fitSeedlings --------------------------------
-# Seedlings  <- tar_read("Seedlings")
-
-fitSeedlings <- function(Seedlings) {
-  
-  fit_seedlings <- brms::brm(count_ha ~ ba_ha, data = Seedlings[Seedlings$tax == "Fagus.sylvatica",], family = negbinomial,
-                             cores = getOption("mc.cores", 4))
-  
-  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha, data = Seedlings[Seedlings$tax == "other",], family = negbinomial,
-                             cores = getOption("mc.cores", 4))
-
-  message("Summary of the the fit for Fagus seedlings:")
-  print(summary(fit_seedlings))
-  
-  message("Summary of the the fit for other seedlings:")
-  print(summary(fit_seedlings_other))
-  
-  return(list(Fagus.sylvatica = fit_seedlings, other = fit_seedlings_other))
-  
 }
 
