@@ -332,8 +332,6 @@ parameters {
   
   vector[N_species] r_log;
   vector[N_species] l_log;
-
-  
   
   // … dependent on environment. Matrix for convenient matrix multiplication
   // matrix[N_beta, N_species] Beta_c_j;
@@ -342,8 +340,8 @@ parameters {
   // matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
   
   //// Special case l  
-  // matrix[N_locs, N_species] L_random; // array[N_locs] vector[N_species] L_random; // here real array is used for compatibility with to_vector
-  // vector<lower=0>[N_species] sigma_l;
+  matrix[N_locs, N_species] L_random; // array[N_locs] vector[N_species] L_random; // here real array is used for compatibility with to_vector
+  vector<lower=0>[N_species] sigma_l;
   
   // real<lower=0, upper=1> theta;
   
@@ -378,8 +376,8 @@ transformed parameters {
   
   for(loc in 1:N_locs) {
     
-    L_loc[loc, ] = exp(l_log) .* L_smooth[loc, ]; // + // Offset with fixed coefficient. "The smooth to real number coefficient"
-                            // sigma_l .* L_random[loc, ]'; // non-centered loc-level random effects
+    L_loc[loc, ] = exp(l_log) .* L_smooth[loc, ] + // Offset with fixed coefficient. "The smooth to real number coefficient"
+                   sigma_l .* L_random[loc, ]'; // non-centered loc-level random effects
     
   }
   
@@ -409,10 +407,8 @@ model {
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
 
   // ... for special offset L
-  // to_vector(L_random) ~ std_normal(); // Random part around slope for l
-  // sigma_l ~ cauchy(0, 2); // Regularizing half-normal on sigma for random slope for l
-  // l_log ~ normal(prior_l_log[1,], prior_l_log[2,]);
-  
+  to_vector(L_random) ~ std_normal(); // Random intercept for l
+  sigma_l ~ cauchy(0, 2); // Regularizing half-cauchy on sigma for random slope for l  
   
   //// Priors on Parameters
   // prior_*[2, N_species]
@@ -496,6 +492,19 @@ generated quantities {
   
   array[3] real phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), [3, 2, 1]));
   
+  // special case L
+  array[N_locs] vector[N_species] L_loc_prior;
+  array[N_locs, N_species] real L_random_prior;  
+  vector<lower=0>[N_species] sigma_l_prior = to_vector((cauchy_rng(rep_array(0, N_species), rep_array(2, N_species))));
+  
+  for(loc in 1:N_locs) {
+  
+    L_random_prior[loc,] = normal_rng(rep_array(0, N_species), rep_array(1, N_species));
+    L_loc_prior[loc, ] = exp(l_log_prior) .* L_smooth[loc, ] + // Offset with fixed coefficient. "The smooth to real number coefficient"
+                         sigma_l_prior .* to_vector(L_random_prior[loc, ]); // non-centered loc-level random effects
+    
+  }
+  
   
   // Variables for simulation
   vector[L_yhat] y_hat_prior;
@@ -503,7 +512,7 @@ generated quantities {
   array[L_y] real y_prior_sim;
   
   y_hat_prior = unpack(rep_array(prior_state_init_log, N_locs), time_max, times,
-                   vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_logit_prior, h_logit_prior, rep_array(exp(l_log_prior), N_locs), r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
+                   vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_logit_prior, h_logit_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
                    ba_a_avg, ba_a_upper,
                    n_obs, n_yhat, // varying numbers per loc
                    N_species, N_pops, L_yhat, N_locs, // fixed numbers
