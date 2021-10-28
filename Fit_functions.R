@@ -308,7 +308,7 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
-  pars_seedlings <- lapply(Draws_seedlings, function(d) MASS::fitdistr(d, "normal")$estimate)
+  pars_seedlings <- list(Fagus = c(mean = 3, sd = 0.5), others = c(mean = 3, sd = 0.5)) ## !!!! pars_seedlings <- lapply(Draws_seedlings, function(d) MASS::fitdistr(d, "normal")$estimate)
   
   if(widthfactor != 1) {
     pars_g <- lapply(pars_g, function(p) c(p["mean"], widthfactor*p["sd"]))
@@ -321,8 +321,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   priors <- list(
     prior_g_logit = bind_cols(pars_g), ## Matrix[N_species, (mu, sigma)]
     prior_h_logit = bind_cols(pars_h),
-    prior_l_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("b_Intercept"))), ## prelimary hack!
-    prior_r_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), ends_with("b_ba_ha")))
+    prior_l_log = bind_cols(pars_seedlings), ## !!!! bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("b_Intercept"))), ## prelimary hack!
+    prior_r_log = bind_cols(pars_seedlings) ## !!!! bind_cols(dplyr::select(as.data.frame(pars_seedlings), ends_with("b_ba_ha")))
   )
   
   return(c(data_stan, weakpriors, priors))
