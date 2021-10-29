@@ -627,7 +627,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   } else if (match.arg(check) == "posterior") {
     
     if (is.null(draws)) {
-      Sim <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix")
+      Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix")
       Fixpoint <- cmdstanfit$draws(variables = "state_fix", format = "draws_matrix")
       fixpointconverged <- cmdstanfit$draws(variables = "converged", format = "draws_matrix")
       
