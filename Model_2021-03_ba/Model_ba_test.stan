@@ -189,10 +189,10 @@ functions {
 //    
 //      if (y[l] == 0) {
 //        // Likelihood of 0 coming from probability theta; synonymous to t += bernoulli_lpmf(1 | theta);
-//        t = log(theta);
+//        t += log(theta);
 //      }
 //      else {
-//        t = log1m(theta) + // synonymous to bernoulli_lpmf(0 | theta)
+//        t += log1m(theta) + // synonymous to bernoulli_lpmf(0 | theta)
 //             gamma_lpdf(y[l] | alpha_rep[l], beta_rep[l]);
 //      }
 //    }
@@ -212,11 +212,11 @@ real neg_binomial_0_lpmf(int[] y, vector y_hat_rep, vector phi_rep, vector theta
    
      if (y[l] == 0) {
        // Joint Likelihood of 0 coming from probability theta or negbinonial
-    	t = log_sum_exp(bernoulli_lpmf(1 | theta_rep[l]),
+    	t += log_sum_exp(bernoulli_lpmf(1 | theta_rep[l]),
                          bernoulli_lpmf(0 | theta_rep[l]) + neg_binomial_2_lpmf(y[l] | y_hat_rep[l], phi_rep[l]));
     	} else {
 		// Joint Likelihood of 0 coming from probability theta_rep or negbinonial
-    	t = bernoulli_lpmf(0 | theta_rep[l]) +  // log1m(theta_rep[l]) synonymous to bernoulli_lpmf(0 | theta_rep)?
+    	t += bernoulli_lpmf(0 | theta_rep[l]) +  // log1m(theta_rep[l]) synonymous to bernoulli_lpmf(0 | theta_rep)?
     		neg_binomial_2_lpmf(y[l] | y_hat_rep[l], phi_rep[l]);
     	}
     }
@@ -601,6 +601,14 @@ generated quantities {
   
   //// Predictions
   y_hat_rep = y_hat[rep_yhat2y];
-  y_sim = neg_binomial_0_rng(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y], theta_obs[rep_obsmethod2y], L_y);
+  y_sim = neg_binomial_0_rng(y_hat_rep, phi_obs[rep_obsmethod2y], theta_obs[rep_obsmethod2y], L_y);
+  
+  
+  //// For sensitivity analysis
+  real log_prior;
+  vector[L_y] log_lik; // does this have to be a vector?
+  
+  // log_prior = normal_lpdf(beta | prior_beta[1], prior_beta[2]) + normal_lpdf(sigma | prior_sigma[1], prior_sigma[2]); // joint prior specification, sum of all logpriors
+  // log_lik = neg_binomial_0_lpmf(y | y_hat_rep, phi_obs[rep_obsmethod2y], theta_obs[rep_obsmethod2y], L_y);
 
 }
