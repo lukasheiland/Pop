@@ -186,10 +186,10 @@ functions {
       
       if (y[l] == 0) {
         // Likelihood of 0 coming from probability theta; synonymous to t += bernoulli_lpmf(1 | theta);
-        t = log(theta);
+        t += log(theta);
       }
       else {
-        t = log1m(theta) + // synonymous to bernoulli_lpmf(0 | theta)
+        t += log1m(theta) + // synonymous to bernoulli_lpmf(0 | theta)
              gamma_lpdf(y[l] | alpha_rep[l], beta_rep[l]);
       }
     }
