@@ -94,7 +94,6 @@ Seedlings_s|stem||46a9595e49329d8a|26d3dfb509dced43|-142007958||||0|rds|list|||0
 Seedlings|stem|9446e821894d8cdb|e366b261bd7792c2|90026d18efcd9d81|-185150805||t18928.4497164752s|bd4c9d7ef0aefea4|67141|rds|vector|||9.896||
 fits_Seedlings|stem|7f87d5add556f9f9|3df0e9bfc4ef7fe5|c8c79d9444d00de8|809945682||t18928.6243273166s|6879b77b0523e321|357776483|rds|vector|||309.368|There were 3 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See httpmcstan.orgmiscwarnings.htmldivergenttransitionsafterwarmup|
 data_stan_priors|stem|1050e884b440e313|5f8ab647110035d6|783bc841e9bdbe7e|1623270232||t18928.6243470278s|985902732c12f172|33473|rds|vector|||1.366||
-file_model_test|stem|c6a47f9a34c60f8e|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18929.6488891458s|add8d93687654d1d|25427|file|vector|||7.829||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
@@ -125,34 +124,5 @@ joinEnv|function|2488b8203673870c||||||||||||||
 summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 drawTest|function|c4bc9d044fc9fa86||||||||||||||
-model_test|stem|714ee73a4cfca099|a3aa00c06cce5e55|18b4e3dad4860b27|-1162399619||t18929.5976284568s||7438|rds|vector|||9.918||An error occured during compilation See the message above for more information.
-scaleData|function|0d0c01b1b3160a22
-cleanEnv|function|06a0767a0f88a954
-extractDraws|function|3dff977b003c47b4
-plotSensitivity|function|1b82069fa2790eec
-fitTransition|function|44bc0d5310fdbeda
-scaleResiduals|function|417cb86330f8c9fb
-testSensitivity|function|a9b842a196cb283d
-plotSurfaces|function|8e8bee5493cb7ccd
-fitSeedlings|function|ab9445c1b014d2e9
-predictS|function|77bcabfef1d8569c
-predictSurfaces|function|e08447bd71c3e5fe
-countTransitions|function|3ed0ea15a11c5e77
-plotStanfit|function|f432888b6ea15762
-saveStages_s|function|fd5024a4e717b197
-plotDensCheck|function|844300284370dc98
-summarizeFit|function|5e7992612ea96dd4
-wrangleSeedlings|function|d074bec2bfda3a20
-selectClusters|function|e84b8a94cea77208
-formatPriors|function|fcda634744eb1a1e
-joinStages|function|e77d9690659bf401
-draw|function|eec54dbfa7152637
-fitS|function|b1d146216eef03f2
-readStanfit|function|5fb977364933b1e8
-constructConstantGrid_SK|function|ec0773362d05dadf
-addPackage|function|d45c347b66cce55c
-formatStanData|function|3f0b01ea7f6ba1af
-joinEnv|function|2488b8203673870c
-summarizeEnvByCluster|function|5fcaa758babda781
-constructConstantGrid|function|33d54800694377c7
-drawTest|function|c4bc9d044fc9fa86
+file_model_test|stem|67c503dfee52c618|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18929.6627470075s|1aef750e2b3d4392|25432|file|vector|||31.093||
+model_test|stem|e0285751f135a5e6|a3aa00c06cce5e55|84741103a5553aed|-1162399619||t18929.6667438964s|7eb702857c4c6cf5|7437|rds|vector|||53.348||
