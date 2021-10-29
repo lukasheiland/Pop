@@ -199,6 +199,44 @@ functions {
 //    return t;
 //  }
 
+
+//// Implementation of negbinomial probability density with zero inflation
+real neg_binomial_0_lpmf(int[] y, vector y_hat_rep, vector phi_rep, vector theta_rep, int L_y) {
+   
+   real t; // target
+   
+   for (l in 1:L_y) {
+   
+	// From a process point of view this is just a negbinom model, with some values multiplied by zero.
+	// rbinom(100, 1, prob = 0.2) * rnbinom(100, size = 1100, mu = 10)
+   
+     if (y[l] == 0) {
+       // Joint Likelihood of 0 coming from probability theta or negbinonial
+    	t = log_sum_exp(bernoulli_lpmf(1 | theta_rep[l]),
+                         bernoulli_lpmf(0 | theta_rep[l]) + neg_binomial_2_lpmf(y[l] | y_hat_rep[l], phi_rep[l]));
+    	} else {
+		// Joint Likelihood of 0 coming from probability theta_rep or negbinonial
+    	t = bernoulli_lpmf(0 | theta_rep[l]) +  // log1m(theta_rep[l]) synonymous to bernoulli_lpmf(0 | theta_rep)?
+    		neg_binomial_2_lpmf(y[l] | y_hat_rep[l], phi_rep[l]);
+    	}
+    }
+   return t; // target wich will get summed up at each run
+ }
+ 
+ 
+//// Implementation of zi negbinomial random number generator
+real[] neg_binomial_0_rng(vector y_hat_rep, vector phi_rep, vector theta_rep, int L_y) {
+   
+   array[L_y] real n_io;
+   array[L_y] real io = bernoulli_rng(theta_rep); // variable assignment operator to force array real instead of int
+   array[L_y] real n = neg_binomial_2_rng(y_hat_rep, phi_rep);
+   n_io = to_array_1d(to_vector(n) .* to_vector(io));
+
+   return n_io;
+ }
+
+
+
 }
 
 data {
@@ -351,6 +389,7 @@ parameters {
     // vector<lower=0>[3] alpha_obs_inv; // observation error in gamma
     // vector<lower=0>[2] sigma_obs; // observation error
     // vector<lower=0>[3] sigma_process; // lognormal error for observations from predictions
+  vector<lower=0,upper=1>[3] theta_obs; // observation error in neg_binomial
   
   // matrix[N_pops, timespan_max] u[N_locs];
   
@@ -448,7 +487,7 @@ model {
 
   // Fit predictions to data.
   // a2b ~ poisson(y_hat[rep_yhat2a2b] .* inv_logit(h_logit)[rep_species2a2b] .* timediff);
-  y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
+  y ~ neg_binomial_0(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y], theta_obs[rep_obsmethod2y], L_y);
   
     // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
 }
@@ -519,7 +558,7 @@ generated quantities {
                    i_j, i_a, i_b);
                    
   y_hat_prior_rep = y_hat_prior[rep_yhat2y];
-  y_prior_sim = neg_binomial_2_rng(y_hat_prior[rep_yhat2y], phi_obs_prior[rep_obsmethod2y]);
+  y_prior_sim = neg_binomial_2_rng(y_hat_prior[rep_yhat2y], phi_obs_prior[rep_obsmethod2y]); // , [0, 0, 0]', L_y
 
 
   //// Variables for fix point iteration
@@ -562,6 +601,6 @@ generated quantities {
   
   //// Predictions
   y_hat_rep = y_hat[rep_yhat2y];
-  y_sim = neg_binomial_2_rng(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]); // A small value is added to phi_obs for catching this bug: "neg_binomial_2_rng: Random number that came from gamma distribution is 1.44489e+09, but must be less than 1.07374e+09.
+  y_sim = neg_binomial_0_rng(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y], theta_obs[rep_obsmethod2y], L_y);
 
 }
