@@ -39,7 +39,9 @@ tar_make(c("summary_test",
            # "draws_test",
            "residuals_test",
            "plots_test",
-           "plot_denscheck_posterior_test"))
+           "plot_denscheck_posterior_test",
+           "sensitivity_test",
+           "plot_powerscale_test"))
 ## alternatives
 # plan(multisession)
 # future(tar_make(names = "predict_splines")) # just as a future
