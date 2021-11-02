@@ -268,6 +268,9 @@ list(
                  "converged", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "fixiter_max")),
     tar_target(exclude,
                c(pars_exclude, helpers_exclude, simnames_prior, simnames_posterior)),
+    tar_target(parname,
+               c("phi_obs", "theta", "sigma_l",
+                 "b_log", "c_a_log", "c_b_log", "c_j_log", "g_logit", "h_logit", "l_log", "r_log", "s_log")),
     
     tar_target(draws_test,
                extractDraws(stanfit_test, exclude = helpers_exclude)),
@@ -286,7 +289,11 @@ list(
     tar_target(plot_denscheck_prior_test,
                plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
     tar_target(plot_denscheck_posterior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior"))
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior")),
+    
+    ## Sensitivity analysis
+    tar_target(sensitivity_test, testSensitivity(fit_test, include = parname)),
+    tar_target(plot_powerscale_test, plotSensitivity(fit_test, include = parname))
     
   ),
   
