@@ -608,9 +608,27 @@ generated quantities {
   
   //// For sensitivity analysis
   real log_prior;
-  vector[L_y] log_lik; // does this have to be a vector?
+  vector[L_y] log_lik;
   
-  // log_prior = normal_lpdf(beta | prior_beta[1], prior_beta[2]) + normal_lpdf(sigma | prior_sigma[1], prior_sigma[2]); // joint prior specification, sum of all logpriors
-  // log_lik = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs[rep_obsmethod2y][l], theta_obs[rep_obsmethod2y][l]);
-
+  for(loc in 1:N_locs) {
+    log_prior += normal_lpdf(state_init_log[loc] | prior_state_init_log[loc], 3);
+  }
+  
+  log_prior = normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 3), [3, 2, 1]) +
+			  normal_lpdf(to_vector(L_random_log) | 0, 1) +
+			  normal_lpdf(sigma_l | 0, 1) +
+			  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
+			  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) +
+			  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) +
+			  normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) +
+			  normal_lpdf(g_logit | prior_g_logit[1,], prior_g_logit[2,]) +
+			  normal_lpdf(h_logit | prior_h_logit[1,], prior_h_logit[2,]) +
+			  normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
+			  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
+			  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]) +
+  			  log_prior; // joint prior specification, sum of all logpriors
+	    			  
+  for(l in 1:L_y) {
+    log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs[rep_obsmethod2y][l], theta_obs[rep_obsmethod2y][l]);
+  }
 }
