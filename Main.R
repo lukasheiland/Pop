@@ -18,6 +18,7 @@ library(bayesplot)
 library(cowplot)
 library(parallel)
 library(DHARMa)
+library(priorsense)
 
 
 # Orientation -------------------------------------------------------------
