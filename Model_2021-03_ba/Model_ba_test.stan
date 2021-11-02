@@ -201,35 +201,31 @@ functions {
 
 
 //// Implementation of negbinomial probability density with zero inflation
-real neg_binomial_0_lpmf(int[] y, vector y_hat_rep, vector phi_rep, vector theta_rep, int L_y) {
+real neg_binomial_0_lpmf(int y, real y_hat, real phi_obs, real theta) {
    
-   real t; // target
-   
-   for (l in 1:L_y) {
-   
-	// From a process point of view this is just a negbinom model, with some values multiplied by zero.
-	// rbinom(100, 1, prob = 0.2) * rnbinom(100, size = 1100, mu = 10)
-   
-     if (y[l] == 0) {
-       // Joint Likelihood of 0 coming from probability theta or negbinonial
-    	t += log_sum_exp(bernoulli_lpmf(1 | theta_rep[l]),
-                         bernoulli_lpmf(0 | theta_rep[l]) + neg_binomial_2_lpmf(y[l] | y_hat_rep[l], phi_rep[l]));
-    	} else {
-		// Joint Likelihood of 0 coming from probability theta_rep or negbinonial
-    	t += bernoulli_lpmf(0 | theta_rep[l]) +  // log1m(theta_rep[l]) synonymous to bernoulli_lpmf(0 | theta_rep)?
-    		neg_binomial_2_lpmf(y[l] | y_hat_rep[l], phi_rep[l]);
-    	}
-    }
-   return t; // target wich will get summed up at each run
+  real t; // target
+  // From a process point of view this is just a negbinom model, with some values multiplied by zero.
+  // rbinom(100, 1, prob = 0.2) * rnbinom(100, size = 1100, mu = 10)
+  
+  if (y == 0) {
+    // Joint Likelihood of 0 coming from probability theta or negbinonial
+  	t = log_sum_exp(bernoulli_lpmf(1 | theta),
+                       bernoulli_lpmf(0 | theta) + neg_binomial_2_lpmf(y | y_hat, phi_obs));
+  } else {
+	// Joint Likelihood of 0 coming from probability theta_rep or negbinonial
+  	t = bernoulli_lpmf(0 | theta) +  // log1m(theta) synonymous to bernoulli_lpmf(0 | theta_rep)?
+  		neg_binomial_2_lpmf(y | y_hat, phi_obs);
+  }
+  return t; // target wich will get summed up at each run
  }
  
  
 //// Implementation of zi negbinomial random number generator
-real[] neg_binomial_0_rng(vector y_hat_rep, vector phi_rep, vector theta_rep, int L_y) {
+real[] neg_binomial_0_rng(vector y_hat_rep, vector phi_obs_rep, vector theta_rep, int L_y) {
    
    array[L_y] real n_io;
    array[L_y] real io = bernoulli_rng(theta_rep); // variable assignment operator to force array real instead of int
-   array[L_y] real n = neg_binomial_2_rng(y_hat_rep, phi_rep);
+   array[L_y] real n = neg_binomial_2_rng(y_hat_rep, phi_obs_rep);
    n_io = to_array_1d(to_vector(n) .* to_vector(io));
 
    return n_io;
@@ -378,7 +374,7 @@ parameters {
   // matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
   
   //// Special case l  
-  matrix[N_locs, N_species] L_random; // array[N_locs] vector[N_species] L_random; // here real array is used for compatibility with to_vector
+  matrix[N_locs, N_species] L_random_log; // array[N_locs] vector[N_species] L_random_log; // here real array is used for compatibility with to_vector
   vector<lower=0>[N_species] sigma_l;
   
   // real<lower=0, upper=1> theta;
@@ -400,7 +396,7 @@ parameters {
 
 transformed parameters {
 
-  array[N_locs] vector[N_species] L_loc;
+  array[N_locs] vector<lower=0>[N_species] L_loc;
   
   
   //// Level 1 (species) to 2 (locs). Environmental effects on population rates.
@@ -415,8 +411,8 @@ transformed parameters {
   
   for(loc in 1:N_locs) {
     
-    L_loc[loc, ] = exp(l_log) .* L_smooth[loc, ] + // Offset with fixed coefficient. "The smooth to real number coefficient"
-                   sigma_l .* L_random[loc, ]'; // non-centered loc-level random effects
+    L_loc[loc, ] = exp(l_log .* L_smooth[loc, ] + // The smooth effect
+                       sigma_l .* L_random_log[loc, ]'); // non-centered loc-level random intercept
     
   }
   
@@ -446,8 +442,8 @@ model {
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
 
   // ... for special offset L
-  to_vector(L_random) ~ std_normal(); // Random intercept for l
-  sigma_l ~ cauchy(0, 2); // Regularizing half-cauchy on sigma for random slope for l  
+  to_vector(L_random_log) ~ std_normal(); // Random intercept for l
+  sigma_l ~ std_normal(); // Regularizing half-cauchy on sigma for random slope for l  ## cauchy(0, 2);
   
   //// Priors on Parameters
   // prior_*[2, N_species]
@@ -487,9 +483,14 @@ model {
 
   // Fit predictions to data.
   // a2b ~ poisson(y_hat[rep_yhat2a2b] .* inv_logit(h_logit)[rep_species2a2b] .* timediff);
-  y ~ neg_binomial_0(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y], theta_obs[rep_obsmethod2y], L_y);
+  // y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
+
+
+  for(l in 1:L_y) {
+    y[l] ~ neg_binomial_0(y_hat[rep_yhat2y][l], phi_obs[rep_obsmethod2y][l], theta_obs[rep_obsmethod2y][l]);
+  }  
   
-    // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
+  // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta, L_y);
 }
 
 
@@ -533,14 +534,15 @@ generated quantities {
   
   // special case L
   array[N_locs] vector[N_species] L_loc_prior;
-  array[N_locs, N_species] real L_random_prior;  
-  vector<lower=0>[N_species] sigma_l_prior = to_vector((cauchy_rng(rep_array(0, N_species), rep_array(2, N_species))));
+  array[N_locs, N_species] real L_random_log_prior;  
+  vector<lower=0>[N_species] sigma_l_prior = to_vector(normal_rng(rep_array(0, N_species), rep_array(1, N_species)));
   
   for(loc in 1:N_locs) {
   
-    L_random_prior[loc,] = normal_rng(rep_array(0, N_species), rep_array(1, N_species));
-    L_loc_prior[loc, ] = exp(l_log_prior) .* L_smooth[loc, ] + // Offset with fixed coefficient. "The smooth to real number coefficient"
-                         sigma_l_prior .* to_vector(L_random_prior[loc, ]); // non-centered loc-level random effects
+    L_random_log_prior[loc,] = normal_rng(rep_array(0, N_species), rep_array(1, N_species));
+    L_loc_prior[loc, ] = exp(l_log_prior .* L_smooth[loc, ] +
+                         sigma_l_prior .* to_vector(L_random_log_prior[loc, ]));
+                         
     
   }
   
@@ -609,6 +611,6 @@ generated quantities {
   vector[L_y] log_lik; // does this have to be a vector?
   
   // log_prior = normal_lpdf(beta | prior_beta[1], prior_beta[2]) + normal_lpdf(sigma | prior_sigma[1], prior_sigma[2]); // joint prior specification, sum of all logpriors
-  // log_lik = neg_binomial_0_lpmf(y | y_hat_rep, phi_obs[rep_obsmethod2y], theta_obs[rep_obsmethod2y], L_y);
+  // log_lik = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs[rep_obsmethod2y][l], theta_obs[rep_obsmethod2y][l]);
 
 }
