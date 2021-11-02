@@ -693,3 +693,39 @@ scaleResiduals <- function(cmdstanfit, data_stan_priors) {
   return(residuals)
 }
 
+
+## testSensitivity ------------------------------------------------------------
+# fit <- tar_read(fit_test)
+# include <- tar_read()
+
+## For CJSdist, we consider an ad hoc threshold ≥ 0.05 to be indicative of sensitivity. For a normal distribution, this corresponds to the mean differing by approximately more than 0.3 standard deviations,
+## or the standard deviation differing by a factor greater than approximately 0.3, when the power-scaling factor is changed by a factor of two.
+
+testSensitivity <- function(fit, include, measure = "cjs_dist") {
+  sensitivity <- powerscale_sensitivity(fit,
+                                        variables = include,
+                                        log_prior_fn = extract_log_prior, # require(priorsense)
+                                        div_measure = measure)
+  senspath <- fit$output_files()[1] %>%
+    stringr::str_replace("-1-", "-x-") %>%
+    stringr::str_replace(".csv", "_sensitivity.csv")
+  write.csv(sensitivity[[1]], senspath)
+  
+  return(sensitivity)
+}
+
+
+## plotSensitivity ------------------------------------------------------------
+# fit <- tar_read(fit_test)
+# include <- tar_read()
+plotSensitivity <- function(fit, include, measure = "cjs_dist") {
+  senssequence <- powerscale_sequence(fit,
+                                      variables = include,
+                                      log_prior_fn = extract_log_prior, # require(priorsense)
+                                      div_measure = measure)
+  
+  plot_powerscale <- powerscale_plot_dens(senssequence, variables = include)
+  
+  return(plot_powerscale)
+}
+
