@@ -238,9 +238,9 @@ list(
     
     
     tar_target(fit_test,
-               drawTest(model = model_test, data_stan_priors, method = "mcmc", initfunc = 0.5)),
+               drawTest(model = model_test, data_stan_priors, method = "mcmc", n_chains = 6, iter_warmup = 800, iter_sampling = 400, initfunc = 0.5)),
     tar_target(fit,
-               draw(model = model, data_stan_priors, method = "mcmc", initfunc = 0.5)),
+               draw(model = model, data_stan_priors, method = "mcmc", n_chains = 6, iter_warmup = 800, iter_sampling = 400, initfunc = 0.5)),
     
     tar_target(summary_test,
                summarizeFit(fit_test)),
