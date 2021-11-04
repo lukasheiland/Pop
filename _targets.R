@@ -269,7 +269,7 @@ list(
     tar_target(exclude,
                c(pars_exclude, helpers_exclude, simnames_prior, simnames_posterior)),
     tar_target(parname,
-               c("phi_obs", "theta", "sigma_l",
+               c("phi_obs", "sigma_l",
                  "b_log", "c_a_log", "c_b_log", "c_j_log", "g_logit", "h_logit", "l_log", "r_log", "s_log")),
     
     tar_target(draws_test,

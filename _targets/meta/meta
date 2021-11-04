@@ -73,19 +73,21 @@ data_stan|stem|5a6b868ff7d40a6d|d18a2fb7bd18372c|1774ae163170d9ca|1263995833||t1
 fit_g|stem|b850429259bf7bd6|255e3515660b75a6|f7f03db06cbe4d86|128175024||t18922.9375606972s|067b255b6e6cf077|158213|rds|vector|||2.492||
 fit_h|stem|993d9a2bb93fcbac|ca8b86a90da6d4a5|f7f03db06cbe4d86|468382782||t18922.9376048181s|b1388e4f0e55b0d8|159040|rds|vector|||3.779||
 stanfit_test_plotting|stem|3de9478b942bd91c|ee1360819d2916ad|2e2370de4f0a3992|553033643||t18923.5357440116s|e79e10f3870482ca|210785576|rds|vector|||73.194|The following variables have undefined values  y_hat_rep.1,The following variables have undefined values  y_hat_rep.2,The following variables have undefined values  y_hat_rep.3,The following variables have undefined values  y_hat_rep.4,The following variables have undefined values  y_hat_rep.5,The following variables have undefined values  y_hat_rep.6,The following variables have undefined values  y_hat_rep.7,The following variables have undefined values  y_hat_rep.8,The following variables have undefined values  y_hat_rep.9,The following variables have undefined values  y_hat_rep.10,The following variables have undefined values  y_hat_rep.11,The following variables have undefined values  y_hat_rep.12,The following variables have undefined values  y_hat_rep.13,The following variables have undefined values  y_hat_rep.14,The following variables have undefined values  y_hat_rep.15,The following variables have undefined values  y_hat_rep.16,The following variables have undefined values  y_hat_rep.17,The following variables have undefined values  y_hat_rep.18,The following variables have undefined values  y_hat_rep.19,The following variables have undefined values  y_hat_rep.20,The following variables have undefined values  y_hat_rep.21,The following variables have undefined values  y_hat_rep.22,The following variables have undefined values  y_hat_rep.23,The following variables have undefined values  y_hat_rep.24,The following variables have undefined values  y_hat_rep.25,The following variables have undefined values  y_hat_rep.26,The following variables have undefined values  y_hat_rep.27,The following variables have undefined values  y_hat_rep.28,The following variables have undefined values  y_hat_rep.29,The following variables have undefined values  y_hat_rep.30,The following variables have undefined values  y_hat_rep.31,The following variables have undefined values  y_hat_rep.32,The following variables have undefined values  y_hat_rep.33,The following variables have undefined value|
-summary_test|stem|2f5aaf22dba97872|9e7a83797e3557cf|ca3fbc312b0116cd|-908423816||t18923.5378934328s|a6fdb28250052cc4|468758|rds|vector|||185.547||
 plots_test|stem|f7a4e5cec8a8604c|d6be4756121ac20b|f9df611606327492|1637481436||t18927.5091925432s|818a4d00b5d37bca|10658521667|rds|vector|||148.66||
 stanfit_test|stem|40650a04396eb1cd|402ccdae6f1a90c3|2e2370de4f0a3992|-1726047245||t18927.5250388343s|4aa991fac64c57d9|213417273|rds|vector|||101.838|The following variables have undefined values  y_hat_rep.1,The following variables have undefined values  y_hat_rep.2,The following variables have undefined values  y_hat_rep.3,The following variables have undefined values  y_hat_rep.4,The following variables have undefined values  y_hat_rep.5,The following variables have undefined values  y_hat_rep.6,The following variables have undefined values  y_hat_rep.7,The following variables have undefined values  y_hat_rep.8,The following variables have undefined values  y_hat_rep.9,The following variables have undefined values  y_hat_rep.10,The following variables have undefined values  y_hat_rep.11,The following variables have undefined values  y_hat_rep.12,The following variables have undefined values  y_hat_rep.13,The following variables have undefined values  y_hat_rep.14,The following variables have undefined values  y_hat_rep.15,The following variables have undefined values  y_hat_rep.16,The following variables have undefined values  y_hat_rep.17,The following variables have undefined values  y_hat_rep.18,The following variables have undefined values  y_hat_rep.19,The following variables have undefined values  y_hat_rep.20,The following variables have undefined values  y_hat_rep.21,The following variables have undefined values  y_hat_rep.22,The following variables have undefined values  y_hat_rep.23,The following variables have undefined values  y_hat_rep.24,The following variables have undefined values  y_hat_rep.25,The following variables have undefined values  y_hat_rep.26,The following variables have undefined values  y_hat_rep.27,The following variables have undefined values  y_hat_rep.28,The following variables have undefined values  y_hat_rep.29,The following variables have undefined values  y_hat_rep.30,The following variables have undefined values  y_hat_rep.31,The following variables have undefined values  y_hat_rep.32,The following variables have undefined values  y_hat_rep.33,The following variables have undefined value|
 draws_test|stem|8dacf8ed61bde19f|9d5542c15317c9df|c2d1ce4b6035be91|-1956291274||t18927.5254108756s|49105a58d3c959e5|205062568|rds|vector|||3.439||
-file_model_test|stem|3f2b56fd7896d2ac|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18928.7104934048s|40d40817e1fda096|23606|file|vector|||4.068||
-model_test|stem|3cbb42cc4fe99746|a3aa00c06cce5e55|f30359cc35af9157|-1162399619||t18928.7113325347s|2cc434dafa796fb0|7504|rds|vector|||25.01||
 Seedlings|stem|fa599a4f35022ca9|e366b261bd7792c2|4d855a233b64674c|-185150805||t18928.7113823964s|f27e5bf5905e3729|67140|rds|vector|||2.395||
 fits_Seedlings|stem|d78663c43aab28d2|3df0e9bfc4ef7fe5|f346244e2930684c|809945682||t18928.7139005733s|8a770af2d362365e|405324188|rds|vector|||196.288||
+data_stan_priors|stem|68a1a965b59638b4|5f8ab647110035d6|a3d318368beed28a|1623270232||t18928.7601226731s|29d4d220a3eeb5bf|33360|rds|vector|||1.291|Method posterior_samples is deprecated. Please see as_draws for recommended alternatives.|
+residuals_test|stem|597c6e52ac842f4c|b188cb154da95fa6|d07b0a56ff807cc0|-1334224030||t18928.786431349s|fc654257fce37c40|6886720|rds|vector|||74.728||
+plot_denscheck_posterior_test|stem|2b4e807399d4760b|bbc638bd0648ce7b|553a0764097e7222|917631247||t18927.6044224215s||2.15554030760018e-308|rds|vector|||45.72|NaNs produced|NAs not allowed in x.
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
+plotSensitivity|function|1b82069fa2790eec||||||||||||||
 fitTransition|function|44bc0d5310fdbeda||||||||||||||
 scaleResiduals|function|417cb86330f8c9fb||||||||||||||
+testSensitivity|function|a9b842a196cb283d||||||||||||||
 plotSurfaces|function|8e8bee5493cb7ccd||||||||||||||
 fitSeedlings|function|ab9445c1b014d2e9||||||||||||||
 predictS|function|77bcabfef1d8569c||||||||||||||
@@ -93,7 +95,7 @@ predictSurfaces|function|e08447bd71c3e5fe||||||||||||||
 countTransitions|function|3ed0ea15a11c5e77||||||||||||||
 plotStanfit|function|f432888b6ea15762||||||||||||||
 saveStages_s|function|fd5024a4e717b197||||||||||||||
-plotDensCheck|function|afdcf94b2dfa3f0a||||||||||||||
+plotDensCheck|function|844300284370dc98||||||||||||||
 summarizeFit|function|5e7992612ea96dd4||||||||||||||
 wrangleSeedlings|function|d074bec2bfda3a20||||||||||||||
 selectClusters|function|e84b8a94cea77208||||||||||||||
@@ -109,7 +111,39 @@ joinEnv|function|2488b8203673870c||||||||||||||
 summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 drawTest|function|c4bc9d044fc9fa86||||||||||||||
-data_stan_priors|stem|68a1a965b59638b4|5f8ab647110035d6|a3d318368beed28a|1623270232||t18928.7601226731s|29d4d220a3eeb5bf|33360|rds|vector|||1.291|Method posterior_samples is deprecated. Please see as_draws for recommended alternatives.|
-fit_test|stem|72fb36237f46e28d|583572f64db46ecb|50b2e0e7733d2728|-1560265059||t18928.7855401353s|2cf73cd4ab4c009f|258306|rds|vector|||2196.026||
-residuals_test|stem|597c6e52ac842f4c|b188cb154da95fa6|d07b0a56ff807cc0|-1334224030||t18928.786431349s|fc654257fce37c40|6886720|rds|vector|||74.728||
-plot_denscheck_posterior_test|stem|2b4e807399d4760b|bbc638bd0648ce7b|553a0764097e7222|917631247||t18927.6044224215s||1.66880545125097e-308|rds|vector|||45.72|NaNs produced|NAs not allowed in x.
+parname|stem|7b9255fa289c618a|6452b456f05cc1a7|a3dad144c40657ed|-1053533873||t18933.730177438s|e42ed4625f93f45f|114|rds|vector|||4.167||
+file_model_test|stem|001fb4605544c5cc|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18933.726687537s|4bb9526fe626308b|26067|file|vector|||0||
+model_test|stem|5a9176e9098ad531|a3aa00c06cce5e55|7d472491dc271eb3|-1162399619||t18933.730473321s|ad70be90f0f1252f|7503|rds|vector|||25.506||
+fit_test|stem|a3293013b39a87ed|583572f64db46ecb|f9e3b26255854914|-1560265059||t18935.0387378542s|085c91d128f717ad|285505|rds|vector|||113033.977||
+summary_test|stem|100967158d94e031|9e7a83797e3557cf|ad4eb6661d3365fd|-908423816||t18935.0421967814s|8722dce5d828158c|534280|rds|vector|||298.784||
+plot_powerscale_test|stem||6fae07fc2df05fe4|74e570fedb4282cb|461645073||t18935.0421973226s||0|rds|vector|||0.037||Cant find the following variables in the output theta
+scaleData|function|0d0c01b1b3160a22
+cleanEnv|function|06a0767a0f88a954
+extractDraws|function|3dff977b003c47b4
+plotSensitivity|function|1b82069fa2790eec
+fitTransition|function|44bc0d5310fdbeda
+scaleResiduals|function|417cb86330f8c9fb
+testSensitivity|function|a9b842a196cb283d
+plotSurfaces|function|8e8bee5493cb7ccd
+fitSeedlings|function|ab9445c1b014d2e9
+predictS|function|77bcabfef1d8569c
+predictSurfaces|function|e08447bd71c3e5fe
+countTransitions|function|3ed0ea15a11c5e77
+plotStanfit|function|f432888b6ea15762
+saveStages_s|function|fd5024a4e717b197
+plotDensCheck|function|844300284370dc98
+summarizeFit|function|5e7992612ea96dd4
+wrangleSeedlings|function|d074bec2bfda3a20
+selectClusters|function|e84b8a94cea77208
+formatPriors|function|fcda634744eb1a1e
+joinStages|function|e77d9690659bf401
+draw|function|eec54dbfa7152637
+fitS|function|b1d146216eef03f2
+readStanfit|function|5fb977364933b1e8
+constructConstantGrid_SK|function|ec0773362d05dadf
+addPackage|function|d45c347b66cce55c
+formatStanData|function|3f0b01ea7f6ba1af
+joinEnv|function|2488b8203673870c
+summarizeEnvByCluster|function|5fcaa758babda781
+constructConstantGrid|function|33d54800694377c7
+drawTest|function|c4bc9d044fc9fa86
