@@ -1,6 +1,7 @@
 # Directories
 _targets/objects/*
-Data/
+Data/*
+Publish/*
 Fits/*
 /Fits.nosync/*
 */*/Fits.nosync/*
