@@ -97,11 +97,17 @@ list(
     tar_target(threshold_dbh, 200),
     tar_target(taxon_select, c("Fagus.sylvatica")),
     
+    tar_target(Data_big_area,
+               prepareBigData(Data_big, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
+    
+    tar_target(Data_small_area,
+               prepareSmallData(Data_small, taxon_select = taxon_select)),
+    
     tar_target(Stages_transitions,
                countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
     
     tar_target(Stages,
-               joinStages(Data_big, Data_small, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
+               joinStages(Data_big_area, Data_small_area, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
     tar_target(Stages_env,
                joinEnv(Stages, Env_cluster)),
     
@@ -206,8 +212,8 @@ list(
                  prior_c_a_log = c(-5, 2),
                  prior_c_b_log = c(-5, 2),
                  prior_c_j_log = c(-6, 2),
-                 ## prior_g_logit,
-                 ## prior_h_logit,
+                 ## prior_g_log,
+                 ## prior_h_log,
                  # prior_l_log = c(5, 2),
                  # prior_r_log = c(1, 2),
                  prior_s_log = c(-2, 1)
@@ -268,8 +274,8 @@ list(
     tar_target(exclude,
                c(pars_exclude, helpers_exclude, simnames_prior, simnames_posterior)),
     tar_target(parname,
-               c("phi_obs", "theta", "sigma_l",
-                 "b_log", "c_a_log", "c_b_log", "c_j_log", "g_logit", "h_logit", "l_log", "r_log", "s_log")),
+               c("phi_obs", "sigma_l",
+                 "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
     
     tar_target(draws_test,
                extractDraws(stanfit_test, exclude = helpers_exclude)),
