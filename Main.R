@@ -3,7 +3,10 @@ library(here)
 library(magrittr)
 library(glue)
 library(dplyr)
+library(tidyr)
+library(nesting)
 library(stringr)
+library(forcats)
 library(targets)
 library(visNetwork)
 library(future)
@@ -22,7 +25,7 @@ library(priorsense)
 
 
 # Orientation -------------------------------------------------------------
-setwd(here())
+# setwd(here())
 
 
 # Pre-targets sourcing ----------------------------------------------------
