@@ -38,30 +38,29 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     ungroup() %>%
     dplyr::select("plotid", "tax", "obsid",
                   "timediff_plot",
-                  "count_A2B_plot", "count_J2A_plot",
+                  "count_A2B_plot", "count_J2A_plot", ## [1/ha]
+                  "count_A2B_plot_obs", "count_J2A_plot_obs", ## true observed ...
+                  "area_A2B", "area_J2A", ## on this area
                   "count_A_sum_before", "count_J_integr_plot", "count_J_sum_before", "count_A_integr_plot",
                   "h_plot", "g_plot") %>%
-    # mutate_at(c("count_A2B_plot", "count_J2A_plot", "count_J_integr_plot", "count_A_integr_plot"), round) %>%
-    # mutate(joinid = interaction(plotid, tax)) %>%
-    # dplyr::select(-plotid, -tax) %>%
     
     group_by(plotid, obsid, tax) %>%
     slice(1)
   
   G <- Stages_transitions %>%
     # filter(!is.na(g_plot))
-    filter(!is.na(count_J2A_plot) & isTRUE(count_J_integr_plot > 0)) ## also drops NAs
+    filter(!is.na(count_J2A_plot_obs) & isTRUE(count_J_integr_plot > 0)) ## also drops NAs
 
   H <- Stages_transitions %>%
     # filter(!is.na(h_plot))
-    filter(!is.na(count_A2B_plot) & isTRUE(count_A_integr_plot > 0)) ## also drops NAs
+    filter(!is.na(count_A2B_plot_obs) & isTRUE(count_A_integr_plot > 0)) ## also drops NAs
   
   Stages %<>%
     
     ## Join Stages_transitions
     # bind_cols(Stages_transitions[match(interaction(.$plotid, .$tax), Stages_transitions$joinid), ]) %>%
     
-    ## Synonyms for consistency wiht model lingo
+    ## Synonyms for consistency with model lingo
     group_by(clusterid) %>%
     mutate(plot = match(plotid, unique(plotid))) %>% ## for numbers designating which corner it is, extract the substring at the end of plotid
     ungroup() %>%
@@ -73,10 +72,10 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     
     ## Stages are measured in different terms: ba or count
     mutate(y = case_when(
-      stage == "J" ~ count_ha_r,
-      stage == "A" ~ count_ha_r,
-      stage == "B" ~ ba_ha_r,
-      stage == "BA" ~ ba_ha_r
+      stage == "J" ~ count_obs, # count_ha_r,
+      stage == "A" ~ count_obs, # count_ha_r,
+      stage == "B" ~ count_obs, # ba_ha_r
+      stage == "BA" ~ as.double(ba_ha_r)
     )) %>%
     
     ## Different levels of observation error were assumed for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
@@ -175,7 +174,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
   L_smooth_log <- S %>%
     group_by(loc) %>%
     summarize_at(paste("s", taxon_s, sep = "_"), first) %>%
-    column_to_rownames(var = "loc") %>%
+    tibble::column_to_rownames(var = "loc") %>%
     as.matrix()
   
   #### Some data for multiple reuse in the list
@@ -204,6 +203,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     N_species = N_species,
     N_pops = length(unique(S$pop)),
     N_beta = ncol(X),
+    N_protocol = length(unique(S$methodid)), ## different sampling area levels
     
     n_obs = S_locs$n_obs,
     n_yhat = S_locs$n_yhat,
@@ -214,6 +214,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     
     rep_yhat2y = vrep(1:L_yhat, S_yhat$n_plots), ## repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
     rep_obsmethod2y = as.integer(S$obsmethod),
+    rep_protocol2y = as.integer(S$methodid),
     # rep_yhat2a2b = S_a2b$rep_yhat2a2b,
     # rep_species2a2b = S_a2b$rep_species2a2b,
     rep_pops2init =  as.integer(S_init$pop),
@@ -227,7 +228,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     L_smooth_log = L_smooth_log, ## array[N_locs] vector<lower=0>[N_species] L_smooth_log;
     L_smooth = exp(L_smooth_log),
     
-    y = S$y,
+    y = as.integer(S$y),
+    area = tidyr::replace_na(S$offset, 0),
     # a2b = S_a2b$a2b,
     
     ## Settings corner
@@ -239,15 +241,14 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     prior_state_init_log = prior_state_init_log,
     
     ## the transitions.
-    ## no values between 0 and 1, so rounding is fine (H$count_A_integr_plot > 0 & H$count_A_integr_plot < 1) %>% any()
     L_g = nrow(G),
     L_h = nrow(H),
-    y_j2a = round(G$count_J2A_plot),
-    y_a2b = round(H$count_A2B_plot),
-    y_j = round(G$count_J_integr_plot),
-    y_a = round(H$count_A_integr_plot),
-    # y_g = G$g_plot,
-    # y_h = H$h_plot,
+    y_j2a = G$count_J2A_plot_obs, # integer
+    y_a2b = H$count_A2B_plot_obs, # integer
+    area_log_j2a = log(G$area_J2A),
+    area_log_a2b = log(H$area_A2B),
+    y_j = G$count_J_integr_plot, # [1/ha]
+    y_a = H$count_A_integr_plot, # # [1/ha]
     species_g = as.integer(factor(G$tax, levels = levels(taxon_s))),
     species_h = as.integer(factor(H$tax, levels = levels(taxon_s)))
   )
@@ -272,10 +273,11 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
     y_trans = if(isg) y_j2a else y_a2b,
     y_base = if(isg) y_j else y_a,
     rep_species = if(isg) species_g else species_h,
-    N_species = N_species
+    N_species = N_species,
+    area_log = if(isg) area_log_j2a else area_log_a2b
   ))
     
-  n_chains <- 3
+  n_chains <- 4
   fit_transition <- model_transitions$sample(data = d,
                                              output_dir = fitpath,
                                              # iter_warmup = iter_warmup, iter_sampling = iter_sampling,
@@ -284,7 +286,7 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
   
   # bayesplot::mcmc_trace(fit_transition$draws())
   # bayesplot::mcmc_pairs(fit_transition$draws())
-  # bayesplot::mcmc_areas(fit_transition$draws(variables = c("prop_logit")), area_method = "scaled height")
+  # bayesplot::mcmc_areas(fit_transition$draws(variables = c("rate_log")), area_method = "scaled height")
   
   message("Summary of the the fit for parameter ", which, ":")
   print(fit_transition$summary())
@@ -302,8 +304,8 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
 formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor = 1) {
   
   ## Matrices[draws, species]
-  Draws_g <- fit_g$draws(variables = "prop_logit", format = "draws_matrix") %>% as.data.frame()
-  Draws_h <- fit_h$draws(variables = "prop_logit", format = "draws_matrix") %>% as.data.frame()
+  Draws_g <- fit_g$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
+  Draws_h <- fit_h$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
   Draws_seedlings <- posterior_samples(fits_Seedlings, fixed = F, pars = c("Intercept$", "b_ba_ha$"))
   
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
@@ -319,8 +321,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   ## The model assumes array[2] vector[N_species] prior_*; which means that the vectors stretch over rows!
   
   priors <- list(
-    prior_g_logit = bind_cols(pars_g), ## Matrix[N_species, (mu, sigma)]
-    prior_h_logit = bind_cols(pars_h),
+    prior_g_log = bind_cols(pars_g), ## Matrix[N_species, (mu, sigma)]
+    prior_h_log = bind_cols(pars_h),
     prior_l_log = bind_cols(pars_seedlings), ## !!!! bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("b_Intercept"))), ## prelimary hack!
     prior_r_log = bind_cols(pars_seedlings) ## !!!! bind_cols(dplyr::select(as.data.frame(pars_seedlings), ends_with("b_ba_ha")))
   )
@@ -345,8 +347,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
 #   c_a_log <- rnorm(n_species, -3.3, 0.2)
 #   c_b_log <- rnorm(n_species, -3, 0.1)
 #   c_j_log <- rnorm(n_species, -5, 0.5)
-#   g_logit <- rnorm(n_species, -1, 0.2)
-#   h_logit <- rnorm(n_species, -0.5, 0.3)
+#   g_log <- rnorm(n_species, -1, 0.2)
+#   h_log <- rnorm(n_species, -0.5, 0.3)
 #   m_a_log <- rnorm(n_species, -1.5, 0.5)
 #   m_j_log <- rnorm(n_species, -1.2, 0.1)
 #   r_log <- rnorm(n_species, 1.5, 0.2)
@@ -363,8 +365,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
 #     # c_b_log = c_b_log,
 #     # c_j_log = c_j_log,
 #     # 
-#     # g_logit = g_logit,
-#     # h_logit = h_logit,
+#     # g_log = g_log,
+#     # h_log = h_log,
 #     # 
 #     # l_log = l_log,
 #     # m_a_log = m_a_log,
@@ -390,8 +392,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
 #     c_b = exp(c_b_log),
 #     c_j = exp(c_j_log),
 #     
-#     g = plogis(g_logit),
-#     h = plogis(h_logit),
+#     g = exp(g_log),
+#     h = exp(h_log),
 #     
 #     l = exp(l_log),
 #     m_a = exp(m_a_log),
@@ -403,8 +405,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
 #     # c_a_loc =  matrix(rep(exp(c_a_log),n_locs), nrow = n_locs, byrow = T),
 #     # c_b_loc =  matrix(rep(exp(c_b_log),n_locs), nrow = n_locs, byrow = T),
 #     # c_j_loc =  matrix(rep(exp(c_j_log),n_locs), nrow = n_locs, byrow = T),
-#     # g_loc =  matrix(rep(plogis(g_logit),n_locs), nrow = n_locs, byrow = T),
-#     # h_loc =  matrix(rep(plogis(h_logit),n_locs), nrow = n_locs, byrow = T),
+#     # g_loc =  matrix(rep(exp(g_log),n_locs), nrow = n_locs, byrow = T),
+#     # h_loc =  matrix(rep(exp(h_log),n_locs), nrow = n_locs, byrow = T),
 #     # l_loc =  matrix(rep(exp(l_log),n_locs), nrow = n_locs, byrow = T),
 #     # m_a_loc =  matrix(rep(exp(m_a_log),n_locs), nrow = n_locs, byrow = T),
 #     # m_j_loc =  matrix(rep(exp(m_j_log),n_locs), nrow = n_locs, byrow = T),
