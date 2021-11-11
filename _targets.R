@@ -244,8 +244,8 @@ list(
                  prior_c_j_log = c(-6, 2),
                  ## prior_g_log,
                  ## prior_h_log,
-                 prior_l_log = c(0.5, 2),
-                 # prior_r_log = c(0.5, 2),
+                 prior_l_log = cbind(Fagus = c(0.5, 2), others = c(0.5, 2)),
+                 # prior_r_log = cbind(Fagus = c(0.5, 2), others = c(0.5, 2)),
                  prior_s_log = c(-2, 1)
                )
              ),
