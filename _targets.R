@@ -32,6 +32,32 @@ future::plan(future::multisession, workers = 6)
 
 # Pipeline ----------------------------------------------------------------
 
+## Inner pipelines
+targets_parname <- list(
+  
+  tar_target(pars_exclude,
+             c("y_hat", "L_loc_log", "L_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
+  tar_target(helpers_exclude,
+             c("vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
+               "area_zeta", "area_zeta_prior", "phi_obs_rep", "phi_obs_rep_prior", "zeta_prior_rep", "zeta_rep",
+               "log_prior", "log_lik")),
+  tar_target(rep_exclude,
+             c("phi_obs_rep", "phi_obs_rep_prior", "zeta_prior_rep", "zeta_rep",
+               "y_hat_rep", "y_hat_prior_rep", "y_hat_rep_offset", "y_hat_prior_rep_offset")),
+  tar_target(simnames_prior,
+             c("y_hat_prior", "y_hat_prior_rep", "y_hat_prior_rep_offset", "y_prior_sim")),
+  tar_target(simnames_posterior,
+             c("y_hat_rep", "y_hat_rep_offset", "y_sim", "y_hat_prior",
+               "converged", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "fixiter_max")),
+  tar_target(exclude,
+             c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
+  tar_target(parname,
+             c("phi_obs", "sigma_l", "zeta",
+               "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log"))
+)
+
+
+## The pipeline
 list(
   
   ## State data files
@@ -186,6 +212,7 @@ list(
                scaleData(Stages_select_pred, predictor_select)) # After selection, so that scaling includes selected plots .
   ),
   
+  
   ## Model fit
   list(
     
@@ -241,16 +268,10 @@ list(
     tar_target(plot_denscheck_priorsim_test,
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
 
-        
     tar_target(fit_test,
                drawTest(model = model_test, data_stan_priors, method = "mcmc", initfunc = 0.5)),
     tar_target(fit,
                draw(model = model, data_stan_priors, method = "mcmc", initfunc = 0.5)),
-    
-    tar_target(summary_test,
-               summarizeFit(fit_test)),
-    tar_target(summary,
-               summarizeFit(fit)),
     
     tar_target(stanfit_test,
                readStanfit(fit_test)),
@@ -262,20 +283,12 @@ list(
     tar_target(stanfit_plotting,
                readStanfit(fit, purge = TRUE)),
     
-    tar_target(pars_exclude,
-               c("y_hat", "L_loc_log", "L_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
-    tar_target(helpers_exclude,
-               c("vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior")),
-    tar_target(simnames_prior,
-               c("y_hat_prior", "y_hat_prior_rep", "y_prior_sim")),
-    tar_target(simnames_posterior,
-               c("y_hat_rep", "y_sim", "y_hat_prior",
-                 "converged", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "iterations_fix", "state_fix", "dominant_fix", "major_fix", "fixiter_max")),
-    tar_target(exclude,
-               c(pars_exclude, helpers_exclude, simnames_prior, simnames_posterior)),
-    tar_target(parname,
-               c("phi_obs", "sigma_l",
-                 "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
+    targets_parname,
+    
+    tar_target(summary_test,
+               summarizeFit(fit_test, exclude = c(helpers_exclude, rep_exclude))),
+    tar_target(summary,
+               summarizeFit(fit, exclude = c(helpers_exclude, rep_exclude))),
     
     tar_target(draws_test,
                extractDraws(stanfit_test, exclude = helpers_exclude)),
