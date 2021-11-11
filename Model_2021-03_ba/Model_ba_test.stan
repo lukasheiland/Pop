@@ -152,6 +152,7 @@ functions {
   }
   
   
+    
 //// Transforms polynomial form into vertex form
 //  vector[] transformToVertex(matrix P) {
 //    
@@ -525,7 +526,7 @@ generated quantities {
   //// Variables for prediction/simulation
   // vector[N_locs] y_hat_temp;
   // y_hat_temp = y_hat;
-  array[L_y] real y_sim;
+  array[L_y] real<lower=0> y_sim;
 
     
   // Possibility to set an option in data for prior generation or not 
@@ -554,32 +555,32 @@ generated quantities {
   // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_array(prior_s_log[1], N_species), rep_array(prior_s_log[2], N_species)));
   
-  array[3] real phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), [3, 2, 1]));
+  array[3] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), [3, 2, 1]));
   
   // special case L
-  array[N_locs] vector[N_species] L_loc_prior;
+  array[N_locs] vector<lower=0>[N_species] L_loc_prior;
   array[N_locs, N_species] real L_random_log_prior;  
-  vector<lower=0>[N_species] sigma_l_prior = to_vector(normal_rng(rep_array(0, N_species), rep_array(1, N_species)));
-  vector<lower=0>[N_protocol] zeta_prior = to_vector(normal_rng(rep_array(0, N_protocol), rep_array(0.2, N_protocol)));
+  vector<lower=0>[N_species] sigma_l_prior = sqrt(square(to_vector(normal_rng(rep_array(0, N_species), rep_array(1, N_species)))));
+  vector<lower=0>[N_protocol] zeta_prior = sqrt(square(to_vector(normal_rng(rep_array(0, N_protocol), rep_array(0.2, N_protocol)))));
   
   for(loc in 1:N_locs) {
   
     L_random_log_prior[loc,] = normal_rng(rep_array(0, N_species), rep_array(1, N_species));
     L_loc_prior[loc, ] = exp(l_log_prior + L_smooth_log[loc, ] +
-                         sigma_l_prior .* to_vector(L_random_log_prior[loc, ]));
+                             sigma_l_prior .* to_vector(L_random_log_prior[loc, ]));
                          
     
   }
   
   
   // Variables for simulation
-  vector[L_yhat] y_hat_prior;
-  vector[L_y] y_hat_prior_rep;
-  vector[L_y] y_hat_prior_rep_offset;
-  vector[L_y] area_zeta_prior;
-  array[L_y] real y_prior_sim;
+  vector<lower=0>[L_yhat] y_hat_prior;
+  vector<lower=0>[L_y] y_hat_prior_rep;
+  vector<lower=0>[L_y] y_hat_prior_rep_offset;
+  vector<lower=0>[L_y] area_zeta_prior;
+  array[L_y] real<lower=0> y_prior_sim;
                    
-  vector[L_y] zeta_prior_rep = zeta_prior[rep_protocol2y];
+  vector<lower=0>[L_y] zeta_prior_rep = zeta_prior[rep_protocol2y];
 
   for(j in 1:L_y) {
   	if (area[j] == 0) {
@@ -655,10 +656,10 @@ generated quantities {
     log_prior += normal_lpdf(state_init_log[loc,] | prior_state_init_log, 3);
   }
   
-  log_prior = normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 3), [3, 2, 1]) +
+  log_prior = normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 3), [3, 2, 1]) + log(2) +
 			  normal_lpdf(zeta | rep_array(0.0, 5), rep_array(0.2, 5)) + log(2) +
+			  normal_lpdf(sigma_l | 0, 1) + log(2) +			  
 			  normal_lpdf(to_vector(L_random_log) | 0, 1) +
-			  normal_lpdf(sigma_l | 0, 1) + log(2) +
 			  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
 			  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) +
 			  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) +

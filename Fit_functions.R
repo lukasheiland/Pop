@@ -475,7 +475,7 @@ drawTest <- function(model, data_stan, initfunc = 0.5,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
   
   } else if (match.arg(method) == "sim") {
-    fit <- model$sample(data = data,
+    fit <- model$sample(data = data_stan,
                         fixed_param = TRUE,
                         output_dir = fitpath,
                         # output_basename = ,
