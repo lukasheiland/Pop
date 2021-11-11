@@ -577,20 +577,8 @@ generated quantities {
   vector[L_y] y_hat_prior_rep;
   vector[L_y] y_hat_prior_rep_offset;
   vector[L_y] area_zeta_prior;
-
-
   array[L_y] real y_prior_sim;
-  
-  y_hat_prior = unpack(rep_array(prior_state_init_log, N_locs), time_max, times,
-                   vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
-                   ba_a_avg, ba_a_upper,
-                   n_obs, n_yhat, // varying numbers per loc
-                   N_species, N_pops, L_yhat, N_locs, // fixed numbers
-                   i_j, i_a, i_b);
                    
-  y_hat_prior_rep = y_hat_prior[rep_yhat2y];
-  y_hat_prior_rep_offset = y_hat_prior_rep .* area_zeta_prior;
-
   vector[L_y] zeta_prior_rep = zeta_prior[rep_protocol2y];
 
   for(j in 1:L_y) {
@@ -600,6 +588,17 @@ generated quantities {
   		area_zeta_prior[j] = area[j];
   	}
   }
+  
+  y_hat_prior = unpack(rep_array(prior_state_init_log, N_locs), time_max, times,
+                       vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
+                       ba_a_avg, ba_a_upper,
+                       n_obs, n_yhat, // varying numbers per loc
+                       N_species, N_pops, L_yhat, N_locs, // fixed numbers
+                       i_j, i_a, i_b);
+ 
+  y_hat_prior_rep = y_hat_prior[rep_yhat2y];
+  y_hat_prior_rep_offset = y_hat_prior_rep .* area_zeta_prior;
+
 
   y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsmethod2y]); // , [0, 0, 0]', L_y
 
