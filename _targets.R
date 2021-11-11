@@ -172,28 +172,31 @@ list(
     list(
       tar_target(Seedlings,
                  wrangleSeedlings(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
-      tar_target(Seedlings_BA_s,
-                 constructConstantGrid_SK(taxon_s, Seedlings),
-                 pattern = map(taxon_s),
-                 iteration = "list"),
-      tar_target(fits_Seedlings_s, ## fits_s each have an attribute "taxon"
-                 fitS(Seedlings_BA_s),
-                 pattern = map(Seedlings_BA_s),
-                 iteration = "list"),
-      tar_target(Seedlings_s,
-                 predictS(fits_Seedlings_s, Seedlings),
-                 iteration = "list"),
-      tar_target(file_Seedlings_s,
-                 saveStages_s(Seedlings_s),
-                 format = "file"),
-      tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
-                 readRDS(file_Seedlings_s)),
-      tar_target(surfaces_Seedlings_s,
-                 predictSurfaces(fits_Seedlings_s),
-                 iteration = "list"),
-      tar_target(surfaceplots_Seedlings_s,
-                 plotSurfaces(surfaces_Seedlings_s),
-                 iteration = "list"),
+      
+      ## for inclusion of splines:
+      # tar_target(Seedlings_BA_s,
+      #            constructConstantGrid_SK(taxon_s, Seedlings),
+      #            pattern = map(taxon_s),
+      #            iteration = "list"),
+      # tar_target(fits_Seedlings_s, ## fits_s each have an attribute "taxon"
+      #            fitS(Seedlings_BA_s),
+      #            pattern = map(Seedlings_BA_s),
+      #            iteration = "list"),
+      # tar_target(Seedlings_s,
+      #            predictS(fits_Seedlings_s, Seedlings),
+      #            iteration = "list"),
+      # tar_target(file_Seedlings_s,
+      #            saveStages_s(Seedlings_s),
+      #            format = "file"),
+      # tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
+      #            readRDS(file_Seedlings_s)),
+      # tar_target(surfaces_Seedlings_s,
+      #            predictSurfaces(fits_Seedlings_s),
+      #            iteration = "list"),
+      # tar_target(surfaceplots_Seedlings_s,
+      #            plotSurfaces(surfaces_Seedlings_s),
+      #            iteration = "list"),
+      
       tar_target(fits_Seedlings,
                  fitSeedlings(Seedlings))
     ),
@@ -241,8 +244,8 @@ list(
                  prior_c_j_log = c(-6, 2),
                  ## prior_g_log,
                  ## prior_h_log,
-                 # prior_l_log = c(5, 2),
-                 # prior_r_log = c(1, 2),
+                 prior_l_log = c(0.5, 2),
+                 # prior_r_log = c(0.5, 2),
                  prior_s_log = c(-2, 1)
                )
     ),
