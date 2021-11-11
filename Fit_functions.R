@@ -501,9 +501,11 @@ draw <- function(model, data_stan, initfunc) {
 # fit <- tar_read("fit")
 # fit <- tar_read("fit_test")
 
-summarizeFit <- function(fit) {
+summarizeFit <- function(fit, exclude = NULL) {
   
-  summary <- fit$summary()
+  allpar <- fit$metadata()$stan_variables
+  includepar <- setdiff(allpar, exclude)
+  summary <- fit$summary(includepar)
   
   summarypath <- fit$output_files()[1] %>%
     stringr::str_replace("-1-", "-x-") %>%
