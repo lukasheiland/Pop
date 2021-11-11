@@ -513,6 +513,10 @@ summarizeFit <- function(fit, exclude = NULL) {
   
   write.csv(summary, summarypath)
   
+  head(summary, 20) %>%
+    as.data.frame() %>%
+    print()
+  
   return(summary)
 }
 
