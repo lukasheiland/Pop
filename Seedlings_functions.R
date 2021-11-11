@@ -131,10 +131,14 @@ constructConstantGrid_SK <- function(Seedlings) {
 
 fitSeedlings <- function(Seedlings) {
   
-  fit_seedlings <- brms::brm(count_ha ~ ba_ha + 1 + (1 | plotid), data = Seedlings[Seedlings$tax == "Fagus.sylvatica",], family = negbinomial,
+  fit_seedlings <- brms::brm(count_ha ~ ba_ha + 1 + (1 | plotid),
+                             family = negbinomial,
+                             data = Seedlings[Seedlings$tax == "Fagus.sylvatica",],
                              cores = getOption("mc.cores", 4))
   
-  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + 1 + (1 | plotid), data = Seedlings[Seedlings$tax == "other",], family = negbinomial,
+  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + 1 + (1 | plotid),
+                                   family = negbinomial,
+                                   data = Seedlings[Seedlings$tax == "other",],
                                    cores = getOption("mc.cores", 4))
   
   message("Summary of the the fit for Fagus seedlings:")
