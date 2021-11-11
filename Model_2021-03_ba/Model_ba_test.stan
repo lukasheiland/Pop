@@ -285,7 +285,7 @@ data {
   // vector<lower=1>[L_a2b] timediff;
   
   matrix[N_locs, N_beta] X; // design matrix
-  array[N_locs] vector[N_species] L_smooth;
+  array[N_locs] vector[N_species] L_smooth_log;
   
   vector<lower=0>[L_y] area;
   
@@ -420,7 +420,7 @@ transformed parameters {
   
   for(loc in 1:N_locs) {
     
-    L_loc[loc, ] = exp(l_log .* L_smooth[loc, ] + // The smooth effect
+    L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ] + // The smooth effect
                        sigma_l .* L_random_log[loc, ]'); // non-centered loc-level random intercept 
   }
   
@@ -565,7 +565,7 @@ generated quantities {
   for(loc in 1:N_locs) {
   
     L_random_log_prior[loc,] = normal_rng(rep_array(0, N_species), rep_array(1, N_species));
-    L_loc_prior[loc, ] = exp(l_log_prior .* L_smooth[loc, ] +
+    L_loc_prior[loc, ] = exp(l_log_prior + L_smooth_log[loc, ] +
                          sigma_l_prior .* to_vector(L_random_log_prior[loc, ]));
                          
     
