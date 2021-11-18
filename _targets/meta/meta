@@ -62,7 +62,6 @@ fits_Seedlings_s|pattern|584e604ae727e840|3921cd95431345fe||-297493343||||573612
 Seedlings_s|stem||46a9595e49329d8a|26d3dfb509dced43|-142007958||||0|rds|list|||0.041||Fehler bei der Auswertung des Argumentes x bei der Methodenauswahl für Funktion as.data.frame nicht anwendbare Methode für st_coordinates auf Objekt der Klasse cgrouped_df, tbl_df, tbl, data.frame angewendet
 file_DE_big_status|stem|ae0f974436e6977a|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18937.6580614102s|c78be29eeba71bae|16437186|file|vector|||13.417||
 file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18937.6577345002s|e684589703d38eb9|5533814|file|vector|||1.968||
-file_Stages_s|stem|c1657d4699bfd689|ee9329b222cb6f7a|69acaaff2836274e|-1399817009|Data/Stages_s.rds|t18941.8618796172s|44d6a4cdbdb52959|42102826|file|vector|||62.407||
 taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t18942.6592890063s|e3871644244b3637|115|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|0.001||
 Data_seedlings|stem|cfcc708af6c1044c|81db27c755665335|792b74af501c76b2|-396571518||t18942.6494565093s|f5abf14db05ef090|1393240|rds|vector|||3.233||
 Data_big_status|stem|ae0f974436e6977a|eff25cb053505d95|69a84043a87fa2b3|813772221||t18942.6594207188s|c78be29eeba71bae|16437186|rds|vector|||13.878||
@@ -75,7 +74,6 @@ radius_max|stem|b35aa22c1781c4ed|e9dfe26516914502|ef46db3751d8e999|-1596622531||
 weakpriors|stem|d019cbdf29aecff9|28f1d15d0ddbf50c|d38fd9c4c2c5e51f|-1879221107||t18948.9600862508s|23174e8584d69801|187|rds|vector|||11.162||
 file_model_transitions|stem|0c8e554a9eafc7d1|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18941.8569560185s|5d521c54c4b9868f|1097|file|vector|||10.919||
 Data_small_area|stem|f888b112d3bb07aa|0a78a63659b2b6ca|3c8274e8d5e456a9|1655197218||t18948.9705771417s|ed8785962ae40e3b|2275139|rds|vector|||87.318||
-file_model_test|stem|7037b5db91c06c0b|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18948.965692622s|57a7fb524b9b637b|30476|file|vector|||12.243||
 parname|stem|5a4a6c07e69a8a08|93959730a826a5a8|a3dad144c40657ed|-1053533873||t18948.9987770788s|6750e7a20a1b121a|109|rds|vector|||0.001||
 simnames_posterior|stem|267c92c00aacde4a|50a127a083982363|a3dad144c40657ed|618692093||t18948.9987772759s|5f22883ff0bcf597|153|rds|vector|||0.001||
 rep_exclude|stem|c396a71d505283ff|b167e77cf27cbb52|a3dad144c40657ed|1847664984||t18948.9987773561s|6556730b296d7213|119|rds|vector|||0.001||
@@ -103,6 +101,8 @@ Stages_transitions|stem|dc385c617697f906|a5e48a6eb89db6d3|24d84b1b1826a056|-1733
 fit_g|stem|d5eb0697728fb6ee|255e3515660b75a6|027a5e71af7b718b|128175024||t18949.6664140057s|294658f66e7a30d8|12515409|rds|vector|||15.645||
 fit_h|stem|fc5ad7e81b50d1ad|ca8b86a90da6d4a5|027a5e71af7b718b|468382782||t18949.6666540845s|cf443cfe345816d6|15277709|rds|vector|||19.558||
 data_stan_priors|stem|ae4a554dda9abc41|5f8ab647110035d6|dcb4ea8c31a255f6|1623270232||t18949.6667371819s|6e49ef2196b17e88|59510|rds|vector|||1.084||
+data_stan|stem|3ea795b968ee4355|d18a2fb7bd18372c|af27499553daf920|1263995833||t18949.6885176766s|886f5d1edc2f3cb3|59152|rds|vector|||26.572||
+file_model_test|stem|7037b5db91c06c0b|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18949.7027308916s|57a7fb524b9b637b|30476|file|vector|||12.243||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
@@ -137,4 +137,4 @@ summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 prepareBigData|function|bc903757a4846348||||||||||||||
 drawTest|function|ecfb490f7363294c||||||||||||||
-data_stan|stem|3ea795b968ee4355|d18a2fb7bd18372c|af27499553daf920|1263995833||t18949.6885176766s|886f5d1edc2f3cb3|59152|rds|vector|||26.572||
+file_Stages_s|stem|7fec3998464646d6|ee9329b222cb6f7a|f14657f4cac422f4|-1399817009|Data/Stages_s.rds|t18949.7107703498s|e09dee1e7d854140|40749482|file|vector|||47.458||
