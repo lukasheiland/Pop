@@ -285,16 +285,16 @@ list(
                cmdstan_model(file_model)),
     
     tar_target(priorsim_test,
-               drawTest(model = model_test, data_stan_priors, method = "sim", initfunc = 0.5)),
+               drawTest(model = model_test, data_stan_priors, method = "sim", initfunc = 0.8)),
     tar_target(plot_denscheck_priorsim_test,
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
 
     tar_target(fit_test,
                drawTest(model = model_test, data_stan_priors, method = "mcmc",
-                        n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
+                        n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.8)),
     tar_target(fit,
                draw(model = model, data_stan_priors, method = "mcmc",
-                    n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
+                    n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.8)),
     
     tar_target(stanfit_test,
                readStanfit(fit_test)),
