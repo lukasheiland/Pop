@@ -7,14 +7,39 @@
 # B_status  <- tar_read("Data_big_status")
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
-prepareBigData <- function(B, # B_status,
+# radius_max <- tar_read("radius_max")
+prepareBigData <- function(B, B_status,
                            taxon_select,
-                           threshold_dbh,
+                           threshold_dbh, radius_max,
                            id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
                            ) {
   
+  ## Areas and radii
+  radius_max_B_cm <- radius_max/10 ## conversion from mm to cm
+  radius_max_A_cm <- 25 * threshold_dbh/10 # [cm]
+  dbh_max_B <- radius_max_B_cm/25 * 10
+  
+  area_max_B <- pi * radius_max_B_cm^2 * 1e-8 # [ha]
+  area_max_A <- pi * radius_max_A_cm^2 * 1e-8 # [ha]
+  
+  ## The average area is the integral on 0 to radius_max of the function f(r) = pi * r^2, divided by radius_max
+  area_0_B <- (pi * radius_max_B_cm^3 * 1e-8) / (3 * radius_max_B_cm) ## [cm^2 * 1e-8 == ha]
+  area_0_A <- (pi * radius_max_A_cm^3 * 1e-8) / (3 * radius_max_A_cm) ## [cm^2 * 1e-8 == ha]
+  
+  M <- matrix(c(radius_max_A_cm, radius_max_B_cm,
+                area_max_A, area_max_B,
+                area_0_A, area_0_B,
+                threshold_dbh, dbh_max_B
+                ),
+              nrow = 4, byrow = T,
+              dimnames = list(c("radius_max[cm]", "area_max [ha]", "area_0 [ha]", "dbh_max [mm]"), c("A", "B")))
+  
+  saveRDS(M, "Publish/Areas_average.csv")
+  print(M)
+  
   id_select_B <- intersect(names(B), id_select) %>% setdiff("treeid") ## make sure to always exclude treeid for good grouping
   ## B doesn't include clusterid!
+  
   
   selectTaxa <- function(Abundance, taxon_select) {
     Abundance %>%
@@ -27,11 +52,11 @@ prepareBigData <- function(B, # B_status,
     if_else(x < 1, ceiling(x), floor(x))
   }
   
-  #### Prepare joining data sets
-  # S <- B_status %>%
-  #   rename(count = count_ha) %>% # just temporarily for consistency with Data_big
-  #   # mutate(excluded = dead | harvested) %>%
-  #   mutate(treejoinid = interaction(obsid, treeid))
+  ### Prepare joining status data for radii
+  S <- B_status %>%
+    rename(count = count_ha) %>% # just temporarily for consistency with Data_big
+    # mutate(excluded = dead | harvested) %>%
+    mutate(treejoinid = interaction(obsid, treeid))
   
   ## For formulas:
   # see: http://wiki.awf.forst.uni-goettingen.de/wiki/index.php/Bitterlich_sampling#Estimation_of_number_of_stems
@@ -43,30 +68,47 @@ prepareBigData <- function(B, # B_status,
     ### Lump taxa first, to facilitate summarize() and complete() later
     selectTaxa(taxon_select) %>%
     
-    ## join distances
-    # mutate(treejoinid = interaction(obsid, treeid)) %>%
-    # bind_cols(distance = S$distance[match(.$treejoinid, S$treejoinid)]) %>%
-    # filter( !(plotid %in% c("DE_BWI_55329.2", "DE_BWI_55329.3"))) %>%
-      ## 24:978433 trees have no associated radius, these are from two plots within one cluster.
-      ## B_temp$distance[B_temp$count > 0] %>% is.na() %>% table()
-      ## B_temp %>% filter(is.na(distance)) %>% filter(count > 0) %>%  View()
-      ## These will get dropped in selection later anyway.
-      ## B_temp %>% filter(is.na(distance)) %>% filter(count > 0) %>% pull(plotid) %>% unique() %>% dput()
+    # join distances
+    mutate(treejoinid = interaction(obsid, treeid)) %>%
+    bind_cols(distance = S$distance[match(.$treejoinid, S$treejoinid)]) %>%
+    filter( !(plotid %in% c("DE_BWI_55329.2", "DE_BWI_55329.3"))) %>%
+    # 24:978433 trees have no associated radius, these are from two plots within one cluster.
+    # B_temp$distance[B_temp$count > 0] %>% is.na() %>% table()
+    # B_temp %>% filter(is.na(distance)) %>% filter(count > 0) %>%  View()
+    # These will get dropped in selection later anyway.
+    # B_temp %>% filter(is.na(distance)) %>% filter(count > 0) %>% pull(plotid) %>% unique() %>% dput()
+
+    ## Explore quantile for potential maximum distances
+    # B_temp %>% pull(distance) %>% quantile(0.98, na.rm = T)
     
+    ## Drop everything above the maximum sampling distance and multiply trees above radius_max with their new area
+    # filter( !distance > radius_max_B_cm ) %>% ## this might drop plots, therefore:
+    mutate(count == if_else(distance > radius_max_B_cm, 0, count)) %>% ## this way, the trees get dropped in all calculations and averages!
     
-    ### Calculate basal area per hectare
-    mutate(ba = pi * (dbh/2)^2 * 1e-6) %>% # mm^2 to m^2)
+    ## Rename
     mutate(count_ha = count) %>% # count is already per hectare, countarea == 1
-    mutate(ba_ha = ba * count_ha) %>%
     mutate(countarea = 1) %>%
     
     ### Calculate the area per tree
     # dplyr::mutate(countarea_tree = tidyr::replace_na(pi * (25*dbh)^2 * 1e-10, 0)) %>% ## [ha == 1e10 mm2] ## dbh has NAs for count 0
     dplyr::mutate(countarea_tree = pi * 25^2 * dbh^2 * 1e-10) %>% ## [ha == 1e10 mm2] ## dbh has NAs for count 0
+      ## equivalent to pi * r^2
+
+    ## Assign a new area to the trees sampled on r_max (truncated area) and correct their count_ha
+    mutate(dbhisgreatermax = dbh > dbh_max_B) %>%
+    mutate(count_ha = if_else(dbhisgreatermax, count_ha * (countarea_tree/area_max_B), count_ha)) %>% ## count_ha_new = count_ha_old * area_old/area_new
+    mutate(countarea_tree = if_else(dbhisgreatermax, area_max_B, countarea_tree)) %>% ## [ha == 1e10 mm2] ## dbh has NAs for count 0
+    
+    ## calculate the count per tree after the correction of the count/ha
+      ## this is equivalent to doing it before, because both the count_ha and countarea_tree were corrected
     dplyr::mutate(count_tree = count_ha * countarea_tree) %>%
       ## The distribution looks fine. Corresponds to the crazy distribution of zf == Zählfaktoren.
     dplyr::mutate(f = floor2(count_tree)/count_tree) %>% ## There are a lot of trees that have count 0.999999826790235 for some reason.
     dplyr::mutate(count_tree = f * count_tree, countarea_tree = f * countarea_tree) %>%
+    
+    ### Calculate basal area per hectare
+    mutate(ba = pi * (dbh/2)^2 * 1e-6) %>% # mm^2 to m^2)
+    mutate(ba_ha = ba * count_ha) %>%
 
     ### make stages
     # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
@@ -81,7 +123,8 @@ prepareBigData <- function(B, # B_status,
                      ba_ha = sum(ba_ha, na.rm = T),
                      ba_obs = ba_ha * area_obs, ## ba_obs = sum(ba_ha, na.rm = T) * area_obs ##
                      count_obs = sum(count_tree, na.rm = TRUE),
-                     offset_ba_ha = count_obs/ba_ha ## the offset includes both area and conversion to basal area
+                     offset_ba_ha = count_obs/ba_ha ## [ha/m2] the offset includes both area and conversion to basal area.
+                        ##Equivalent to: offset_ba_ha == (count_obs/ba_obs) * area [ha/m2]
                      ) %>%
     ## this will yield NaN for stages which have not been observed
     ungroup() %>% #!!!
@@ -101,13 +144,23 @@ prepareBigData <- function(B, # B_status,
     filter(accountfortaxamethods == obsid) %>%
     dplyr::select(-accountfortaxamethods) %>%
     
-    # group_by(stage, tax, obsid, methodid) %>%
-    # mutate(dbh_median = first(dbh_median[!is.na(dbh_median)])) %>%
+    ## Offset after completion with zeroes.
+    group_by(tax, obsid) %>%
+    mutate(count_ba_survey = mean(count_ha/ba_ha, na.rm = T)) %>%
+    ungroup() %>%
+    
+    mutate(iszero = count_ha == 0) %>%
+    mutate(area_0 = case_when(iszero & stage == "A" ~ area_0_A,
+                              iszero & stage == "B" ~ area_0_B)) %>%
+    
+    mutate(offset = case_when(iszero & stage == "A" ~ area_0,
+                            iszero & stage == "B" ~ area_0 * count_ba_survey,
+                            !iszero & (stage == "A") ~ area_obs,
+                            !iszero & (stage == "B") ~ offset_ba_ha)) %>%
     
     droplevels() %>%
-    
     ## stage creation will yield NA stages for when dbh is NA (for completed species)
-    ## but any(is.na(B$dbh) & (B$count != 0)) # so tha, after completion:
+    ## but any(is.na(B$dbh) & (B$count != 0)) # so that, after completion:
     tidyr::drop_na(stage)
   
   return(B)
@@ -115,13 +168,13 @@ prepareBigData <- function(B, # B_status,
 
 
 ## prepareSmallData --------------------------------
-# S  <- tar_read("Data_small")
+# J  <- tar_read("Data_small")
 # taxon_select <- tar_read("taxon_select")
-prepareSmallData <- function(S,
+prepareSmallData <- function(J,
                            taxon_select,
                            id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
                            ) {
-  id_select_S <- intersect(names(S), id_select)
+  id_select_S <- intersect(names(J), id_select)
   
   selectTaxa <- function(Abundance, taxon_select) {
     Abundance %>%
@@ -131,44 +184,54 @@ prepareSmallData <- function(S,
   }
   
   
-  ## S is already completed!
-  S %<>%
+  ## J is already completed!
+  J %<>%
     ### Lump taxa first, to facilitate summarize() and complete() later
     selectTaxa(taxon_select) %>%
     
     ### subset to time-constant regclasses, NOTE: There are more here.
-    ## levels(S$regclass)
-    ## table(S$regclass,S$obsid)
+    ## levels(J$regclass)
+    ## table(J$regclass,J$obsid)
     ## here we select all 20cm height <= trees < 7mm dbh:
     ## c("h[20,50)", "h[50,130)", "hd[130,Inf)[0,5)", "d[5,6)", "d[6,7)")
     dplyr::filter(as.integer(regclass) %in% 1:5)  %>%
     ## these classes are all present in all three obsids, but consider different amounts of plots: # %>% dplyr::group_by(regclass, obsid) %>% dplyr::summarize(count_ha = sum(count/countarea))
 
+    dplyr::group_by(methodid) %>%
+    dplyr::mutate(area_0 = mean(unique(countarea)), na.rm = T) %>%
+    dplyr::ungroup() %>%
+    
     ## drop size classes and summarize counts
-    dplyr::group_by_at(c(id_select_S)) %>%
+    dplyr::group_by_at(c(id_select_S, "area_0")) %>%
     dplyr::summarize(count_ha = sum(count/countarea, na.rm = TRUE),
                      area_obs = weighted.mean(countarea, count/countarea, na.rm = TRUE), ## this produces NaNs when count is 0
-                     count_obs = sum(count, na.rm = TRUE)) %>% ## The average weighted by the count of trees within this size class.
+                     count_obs = sum(count, na.rm = TRUE), ## The average weighted by the count of trees within this size class.
+                     ) %>% 
     dplyr::ungroup() %>%
+    
+    mutate(iszero = count_ha == 0) %>%
+    mutate(offset = case_when(iszero ~ area_0,
+                              !iszero ~ area_obs)) %>%
+
     dplyr::mutate(stage = factor("J")) %>%
     droplevels()
     
     ## recovery test of count/ha
-    ## plot(count_obs/area_obs ~ count_ha, data = S)
+    ## plot(count_obs/area_obs ~ count_ha, data = J)
 
-  return(S)
+  return(J)
 }
 
 
 
 ## joinStages --------------------------------
 # B  <- tar_read("Data_big_area")
-# S  <- tar_read("Data_small_area")
+# J  <- tar_read("Data_small_area")
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
 
 
-joinStages <- function(B, S,
+joinStages <- function(B, J,
                        taxon_select,
                        threshold_dbh,
                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
@@ -185,21 +248,18 @@ joinStages <- function(B, S,
                      ba_ha = sum(ba_ha, na.rm = T),
                      ba_obs = sum(ba_ha, na.rm = T)
                      ) %>%
-    mutate(offset_ba_ha = count_obs/ba_ha) %>% 
     mutate(stage = "BA")
     ## recovery check
     ## plot(I(count_obs/area_obs) ~ count_ha, data = BA)
     ## plot(I(offset_ba_ha * ba_ha) ~ count_obs, data = BA); abline(0,1)
   
-  Stages <- dplyr::bind_rows(S, B, BA) %>%
+  Stages <- dplyr::bind_rows(J, B, BA) %>%
     mutate(ba_ha = replace(ba_ha, is.nan(ba_ha), NA),
            ba_obs = replace(ba_obs, is.nan(ba_obs), NA),
            area_obs = replace(area_obs, is.nan(area_obs), NA),
            offset_ba_ha = replace(offset_ba_ha, is.nan(offset_ba_ha), NA),
            count_obs = replace(count_obs, is.nan(count_obs), NA),
-           count_ha = replace(count_ha, is.nan(count_ha), NA)) %>%
-    
-    mutate(offset = if_else(stage %in% c("B", "BA"), offset_ba_ha, area_obs))
+           count_ha = replace(count_ha, is.nan(count_ha), NA))
 
   ## Print the averages
   # Print <- dplyr::select(Stages, stage, methodid, tax, area_avg_method) %>%
@@ -473,8 +533,9 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
 # Stages_select <- tar_read("Stages_select")
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
+# radius_max <- tar_read("radius_max")
 
-countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select, threshold_dbh) {
+countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select, threshold_dbh, radius_max) {
   
   ### local functions
   selectTaxa <- function(Abundance, taxon_select) {
@@ -554,8 +615,13 @@ countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
   
   clusterid_select <- unique(Stages_select$clusterid)
   
-  ##### Stages with plot level A2B
+  ## Areas and radii
+  radius_max_B_cm <- radius_max/10 ## conversion from mm to cm
+  dbh_max_B <- radius_max_B_cm/25 * 10 ## [mm]
+  area_max_B <- pi * radius_max_B_cm^2 * 1e-8 # [ha]
   
+  ##### Stages with plot level A2B
+
   ## the count factor at stage transition
   countfactor_A2B <- 10^10/(pi * 25^2 * threshold_dbh^2)
   kluppschwelle <- 100 # [mm]
@@ -610,6 +676,9 @@ countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
     # if necessary, plots with harvest will be excluded later.
     bind_rows(dplyr::select(filter(S, excluded), -clusterid)) %>%
     
+    ## Drop everything above the maximum sampling distance, S also has distance!
+    filter( !distance > radius_max_B_cm ) %>%
+    
     ## add clusters via matching
     bind_cols(clusterid = E$clusterid[match(.$plotid, E$plotid)]) %>%
     
@@ -623,8 +692,10 @@ countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
     ### Lump taxa first, to facilitate summarize() and complete() later
     selectTaxa(taxon_select) %>%
     
-    ### rename
+    ### Handle counts. (Correct area truncation. See comments in prepareBigData(...) for details.)
     rename(count_ha = count) %>% # count is already per hectare, countarea == 1
+    mutate(countarea_tree = pi * 25^2 * dbh^2 * 1e-10) %>% ## [ha == 1e10 mm2] ## Calculate the area per tree, equivalent to pi * r^2
+    mutate(count_ha = if_else(dbh > dbh_max_B, count_ha * (countarea_tree/area_max_B), count_ha)) %>% ## ## Assign a new area to the trees sampled on r_max (truncated area) and correct their count_ha: count_ha_new = count_ha_old * area_old/area_new
     
     ### make stages, including dead etc. trees in B!
     mutate(stage = as.factor(if_else(dbh < threshold_dbh, "A", "B"))) %>%
