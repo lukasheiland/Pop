@@ -33,6 +33,41 @@ future::plan(future::multisession, workers = 6)
 # Pipeline ----------------------------------------------------------------
 
 ## Inner pipelines
+
+targets_settings <- list(
+  
+  ## Threshold to discriminate A and B [mm]
+  # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
+  ## lower in the data is 100, so that: 100mm > A > 200mm > B
+  tar_target(threshold_dbh, 200), ## [mm]
+  
+  ## Upper sampling radius
+  ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
+  ##    - dbh_threshold = radius_threshold/c with c == 25
+  ##    - Alternatives: 99% radius == 1571 cm, 95% radius == 1188,  96% radius == 1242, 97% 1310.91
+  tar_target(radius_max, 14000), ## [mm]
+  
+  ## Vector of taxa to select. All others will be lumped into "other".
+  tar_target(taxon_select, c("Fagus.sylvatica")),
+  
+  ## Weakly informative priors.
+  tar_target(weakpriors,
+             ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
+             list(
+               prior_b_log = c(-2, 2),
+               prior_c_a_log = c(-5, 2),
+               prior_c_b_log = c(-5, 2),
+               prior_c_j_log = c(-6, 2),
+               ## prior_g_log,
+               ## prior_h_log,
+               prior_l_log = cbind(Fagus = c(0.5, 2), others = c(0.5, 2)),
+               # prior_r_log = cbind(Fagus = c(0.5, 2), others = c(0.5, 2)),
+               prior_s_log = c(-2, 2)
+             )
+  )
+)
+
+
 targets_parname <- list(
   
   tar_target(pars_exclude,
@@ -57,8 +92,10 @@ targets_parname <- list(
 )
 
 
-## The pipeline
+## The master pipeline
 list(
+  
+  targets_settings,
   
   ## State data files
   # tar_load(starts_with("file"))
@@ -117,20 +154,16 @@ list(
   ## Stage abundance data
   # tar_load(starts_with("S"))
   list(
-    ## Threshold to discriminate A and B [mm]
-    # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
-    ## lower in the data is 100, so that: 100mm > A > 200mm > B
-    tar_target(threshold_dbh, 200),
-    tar_target(taxon_select, c("Fagus.sylvatica")),
-    
     tar_target(Data_big_area,
-               prepareBigData(Data_big, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
+               prepareBigData(Data_big, Data_big_status,
+                              taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max)),
     
     tar_target(Data_small_area,
                prepareSmallData(Data_small, taxon_select = taxon_select)),
     
     tar_target(Stages_transitions,
-               countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
+               countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select,
+                                taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max)),
     
     tar_target(Stages,
                joinStages(Data_big_area, Data_small_area, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
@@ -234,21 +267,6 @@ list(
 
     tar_target(fit_h,
                fitTransition(data_stan, which = "h", model_transitions)),
-    
-    tar_target(weakpriors,
-               ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
-               list(
-                 prior_b_log = c(-2, 1),
-                 prior_c_a_log = c(-5, 2),
-                 prior_c_b_log = c(-5, 2),
-                 prior_c_j_log = c(-6, 2),
-                 ## prior_g_log,
-                 ## prior_h_log,
-                 prior_l_log = cbind(Fagus = c(0.5, 2), others = c(0.5, 2)),
-                 # prior_r_log = cbind(Fagus = c(0.5, 2), others = c(0.5, 2)),
-                 prior_s_log = c(-2, 1)
-               )
-             ),
 
     tar_target(data_stan_priors,
                formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor = 2)), # priors
@@ -272,22 +290,19 @@ list(
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
 
     tar_target(fit_test,
-               drawTest(model = model_test, data_stan_priors, method = "mcmc", initfunc = 0.5)),
+               drawTest(model = model_test, data_stan_priors, method = "mcmc",
+                        n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
     tar_target(fit,
-               draw(model = model, data_stan_priors, method = "mcmc", initfunc = 0.5)),
+               draw(model = model, data_stan_priors, method = "mcmc",
+                    n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
     
     tar_target(stanfit_test,
                readStanfit(fit_test)),
     tar_target(stanfit,
                readStanfit(fit)),
-    
-    tar_target(stanfit_test_plotting,
-               readStanfit(fit_test, purge = TRUE)),
-    tar_target(stanfit_plotting,
-               readStanfit(fit, purge = TRUE)),
-    
+
     targets_parname,
-    
+
     tar_target(summary_test,
                summarizeFit(fit_test, exclude = c(helpers_exclude, rep_exclude))),
     tar_target(summary,
@@ -299,6 +314,11 @@ list(
                extractDraws(stanfit, exclude = helpers_exclude)),
     
     ## Posterior plots
+    tar_target(stanfit_test_plotting,
+               readStanfit(fit_test, purge = TRUE)),
+    tar_target(stanfit_plotting,
+               readStanfit(fit, purge = TRUE)),
+
     tar_target(plots_test,
                plotStanfit(stanfit_test_plotting, exclude = exclude)),
     tar_target(plots,
@@ -310,27 +330,38 @@ list(
     tar_target(plot_denscheck_prior_test,
                plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
     tar_target(plot_denscheck_posterior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior")),
+               plotDensCheck(cmdstanfit = fit_gq_test, data_stan_priors, check = "posterior")),
     
     ## Sensitivity analysis
-    tar_target(sensitivity_test, testSensitivity(fit_test, include = parname)),
-    tar_target(plot_powerscale_test, plotSensitivity(fit_test, include = parname))
+    tar_target(sensitivity_test, testSensitivity(fit_gq_test, include = parname)),
+    tar_target(plot_powerscale_test, plotSensitivity(fit_gq_test, include = parname))
 
   ),
   
   
   ## Generated quantities
   list(
-    tar_target(gqmodel,
-               cmdstan_model(paste0(tools::file_path_sans_ext(modelpath_stan),"_gq.stan"))),
-    tar_target(gqfit,
-               draw(gqmodel_stan, draws)),
-    tar_target(gq,
-               extractDraws(gqfit))
-    # tar_stan_gq(gq,
-    #             stan_files = gqmodelpath_stan,
-    #             data = stages,
-    #             fitted_params = draws)
+    
+    tar_target(model_gq_test,
+               cmdstan_model(paste0(tools::file_path_sans_ext(file_model_test),"_gq.stan"))),
+    tar_target(fit_gq_test,
+               model_gq_test$generate_quantities(fitted_params = stanfit_test,
+                                            data = data_stan_priors,
+                                            output_dir = "Fits.nosync/",
+                                            parallel_chains = getOption("mc.cores", 4))),
+    # tar_target(rstanfit_gq_test,
+    #            readStanfit(fit_gq_test)),
+    # tar_target(draws_gq_test,
+    #            extractDraws(rstanfit_gq_test, exclude = helpers_exclude)),
+
+    tar_target(model_gq,
+               cmdstan_model(paste0(tools::file_path_sans_ext(file_model),"_gq.stan"))),
+    tar_target(fit_gq,
+               model_gq$generate_quantities(fitted_params = stanfit,
+                                            data = data_stan_priors,
+                                            output_dir = "Fits.nosync/",
+                                            parallel_chains = getOption("mc.cores", 4)))
+
   )
 )
 
