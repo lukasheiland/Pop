@@ -229,7 +229,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     L_smooth = exp(L_smooth_log),
     
     y = as.integer(S$y),
-    area = tidyr::replace_na(S$offset, 0),
+    offset = S$offset,
     # a2b = S_a2b$a2b,
     
     ## Settings corner
@@ -252,6 +252,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     species_g = as.integer(factor(G$tax, levels = levels(taxon_s))),
     species_h = as.integer(factor(H$tax, levels = levels(taxon_s)))
   )
+  
+  if (!all(data$n_obs * data$N_pops == data$n_yhat)) message("Unexpected lengths of y_hat per locations. Assuming completion of all possible taxa/stages within plot/times went wrong.")
   
   return(data)
 }
