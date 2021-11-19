@@ -77,11 +77,23 @@ pars_exclude|stem|f6d87b279e41d722|771a09e86bf5842f|a3dad144c40657ed|-2058683567
 exclude|stem|1e25a92fc6ae4cac|4ddb5e59ad101527|2aa3c593b403c7db|405431231||t18950.4950071006s|f2c7816cf0b6f497|305|rds|vector|||0.001||
 parname|stem|eed53361e93200fb|e2d5630f3421ee8a|a3dad144c40657ed|-1053533873||t18950.5454413692s|9935591c0ed1d478|103|rds|vector|||3.63||
 plot_powerscale_test|stem||ef57b946473923bc|98c47962478e50a7|461645073||t18935.0421973226s||0|rds|vector|||2.419||Cant find the following variables in the output phi_obs, sigma_l, b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, l_log, r_log, s_log
-plot_denscheck_posterior_test|stem|05c2df23e569a36b|f52817649002c783|97a684534f2937c8|917631247||t18950.6073621156s|70583db1420c0d4d|718105985|rds|vector|||265.187|Removed 5803 rows containing nonfinite values stat_density.|
 file_gq_test|stem|d2bc677095d9f631|bd39871788df754a|3e6dca99ba1b073e|-649267753|Model_2021-03_ba/Model_ba_test_gq.stan|t18950.6741100741s|9b95a39dcecd908c|22588|file|vector|||3.844||
 model_gq_test|stem|e3bc43a58b883c03|f90e38d23c041a22|967e360b42119e56|-1844068174||t18950.6745578568s|ad70be90f0f1252f|7503|rds|vector|||18.859||
 fit_gq_test|stem|ab993fad5bc600f3|9c98642bc96673e1|0eaa8ba6a41857a0|-383498378||t18950.7253438336s|2c3fd650e26f4c4d|30867|rds|vector|||4387.821||
-sensitivity_test|stem||9bcf740baf6211e6|74c8394362121167|-16223955||t18941.9027908669s||0|rds|vector|||4.499||Cant find the following variables in the output phi_obs, sigma_l, b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, l_log, r_log, s_log
+file_model_test|stem|23452ffbeae2780d|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18950.7470878232s|52a08d1eb70bda6f|30714|file|vector|||3.709||
+model_test|stem|31d3d47d935ccfa9|a3aa00c06cce5e55|6cfcae0bbd3e08f9|-1162399619||t18950.7949147357s|ad70be90f0f1252f|7503|rds|vector|||23.431||
+data_stan|stem|775558e8b83cd711|d18a2fb7bd18372c|819f0efb2fc4c514|1263995833||t18950.7949472824s|66dfa119e1d76d3f|726490|rds|vector|||2.489||
+fit_g|stem|1bfd65e322869c0b|255e3515660b75a6|6f262db5e2dda4d9|128175024||t18950.7950646911s|fff7a81f90dd0c23|12490952|rds|vector|||9.387||
+fit_h|stem|f20b0caba8daac8c|ca8b86a90da6d4a5|6f262db5e2dda4d9|468382782||t18950.7951696922s|cbf21247d053895c|15258980|rds|vector|||8.21||
+data_stan_priors|stem|5e447babb7a10711|5f8ab647110035d6|f8211d55eb557da3|1623270232||t18950.7952346467s|a39ab2cd55b6b396|726598|rds|vector|||0.895|Method posterior_samples is deprecated. Please see as_draws for recommended alternatives.|
+fit_test|stem|2d878d864cf8d492|87169727a36b2a6e|09985d926192d893|-1560265059||t18950.8187890705s|596f618bdb858cd2|337634|rds|vector|||2035.057||
+residuals_test|stem|5a8cf650b5116af6|b188cb154da95fa6|ffc3195effd769c5|-1334224030||t18950.8198815362s|7a4a8d8a8dbe6d51|21165474|rds|vector|||87.774||
+stanfit_test|stem|9d4965dc202d6c30|402ccdae6f1a90c3|66bad21e5e2cc4e6|-1726047245||t18950.8224023969s|ccf76bf382504f44|518742926|rds|vector|||178.42||
+summary_test|stem|bfc80af0342a90c4|c2821adb4b1fd551|301101d2f061df59|-908423816||t18950.8255030788s|a904401aa6431f77|1260910|rds|vector|||267.521||
+plot_denscheck_prior_test|stem|904fa14c14bc17f0|14c966c40f014dac|ba96472be1272cea|1553892209||t18950.8294192788s|2d2920db331d1203|46290551|rds|vector|||320.439|Removed 214 rows containing missing values geom_path.|
+plots_test|stem|02680d99ed33f0af|52681de5f1f04b6b|cf2816b9e6de28fc|1637481436||t18950.8559601696s|e3d983de0e058d69|26069671908|rds|vector|||267.85||
+fit_test_pq|stem|aa9b76f2f235ea9c|5bf07de4de480f68|09985d926192d893|1631369727||t18950.948027147s|6c4bb02c236fd9b3|337605|rds|vector|||6579.954||
+plot_denscheck_posterior_test|stem|05c2df23e569a36b|7416b94d6a96e909|7e05a1851098e259|917631247||t18950.6073621156s||1.94693967054274e-308|rds|vector|||44.395||Cant find the following variables in the output state_fix
 formatStanData|function|3814f235126b0c98||||||||||||||
 prepareSmallData|function|7fd1f663d76eb8c1||||||||||||||
 joinStages|function|e7686698802aa144||||||||||||||
@@ -117,50 +129,4 @@ scaleResiduals|function|6be3a8d3a5a8ab5a||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 addPackage|function|d45c347b66cce55c||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
-file_model_test|stem|23452ffbeae2780d|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18950.7470878232s|52a08d1eb70bda6f|30714|file|vector|||3.709||
-model_test|stem|31d3d47d935ccfa9|a3aa00c06cce5e55|6cfcae0bbd3e08f9|-1162399619||t18950.7949147357s|ad70be90f0f1252f|7503|rds|vector|||23.431||
-data_stan|stem|775558e8b83cd711|d18a2fb7bd18372c|819f0efb2fc4c514|1263995833||t18950.7949472824s|66dfa119e1d76d3f|726490|rds|vector|||2.489||
-fit_g|stem|1bfd65e322869c0b|255e3515660b75a6|6f262db5e2dda4d9|128175024||t18950.7950646911s|fff7a81f90dd0c23|12490952|rds|vector|||9.387||
-fit_h|stem|f20b0caba8daac8c|ca8b86a90da6d4a5|6f262db5e2dda4d9|468382782||t18950.7951696922s|cbf21247d053895c|15258980|rds|vector|||8.21||
-data_stan_priors|stem|5e447babb7a10711|5f8ab647110035d6|f8211d55eb557da3|1623270232||t18950.7952346467s|a39ab2cd55b6b396|726598|rds|vector|||0.895|Method posterior_samples is deprecated. Please see as_draws for recommended alternatives.|
-fit_test|stem|2d878d864cf8d492|87169727a36b2a6e|09985d926192d893|-1560265059||t18950.8187890705s|596f618bdb858cd2|337634|rds|vector|||2035.057||
-residuals_test|stem|5a8cf650b5116af6|b188cb154da95fa6|ffc3195effd769c5|-1334224030||t18950.8198815362s|7a4a8d8a8dbe6d51|21165474|rds|vector|||87.774||
-stanfit_test|stem|9d4965dc202d6c30|402ccdae6f1a90c3|66bad21e5e2cc4e6|-1726047245||t18950.8224023969s|ccf76bf382504f44|518742926|rds|vector|||178.42||
-summary_test|stem|bfc80af0342a90c4|c2821adb4b1fd551|301101d2f061df59|-908423816||t18950.8255030788s|a904401aa6431f77|1260910|rds|vector|||267.521||
-plot_denscheck_prior_test|stem|904fa14c14bc17f0|14c966c40f014dac|ba96472be1272cea|1553892209||t18950.8294192788s|2d2920db331d1203|46290551|rds|vector|||320.439|Removed 214 rows containing missing values geom_path.|
-plots_test|stem|02680d99ed33f0af|52681de5f1f04b6b|cf2816b9e6de28fc|1637481436||t18950.8559601696s|e3d983de0e058d69|26069671908|rds|vector|||267.85||
-formatStanData|function|3814f235126b0c98
-prepareSmallData|function|7fd1f663d76eb8c1
-joinStages|function|e7686698802aa144
-plotDensCheck|function|cf78fd1881ae8eb8
-constructConstantGrid|function|33d54800694377c7
-readStanfit|function|5fb977364933b1e8
-targets_parname|object|29301ca0c60f5106
-fitS|function|b1d146216eef03f2
-countTransitions|function|658905ce538460fd
-predictSurfaces|function|e08447bd71c3e5fe
-fitSeedlings|function|c90011d48780cff7
-plotSurfaces|function|8e8bee5493cb7ccd
-joinEnv|function|2488b8203673870c
-draw|function|eec54dbfa7152637
-testSensitivity|function|a9b842a196cb283d
-plotSensitivity|function|1b82069fa2790eec
-scaleData|function|0d0c01b1b3160a22
-summarizeEnvByCluster|function|5fcaa758babda781
-selectClusters|function|e84b8a94cea77208
-predictS|function|77bcabfef1d8569c
-summarizeFit|function|92b07bf0e2b1489c
-plotStanfit|function|9a34b52ece5f09a4
-package|object|704570267144eddb
-fitTransition|function|886f3caa0132aa08
-prepareBigData|function|bc903757a4846348
-drawTest|function|b1e8907b81b3f606
-constructConstantGrid_SK|function|ec0773362d05dadf
-formatPriors|function|85f237cd509ac815
-targets_settings|object|c54c9aedbac58a4d
-wrangleSeedlings|function|d074bec2bfda3a20
-saveStages_s|function|fd5024a4e717b197
-scaleResiduals|function|6be3a8d3a5a8ab5a
-extractDraws|function|3dff977b003c47b4
-addPackage|function|d45c347b66cce55c
-cleanEnv|function|06a0767a0f88a954
+sensitivity_test|stem||2c9ec9d05960447a|ded2969bdcd3a286|-16223955||t18941.9027908669s||0|rds|vector|||20.614||Cant find the following variables in the output log_prior
