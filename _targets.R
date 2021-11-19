@@ -18,11 +18,12 @@ source("Fit_functions.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
-tar_option_set(packages = c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
-                            "lubridate", # "zoo",
-                            "sf", "raster", ## for correct loading of environmental data
-                            "mgcv", "MASS",
-                            "cmdstanr", "rstan", "brms", "bayesplot", "cowplot", "parallel", "DHARMa", "priorsense"))
+package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
+             "lubridate", # "zoo",
+             "sf", "raster", ## for correct loading of environmental data
+             "mgcv", "MASS",
+             "cmdstanr", "rstan", "brms", "bayesplot", "cowplot", "parallel", "DHARMa", "priorsense")
+tar_option_set(packages = package)
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
 ### Future
