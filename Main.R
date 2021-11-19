@@ -1,31 +1,7 @@
 # Library -----------------------------------------------------------------
-library(here)
-library(magrittr)
-library(glue)
-library(dplyr)
-library(tidyr)
-library(nesting)
-library(stringr)
-library(forcats)
 library(targets)
-library(visNetwork)
-library(future)
-
-library(sf)
-library(mgcv)
-library(MASS)
-library(cmdstanr)
-library(rstan)
-library(brms)
-library(bayesplot)
-library(cowplot)
-library(parallel)
-library(DHARMa)
-library(priorsense)
-
-
-# Orientation -------------------------------------------------------------
-# setwd(here())
+source("_targets.R")
+sapply(package, require, character.only = TRUE) ## package is a vector of all packages required in targets
 
 
 # Pre-targets sourcing ----------------------------------------------------
