@@ -285,13 +285,16 @@ list(
                cmdstan_model(file_model)),
     
     tar_target(priorsim_test,
-               drawTest(model = model_test, data_stan_priors, method = "sim", initfunc = 0.8)),
+               drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.8, gpq = FALSE,)),
     tar_target(plot_denscheck_priorsim_test,
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
 
     tar_target(fit_test,
-               drawTest(model = model_test, data_stan_priors, method = "mcmc",
-                        n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.8)),
+               drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.8, gpq = FALSE,
+                        method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
+    tar_target(fit_test_gq,
+               drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.8, gpq = TRUE,
+                        method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit,
                draw(model = model, data_stan_priors, method = "mcmc",
                     n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.8)),
@@ -314,10 +317,10 @@ list(
                extractDraws(stanfit, exclude = helpers_exclude)),
     
     ## Posterior plots
-    tar_target(stanfit_test_plotting,
-               readStanfit(fit_test, purge = TRUE)),
-    tar_target(stanfit_plotting,
-               readStanfit(fit, purge = TRUE)),
+    # tar_target(stanfit_test_plotting,
+    #            readStanfit(fit_test, purge = TRUE)),
+    # tar_target(stanfit_plotting,
+    #            readStanfit(fit, purge = TRUE)),
 
     tar_target(plots_test,
                plotStanfit(stanfit_test, exclude = exclude)),
@@ -330,31 +333,17 @@ list(
     tar_target(plot_denscheck_prior_test,
                plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
     tar_target(plot_denscheck_posterior_test,
-               plotDensCheck(cmdstanfit = fit_gq_test, data_stan_priors, check = "posterior")),
+               plotDensCheck(cmdstanfit = fit_test_gq, data_stan_priors, check = "posterior")),
     
     ## Sensitivity analysis
-    tar_target(sensitivity_test, testSensitivity(fit_gq_test, include = parname)),
-    tar_target(plot_powerscale_test, plotSensitivity(fit_gq_test, include = parname))
+    tar_target(sensitivity_test, testSensitivity(fit_test_gq, include = parname)),
+    tar_target(plot_powerscale_test, plotSensitivity(fit_test_gq, include = parname))
 
   ),
   
   
-  ## Generated quantities
+  ## Standalone generated quantities
   list(
-    
-    tar_target(file_gq_test,
-               paste0(tools::file_path_sans_ext(file_model_test),"_gq.stan"), format = "file"),
-    tar_target(model_gq_test,
-               cmdstan_model(file_gq_test)),
-    tar_target(fit_gq_test,
-               model_gq_test$generate_quantities(fitted_params = fit_test$output_files(),
-                                                 data = data_stan_priors,
-                                                 output_dir = "Fits.nosync/",
-                                                 parallel_chains = getOption("mc.cores", 4))),
-    # tar_target(rstanfit_gq_test,
-    #            readStanfit(fit_gq_test)),
-    # tar_target(draws_gq_test,
-    #            extractDraws(rstanfit_gq_test, exclude = helpers_exclude)),
 
     tar_target(file_gq,
                paste0(tools::file_path_sans_ext(file_model),"_gq.stan"), format = "file"),
@@ -365,6 +354,11 @@ list(
                                             data = data_stan_priors,
                                             output_dir = "Fits.nosync/",
                                             parallel_chains = getOption("mc.cores", 4)))
+    
+    # tar_target(rstanfit_gq_test,
+    #            readStanfit(fit_gq_test)),
+    # tar_target(draws_gq_test,
+    #            extractDraws(rstanfit_gq_test, exclude = helpers_exclude)),
 
   )
 )
