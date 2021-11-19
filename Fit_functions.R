@@ -256,6 +256,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
   
   if (!all(data$n_obs * data$N_pops == data$n_yhat)) message("Unexpected lengths of y_hat per locations. Assuming completion of all possible taxa/stages within plot/times went wrong.")
   
+  attr(data, "Long") <- S
+  
   return(data)
 }
 
@@ -329,7 +331,10 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
     prior_r_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("ba_ha")))
   )
   
-  return(c(data_stan, weakpriors, priors))
+  data_stan_priors <- c(data_stan, weakpriors, priors)
+  attr(data_stan_priors, "Long") <- attr(data_stan, "Long")
+  
+  return(data_stan_priors)
 }
 
 
@@ -626,8 +631,9 @@ plotStanfit <- function(stanfit, exclude) {
 plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c("prior", "posterior")) {
   
   data <- data_stan_priors$y
-  pop <- data_stan_priors$rep_pops2y
-  
+  Longdata <- attr(data_stan_priors, "Long")
+  grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
+
   if(match.arg(check) == "prior") {
     
     if (is.null(draws)) {
@@ -655,7 +661,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   completerows <- complete.cases(Sim)
   Sim <- Sim[completerows,]
   attr(Sim, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
-  densplot <- bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = pop)
+  densplot <- bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = grp)
   
   if (match.arg(check) == "posterior") {
     Fixpoint <- Fixpoint[completerows,]
@@ -671,7 +677,9 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   }
 
   
-  basename <- cmdstanfit$metadata()$model_name %>%
+  basename <- cmdstanfit$output_files()[1] %>%
+    basename() %>%
+    tools::file_path_sans_ext() %>%
     str_replace("-[1-9]-", "-x-")
   name <- paste0("dens_", check)
   ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), densplot)
@@ -693,13 +701,24 @@ scaleResiduals <- function(cmdstanfit, data_stan_priors) {
   y_hat <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix") %>% apply(2, median, na.rm = T)
   y_hat[is.na(y_hat)] <- 0
   
+  Longdata <- attr(data_stan_priors, "Long")
+  grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
+  
   residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = y_hat, integerResponse = T)
 
-  basename <- cmdstanfit$metadata()$model_name %>%
+  basename <- cmdstanfit$output_files()[1] %>%
+    basename() %>%
+    tools::file_path_sans_ext() %>%
     str_replace("-[1-9]-", "-x-")
   
-  png(paste0("Fits.nosync/", basename, "_", "DHARMa", ".png"), width = 2000, height = 1200)
+  png(paste0("Fits.nosync/", basename, "_", "DHARMa", ".png"), width = 1600, height = 1000)
   plot(residuals, quantreg = T, smoothScatter = F)
+  dev.off()
+  
+  # residuals_grouped <- recalculateResiduals(residuals, group = grp)
+  
+  png(paste0("Fits.nosync/", basename, "_", "DHARMa_grouped", ".png"), width = 2200, height = 800)
+  plot(residuals, form = grp, quantreg = T, smoothScatter = F)
   dev.off()
   
   return(residuals)
