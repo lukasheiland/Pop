@@ -342,25 +342,29 @@ list(
   ## Generated quantities
   list(
     
+    tar_target(file_gq_test,
+               paste0(tools::file_path_sans_ext(file_model_test),"_gq.stan"), format = "file"),
     tar_target(model_gq_test,
-               cmdstan_model(paste0(tools::file_path_sans_ext(file_model_test),"_gq.stan"))),
+               cmdstan_model(file_gq_test)),
     tar_target(fit_gq_test,
                model_gq_test$generate_quantities(fitted_params = fit_test$output_files(),
                                                  data = data_stan_priors,
                                                  output_dir = "Fits.nosync/",
-                                                 parallel_chains = getOption("mc.cores", 4))),
+                                                 parallel_chains = getOption("mc.cores", 6))),
     # tar_target(rstanfit_gq_test,
     #            readStanfit(fit_gq_test)),
     # tar_target(draws_gq_test,
     #            extractDraws(rstanfit_gq_test, exclude = helpers_exclude)),
     
+    tar_target(file_gq,
+               paste0(tools::file_path_sans_ext(file_model),"_gq.stan"), format = "file"),
     tar_target(model_gq,
-               cmdstan_model(paste0(tools::file_path_sans_ext(file_model),"_gq.stan"))),
+               cmdstan_model(file_gq)),
     tar_target(fit_gq,
                model_gq$generate_quantities(fitted_params = fit$output_files(),
                                             data = data_stan_priors,
                                             output_dir = "Fits.nosync/",
-                                            parallel_chains = getOption("mc.cores", 4)))
+                                            parallel_chains = getOption("mc.cores", 6)))
     
   )
 )
