@@ -582,8 +582,7 @@ plotStanfit <- function(stanfit, exclude) {
   usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
   basename <- attr(stanfit, "model_name") %>%
     str_replace("-[1-9]-", "-x-")
-  excludeplus <- c("lp__", "phi_obs")
-  parname <- setdiff(stanfit@model_pars, c(exclude, excludeplus))
+  parname <- setdiff(stanfit@model_pars, c(exclude))
   parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]"))) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
   parname_sansprior <- parname[!grepl("prior$", parname)]
 
