@@ -2,6 +2,8 @@
 library(targets)
 source("_targets.R")
 sapply(package, require, character.only = TRUE) ## package is a vector of all packages required in targets
+library(visNetwork)
+library(future)
 
 
 # Pre-targets sourcing ----------------------------------------------------
