@@ -42,6 +42,7 @@ tar_make(c("summary_test",
            # "draws_test",
            "residuals_test",
            "plots_test",
+           "plot_denscheck_prior_test",
            "plot_denscheck_posterior_test",
            "sensitivity_test",
            "plot_powerscale_test"))
