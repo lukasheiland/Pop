@@ -80,7 +80,6 @@ rep_exclude|stem|c396a71d505283ff|b167e77cf27cbb52|a3dad144c40657ed|1847664984||
 helpers_exclude|stem|0429bc0624167dff|c419594ee4b3a4b7|a3dad144c40657ed|1133870334||t18948.9987775217s|aa4b28cd19784daa|145|rds|vector|||0.002||
 simnames_prior|stem|3eef9e0a9e674e3a|dc925e066ee03273|a3dad144c40657ed|-1993142823||t18948.9987776694s|1701aa42bd45be76|89|rds|vector|||0.001||
 model_test|stem|40e1dc967d13f605|a3aa00c06cce5e55|d2f60e0684578afb|-1162399619||t18948.9994316763s|89dea1b195f7b777|7438|rds|vector|||56.476||
-model_gq_test|stem|9277a951334b10a5|298b6f5ba533427d|8d5d1b0f6d5748a1|-1844068174||t18948.9998308539s|b5b83b39767bedd6|7440|rds|vector|||34.475||
 exclude|stem|b7b37c5c33700682|4ddb5e59ad101527|b2937b049c9306a9|405431231||t18948.9998312883s|72edd60c3d768dd3|291|rds|vector|||0.003||
 fit_test|stem|c3c76f02d94fab03|583572f64db46ecb|38032c18d69dff8d|-1560265059||t18949.4555810316s|c72e3b0c02af1066|35648|rds|vector|||1.172|No chains finished successfully. Unable to retrieve the fit.|
 summary_test|stem|9e996b215562aa74|c2821adb4b1fd551|bb4fb837a3defa97|-908423816||t18923.46114741s||468478|rds|vector|||11.374||Fitting failed. Unable to retrieve the metadata.
@@ -102,12 +101,12 @@ fit_g|stem|d5eb0697728fb6ee|255e3515660b75a6|027a5e71af7b718b|128175024||t18949.
 fit_h|stem|fc5ad7e81b50d1ad|ca8b86a90da6d4a5|027a5e71af7b718b|468382782||t18949.6666540845s|cf443cfe345816d6|15277709|rds|vector|||19.558||
 data_stan_priors|stem|ae4a554dda9abc41|5f8ab647110035d6|dcb4ea8c31a255f6|1623270232||t18949.6667371819s|6e49ef2196b17e88|59510|rds|vector|||1.084||
 data_stan|stem|3ea795b968ee4355|d18a2fb7bd18372c|af27499553daf920|1263995833||t18949.6885176766s|886f5d1edc2f3cb3|59152|rds|vector|||26.572||
-file_model_test|stem|7037b5db91c06c0b|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18949.7027308916s|57a7fb524b9b637b|30476|file|vector|||12.243||
+file_Stages_s|stem|7fec3998464646d6|ee9329b222cb6f7a|f14657f4cac422f4|-1399817009|Data/Stages_s.rds|t18949.7107703498s|e09dee1e7d854140|40749482|file|vector|||47.458||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 plotSensitivity|function|1b82069fa2790eec||||||||||||||
-targets_parname|object|2846f29e0ffebda3||||||||||||||
+targets_parname|object|a3adac95f7510d16||||||||||||||
 fitTransition|function|886f3caa0132aa08||||||||||||||
 prepareSmallData|function|7fd1f663d76eb8c1||||||||||||||
 scaleResiduals|function|417cb86330f8c9fb||||||||||||||
@@ -117,7 +116,7 @@ fitSeedlings|function|c90011d48780cff7||||||||||||||
 predictS|function|77bcabfef1d8569c||||||||||||||
 predictSurfaces|function|e08447bd71c3e5fe||||||||||||||
 countTransitions|function|658905ce538460fd||||||||||||||
-plotStanfit|function|f432888b6ea15762||||||||||||||
+plotStanfit|function|d32acb0cd0b41d7c||||||||||||||
 saveStages_s|function|fd5024a4e717b197||||||||||||||
 plotDensCheck|function|844300284370dc98||||||||||||||
 summarizeFit|function|92b07bf0e2b1489c||||||||||||||
@@ -137,4 +136,6 @@ summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 prepareBigData|function|bc903757a4846348||||||||||||||
 drawTest|function|ecfb490f7363294c||||||||||||||
-file_Stages_s|stem|7fec3998464646d6|ee9329b222cb6f7a|f14657f4cac422f4|-1399817009|Data/Stages_s.rds|t18949.7107703498s|e09dee1e7d854140|40749482|file|vector|||47.458||
+file_model_test|stem|5cfe750abf1af53a|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18949.7440091001s|f8cf14b937de284d|26567|file|vector|||11.86||
+file_gq_test|stem|5ce4a4ab62c92973|bd39871788df754a|3e6dca99ba1b073e|-649267753|Model_2021-03_ba/Model_ba_test_gq.stan|t18950.4260868853s|508496d9d66d6a64|26802|file|vector|||0.003||
+model_gq_test|stem|60e71dcc231c8bea|f90e38d23c041a22|c93f9da74aa7adaf|-1844068174||t18950.4327938475s|0bddb9a13bf20967|7439|rds|vector|||50.573||
