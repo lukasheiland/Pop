@@ -567,7 +567,8 @@ extractDraws <- function(stanfit, exclude = helpers_exclude) {
 
 
 ## plotStanfit --------------------------------
-# stanfit  <- tar_read("stanfit_plotting")
+# stanfit  <- tar_read("stanfit")
+# stanfit  <- tar_read("stanfit_test")
 # stanfit  <- tar_read("stanfit_test_plotting")
 # exclude <- tar_read("exclude")
 
@@ -582,7 +583,7 @@ plotStanfit <- function(stanfit, exclude) {
   usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
   basename <- attr(stanfit, "model_name") %>%
     str_replace("-[1-9]-", "-x-")
-  parname <- setdiff(stanfit@model_pars, c(exclude))
+  parname <- setdiff(stanfit@model_pars, exclude)
   parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]"))) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
   parname_sansprior <- parname[!grepl("prior$", parname)]
 
@@ -604,7 +605,7 @@ plotStanfit <- function(stanfit, exclude) {
   if(usedmcmc) {
     
     png(paste0("Fits.nosync/", basename, "_", "pairsplot", ".png"), width = 2600, height = 2600)
-    pairs(stanfit, pars = c(parname_sansprior, "phi_obs_inv_sqrt", "lp__"), include = T)
+    pairs(stanfit, pars = c(parname_sansprior, "lp__"), include = T)
     dev.off()
     
   }
