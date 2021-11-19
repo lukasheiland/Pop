@@ -236,6 +236,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     tolerance_fix = 0.001,
     ba_a_upper = ba_a_upper,
     ba_a_avg = ba_a_avg,
+    generateposteriorq = 0,
     
     #### priors
     prior_state_init_log = prior_state_init_log,
@@ -442,11 +443,13 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
 # tar_make("testmodel")
 # model <- testmodel <- tar_read("testmodel")
 
-drawTest <- function(model, data_stan, initfunc = 0.5,
+drawTest <- function(model, data_stan, initfunc = 0.5, gpq = FALSE,
                      method = c("mcmc", "variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = "Fits.nosync/") {
   
   require(cmdstanr)
+  
+  data_stan$generateposteriorq <- as.integer(gpq)
   
   if (!dir.exists(fitpath)) {
     dir.create(fitpath)

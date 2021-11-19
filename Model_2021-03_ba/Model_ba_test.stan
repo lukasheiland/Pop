@@ -301,6 +301,7 @@ data {
   // real dbh_lower_b; // 200
   real ba_a_upper;
   vector[N_species] ba_a_avg;
+  int<lower=0,upper=1> generateposteriorq;
   
   
   //// Priors. The 2 reflect the two parameters mu and sigma
@@ -534,7 +535,6 @@ model {
 
 generated quantities {
 
-
   //—————————————————————————————————————————————————————————————————————//
   // Prediction  -------------------------------------------------------//
   //———————————————————————————————————————————————————————————————————//    
@@ -625,5 +625,86 @@ generated quantities {
 
 
   y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsmethod2y]); // , [0, 0, 0]', L_y
-
+  
+  
+  if (generateposteriorq) {
+  
+    //—————————————————————————————————————————————————————————————————————//
+    // Posterior quantities ----------------------------------------------//
+    //———————————————————————————————————————————————————————————————————//
+    
+    //// Fix point iteration -------------------------------------------
+    int fixiter_max = 5000;
+  
+    array[N_locs] int converged; // tolerance has been reached
+    array[N_locs] real iterations_fix;
+    array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
+    array[N_locs] int dominant_fix;
+    array[N_locs] int major_fix;
+    
+    
+    for(loc in 1:N_locs) {
+      
+      //// fix point, given parameters
+      state_fix[loc] = iterateFix(exp(state_init_log[loc]),
+                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
+                                  // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(h_log), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                  ba_a_avg, ba_a_upper,
+                                  N_species, N_pops,
+                                  i_j, i_a, i_b,
+                                  tolerance_fix, fixiter_max);
+                                     
+      iterations_fix[loc] = state_fix[loc, N_genstates+N_species+1];
+      converged[loc] = iterations_fix[loc] < fixiter_max;
+      
+      if (converged[loc]) { // && convergent[loc]
+        
+        dominant_fix[loc] = state_fix[loc, N_pops+1]/state_fix[loc, N_genstates] > 3; // BA_1 > 75%
+        major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
+        
+      }
+      
+     //    if (y_hat_temp[loc] > 1e+07) {
+     //    	y_hat_temp[loc] = 1e+07;
+     //    } 
+  
+    }
+  
+  
+  
+    //—————————————————————————————————————————————————————————————————————//
+    // Sensitivity analysis ----------------------------------------------//
+    //———————————————————————————————————————————————————————————————————//
+  
+    real log_prior = 0;
+    vector[L_y] log_lik;
+    
+    for(loc in 1:N_locs) {
+      log_prior += normal_lpdf(state_init_log[loc,] | prior_state_init_log, 3);
+    }
+    
+    
+    log_prior = log_prior +
+    			  normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 3), [3, 2, 1]) +
+	  		  normal_lpdf(sigma_l | 0, 1) +		  
+	  		  normal_lpdf(to_vector(L_random_log) | 0, 1) +
+	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
+	  		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) +
+	  		  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) +
+	  		  normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) +
+	  		  normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
+	  		  normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
+	  		  normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
+	  		  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
+	  		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // joint prior specification, sum of all logpriors // normal_lpdf(zeta | rep_array(0.0, 5), rep_array(0.2, 5)) + log(2) +
+	      			  
+    // for(l in 1:L_y) {
+    //   log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs_rep[l], theta_obs_rep[l]);
+    // }
+    
+    for(l in 1:L_y) {
+      log_lik[l] = neg_binomial_2_lpmf(y | y_hat_rep_offset, phi_obs_rep); // offset_zeta
+    }
+  
+  } // END: if(generateposteriorq)
 }
