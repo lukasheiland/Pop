@@ -627,22 +627,32 @@ generated quantities {
   y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsmethod2y]); // , [0, 0, 0]', L_y
   
   
-  if (generateposteriorq) {
+  //—————————————————————————————————————————————————————————————————————————//
+  // pgq -------------------------------------------------------------------//
+  //———————————————————————————————————————————————————————————————————————//
   
-    //—————————————————————————————————————————————————————————————————————//
-    // Posterior quantities ----------------------------------------------//
+  //// Declarations of posterior quantites (as global variables).
+  int fixiter_max = 5000; 
+  array[N_locs] int converged; // tolerance has been reached
+  array[N_locs] real iterations_fix;
+  array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
+  array[N_locs] int dominant_fix;
+  array[N_locs] int major_fix;
+  
+
+  //// Declarations of quantities for sensitivity checks (as global variables).
+  real log_prior = 0;
+  vector[L_y] log_lik;
+
+
+  //// The conditional generation -------------------------------------
+  if (generateposteriorq) {
+
     //———————————————————————————————————————————————————————————————————//
+    // Posterior quantities --------------------------------------------//
+    //—————————————————————————————————————————————————————————————————//
     
     //// Fix point iteration -------------------------------------------
-    int fixiter_max = 5000;
-  
-    array[N_locs] int converged; // tolerance has been reached
-    array[N_locs] real iterations_fix;
-    array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
-    array[N_locs] int dominant_fix;
-    array[N_locs] int major_fix;
-    
-    
     for(loc in 1:N_locs) {
       
       //// fix point, given parameters
@@ -672,17 +682,13 @@ generated quantities {
   
   
   
-    //—————————————————————————————————————————————————————————————————————//
-    // Sensitivity analysis ----------------------------------------------//
     //———————————————————————————————————————————————————————————————————//
+    // Sensitivity analysis --------------------------------------------//
+    //—————————————————————————————————————————————————————————————————//
   
-    real log_prior = 0;
-    vector[L_y] log_lik;
-    
     for(loc in 1:N_locs) {
       log_prior += normal_lpdf(state_init_log[loc,] | prior_state_init_log, 3);
     }
-    
     
     log_prior = log_prior +
     			  normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 3), [3, 2, 1]) +
