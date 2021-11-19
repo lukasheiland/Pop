@@ -293,7 +293,7 @@ list(
     tar_target(fit_test,
                drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.8, gpq = FALSE,
                         method = "mcmc", n_chains = 6, iter_warmup = 800, iter_sampling = 500)),
-    tar_target(fit_test_gq,
+    tar_target(fit_test_pq,
                drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.8, gpq = TRUE,
                         method = "mcmc", n_chains = 6, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit,
@@ -334,11 +334,11 @@ list(
     tar_target(plot_denscheck_prior_test,
                plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
     tar_target(plot_denscheck_posterior_test,
-               plotDensCheck(cmdstanfit = fit_test_gq, data_stan_priors, check = "posterior")),
+               plotDensCheck(cmdstanfit = fit_test_pq, data_stan_priors, check = "posterior")),
     
     ## Sensitivity analysis
-    tar_target(sensitivity_test, testSensitivity(fit_test_gq, include = parname)),
-    tar_target(plot_powerscale_test, plotSensitivity(fit_test_gq, include = parname))
+    tar_target(sensitivity_test, testSensitivity(fit_test_pq, include = parname)),
+    tar_target(plot_powerscale_test, plotSensitivity(fit_test_pq, include = parname))
     
   ),
   
