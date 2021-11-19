@@ -71,7 +71,7 @@ targets_settings <- list(
 targets_parname <- list(
   
   tar_target(pars_exclude,
-             c("y_hat", "L_loc_log", "L_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
+             c("y_hat", "L_loc_log", "L_random_log", "L_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
   tar_target(helpers_exclude,
              c("vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "area_zeta", "area_zeta_prior", "phi_obs_rep", "phi_obs_rep_prior", "zeta_prior_rep", "zeta_rep",
@@ -343,8 +343,7 @@ list(
   list(
     
     tar_target(file_gq_test,
-               paste0(tools::file_path_sans_ext(file_model_test),"_gq.stan"),
-               format = "file"),
+               paste0(tools::file_path_sans_ext(file_model_test),"_gq.stan"), format = "file"),
     tar_target(model_gq_test,
                cmdstan_model(file_gq_test)),
     tar_target(fit_gq_test,
@@ -358,8 +357,7 @@ list(
     #            extractDraws(rstanfit_gq_test, exclude = helpers_exclude)),
 
     tar_target(file_gq,
-               paste0(tools::file_path_sans_ext(file_model),"_gq.stan"),
-               format = "file"),
+               paste0(tools::file_path_sans_ext(file_model),"_gq.stan"), format = "file"),
     tar_target(model_gq,
                cmdstan_model(file_gq)),
     tar_target(fit_gq,
