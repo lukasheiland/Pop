@@ -38,14 +38,20 @@ library(priorsense)
 # M <- tar_manifest(fields = c("name", "command"))
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
+
+## targets dependent on fit without generated quantities
 tar_make(c("summary_test",
-           # "draws_test",
            "residuals_test",
            "plots_test",
-           "plot_denscheck_prior_test",
-           "plot_denscheck_posterior_test",
+           "plot_denscheck_prior_test"))
+
+
+## targets dependent on fit WITH generated quantities
+tar_make(c("plot_denscheck_posterior_test",
            "sensitivity_test",
            "plot_powerscale_test"))
+
+
 ## alternatives
 # plan(multisession)
 # future(tar_make(names = "predict_splines")) # just as a future
