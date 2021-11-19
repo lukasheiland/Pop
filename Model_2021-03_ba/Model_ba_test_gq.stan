@@ -453,6 +453,99 @@ transformed parameters {
 generated quantities {
 
   //—————————————————————————————————————————————————————————————————————//
+  // Prediction  -------------------------------------------------------//
+  //———————————————————————————————————————————————————————————————————//    
+	
+  // vector[N_locs] y_hat_temp;
+  // y_hat_temp = y_hat;
+  array[L_y] real<lower=0> y_sim;
+  
+  //// y_hat_rep in transformed parameters
+  // y_sim = neg_binomial_0_rng(y_hat_rep, phi_obs_rep, theta_obs_rep, L_y);
+  y_sim = neg_binomial_2_rng(y_hat_rep_offset, phi_obs_rep);
+
+
+
+  //—————————————————————————————————————————————————————————————————————//
+  // Prior predictive checks -------------------------------------------//
+  //———————————————————————————————————————————————————————————————————//    
+  
+  ///// Priors -----------------------------------
+  real b_log_prior = normal_rng(prior_b_log[1], prior_b_log[2]);
+  real c_a_log_prior = normal_rng(prior_c_a_log[1], prior_c_a_log[2]);
+  real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]);
+  real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]); // strong believe that c is smaller than s in trees
+  
+  vector[N_species] g_log_prior = to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]));
+  vector[N_species] h_log_prior = to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]));
+  
+  vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
+  vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));
+  
+  // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
+  // real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]);
+  
+  real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
+  
+  vector[N_species] vector_b_log_prior = to_vector(normal_rng(rep_array(prior_b_log[1], N_species), rep_array(prior_b_log[2], N_species)));
+  vector[N_species] vector_c_a_log_prior = to_vector(normal_rng(rep_array(prior_c_a_log[1], N_species), rep_array(prior_c_a_log[2], N_species)));
+  vector[N_species] vector_c_b_log_prior = to_vector(normal_rng(rep_array(prior_c_b_log[1], N_species), rep_array(prior_c_b_log[2], N_species)));
+  vector[N_species] vector_c_j_log_prior = to_vector(normal_rng(rep_array(prior_c_j_log[1], N_species), rep_array(prior_c_j_log[2], N_species)));
+  // vector[N_species] vector_l_log_prior = to_vector(normal_rng(rep_array(prior_l_log[1], N_species), rep_array(prior_l_log[2], N_species)));
+  // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
+  vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_array(prior_s_log[1], N_species), rep_array(prior_s_log[2], N_species)));
+  
+  array[3] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), [3, 2, 1]));
+  
+  // special case L
+  array[N_locs] vector<lower=0>[N_species] L_loc_prior;
+  array[N_locs, N_species] real L_random_log_prior;  
+  vector<lower=0>[N_species] sigma_l_prior = sqrt(square(to_vector(normal_rng(rep_array(0, N_species), rep_array(1, N_species)))));
+  // vector<lower=0>[N_protocol] zeta_prior = sqrt(square(to_vector(normal_rng(rep_array(0, N_protocol), rep_array(0.2, N_protocol)))));
+  
+  for(loc in 1:N_locs) {
+  
+    L_random_log_prior[loc,] = normal_rng(rep_array(0, N_species), rep_array(1, N_species));
+    L_loc_prior[loc, ] = exp(l_log_prior + L_smooth_log[loc, ] +
+                             sigma_l_prior .* to_vector(L_random_log_prior[loc, ]));
+                         
+    
+  }
+  
+  
+  //// Prior simulation
+  vector<lower=0>[L_yhat] y_hat_prior;
+  vector<lower=0>[L_y] y_hat_prior_rep;
+  vector<lower=0>[L_y] y_hat_prior_rep_offset;
+  // vector<lower=0>[L_y] offset_zeta_prior;
+  array[L_y] real<lower=0> y_prior_sim;
+                   
+  //  vector<lower=0>[L_y] zeta_prior_rep = zeta_prior[rep_protocol2y];
+  
+  //  for(j in 1:L_y) {
+  //  	if (offset[j] == 0) {
+  //  		offset_zeta_prior[j] = zeta_prior_rep[j];
+  //  	} else {
+  //  		offset_zeta_prior[j] = offset[j];
+  //  	}
+  //  }
+ 
+  y_hat_prior = unpack(rep_array(prior_state_init_log, N_locs), time_max, times,
+                       vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
+                       ba_a_avg, ba_a_upper,
+                       n_obs, n_yhat, // varying numbers per loc
+                       N_species, N_pops, L_yhat, N_locs, // fixed numbers
+                       i_j, i_a, i_b);
+ 
+  y_hat_prior_rep = y_hat_prior[rep_yhat2y];
+  y_hat_prior_rep_offset = y_hat_prior_rep .* offset; // offset_zeta_prior
+
+
+  y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsmethod2y]); // , [0, 0, 0]', L_y
+  
+  
+
+  //—————————————————————————————————————————————————————————————————————//
   // Posterior quantities ----------------------------------------------//
   //———————————————————————————————————————————————————————————————————//
   

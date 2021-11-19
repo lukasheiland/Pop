@@ -75,7 +75,7 @@ targets_parname <- list(
   tar_target(helpers_exclude,
              c("vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "area_zeta", "area_zeta_prior", "phi_obs_rep", "phi_obs_rep_prior", "zeta_prior_rep", "zeta_rep",
-               "log_prior", "log_lik")),
+               "log_prior", "log_lik", "lp__")),
   tar_target(rep_exclude,
              c("phi_obs_rep", "phi_obs_rep_prior", "zeta_prior_rep", "zeta_rep",
                "y_hat_rep", "y_hat_prior_rep", "y_hat_rep_offset", "y_hat_prior_rep_offset")),
@@ -87,7 +87,7 @@ targets_parname <- list(
   tar_target(exclude,
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
   tar_target(parname,
-             c("phi_obs", "sigma_l", "zeta",
+             c("phi_obs", "sigma_l",
                "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log"))
 )
 
