@@ -686,8 +686,6 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   
   plotname <- paste(names(densplots), check, sep = "_")
   
-  ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), densplot)
-  
   mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p, device = "png", width = 15, height = 10), plots, plotname)
   ## cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria"), ncol = 1) #  axis = "b", align = "h"
   
@@ -733,8 +731,8 @@ scaleResiduals <- function(cmdstanfit, data_stan_priors) {
 
 
 ## testSensitivity ------------------------------------------------------------
-# fit <- tar_read(fit_test)
-# include <- tar_read()
+# fit <- tar_read(fit_test_pq)
+# include <- tar_read(parname)
 
 ## For CJSdist, we consider an ad hoc threshold ≥ 0.05 to be indicative of sensitivity. For a normal distribution, this corresponds to the mean differing by approximately more than 0.3 standard deviations,
 ## or the standard deviation differing by a factor greater than approximately 0.3, when the power-scaling factor is changed by a factor of two.
@@ -762,7 +760,15 @@ plotSensitivity <- function(fit, include, measure = "cjs_dist") {
                                       log_prior_fn = extract_log_prior, # require(priorsense)
                                       div_measure = measure)
   
-  plot_powerscale <- powerscale_plot_dens(senssequence, variables = include)
+  plot_powerscale <- powerscale_plot_dens(senssequence,
+                                          variables = names(senssequence$base_draws)[1:(length(senssequence$base_draws)-3)]) ## These are the variable names in "include", but with indices.
+  
+  basename <- cmdstanfit$output_files()[1] %>%
+    basename() %>%
+    tools::file_path_sans_ext() %>%
+    str_replace("-[1-9]-", "-x-")
+  
+  ggsave(paste0("Fits.nosync/", basename, "_", "sens_powerscale", ".pdf"), densplot)
   
   return(plot_powerscale)
 }
