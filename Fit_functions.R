@@ -686,9 +686,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   
   plotname <- paste(names(densplots), check, sep = "_")
   
-  ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), densplot)
-  
-  mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), plots, plotname)
+  mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), densplots, plotname)
   ## cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria"), ncol = 1) #  axis = "b", align = "h"
   
   return(densplots)
