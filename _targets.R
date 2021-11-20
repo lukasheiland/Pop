@@ -57,7 +57,7 @@ targets_settings <- list(
              list(
                prior_b_log = c(-2, 2),
                prior_c_a_log = c(-5, 2),
-               prior_c_b_log = c(-5, 2),
+               prior_c_b_log = c(-1, 2),
                prior_c_j_log = c(-6, 2),
                ## prior_g_log,
                ## prior_h_log,
