@@ -763,7 +763,7 @@ plotSensitivity <- function(fit, include, measure = "cjs_dist") {
   plot_powerscale <- powerscale_plot_dens(senssequence,
                                           variables = names(senssequence$base_draws)[1:(length(senssequence$base_draws)-3)]) ## These are the variable names in "include", but with indices.
   
-  basename <- cmdstanfit$output_files()[1] %>%
+  basename <-  fit$output_files()[1] %>%
     basename() %>%
     tools::file_path_sans_ext() %>%
     str_replace("-[1-9]-", "-x-")
