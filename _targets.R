@@ -301,14 +301,14 @@ list(
                     n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.8)),
     
     tar_target(stanfit_test,
-               readStanfit(fit_test)),
+               readStanfit(fit_test_pq)),
     tar_target(stanfit,
                readStanfit(fit)),
 
     targets_parname,
 
     tar_target(summary_test,
-               summarizeFit(fit_test, exclude = c(helpers_exclude, rep_exclude))),
+               summarizeFit(fit_test_pq, exclude = c(helpers_exclude, rep_exclude))),
     tar_target(summary,
                summarizeFit(fit, exclude = c(helpers_exclude, rep_exclude))),
     
@@ -330,9 +330,9 @@ list(
     
     ## Posterior predictive tests
     tar_target(residuals_test,
-               scaleResiduals(cmdstanfit = fit_test, data_stan_priors)),
+               scaleResiduals(cmdstanfit = fit_test_pq, data_stan_priors)),
     tar_target(plot_denscheck_prior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
+               plotDensCheck(cmdstanfit = fit_test_pq, data_stan_priors, check = "prior")),
     tar_target(plot_denscheck_posterior_test,
                plotDensCheck(cmdstanfit = fit_test_pq, data_stan_priors, check = "posterior")),
     
