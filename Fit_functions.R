@@ -661,7 +661,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   completerows <- complete.cases(Sim)
   Sim <- Sim[completerows,]
   attr(Sim, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
-  densplot <- bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = grp)
+  densplots <- list("predictions" = bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = grp))
   
   if (match.arg(check) == "posterior") {
     Fixpoint <- Fixpoint[completerows,]
@@ -672,8 +672,10 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
     Fixpoint <- Fixpoint[, popstatesinfixpoint]
     attr(Fixpoint, "dimnames")$variable <- rep(c(paste("log pop", 1:data_stan_priors$N_pops), paste("log ba", 1:data_stan_priors$N_species)), data_stan_priors$N_locs)
     
-    fixdensplot <- bayesplot::mcmc_areas_ridges(log(Fixpoint))
-    densplot <- cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria"), ncol = 1) #  axis = "b", align = "h"
+    fixplot <- bayesplot::mcmc_areas_ridges(log(Fixpoint))
+    
+    densplots <- c(densplots, list("equilibria" = fixplot)
+      
   }
 
   
@@ -681,10 +683,15 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
     basename() %>%
     tools::file_path_sans_ext() %>%
     str_replace("-[1-9]-", "-x-")
-  name <- paste0("dens_", check)
+  
+  plotname <- paste(names(densplots), check, sep = "_")
+  
   ggsave(paste0("Fits.nosync/", basename, "_", name, ".pdf"), densplot)
   
-  return(densplot)
+  mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".pdf"), p), plots, plotname)
+  ## cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria"), ncol = 1) #  axis = "b", align = "h"
+  
+  return(densplots)
 }
 
 
