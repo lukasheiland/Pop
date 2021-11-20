@@ -287,7 +287,7 @@ list(
     
     tar_target(priorsim_test,
                drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.8, gpq = FALSE,)),
-    tar_target(plot_denscheck_priorsim_test,
+    tar_target(plots_denscheck_priorsim_test,
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
 
     tar_target(fit_test,
@@ -331,9 +331,9 @@ list(
     ## Posterior predictive tests
     tar_target(residuals_test,
                scaleResiduals(cmdstanfit = fit_test_pq, data_stan_priors)),
-    tar_target(plot_denscheck_prior_test,
+    tar_target(plots_denscheck_prior_test,
                plotDensCheck(cmdstanfit = fit_test_pq, data_stan_priors, check = "prior")),
-    tar_target(plot_denscheck_posterior_test,
+    tar_target(plots_denscheck_posterior_test,
                plotDensCheck(cmdstanfit = fit_test_pq, data_stan_priors, check = "posterior")),
     
     ## Sensitivity analysis
