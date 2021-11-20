@@ -768,7 +768,7 @@ plotSensitivity <- function(fit, include, measure = "cjs_dist") {
     tools::file_path_sans_ext() %>%
     str_replace("-[1-9]-", "-x-")
   
-  ggsave(paste0("Fits.nosync/", basename, "_", "sens_powerscale", ".pdf"), densplot)
+  ggsave(paste0("Fits.nosync/", basename, "_", "sens_powerscale", ".pdf"), plot_powerscale)
   
   return(plot_powerscale)
 }
