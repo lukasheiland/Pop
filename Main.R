@@ -17,15 +17,11 @@ library(future)
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
 
-## targets dependent on fit without generated quantities
 tar_make(c("summary_test",
            "residuals_test",
            "plots_test",
-           "plot_denscheck_prior_test"))
-
-
-## targets dependent on fit WITH generated quantities
-tar_make(c("plot_denscheck_posterior_test",
+           "plots_denscheck_prior_test",
+           "plots_denscheck_posterior_test",
            "sensitivity_test",
            "plot_powerscale_test"))
 
