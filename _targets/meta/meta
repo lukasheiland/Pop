@@ -89,15 +89,15 @@ fit_test_pq|stem|dc329c9c82e88811|5bf07de4de480f68|4b583a062c356a4b|1631369727||
 plot_denscheck_posterior_test|stem|d672477bfd37e412|7416b94d6a96e909|81b91d7a79b386c2|917631247||t18951.0427706824s|87a7f2074aed543c|2037654236|rds|vector|||549.114|Removed 5803 rows containing nonfinite values stat_density.|
 plot_powerscale_test|stem||30bed32c3d4ee5d5|2eded885ee3ab3ba|461645073||t18935.0421973226s||0|rds|vector|||88.222|Some Pareto k diagnostic values are too high. See helpparetokdiagnostic for details.|undefined columns selected
 fit_test|stem|2fe7c7abc939a8e7|87169727a36b2a6e|4b583a062c356a4b|-1560265059||t18951.0655459769s|3a7f43c5c492ae8e|374202|rds|vector|||1875.096||
-residuals_test|stem|5a8cf650b5116af6|b188cb154da95fa6|b85bac286be42d4f|-1334224030||t18951.0670446044s|7a4a8d8a8dbe6d51|21165474|rds|vector|||122.921||
-stanfit_test|stem|e91cbd6182ef3291|402ccdae6f1a90c3|7b5709230bd834d3|-1726047245||t18951.0701938053s|f816166a480a93a9|519887361|rds|vector|||230.947|The following variables have undefined values  iterations_fix.1,The following variables have undefined values  iterations_fix.2,The following variables have undefined values  iterations_fix.3,The following variables have undefined values  iterations_fix.4,The following variables have undefined values  iterations_fix.5,The following variables have undefined values  iterations_fix.6,The following variables have undefined values  iterations_fix.7,The following variables have undefined values  iterations_fix.8,The following variables have undefined values  iterations_fix.9,The following variables have undefined values  iterations_fix.10,The following variables have undefined values  iterations_fix.11,The following variables have undefined values  iterations_fix.12,The following variables have undefined values  iterations_fix.13,The following variables have undefined values  iterations_fix.14,The following variables have undefined values  iterations_fix.15,The following variables have undefined values  iterations_fix.16,The following variables have undefined values  iterations_fix.17,The following variables have undefined values  iterations_fix.18,The following variables have undefined values  iterations_fix.19,The following variables have undefined values  iterations_fix.20,The following variables have undefined values  iterations_fix.21,The following variables have undefined values  iterations_fix.22,The following variables have undefined values  iterations_fix.23,The following variables have undefined values  iterations_fix.24,The following variables have undefined values  iterations_fix.25,The following variables have undefined values  iterations_fix.26,The following variables have undefined values  iterations_fix.27,The following variables have undefined values  iterations_fix.28,The following variables have undefined values  iterations_fix.29,The following variables have undefined values  iterations_fix.30,The following variables have undefined values  iterations_fix.31,The followi|
 summary_test|stem|35ee92c7c61e5c50|c2821adb4b1fd551|9cbfcf5ed66eb0d5|-908423816||t18951.0735858329s|8f4191af821fe76b|1268482|rds|vector|||292.737||
 plot_denscheck_prior_test|stem|904fa14c14bc17f0|14c966c40f014dac|cb964a36556ec084|1553892209||t18951.0775025421s|2d2920db331d1203|46290551|rds|vector|||320.603|Removed 214 rows containing missing values geom_path.|
-plots_test|stem|02680d99ed33f0af|52681de5f1f04b6b|aa5479f20367e269|1637481436||t18950.8559601696s||2.15554070293289e-308|rds|vector|||5.742||NAs not allowed in x.
+plots_test|stem|02680d99ed33f0af|52681de5f1f04b6b|aa5479f20367e269|1637481436||t18950.8559601696s||2.21638221406042e-308|rds|vector|||5.742||NAs not allowed in x.
+sensitivity_test|stem|9b4e8da748085304|2c9ec9d05960447a|884afdb288caadbf|-16223955||t18951.4386463797s|8ea15fe19e9b2e93|571|rds|vector|||101.929|Some Pareto k diagnostic values are too high. See helpparetokdiagnostic for details.|
+residuals_test|stem|eba42ca225bfb43a|56beaeb6c8216ab5|8e2fd90202ccb9d6|-1334224030||t18951.4753577993s|88d60529d60eeb1f|21157891|rds|vector|||118.771||
 formatStanData|function|3814f235126b0c98||||||||||||||
 prepareSmallData|function|7fd1f663d76eb8c1||||||||||||||
 joinStages|function|e7686698802aa144||||||||||||||
-plotDensCheck|function|cf78fd1881ae8eb8||||||||||||||
+plotDensCheck|function|8f0e8d0419dc654a||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 readStanfit|function|5fb977364933b1e8||||||||||||||
 targets_parname|object|29301ca0c60f5106||||||||||||||
@@ -129,4 +129,5 @@ scaleResiduals|function|6be3a8d3a5a8ab5a||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 addPackage|function|d45c347b66cce55c||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
-sensitivity_test|stem|9b4e8da748085304|2c9ec9d05960447a|884afdb288caadbf|-16223955||t18951.4386463797s|8ea15fe19e9b2e93|571|rds|vector|||101.929|Some Pareto k diagnostic values are too high. See helpparetokdiagnostic for details.|
+stanfit_test|stem|db527f461d64767b|a6fc3beac7087fc0|7213ebc84633cac4|-1726047245||t18951.4798936359s|41cec6a52825ff89|557533245|rds|vector|||271.817||
+plots_denscheck_prior_test|stem||a783a63dbe92c8dd|f3746006634fd4b2|-677417683||t18951.4809114461s||0|rds|vector|||87.585||object name not found
