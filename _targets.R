@@ -57,12 +57,11 @@ targets_settings <- list(
              list(
                prior_b_log = c(-2, 2),
                prior_c_a_log = c(-5, 2),
-               prior_c_b_log = c(-5, 2),
+               prior_c_b_log = c(-1, 2),
                prior_c_j_log = c(-6, 2),
                ## prior_g_log,
                ## prior_h_log,
                prior_l_log = cbind(Fagus = c(0.5, 2), others = c(0.5, 2)),
-               prior_m_b_log = c(-3, 2),
                # prior_r_log = cbind(Fagus = c(0.5, 2), others = c(0.5, 2)),
                prior_s_log = c(-2, 2)
              )
@@ -75,7 +74,7 @@ targets_parname <- list(
   tar_target(pars_exclude,
              c("y_hat", "L_loc_log", "L_random_log", "L_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
   tar_target(helpers_exclude,
-             c("vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_m_b_log_prior", "vector_s_log_prior",
+             c("vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "area_zeta", "area_zeta_prior", "phi_obs_rep", "phi_obs_rep_prior", "zeta_prior_rep", "zeta_rep",
                "log_prior", "log_lik", "lp__")),
   tar_target(rep_exclude,
@@ -90,7 +89,7 @@ targets_parname <- list(
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
   tar_target(parname,
              c("phi_obs", "sigma_l",
-               "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "m_b_log", "r_log", "s_log"))
+               "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log"))
 )
 
 
