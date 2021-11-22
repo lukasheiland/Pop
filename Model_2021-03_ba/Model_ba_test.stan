@@ -2,7 +2,7 @@ functions {
   
   //// Difference equations
   matrix simulate(vector initialstate, int time_max,
-                  vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector m_b, vector r, vector s, 
+                  vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
                   vector ba_a_avg, real ba_a_upper,
                   int N_spec, int N_pops,
                   int[] i_j, int[] i_a, int[] i_b) {
@@ -25,7 +25,7 @@ functions {
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b)); It is important to expm1() some state (here J), because the rates are positive anyway
       State[i_j, t]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
       State[i_a, t]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
-      State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum + m_b);
+      State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
     
     }
     
@@ -36,7 +36,7 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(vector[] state_init_log, int[] time_max, int[] times,
-                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector[] L_loc, vector m_b_log, vector r_log, vector s_log,
+                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector[] L_loc, vector r_log, vector s_log,
                 // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_log, vector h_log, vector[] L_loc, matrix R_log, matrix S_log,
                 vector ba_a_avg, real ba_a_upper,
                 int[] n_obs, int[] n_yhat,
@@ -57,7 +57,7 @@ functions {
                         
                         simulate(exp(state_init_log[loc]),
                                  time_max[loc],
-                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(m_b_log), exp(r_log), exp(s_log),
+                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
                                  i_j, i_a, i_b);
@@ -81,7 +81,7 @@ functions {
   // Expects a state vector[N_pops]
   // returns a state vector of the form [J1, …, A1, …, B1, …, BA1, …, iterations]
   vector iterateFix(vector state_0,
-                    vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector m_b, vector r, vector s, 
+                    vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
                     vector ba_a_avg, real ba_a_upper,
                     int N_spec, int N_pops,
                     int[] i_j, int[] i_a, int[] i_b,
@@ -112,7 +112,7 @@ functions {
       
       s_1[i_j]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
       s_1[i_a]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
-      s_1[i_b]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum + m_b);
+      s_1[i_b]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
       
       BA_1 =  s_1[i_a] .* ba_a_avg + s_1[i_b]; // New BA as additional state.
       s_1[(N_pops+1):] = BA_1;
@@ -322,8 +322,6 @@ data {
   array[2] vector[N_species] prior_l_log;
   array[2] vector[N_species] prior_r_log;
   
-  vector[2] prior_m_b_log;
-  
   // vector[2] prior_l_log;
   // vector[2] prior_r_log;
   
@@ -372,7 +370,6 @@ parameters {
   vector[N_species] c_j_log;
   vector[N_species] g_log;
   vector[N_species] h_log;
-  vector[N_species] m_b_log;
   vector[N_species] s_log;
   
   vector[N_species] r_log;
@@ -439,7 +436,7 @@ transformed parameters {
   //  }
   
   vector<lower=0>[L_yhat] y_hat = unpack(state_init_log, time_max, times,
-                                b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, L_loc, m_b_log, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
+                                b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 // b_log, c_a_log, c_b_log, C_j_log, G_log, h_log, L_loc, R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat, // varying numbers per loc
@@ -496,7 +493,6 @@ model {
   l_log ~ normal(prior_l_log[1], prior_l_log[2]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
   
-  m_b_log ~ normal(prior_m_b_log[1], prior_m_b_log[2]);
   s_log ~ normal(prior_s_log[1], prior_s_log[2]);
 
   
@@ -580,7 +576,6 @@ generated quantities {
   vector[N_species] vector_c_j_log_prior = to_vector(normal_rng(rep_array(prior_c_j_log[1], N_species), rep_array(prior_c_j_log[2], N_species)));
   // vector[N_species] vector_l_log_prior = to_vector(normal_rng(rep_array(prior_l_log[1], N_species), rep_array(prior_l_log[2], N_species)));
   // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
-  vector[N_species] vector_m_b_log_prior = to_vector(normal_rng(rep_array(prior_m_b_log[1], N_species), rep_array(prior_m_b_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_array(prior_s_log[1], N_species), rep_array(prior_s_log[2], N_species)));
   
   array[3] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), [3, 2, 1]));
@@ -619,7 +614,7 @@ generated quantities {
   //  }
  
   y_hat_prior = unpack(rep_array(prior_state_init_log, N_locs), time_max, times,
-                       vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, vector_m_b_log_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
+                       vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
                        ba_a_avg, ba_a_upper,
                        n_obs, n_yhat, // varying numbers per loc
                        N_species, N_pops, L_yhat, N_locs, // fixed numbers
@@ -662,7 +657,7 @@ generated quantities {
       
       //// fix point, given parameters
       state_fix[loc] = iterateFix(exp(state_init_log[loc]),
-                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(m_b_log), exp(r_log), exp(s_log),
+                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
                                   // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(h_log), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
                                   ba_a_avg, ba_a_upper,
                                   N_species, N_pops,
@@ -696,19 +691,18 @@ generated quantities {
     }
     
     log_prior = log_prior +
-    		    normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 3), [3, 2, 1]) +
-	  		    normal_lpdf(sigma_l | 0, 1) +		  
-	  		    normal_lpdf(to_vector(L_random_log) | 0, 1) +
-	  		    normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
-	  		    normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) +
-	  		    normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) +
-	  		    normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) +
-	  		    normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
-	  		    normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
-	  		    normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
-	  		    normal_lpdf(m_b_log | prior_m_b_log[1], prior_m_b_log[2]) +
-	  		    normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
-	  		    normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // joint prior specification, sum of all logpriors // normal_lpdf(zeta | rep_array(0.0, 5), rep_array(0.2, 5)) + log(2) +
+    			  normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 3), [3, 2, 1]) +
+	  		  normal_lpdf(sigma_l | 0, 1) +		  
+	  		  normal_lpdf(to_vector(L_random_log) | 0, 1) +
+	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
+	  		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) +
+	  		  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) +
+	  		  normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) +
+	  		  normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
+	  		  normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
+	  		  normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
+	  		  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
+	  		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // joint prior specification, sum of all logpriors // normal_lpdf(zeta | rep_array(0.0, 5), rep_array(0.2, 5)) + log(2) +
 	      			  
     // for(l in 1:L_y) {
     //   log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs_rep[l], theta_obs_rep[l]);
