@@ -204,6 +204,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     N_pops = length(unique(S$pop)),
     N_beta = ncol(X),
     N_protocol = length(unique(S$methodid)), ## different sampling area levels
+    N_groups = as.integer(interaction(as.integer(as.factor(S$obsid)), S$stage, substr(S$tax, 1, 1))) %>% unique() %>% length(),
     
     n_obs = S_locs$n_obs,
     n_yhat = S_locs$n_yhat,
@@ -219,6 +220,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     # rep_species2a2b = S_a2b$rep_species2a2b,
     rep_pops2init =  as.integer(S_init$pop),
     rep_pops2y =  as.integer(S$pop),
+    rep_groups2y = as.integer(interaction(as.integer(as.factor(S$obsid)), S$stage, substr(S$tax, 1, 1))),
     
     time_max = S_locs$time_max,
     times = S_times$t,
@@ -628,7 +630,7 @@ plotStanfit <- function(stanfit, exclude) {
 # data_stan_priors <- tar_read("data_stan_priors")
 # draws <- tar_read("draws_test") ## this is here as an option for plotting draw objects if the fit has NaNs in generated quantities
 
-plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c("prior", "posterior")) {
+plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c("prior", "posterior"), plotfix = T) {
   
   data <- data_stan_priors$y
   Longdata <- attr(data_stan_priors, "Long")
@@ -646,8 +648,11 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
     
     if (is.null(draws)) {
       Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix")
-      Fixpoint <- cmdstanfit$draws(variables = "state_fix", format = "draws_matrix")
-      fixpointconverged <- cmdstanfit$draws(variables = "converged", format = "draws_matrix")
+      
+      if (plotfix) {
+        Fixpoint <- cmdstanfit$draws(variables = "state_fix", format = "draws_matrix")
+        fixpointconverged <- cmdstanfit$draws(variables = "converged", format = "draws_matrix")
+      }
       
     } else {
       Sim <- draws$y_hat_rep
@@ -663,7 +668,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
   attr(Sim, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
   densplots <- list("predictions" = bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = grp))
   
-  if (match.arg(check) == "posterior") {
+  if (match.arg(check) == "posterior" & plotfix) {
     Fixpoint <- Fixpoint[completerows,]
     attr(Fixpoint, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
     # fixpointconverged <- fixpointconverged[completerows,]

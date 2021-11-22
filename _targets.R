@@ -278,12 +278,18 @@ list(
     tar_target(file_model,
                "Model_2021-03_ba/Model_ba.stan",
                format = "file"),
+    tar_target(file_model_test_distr,
+               "Model_2021-03_ba/Model_ba_test_distr.stan",
+               format = "file"),
     
     tar_target(model_test,
                cmdstan_model(file_model_test) #, cpp_options = list(stan_opencl = TRUE)
                ),
     tar_target(model,
                cmdstan_model(file_model)),
+    tar_target(model_test_distr,
+               cmdstan_model(file_model_test_distr) #, cpp_options = list(stan_opencl = TRUE)
+    ),
     
     tar_target(priorsim_test,
                drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.8, gpq = FALSE,)),
@@ -295,6 +301,9 @@ list(
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit_test_pq,
                drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.8, gpq = TRUE,
+                        method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
+    tar_target(fit_test_distr,
+               drawTest(model = model_test_distr, data_stan = data_stan_priors, initfunc = 0.8,
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit,
                draw(model = model, data_stan_priors, method = "mcmc",
@@ -311,6 +320,8 @@ list(
                summarizeFit(fit_test_pq, exclude = c(helpers_exclude, rep_exclude))),
     tar_target(summary,
                summarizeFit(fit, exclude = c(helpers_exclude, rep_exclude))),
+    tar_target(summary_test_distr,
+               summarizeFit(fit_test_distr, exclude = c(helpers_exclude, rep_exclude))),
     
     tar_target(draws_test,
                extractDraws(stanfit_test, exclude = helpers_exclude)),
@@ -335,6 +346,11 @@ list(
                plotDensCheck(cmdstanfit = fit_test_pq, data_stan_priors, check = "prior")),
     tar_target(plots_denscheck_posterior_test,
                plotDensCheck(cmdstanfit = fit_test_pq, data_stan_priors, check = "posterior")),
+    
+    tar_target(residuals_test_distr,
+               scaleResiduals(cmdstanfit = fit_test_distr, data_stan_priors)),
+    tar_target(plots_denscheck_posterior_test_distr,
+               plotDensCheck(cmdstanfit = fit_test_distr, data_stan_priors, check = "posterior", plotfix = F)),
     
     ## Sensitivity analysis
     tar_target(sensitivity_test, testSensitivity(fit_test_pq, include = parname)),
