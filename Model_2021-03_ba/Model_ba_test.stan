@@ -25,7 +25,7 @@ functions {
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b)); It is important to expm1() some state (here J), because the rates are positive anyway
       State[i_j, t]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
       State[i_a, t]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
-      State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum + m_b);
+      State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B - m_b .* B) ./ (1 + c_b*BA_sum);
     
     }
     
@@ -569,9 +569,11 @@ generated quantities {
   vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));
   
+  
   // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
   // real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]);
-  
+
+  real m_b_log_prior = normal_rng(prior_m_b_log[1], prior_m_b_log[2]);
   real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
   
   vector[N_species] vector_b_log_prior = to_vector(normal_rng(rep_array(prior_b_log[1], N_species), rep_array(prior_b_log[2], N_species)));
