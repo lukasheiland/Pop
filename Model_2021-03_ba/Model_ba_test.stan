@@ -257,6 +257,7 @@ data {
   int<lower=0> N_species; // overall number of unique species across plot and locations (not nested!)
   int<lower=0> N_pops; // (species*stages) within loc; this is the length of initial values!
   int<lower=0> N_beta;
+  int<lower=0> N_obsmethodTax;
   int<lower=0> N_protocol;
 
 
@@ -271,7 +272,7 @@ data {
 
   //// rep - repeat indices within groups for broadcasting to the subsequent hierarchical levels
   int<lower=1> rep_yhat2y[L_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
-  int<lower=1> rep_obsmethod2y[L_y]; // factor (1, 2, 3), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  int<lower=1> rep_obsmethodTax2y[L_y]; // factor (1, 2, 3), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
   int<lower=1> rep_protocol2y[L_y]; // factor (1:5)
 
   // int<lower=1> rep_locs2plots[L_plots]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
@@ -387,9 +388,9 @@ parameters {
   
   
   //// Errors
-  vector<lower=0>[3] phi_obs_inv_sqrt; // error in neg_binomial per stage
-  // vector<lower=0>[N_protocol] zeta; // zero-offset parameter
-
+  vector<lower=0>[N_obsmethodTax] phi_obs_inv_sqrt; // error in neg_binomial per tax and stage
+  
+    // vector<lower=0>[N_protocol] zeta; // zero-offset parameter
 	// real<lower=0> kappa_inv; // error in beta for h_log
     // vector<lower=0>[3] alpha_obs_inv; // observation error in gamma
     // vector<lower=0>[2] sigma_obs; // observation error
@@ -417,7 +418,7 @@ transformed parameters {
   // matrix[N_locs, N_species] R_log = X * Beta_r;
   // matrix[N_locs, N_species] S_log = X * Beta_s;
 
-  vector<lower=0>[3] phi_obs = inv_square(phi_obs_inv_sqrt); // inv_square == square_inv
+  vector<lower=0>[N_obsmethodTax] phi_obs = inv_square(phi_obs_inv_sqrt); // inv_square == square_inv
     // vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
   
   for(loc in 1:N_locs) {
@@ -445,8 +446,8 @@ transformed parameters {
                                 
   vector[L_y] y_hat_rep = y_hat[rep_yhat2y];
   vector[L_y] y_hat_rep_offset = y_hat_rep .* offset; // offset_zeta
-  vector[L_y] phi_obs_rep = phi_obs[rep_obsmethod2y];
-  // vector[L_y] theta_obs_rep = theta_obs[rep_obsmethod2y];
+  vector[L_y] phi_obs_rep = phi_obs[rep_obsmethodTax2y];
+  // vector[L_y] theta_obs_rep = theta_obs[rep_obsmethodTax2y];
 }
 
 
@@ -458,7 +459,8 @@ model {
   
   //// Hyperpriors
 
-  phi_obs_inv_sqrt ~ normal(rep_array(0.0, 3), [3, 2, 1]); // Observation error for neg_binomial
+  phi_obs_inv_sqrt ~ normal(rep_array(0.0, 6), [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]); // Observation error for neg_binomial
+  	// Levels of obsmethodTax: j.F a.F ba.F j.o a.o ba.o
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
   
   // ... for special offset L
@@ -517,17 +519,17 @@ model {
   //———————————————————————————————————————————————————————————————————//    
 
   // a2b ~ poisson(y_hat[rep_yhat2a2b] .* exp(h_log)[rep_species2a2b] .* timediff);
-  // y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_obsmethod2y]);
+  // y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_obsmethodTax2y]);
   
   y ~ neg_binomial_2(y_hat_rep_offset, phi_obs_rep);
 
   
-  // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethod2y], theta_obs, L_y);
+  // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsmethodTax2y], theta_obs, L_y);
   
   //  for(l in 1:L_y) {
   //	
   //	y[l] ~ neg_binomial_0(y_hat_rep[l], phi_obs_rep[l], theta_obs_rep[l]);
-  //    // y[l] ~ neg_binomial_0(y_hat[rep_yhat2y][l], phi_obs[rep_obsmethod2y][l], theta_obs[rep_obsmethod2y][l]);
+  //    // y[l] ~ neg_binomial_0(y_hat[rep_yhat2y][l], phi_obs[rep_obsmethodTax2y][l], theta_obs[rep_obsmethodTax2y][l]);
   //  }  
 
 }
@@ -578,7 +580,7 @@ generated quantities {
   // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_array(prior_s_log[1], N_species), rep_array(prior_s_log[2], N_species)));
   
-  array[3] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 3), [3, 2, 1]));
+  array[N_obsmethodTax] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 6), [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]));
   
   // special case L
   array[N_locs] vector<lower=0>[N_species] L_loc_prior;
@@ -624,7 +626,7 @@ generated quantities {
   y_hat_prior_rep_offset = y_hat_prior_rep .* offset; // offset_zeta_prior
 
 
-  y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsmethod2y]); // , [0, 0, 0]', L_y
+  y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsmethodTax2y]); // , [0, 0, 0]', L_y
   
   
   //—————————————————————————————————————————————————————————————————————————//
@@ -691,7 +693,7 @@ generated quantities {
     }
     
     log_prior = log_prior +
-    			  normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 3), [3, 2, 1]) +
+    		  normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 6), [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]) +
 	  		  normal_lpdf(sigma_l | 0, 1) +		  
 	  		  normal_lpdf(to_vector(L_random_log) | 0, 1) +
 	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
