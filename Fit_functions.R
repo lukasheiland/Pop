@@ -78,8 +78,9 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
       stage == "BA" ~ as.double(ba_ha_r)
     )) %>%
     
-    ## Different levels of observation error were assumed for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
-    mutate(obsmethod = fct_recode(stage, "j" = "J", "a" = "A", "ba" = "B", "ba" = "BA")) %>% 
+    ## Different levels of observation error were assumed per species and for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
+    mutate(obsmethod = fct_recode(stage, "j" = "J", "a" = "A", "ba" = "B", "ba" = "BA")) %>%
+    mutate(obsmethodTax = interaction(obsmethod, substr(tax, 1, 1))) %>% 
     
     ## pop is just an id for the initial states vector
     mutate(pop = interaction(tax, stage)) %>%
@@ -203,6 +204,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     N_species = N_species,
     N_pops = length(unique(S$pop)),
     N_beta = ncol(X),
+    N_obsmethod = length(unique(S$obsmethod)), ## different sampling area levels
+    N_obsmethodTax = length(unique(S$obsmethodTax)), ## different sampling area levels
     N_protocol = length(unique(S$methodid)), ## different sampling area levels
     N_groups = as.integer(interaction(as.integer(as.factor(S$obsid)), S$stage, substr(S$tax, 1, 1))) %>% unique() %>% length(),
     
@@ -215,6 +218,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     
     rep_yhat2y = vrep(1:L_yhat, S_yhat$n_plots), ## repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
     rep_obsmethod2y = as.integer(S$obsmethod),
+    rep_obsmethodTax2y = as.integer(S$obsmethodTax), ## see: # attr(data_stan_priors, "Long")$obsmethodTax %>% levels()
     rep_protocol2y = as.integer(S$methodid),
     # rep_yhat2a2b = S_a2b$rep_yhat2a2b,
     # rep_species2a2b = S_a2b$rep_species2a2b,

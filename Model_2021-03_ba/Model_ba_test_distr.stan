@@ -258,6 +258,7 @@ data {
   int<lower=0> N_pops; // (species*stages) within loc; this is the length of initial values!
   int<lower=0> N_beta;
   int<lower=0> N_protocol;
+  int<lower=0> N_obsmethodTax;
   int<lower=0> N_groups;
 
 
@@ -273,7 +274,7 @@ data {
 
   //// rep - repeat indices within groups for broadcasting to the subsequent hierarchical levels
   int<lower=1> rep_yhat2y[L_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
-  int<lower=1> rep_obsmethod2y[L_y]; // factor (1, 2, 3), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  int<lower=1> rep_obsmethodTax2y[L_y]; // factor (1, 2, 3), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
   int<lower=1> rep_protocol2y[L_y]; // factor (1:5)
   int<lower=1> rep_groups2y[L_y]; // factor (1:5)
 
@@ -351,7 +352,7 @@ parameters {
   
 
   //// Errors
-  vector<lower=0>[3] phi_obs_inv_sqrt; // error in neg_binomial per stage
+  vector<lower=0>[N_obsmethodTax] phi_obs_inv_sqrt; // error in neg_binomial per stage
   vector<lower=0>[N_groups] mu;
 
   // array[N_locs] vector[N_pops] state_init_log;
@@ -360,12 +361,12 @@ parameters {
 
 transformed parameters {
 
-  vector<lower=0>[3] phi_obs = inv_square(phi_obs_inv_sqrt); // inv_square == square_inv
+  vector<lower=0>[N_obsmethodTax] phi_obs = inv_square(phi_obs_inv_sqrt); // inv_square == square_inv
     // vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
                                 
   vector[L_y] y_hat_rep = mu[rep_groups2y];
   vector[L_y] y_hat_rep_offset = y_hat_rep .* offset;
-  vector[L_y] phi_obs_rep = phi_obs[rep_obsmethod2y];
+  vector[L_y] phi_obs_rep = phi_obs[rep_obsmethodTax2y];
 
 }
 
@@ -378,8 +379,9 @@ model {
   
   //// Hyperpriors
 
-  phi_obs_inv_sqrt ~ normal(rep_array(0.0, 3), [0.1, 0.2, 0.05]); // Observation error for neg_binomial
+  phi_obs_inv_sqrt ~ normal(rep_array(0.0, 6), [0.2, 0.3, 0.1, 0.1, 0.2, 0.01]); // Observation error for neg_binomial
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
+  	// Levels of obsmethodTax: j.F a.F ba.F j.o a.o ba.o
   
   
 //  for(loc in 1:N_locs) {
