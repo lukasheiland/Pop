@@ -508,7 +508,7 @@ model {
   // }
   
   for(loc in 1:N_locs) {
-    state_init_log[loc] ~ normal(prior_state_init_log, 3);
+    state_init_log[loc] ~ normal(prior_state_init_log, 5);
   }
 
 
@@ -580,7 +580,7 @@ generated quantities {
   // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_array(prior_s_log[1], N_species), rep_array(prior_s_log[2], N_species)));
   
-  array[N_obsmethodTax] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 6), [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]));
+  array[N_obsmethodTax] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 6), [1, 1, 0.1, 1, 1, 0.1])); // [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]
   
   // special case L
   array[N_locs] vector<lower=0>[N_species] L_loc_prior;
@@ -689,11 +689,12 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | prior_state_init_log, 3);
+      log_prior += normal_lpdf(state_init_log[loc,] | prior_state_init_log, 5);
     }
     
+    // [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]
     log_prior = log_prior +
-    		  normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 6), [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]) +
+    		  normal_lpdf(phi_obs_inv_sqrt | rep_array(0.0, 6), [1, 1, 0.1, 1, 1, 0.1]) +
 	  		  normal_lpdf(sigma_l | 0, 1) +		  
 	  		  normal_lpdf(to_vector(L_random_log) | 0, 1) +
 	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
