@@ -292,10 +292,10 @@ list(
     
     tar_target(fit_test,
                drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.8, gpq = FALSE,
-                        method = "mcmc", n_chains = 6, iter_warmup = 800, iter_sampling = 500)),
+                        method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit_test_pq,
                drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.8, gpq = TRUE,
-                        method = "mcmc", n_chains = 6, iter_warmup = 800, iter_sampling = 500)),
+                        method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit,
                draw(model = model, data_stan_priors, method = "mcmc",
                     n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.8)),
@@ -354,7 +354,7 @@ list(
                model_gq$generate_quantities(fitted_params = fit$output_files(),
                                             data = data_stan_priors,
                                             output_dir = "Fits.nosync/",
-                                            parallel_chains = getOption("mc.cores", 6)))
+                                            parallel_chains = getOption("mc.cores", 4)))
     
     # tar_target(rstanfit_gq_test,
     #            readStanfit(fit_gq_test)),
