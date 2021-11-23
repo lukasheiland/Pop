@@ -102,11 +102,11 @@ file_model_test|stem|0631a4880cbd8a35|e344941b51aafe21|ef46db3751d8e999|-1074015
 helpers_exclude|stem|a90735f073486140|6ddadf55d0ce9ef8|a3dad144c40657ed|1133870334||t18953.7934698631s|dd5db50a8149e5ce|152|rds|vector|||11.987||
 residuals_test_distr|stem|62dccb6ecaa61e50|b4bb87ef1050fe8c|da48192862bd9e95|-1529223786||t18953.8052507379s|9f4b817f28136f8a|14994259|rds|vector|||202.12||
 fits_Seedlings|stem|427c81c27c4dfbac|3df0e9bfc4ef7fe5|7b5f04d26372dfa4|809945682||t18953.8945716489s|c6edd1d01c93ac2e|359737261|rds|vector|||316.94|There were 4 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See httpmcstan.orgmiscwarnings.htmldivergenttransitionsafterwarmup|
-data_stan|stem|6eb6511fdffc6b85|d18a2fb7bd18372c|11c321965824ac87|1263995833||t18953.8946027412s|cc2b18ebe24c8572|726846|rds|vector|||1.438||
-fit_g|stem|277243caf4700c0a|255e3515660b75a6|731d5bdf71e36f2a|128175024||t18953.8947920349s|7efb60af0910ea4d|12515380|rds|vector|||15.222||
-fit_h|stem|d03053580ee7841d|ca8b86a90da6d4a5|731d5bdf71e36f2a|468382782||t18953.8950672674s|3a7f226f39e856b0|15277689|rds|vector|||22.312||
-data_stan_priors|stem|01777ef9f7835224|5f8ab647110035d6|bad43ea4f52fb1e0|1623270232||t18953.8950815224s|6fd348fc135ec21e|726965|rds|vector|||0.997||
-formatStanData|function|8491fdde3b02fe7b||||||||||||||
+data_stan|stem|6dc830de455f25c9|d18a2fb7bd18372c|0c1817e245bf84fb|1263995833||t18954.4311934491s|45eefa53ebfdd1bf|727604|rds|vector|||12.867||
+fit_g|stem|80415e45efc2f86d|255e3515660b75a6|da57207700771270|128175024||t18954.4314177086s|ba76f77c6f35151f|12515370|rds|vector|||18.226||
+fit_h|stem|984581050bf06da9|ca8b86a90da6d4a5|da57207700771270|468382782||t18954.4316648615s|91750d21bd43942a|15277688|rds|vector|||19.727||
+data_stan_priors|stem|e3912676ae4cf2ff|5f8ab647110035d6|2534de07495a1d0d|1623270232||t18954.4317884059s|6cca356582aa67ab|727689|rds|vector|||2.47||
+formatStanData|function|c4c1b64e99bb65ca||||||||||||||
 prepareSmallData|function|7fd1f663d76eb8c1||||||||||||||
 joinStages|function|e7686698802aa144||||||||||||||
 plotDensCheck|function|72fb5b3f7d173ad5||||||||||||||
@@ -141,8 +141,8 @@ scaleResiduals|function|6be3a8d3a5a8ab5a||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 addPackage|function|d45c347b66cce55c||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
-file_model_test_distr|stem|259f0c8775a35802|df35faf006647ae2|ef46db3751d8e999|1311391266|Model_2021-03_ba/Model_ba_test_distr.stan|t18953.9231351323s|ccba044a032c9ae7|16722|file|vector|||55.797||
-model_test_distr|stem|30b9c29ee6498df1|2cee12c0d2defb35|48dfa5f8993a756b|-230357194||t18953.9245496163s|c4f7e57dd5db1c7c|7443|rds|vector|||24.66||
-fit_test_distr|stem|eeadd075e3fd9cb3|8f984c78c23ed4e4|20b5684bf505e78a|-1344280777||t18953.925415421s|b90c3ae89b4b2a36|159522|rds|vector|||74.35||
-summary_test_distr|stem|f506f0bbc25afb2d|ea5367291f9a4229|a0cc19cb6e4caa75|1552413202||t18953.9269817992s|9652d45a9e404cc1|388920|rds|vector|||135.272||
-plots_denscheck_posterior_test_distr|stem|046b1ff66feeeab5|6e4daafc91f90fdf|907ca94ea58a7729|-838666142||t18953.9329197616s|85c487da664149e7|47548585|rds|vector|||481.378|Removed 5803 rows containing nonfinite values stat_density.|
+file_model_test_distr|stem|edf841716e913d31|df35faf006647ae2|ef46db3751d8e999|1311391266|Model_2021-03_ba/Model_ba_test_distr.stan|t18954.4527042246s|a948dac470ac3756|16857|file|vector|||9.913||
+model_test_distr|stem|addf6507d125cb2a|2cee12c0d2defb35|8d6d549173fa22d3|-230357194||t18954.453372252s|a592704eb6d472e5|7441|rds|vector|||22.443||
+fit_test_distr|stem|815104fff6137e38|8f984c78c23ed4e4|a53110f276189353|-1344280777||t18954.454153223s|5497cdef4104cafb|159531|rds|vector|||67.153||
+summary_test_distr|stem|bdc431bdaef189bc|ea5367291f9a4229|299d021c1aee77d5|1552413202||t18954.4556075481s|7315b564c084555f|388516|rds|vector|||125.597||
+plots_denscheck_posterior_test_distr|stem|9547eedce928483a|6e4daafc91f90fdf|cc427c5f05c3107b|-838666142||t18954.4614978382s|b505d652d907c781|47267941|rds|vector|||480.448|Removed 5803 rows containing nonfinite values stat_density.|
