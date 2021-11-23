@@ -94,22 +94,18 @@ model_transitions|stem|aed63dd5e7fd392b|6f5288cead19f3b4|e9da770e4852b7c7|-12758
 Data_seedlings|stem|cfcc708af6c1044c|81db27c755665335|792b74af501c76b2|-396571518||t18953.7532994257s|f5abf14db05ef090|1393240|rds|vector|||3.233||
 Data_big_status|stem|ae0f974436e6977a|eff25cb053505d95|69a84043a87fa2b3|813772221||t18953.7534277906s|c78be29eeba71bae|16437186|rds|vector|||13.878||
 Seedlings|stem|9446e821894d8cdb|e366b261bd7792c2|90026d18efcd9d81|-185150805||t18953.7537697576s|bd4c9d7ef0aefea4|67141|rds|vector|||9.896||
-fits_Seedlings|stem|168b77c04780a93b|3df0e9bfc4ef7fe5|7b5f04d26372dfa4|809945682||t18953.7822721318s|508244d92d41379e|359082889|rds|vector|||358.922|There were 86 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See httpmcstan.orgmiscwarnings.htmldivergenttransitionsafterwarmup|
 Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|04617d440238533a|-1840226744||t18953.7592240997s|9b01f5e608a77422|1022676|rds|vector|||1.754||
 Stages_select|stem|ba4165f1b03e622f|85bbba690b341a1b|0d1fa0dfee385daf|-1427272822||t18953.7544954019s|2c98b7058a5a899e|758200|rds|vector|||55.284||
 Stages_scaled|stem|f997edaa2852a872|4084417319dea073|ab8f932a4ddd01ce|1092130661||t18953.7592435407s|bfb582ddd98c93c2|1208850|rds|vector|||0.07||
 Stages_transitions|stem|dc385c617697f906|a5e48a6eb89db6d3|24d84b1b1826a056|-173363864||t18953.7597154754s|db822469aebc585f|342571|rds|vector|||24.244||
 file_model_test|stem|0631a4880cbd8a35|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18953.6023829249s|0b671d0680272be7|31398|file|vector|||11.493||
-data_stan|stem|6eb6511fdffc6b85|d18a2fb7bd18372c|11c321965824ac87|1263995833||t18953.7889465335s|cc2b18ebe24c8572|726846|rds|vector|||11.942||
-fit_g|stem|3ac4892e40138faf|255e3515660b75a6|731d5bdf71e36f2a|128175024||t18953.7891516474s|06be415b8987a3db|12515379|rds|vector|||16.626||
-fit_h|stem|47b26b11e35ffe6b|ca8b86a90da6d4a5|731d5bdf71e36f2a|468382782||t18953.7893487603s|ab13ceb2ee282dcd|15277716|rds|vector|||15.763||
-data_stan_priors|stem|2d90ac213418a992|5f8ab647110035d6|5217dc84e2e48f7c|1623270232||t18953.7894721895s|1a07e4827bf21b3e|726963|rds|vector|||2.269||
-file_model_test_distr|stem|71e6ee6d17206633|df35faf006647ae2|ef46db3751d8e999|1311391266|Model_2021-03_ba/Model_ba_test_distr.stan|t18953.783737947s|c8fd31daec8e0acd|16715|file|vector|||10.634||
-model_test_distr|stem|2f55f23c4abee113|2cee12c0d2defb35|a5c3ea48f878e295|-230357194||t18953.7916120031s|ac061bdf8fbe2654|7442|rds|vector|||21.56||
-fit_test_distr|stem|f44d686ced6a68e4|8f984c78c23ed4e4|1c165d537ee266ad|-1344280777||t18953.7925351756s|96b6dd46c0f7dd57|159524|rds|vector|||79.28||
 helpers_exclude|stem|a90735f073486140|6ddadf55d0ce9ef8|a3dad144c40657ed|1133870334||t18953.7934698631s|dd5db50a8149e5ce|152|rds|vector|||11.987||
-summary_test_distr|stem|d92d1aff96f76f77|ea5367291f9a4229|1a159170939ec45f|1552413202||t18953.794835649s|648a2982f7d9cd62|388186|rds|vector|||117.562||
-plots_denscheck_posterior_test_distr|stem|bb6d5f6aa8521100|6e4daafc91f90fdf|c52eb9d52ff9522e|-838666142||t18953.802570002s|2450140f2084f4d5|46964530|rds|vector|||621.931|Removed 5803 rows containing nonfinite values stat_density.|
+residuals_test_distr|stem|62dccb6ecaa61e50|b4bb87ef1050fe8c|da48192862bd9e95|-1529223786||t18953.8052507379s|9f4b817f28136f8a|14994259|rds|vector|||202.12||
+fits_Seedlings|stem|427c81c27c4dfbac|3df0e9bfc4ef7fe5|7b5f04d26372dfa4|809945682||t18953.8945716489s|c6edd1d01c93ac2e|359737261|rds|vector|||316.94|There were 4 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See httpmcstan.orgmiscwarnings.htmldivergenttransitionsafterwarmup|
+data_stan|stem|6eb6511fdffc6b85|d18a2fb7bd18372c|11c321965824ac87|1263995833||t18953.8946027412s|cc2b18ebe24c8572|726846|rds|vector|||1.438||
+fit_g|stem|277243caf4700c0a|255e3515660b75a6|731d5bdf71e36f2a|128175024||t18953.8947920349s|7efb60af0910ea4d|12515380|rds|vector|||15.222||
+fit_h|stem|d03053580ee7841d|ca8b86a90da6d4a5|731d5bdf71e36f2a|468382782||t18953.8950672674s|3a7f226f39e856b0|15277689|rds|vector|||22.312||
+data_stan_priors|stem|01777ef9f7835224|5f8ab647110035d6|bad43ea4f52fb1e0|1623270232||t18953.8950815224s|6fd348fc135ec21e|726965|rds|vector|||0.997||
 formatStanData|function|8491fdde3b02fe7b||||||||||||||
 prepareSmallData|function|7fd1f663d76eb8c1||||||||||||||
 joinStages|function|e7686698802aa144||||||||||||||
@@ -145,4 +141,8 @@ scaleResiduals|function|6be3a8d3a5a8ab5a||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 addPackage|function|d45c347b66cce55c||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
-residuals_test_distr|stem|62dccb6ecaa61e50|b4bb87ef1050fe8c|da48192862bd9e95|-1529223786||t18953.8052507379s|9f4b817f28136f8a|14994259|rds|vector|||202.12||
+file_model_test_distr|stem|259f0c8775a35802|df35faf006647ae2|ef46db3751d8e999|1311391266|Model_2021-03_ba/Model_ba_test_distr.stan|t18953.9231351323s|ccba044a032c9ae7|16722|file|vector|||55.797||
+model_test_distr|stem|30b9c29ee6498df1|2cee12c0d2defb35|48dfa5f8993a756b|-230357194||t18953.9245496163s|c4f7e57dd5db1c7c|7443|rds|vector|||24.66||
+fit_test_distr|stem|eeadd075e3fd9cb3|8f984c78c23ed4e4|20b5684bf505e78a|-1344280777||t18953.925415421s|b90c3ae89b4b2a36|159522|rds|vector|||74.35||
+summary_test_distr|stem|f506f0bbc25afb2d|ea5367291f9a4229|a0cc19cb6e4caa75|1552413202||t18953.9269817992s|9652d45a9e404cc1|388920|rds|vector|||135.272||
+plots_denscheck_posterior_test_distr|stem|046b1ff66feeeab5|6e4daafc91f90fdf|907ca94ea58a7729|-838666142||t18953.9329197616s|85c487da664149e7|47548585|rds|vector|||481.378|Removed 5803 rows containing nonfinite values stat_density.|
