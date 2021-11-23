@@ -369,8 +369,8 @@ parameters {
   vector[N_species] c_a_log;
   vector[N_species] c_b_log;
   vector[N_species] c_j_log;
-  vector[N_species] g_log;
-  vector[N_species] h_log;
+  vector<upper=0>[N_species] g_log;
+  vector<upper=0>[N_species] h_log;
   vector[N_species] s_log;
   
   vector[N_species] r_log;
@@ -561,8 +561,8 @@ generated quantities {
   real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]);
   real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]); // strong believe that c is smaller than s in trees
   
-  vector[N_species] g_log_prior = to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]));
-  vector[N_species] h_log_prior = to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]));
+  vector<upper=0>[N_species] g_log_prior = to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]));
+  vector<upper=0>[N_species] h_log_prior = to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]));
   
   vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));
