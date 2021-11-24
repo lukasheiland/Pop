@@ -24,7 +24,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
   ba_a_avg <- Stages %>%
     filter(stage == "A") %>%
     group_by(tax) %>%
-    summarize(ba_a_avg = mean(ba_ha/count_ha, na.rm = T)) %>% ## [area/ha * ha/1 == ba/1]
+    summarize(ba_a_avg = mean(ba_ha/count_ha, na.rm = T)) %>% ## [(ba/ha)/(1/ha) == ba/ha * ha == ba/1]
     pull(ba_a_avg, name = tax)
   
   
