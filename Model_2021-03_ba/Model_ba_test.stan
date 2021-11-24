@@ -23,7 +23,7 @@ functions {
       
       /// Model
       // Note: log1p(expm1(a) + exp(b)) == log(exp(a) + exp(b)); It is important to expm1() some state (here J), because the rates are positive anyway
-      State[i_j, t]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+      State[i_j, t]  =  ((r .* BA)/(1 + BA_sum) + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum); // before: r .* BA + l ...
       State[i_a, t]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
       State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
     
@@ -110,7 +110,7 @@ functions {
       vector[N_spec] BA_1;
       real BA_sum = sum(BA);
       
-      s_1[i_j]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+      s_1[i_j]  =  ((r .* BA)/(1 + BA_sum) + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
       s_1[i_a]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
       s_1[i_b]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
       
