@@ -335,7 +335,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
     prior_r_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("ba_ha")))
   )
   
-  data_stan_priors <- c(data_stan, weakpriors, priors)
+  data_stan_priors <- c(data_stan, priors)
+  data_stan_priors <- utils::modifyList(data_stan_priors, weakpriors)
   attr(data_stan_priors, "Long") <- attr(data_stan, "Long")
   
   return(data_stan_priors)
