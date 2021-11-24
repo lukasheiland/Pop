@@ -4,6 +4,7 @@ source("_targets.R")
 sapply(package, require, character.only = TRUE) ## package is a vector of all packages required in targets
 library(visNetwork)
 library(future)
+library(future.callr)
 
 
 # Pre-targets sourcing ----------------------------------------------------
@@ -17,13 +18,14 @@ library(future)
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
 
-tar_make(c("summary_test",
+tar_make_future(c("summary_test",
            "residuals_test",
            "plots_test",
            "plots_denscheck_prior_test",
            "plots_denscheck_posterior_test",
            "sensitivity_test",
-           "plot_powerscale_test"))
+           "plot_powerscale_test"),
+           workers = 7, reporter = "timestamp")
 
 
 ## alternatives

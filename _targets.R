@@ -11,6 +11,11 @@ library(targets)
 library(tarchetypes)
 # library(stantargets)
 
+### Future
+library(future)
+library(future.callr)
+plan(callr) ## "It is crucial that future::plan() is called in the target script file itself"
+
 ### Source the functions
 source("Wrangling_functions.R")
 source("Seedlings_functions.R")
@@ -25,10 +30,6 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "cmdstanr", "rstan", "brms", "bayesplot", "cowplot", "parallel", "DHARMa", "priorsense")
 tar_option_set(packages = package)
 addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
-
-### Future
-library(future)
-future::plan(future::multisession, workers = 6)
 
 
 # Pipeline ----------------------------------------------------------------
