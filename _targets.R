@@ -57,14 +57,14 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-5, 2),
+               prior_b_log = c(-8, 2),
                prior_c_a_log = c(-6, 2),
                prior_c_b_log = c(-6, 2),
                prior_c_j_log = c(-7, 3),
                ## prior_g_log,
                ## prior_h_log,
                prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
-               prior_r_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
+               # prior_r_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                prior_s_log = c(-2, 2)
              )
   )
