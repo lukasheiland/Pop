@@ -102,6 +102,9 @@ data_stan|stem|0a15f4673097f5ab|d18a2fb7bd18372c|9f8b533f9fa51b75|1263995833||t1
 fit_g|stem|3ac7c122681597da|255e3515660b75a6|f5015fa4881937b4|128175024||t18954.4878495645s|7e90d49d92ac4f81|12515377|rds|vector|||15.073||
 fit_h|stem|5fa480af2f7a17f8|ca8b86a90da6d4a5|f5015fa4881937b4|468382782||t18954.4880621078s|06bdd68636e1cbdd|15277697|rds|vector|||17.104||
 weakpriors|stem|dd5ee29933f9b7c2|07fab4902662b1cb|d38fd9c4c2c5e51f|-1879221107||t18956.4024784612s|2721c650416a264a|204|rds|vector|||11.768||
+Seedlings|stem|b01463db855803d6|e366b261bd7792c2|e4e9d90d5034d1a4|-185150805||t18956.4049898578s|662125ca7b963b8e|97542|rds|vector|||12.853||
+fits_Seedlings|stem|93ebbb8156a05959|3df0e9bfc4ef7fe5|1e28a2e60ec06c8c|809945682||t18956.4094842687s|7c9ba56721b69dde|359683894|rds|vector|||365.373|There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See httpmcstan.orgmiscwarnings.htmldivergenttransitionsafterwarmup|
+data_stan_priors|stem|d13d51733238d8be|5f8ab647110035d6|32261405452d9abd|1623270232||t18956.4095142669s|703c35024bfe8756|727345|rds|vector|||1.509||
 formatStanData|function|8c738729f77024a7||||||||||||||
 prepareSmallData|function|7fd1f663d76eb8c1||||||||||||||
 joinStages|function|e7686698802aa144||||||||||||||
@@ -130,16 +133,13 @@ prepareBigData|function|bc903757a4846348||||||||||||||
 drawTest|function|b1e8907b81b3f606||||||||||||||
 constructConstantGrid_SK|function|ec0773362d05dadf||||||||||||||
 formatPriors|function|37a7fda295fdff44||||||||||||||
-targets_settings|object|a7ea5aecff3afcb6||||||||||||||
+targets_settings|object|98bc8fa117a4e88e||||||||||||||
 wrangleSeedlings|function|4860e789b953498d||||||||||||||
 saveStages_s|function|fd5024a4e717b197||||||||||||||
 scaleResiduals|function|6be3a8d3a5a8ab5a||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 addPackage|function|d45c347b66cce55c||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
-Seedlings|stem|b01463db855803d6|e366b261bd7792c2|e4e9d90d5034d1a4|-185150805||t18956.4049898578s|662125ca7b963b8e|97542|rds|vector|||12.853||
-fits_Seedlings|stem|93ebbb8156a05959|3df0e9bfc4ef7fe5|1e28a2e60ec06c8c|809945682||t18956.4094842687s|7c9ba56721b69dde|359683894|rds|vector|||365.373|There were 1 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See httpmcstan.orgmiscwarnings.htmldivergenttransitionsafterwarmup|
-data_stan_priors|stem|d13d51733238d8be|5f8ab647110035d6|32261405452d9abd|1623270232||t18956.4095142669s|703c35024bfe8756|727345|rds|vector|||1.509||
 formatStanData|function|8c738729f77024a7
 prepareSmallData|function|7fd1f663d76eb8c1
 joinStages|function|e7686698802aa144
@@ -150,7 +150,7 @@ targets_parname|object|0a07434864228b17
 fitS|function|b1d146216eef03f2
 countTransitions|function|658905ce538460fd
 predictSurfaces|function|e08447bd71c3e5fe
-fitSeedlings|function|08146fedc60be702
+fitSeedlings|function|53e79a37b6d18b25
 plotSurfaces|function|8e8bee5493cb7ccd
 joinEnv|function|2488b8203673870c
 draw|function|eec54dbfa7152637
