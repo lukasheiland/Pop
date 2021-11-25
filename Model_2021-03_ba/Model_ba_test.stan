@@ -303,7 +303,8 @@ data {
   real ba_a_upper;
   vector[N_species] ba_a_avg;
   int<lower=0,upper=1> generateposteriorq;
-  
+  real<lower=0> parfactor;
+  real<lower=0> timestep;
   
   //// Priors. The 2 reflect the two parameters mu and sigma
   // environmentally-dependent priors are species-agnostic on purpose
@@ -357,6 +358,7 @@ transformed data {
   
   //// Data for generated quantities
   int N_genstates = N_pops + N_species;
+  real factor_log = log(parfactor/timestep);
   
 }
 
@@ -459,7 +461,7 @@ model {
   
   //// Hyperpriors
 
-  phi_obs_inv_sqrt ~ normal(rep_array(0.0, 6), [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]); // Observation error for neg_binomial
+  phi_obs_inv_sqrt ~ normal(rep_vector(0.0, 6), [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]); // Observation error for neg_binomial
   	// Levels of obsmethodTax: j.F a.F ba.F j.o a.o ba.o
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
   
@@ -572,25 +574,25 @@ generated quantities {
   
   real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
   
-  vector[N_species] vector_b_log_prior = to_vector(normal_rng(rep_array(prior_b_log[1], N_species), rep_array(prior_b_log[2], N_species)));
-  vector[N_species] vector_c_a_log_prior = to_vector(normal_rng(rep_array(prior_c_a_log[1], N_species), rep_array(prior_c_a_log[2], N_species)));
-  vector[N_species] vector_c_b_log_prior = to_vector(normal_rng(rep_array(prior_c_b_log[1], N_species), rep_array(prior_c_b_log[2], N_species)));
-  vector[N_species] vector_c_j_log_prior = to_vector(normal_rng(rep_array(prior_c_j_log[1], N_species), rep_array(prior_c_j_log[2], N_species)));
-  // vector[N_species] vector_l_log_prior = to_vector(normal_rng(rep_array(prior_l_log[1], N_species), rep_array(prior_l_log[2], N_species)));
-  // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_array(prior_r_log[1], N_species), rep_array(prior_r_log[2], N_species)));
-  vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_array(prior_s_log[1], N_species), rep_array(prior_s_log[2], N_species)));
+  vector[N_species] vector_b_log_prior = normal_rng(rep_vector(prior_b_log[1], N_species), rep_vector(prior_b_log[2], N_species));
+  vector[N_species] vector_c_a_log_prior = normal_rng(rep_vector(prior_c_a_log[1], N_species), rep_vector(prior_c_a_log[2], N_species));
+  vector[N_species] vector_c_b_log_prior = normal_rng(rep_vector(prior_c_b_log[1], N_species), rep_vector(prior_c_b_log[2], N_species));
+  vector[N_species] vector_c_j_log_prior = normal_rng(rep_vector(prior_c_j_log[1], N_species), rep_vector(prior_c_j_log[2], N_species));
+  // vector[N_species] vector_l_log_prior = normal_rng(rep_vector(prior_l_log[1], N_species), rep_vector(prior_l_log[2], N_species));
+  // vector[N_species] vector_r_log_prior = normal_rng(rep_vector(prior_r_log[1], N_species), rep_vector(prior_r_log[2], N_species));
+  vector[N_species] vector_s_log_prior = normal_rng(rep_vector(prior_s_log[1], N_species), rep_vector(prior_s_log[2], N_species));
   
-  array[N_obsmethodTax] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_array(0.0, 6), [1, 1, 0.1, 1, 1, 0.1])); // [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]
+  array[N_obsmethodTax] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_vector(0.0, 6), [1, 1, 0.1, 1, 1, 0.1])); // [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]
   
   // special case L
   array[N_locs] vector<lower=0>[N_species] L_loc_prior;
   array[N_locs, N_species] real L_random_log_prior;  
-  vector<lower=0>[N_species] sigma_l_prior = sqrt(square(to_vector(normal_rng(rep_array(0, N_species), rep_array(1, N_species)))));
-  // vector<lower=0>[N_protocol] zeta_prior = sqrt(square(to_vector(normal_rng(rep_array(0, N_protocol), rep_array(0.2, N_protocol)))));
+  vector<lower=0>[N_species] sigma_l_prior = sqrt(square(normal_rng(rep_vector(0, N_species), rep_vector(1, N_species))));
+  // vector<lower=0>[N_protocol] zeta_prior = sqrt(square(normal_rng(rep_vector(0, N_protocol), rep_vector(0.2, N_protocol))));
   
   for(loc in 1:N_locs) {
   
-    L_random_log_prior[loc,] = normal_rng(rep_array(0, N_species), rep_array(1, N_species));
+    L_random_log_prior[loc,] = normal_rng(rep_vector(0, N_species), rep_vector(1, N_species));
     L_loc_prior[loc, ] = exp(l_log_prior + L_smooth_log[loc, ] +
                              sigma_l_prior .* to_vector(L_random_log_prior[loc, ]));
                          
@@ -634,17 +636,18 @@ generated quantities {
   //———————————————————————————————————————————————————————————————————————//
   
   //// Declarations of posterior quantites (as global variables).
+  // … are directly initiated with zeroes or 9, so that there are never NaNs in generated quantities.
   int fixiter_max = 5000; 
-  array[N_locs] int converged; // tolerance has been reached
-  array[N_locs] real iterations_fix;
-  array[N_locs] vector[N_genstates+N_species+1] state_fix; // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
-  array[N_locs] int dominant_fix;
-  array[N_locs] int major_fix;
+  array[N_locs] int converged = rep_array(9, N_locs); // tolerance has been reached
+  array[N_locs] real iterations_fix = rep_array(0, N_locs);
+  array[N_locs] vector[N_genstates+N_species+1] state_fix = rep_array(rep_vector(0, N_genstates+N_species+1), N_locs); // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
+  array[N_locs] int dominant_fix = converged;
+  array[N_locs] int major_fix = converged;
   
 
   //// Declarations of quantities for sensitivity checks (as global variables).
-  real log_prior = 0;
-  vector[L_y] log_lik;
+  real log_prior = 0; // this is zero to prevent NaNs from being in the sum.
+  vector[L_y] log_lik = rep_vector(inf, N_locs);
 
 
   //// The conditional generation -------------------------------------

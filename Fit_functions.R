@@ -8,7 +8,7 @@
 # taxon_s  <- tar_read("taxon_s")
 # threshold_dbh <- tar_read("threshold_dbh")
 
-formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
+formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, timestep = 1, parfactor = 1) {
   
   #### Essential worker
   ## reps each element of the first vector by the corresponding number in the second vector (c and unlist make sure that a vector is returned)
@@ -92,7 +92,10 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     mutate(t = as.integer(lubridate::year(time))) %>%
     mutate(t = t - min(t) + 1) %>%
     mutate(isy0 = (t == 1)) %>%
-    ungroup()
+    
+    mutate(t1 = t, t_min = min(t)) %>%
+    mutate(t = round((t - t_min)/timestep) + t_min) %>%
+    mutate(res_t = (t - t_min)*timestep + t_min - t1)
   
   
   ## Format: [L_y] — locations/obs/pops(/stage/species)/plots
@@ -121,9 +124,14 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
   ## Format: [L_times] — locations/resurveys
   S_times <- S %>%
     group_by(loc, obsid) %>% # first, group by obsid to extract one time per obsid within loc (in case there are multiple days somehow, which is not the case atm!)
-    summarize(t = first(t)) %>%
+    summarize(t = first(t), t1 = first(t1), res_t = first(res_t)) %>%
     group_by(loc) %>%
-    summarize(t = unique(t), .groups = "drop") ## This way its certain, that there is one time per obsid
+    mutate(t = unique(t), .groups = "drop") ## This way its certain, that there is one time per obsid
+  
+  Timetable <- table(S_times$res_t)
+  message("Table of residual times in years throug timestep reduction: ")
+  write.csv("Publish/Residual_times.csv")
+  print(Timetable)
   
   ## Format: [N_locs] — locations
   S_locs <- S %>%
@@ -240,7 +248,10 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh) {
     tolerance_fix = 0.001,
     ba_a_upper = ba_a_upper,
     ba_a_avg = ba_a_avg,
+    timestep = timestep,
+    parfactor = parfactor,
     generateposteriorq = 0,
+    
     
     #### priors
     prior_state_init_log = prior_state_init_log,
