@@ -43,9 +43,14 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
   
   
   D_count <- D_filtered %>%
+    group_by(plotid, year) %>%
+    dplyr::mutate(ba_ha_sum = replace_na(sum(ba_ha, na.rm = T), 0), ## replaces NaNs!
+                  ba_ha_sum_p1_inv = 1/(1+ba_ha_sum)) %>%
     group_by(plotid, year, tax, taxid) %>%
     dplyr::summarize(count_ha = sum(count_ha, na.rm = T),
-                     ba_ha = sum(ba_ha, na.rm = T)) %>%
+                     ba_ha = sum(ba_ha, na.rm = T),
+                     ba_ha_sum = first(ba_ha_sum),
+                     ba_ha_sum_p1_inv = first(ba_ha_sum_p1_inv)) %>%
     mutate(count_ha = as.integer(round(count_ha)))
   
   D_count <- left_join(D_count, D_geo, by = "plotid")
@@ -131,12 +136,15 @@ constructConstantGrid_SK <- function(Seedlings) {
 
 fitSeedlings <- function(Seedlings) {
   
-  fit_seedlings <- brms::brm(count_ha ~ ba_ha + 1 + (1 | plotid),
+  ## count_ha = r*BA / (1+BA_sum)
+  ## log(count_ha) = log(r * BA) + log(1/1+BA_sum)
+  
+  fit_seedlings <- brms::brm(count_ha ~ ba_ha + 1 + offset(ba_ha_sum_p1_inv) + (1 | plotid),
                              family = negbinomial,
                              data = Seedlings[Seedlings$tax == "Fagus.sylvatica",],
                              cores = getOption("mc.cores", 4))
   
-  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + 1 + (1 | plotid),
+  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + 1 + offset(ba_ha_sum_p1_inv) + (1 | plotid),
                                    family = negbinomial,
                                    data = Seedlings[Seedlings$tax == "other",],
                                    cores = getOption("mc.cores", 4))
