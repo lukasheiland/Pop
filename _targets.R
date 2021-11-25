@@ -256,7 +256,7 @@ list(
   list(
     
     tar_target(data_stan,
-               formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh)),
+               formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh, timestep = 5, parfactor = 1)),
     
     tar_target(file_model_transitions,
                "Model_2021-03_ba/Model_transitions.stan",
