@@ -41,7 +41,7 @@ targets_settings <- list(
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 200mm > B
-  tar_target(threshold_dbh, 200), ## [mm]
+  tar_target(threshold_dbh, 150), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
@@ -57,15 +57,15 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-8, 2),
-               prior_c_a_log = c(-6, 2),
-               prior_c_b_log = c(-6, 2),
-               prior_c_j_log = c(-7, 3),
+               prior_b_log = c(-5, 2),
+               prior_c_a_log = c(-7, 3),
+               prior_c_b_log = c(-7, 3),
+               prior_c_j_log = c(-8, 3),
                ## prior_g_log,
                ## prior_h_log,
                prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                # prior_r_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
-               prior_s_log = c(-2, 2)
+               prior_s_log = c(-3, 2)
              )
   )
 )
@@ -256,7 +256,7 @@ list(
   list(
     
     tar_target(data_stan,
-               formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh, timestep = 5, parfactor = 1)),
+               formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh, timestep = 1, parfactor = 1)),
     
     tar_target(file_model_transitions,
                "Model_2021-03_ba/Model_transitions.stan",
