@@ -139,12 +139,12 @@ fitSeedlings <- function(Seedlings) {
   ## count_ha = r*BA / (1+BA_sum)
   ## log(count_ha) = log(r * BA) + log(1/1+BA_sum)
   
-  fit_seedlings <- brms::brm(count_ha ~ ba_ha + 1 + offset(ba_ha_sum_p1_inv) + (1 | plotid),
+  fit_seedlings <- brms::brm(count_ha ~ ba_ha + 1 + offset(log(ba_ha_sum_p1_inv)) + (1 | plotid),
                              family = negbinomial,
                              data = Seedlings[Seedlings$tax == "Fagus.sylvatica",],
                              cores = getOption("mc.cores", 4))
   
-  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + 1 + offset(ba_ha_sum_p1_inv) + (1 | plotid),
+  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + 1 + offset(log(ba_ha_sum_p1_inv)) + (1 | plotid),
                                    family = negbinomial,
                                    data = Seedlings[Seedlings$tax == "other",],
                                    cores = getOption("mc.cores", 4))
