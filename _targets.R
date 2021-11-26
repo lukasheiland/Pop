@@ -288,7 +288,7 @@ list(
                cmdstan_model(file_model)),
     
     tar_target(priorsim_test,
-               drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.8, gpq = FALSE,)),
+               drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.5, gpq = FALSE,)),
     tar_target(plots_denscheck_priorsim_test,
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
 
