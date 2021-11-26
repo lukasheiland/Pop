@@ -647,7 +647,7 @@ generated quantities {
 
   //// Declarations of quantities for sensitivity checks (as global variables).
   real log_prior = 0; // this is zero to prevent NaNs from being in the sum.
-  vector[L_y] log_lik = rep_vector(0, N_locs);
+  vector[L_y] log_lik = rep_vector(0, L_y);
 
 
   //// The conditional generation -------------------------------------
@@ -714,8 +714,8 @@ generated quantities {
     //   log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs_rep[l], theta_obs_rep[l]);
     // }
     
-    for(l in 1:L_y) {
-      log_lik[l] = neg_binomial_2_lpmf(y | y_hat_rep_offset, phi_obs_rep); // offset_zeta
+    for(i in 1:L_y) {
+      log_lik[i] = neg_binomial_2_lpmf(y[i] | y_hat_rep_offset[i], phi_obs_rep[i]); // offset_zeta
     }
   
   } // END: if(generateposteriorq)
