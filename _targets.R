@@ -293,14 +293,14 @@ list(
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
 
     tar_target(fit_test,
-               drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.8, gpq = FALSE,
+               drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.5, gpq = FALSE,
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit_test_pq,
-               drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.8, gpq = TRUE,
+               drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.5, gpq = TRUE,
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit,
                draw(model = model, data_stan_priors, method = "mcmc",
-                    n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.8)),
+                    n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
     
     tar_target(stanfit_test,
                readStanfit(fit_test_pq)),
