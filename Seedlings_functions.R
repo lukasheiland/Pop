@@ -9,7 +9,7 @@
 
 wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh) {
   
-  if (taxon_select != "Fagus.sylvatica") stop("Prior for seedling regeneration rate r is only implemented for Fagus.sylvatica!")
+  if (taxon_select != "Fagus.sylvatica") stop("Prior pfor seedling regeneration rate r is only implemented for Fagus.sylvatica!")
   
   Data_seedlings <- Data_seedlings %>%
     mutate(tax = str_replace_all(taxon, " ", replacement = ".")) %>%
@@ -67,7 +67,7 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
 }
 
 
-## wrangleSeedlings --------------------------------
+## wrangleSeedlings_s --------------------------------
 # Data_seedlings_fullgrid  <- tar_read("Data_seedlings_fullgrid")
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
@@ -96,7 +96,7 @@ wrangleSeedlings_s <- function(Data_seedlings_fullgrid, taxon_select = taxon_sel
     dplyr::summarize(ba_ha = mean(ba_ha, na.rm = T)) %>%
     ungroup() %>%
     
-    complete(plotid, nesting(tax, taxid), fill = list(ba_ha = 0)) %>% ## colSums(is.na()) ## there are only NAs for 1 tax
+    complete(plotid, nesting(tax, taxid), fill = list(ba_ha = 0)) %>% ## colSums(is.na(D)) ## there are only NAs because of completion, where there had been plots without observations before 1 for each plot.
     drop_na()
     
   D_geo <- Data_seedlings_fullgrid %>%
@@ -132,7 +132,6 @@ wrangleSeedlings_s <- function(Data_seedlings_fullgrid, taxon_select = taxon_sel
 
 ## predictSeedlingsSurfaces --------------------------------
 # fits  <- tar_read("fits_Seedlings_s")
-
 predictSeedlingsSurfaces <- function(fits) {
   
   SK <- raster::getData("GADM", country = "SK", level = 0, path = "Data/")
@@ -146,11 +145,13 @@ predictSeedlingsSurfaces <- function(fits) {
   
   # P <- raster::predict(R, fit); plot(P, col = viridis::viridis(255))
   surfaces <- lapply(fits, function(f) raster::predict(R, f, type = "response"))
-  names(surfaces) <- sapply(fits, function(f) attr(f, "taxon"))
+  names(surfaces) <- paste0(sapply(fits, function(f) attr(f, "taxon")), "_SK")
   
   return(surfaces)
 }
 
+
+## saveSeedlings_s --------------------------------
 saveSeedlings_s <- function(Seedlings_s) {
   path <- "Data/Seedlings_s.rds"
   saveRDS(Seedlings_s, file = path)

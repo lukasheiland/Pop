@@ -372,8 +372,19 @@ predictSurfaces <- function(fits, BA_s) {
 
 ## surfaces <- tar_read(surfaces_Seedlings_s)
 plotSurfaces <- function(surfaces) {
+  
+  plotRaster <- function(r) {
+    require(rasterVis)
+    
+    gplot(r) +
+      geom_tile(aes(fill = value)) +
+      scale_fill_viridis_c() +
+      coord_quickmap()
+  }
 
-  surfaceplots <- lapply(surfaces, function(s) plot(s, col = viridis::viridis(255)))
+  surfaceplots <- lapply(surfaces, function(s) plotRaster(s))
+  
+  mapply(function(p, n) ggsave(paste0("Publish/", "Surface_", n, ".png"), p, device = "png", width = 15, height = 10), surfaceplots, names(surfaceplots))
   
   return(surfaceplots)
 }
