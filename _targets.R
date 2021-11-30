@@ -121,7 +121,7 @@ list(
     tar_target(file_SK,
                "Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds",
                format = "file"),
-    tar_target(file_SK,
+    tar_target(file_SK_fullgrid,
                "Inventory.nosync/SK NIML/Data/SK_NIML_complete_fullgrid.rds",
                format = "file")
     # tar_target(file_Taxa,
@@ -223,7 +223,7 @@ list(
                  predictS(fits_Seedlings_s, Seedlings),
                  iteration = "list"),
       tar_target(file_Seedlings_s,
-                 "Data/Seedlings_s.rds" ## server! ## on other machine saveSeedlings_s(Seedlings_s),
+                 "Data/Seedlings_s.rds", ## server! ## on other machine saveSeedlings_s(Seedlings_s),
                  format = "file"),
       tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
                  readRDS(file_Seedlings_s)),
