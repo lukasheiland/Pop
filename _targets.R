@@ -194,7 +194,7 @@ list(
                  iteration = "list"),
       
       tar_target(file_Stages_s,
-                 "Data/Stages_s.rds", ## on other machine: saveStages_s(Stages_s),
+                 "Data/Stages_s.rds", ## server! ## on other machine: saveStages_s(Stages_s),
                  format = "file"),
       tar_target(Data_Stages_s,
                  readRDS(file_Stages_s)),
@@ -223,7 +223,7 @@ list(
                  predictS(fits_Seedlings_s, Seedlings),
                  iteration = "list"),
       tar_target(file_Seedlings_s,
-                 saveSeedlings_s(Seedlings_s),
+                 "Data/Seedlings_s.rds" ## server! ## on other machine saveSeedlings_s(Seedlings_s),
                  format = "file"),
       tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
                  readRDS(file_Seedlings_s)),
@@ -234,7 +234,7 @@ list(
                  plotSurfaces(surfaces_Seedlings_s),
                  iteration = "list"),
       tar_target(fits_Seedlings,
-                 fitSeedlings(Seedlings_s))
+                 fitSeedlings(Data_Seedlings_s)) 
     ),
     
     
