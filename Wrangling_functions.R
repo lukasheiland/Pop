@@ -348,7 +348,7 @@ predictS <- function(fits, Stages_env) {
 }
 
 
-## predictS --------------------------------
+## predictSurfaces --------------------------------
 # BA_s  <- tar_read("BA_s")
 # fits  <- tar_read("fits_s")
 predictSurfaces <- function(fits, BA_s) {
@@ -370,6 +370,7 @@ predictSurfaces <- function(fits, BA_s) {
 }
 
 
+## surfaces <- tar_read(surfaces_Seedlings_s)
 plotSurfaces <- function(surfaces) {
 
   surfaceplots <- lapply(surfaces, function(s) plot(s, col = viridis::viridis(255)))
@@ -377,12 +378,13 @@ plotSurfaces <- function(surfaces) {
   return(surfaceplots)
 }
 
+
 saveStages_s <- function(Stages_s) {
   
   path <- "Data/Stages_s.rds"
   saveRDS(Stages_s, file = path)
   return(path)
-  }
+}
 
 
 

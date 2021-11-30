@@ -18,13 +18,7 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     
     # mutate(taxid = if_else(tax == "other", "other", as.character(taxid))) %>% ## if not only Fagus would be used
     droplevels()
-  
-  D_geo <- Data_seedlings %>%
-    dplyr::select(plotid, WGS_E, WGS_N) %>%
-    na.omit() %>%
-    unique() %>%
-    st_as_sf(crs = "+proj=longlat +datum=WGS84 +no_defs", coords = c("WGS_E", "WGS_N"))
-  
+
   D_select <- Data_seedlings %>%
     group_by(plotid, year) %>%
     mutate(drop = any(regeneration == "Artificial", na.rm = T)) %>%
@@ -53,10 +47,15 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
                      ba_ha_sum_p1_inv = first(ba_ha_sum_p1_inv)) %>%
     mutate(count_ha = as.integer(round(count_ha)))
   
-  D_count <- left_join(D_count, D_geo, by = "plotid")
-  ## There are very few empty geometries
-  isempty <- sf::st_is_empty(D_count$geometry)
-  D_count <- D_count[!isempty,]
+  
+  D_geo <- Data_seedlings %>%
+    dplyr::select(plotid, WGS_E, WGS_N) %>%
+    na.omit() %>%
+    unique()
+  
+  D_count <- left_join(D_count, D_geo, by = "plotid") %>%
+    filter(!(is.na(WGS_E)|is.na(WGS_N))) %>%
+    st_as_sf(crs = "+proj=longlat +datum=WGS84 +no_defs", coords = c("WGS_E", "WGS_N"))   ## There are very few empty geometries, see in wrangleSeedlings_s()
 
   # library(glmmTMB)
   # m <- glmmTMB::glmmTMB(count_ha ~ ba_ha * tax + 0, data = D_count, family = nbinom2)
@@ -68,88 +67,116 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
 }
 
 
-# constructConstantGrid_SK -------------------------------------
-# Seedlings <- tar_read("Seedlings")
-constructConstantGrid_SK <- function(Seedlings) {
+## wrangleSeedlings --------------------------------
+# Data_seedlings_fullgrid  <- tar_read("Data_seedlings_fullgrid")
+# taxon_select <- tar_read("taxon_select")
+# threshold_dbh <- tar_read("threshold_dbh")
+
+wrangleSeedlings_s <- function(Data_seedlings_fullgrid, taxon_select = taxon_select, threshold_dbh = threshold_dbh) {
   
-  Seedlings <- st_as_sf(Seedlings)
-  d <- st_distance(D_geo)
+  if (taxon_select != "Fagus.sylvatica") stop("Prior for seedling regeneration rate r is only implemented for Fagus.sylvatica!")
+  taxon_s <- c(taxon_select, 'other')
   
+  D <- Data_seedlings_fullgrid %>%
+    mutate(tax = str_replace_all(taxon, " ", replacement = ".")) %>%
+    mutate(tax = forcats::fct_other(tax, !!!as.list(taxon_select), other_level = "other")) %>%
+    mutate(taxid = if_else(tax == "Fagus.sylvatica", "kew.83891", "other")) %>%
+    # mutate(taxid = if_else(tax == "other", "other", as.character(taxid))) %>% ## if not only Fagus would be used
+    droplevels() %>%
+    filter((sizeclass == "big" & dbh >= 100) | is.na(sizeclass)) %>% # drop sizeclass == 'small' ## table(Data_seedlings_fullgrid$sizeclass)
+    filter(status != "Dead tree" | is.na(status)) %>% ## %>%
   
-  st_make_grid(Seedlings)
-  
-  table(Data_seedlings$plotid)
-  
-  Data_seedlings <- st_as_sf(Data_seedlings, coords = c("WGS_E", "WGS_N"))
-  
-  
-  taxon <- as.character(taxon)
-  
-  ## All the clusters on the consistently sampled 4x4 km grid.
-  Coords <- Data_geo %>%
-    mutate(clusterid = paste0("DE_BWI_", Tnr)) %>%
-    filter(Netz == 16) %>%  # 16 = 4km x 4 km grid, subset of the net (structure of four), used in all of the Länder in 2012 (see BMEL_BWI_Methodenband_Web_BWI3.pdf), readRDS("Inventory.nosync/DE BWI/Data/DE_BWI_meta.rds")$x_netz
-    dplyr::select(clusterid) # plot(Coords)
-  
-  ## Basal area of both stages combined ("BA") were averaged by the same location
-  S <- dplyr::filter(Stages_env, tax == taxon &
-                       stage == "BA" &
-                       obsid == "DE_BWI_2012") %>% # only use the latest obsid because there was consistent sampling
-    st_drop_geometry()
-  
-  expandMean <- function(x) {
-    expanded <- rep(0, 4) # has only zeroes
-    expanded[1:length(x)] <- x
-    return(mean(x))
-  }
-  
-  BA_fullgrid <-
-    merge(Coords, S, by = "clusterid", all.x = T, all.y = F) %>% # only merge at locations of the constant grid
-    dplyr::select(clusterid, ba_ha) %>%
-    st_centroid() %>%
-    ## transformed for consistency with other data
-    st_transform(crs = st_crs('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')) %>% # transform to lon/lat after centroid (important for spatial methods)
-    mutate(ba_ha = tidyr::replace_na(ba_ha, 0)) %>%
+    ##  filter(!is.na(tax))?
+    ## Ba per hectare was first summed up per plot and Fagus/others
+    group_by(plotid, year, tax, taxid) %>%
+    dplyr::summarize(ba_ha = sum(ba_ha, na.rm = T)) %>%
     
-    group_by(clusterid) %>%
-    summarize(ba_ha = expandMean(ba_ha)) %>% # within clusterid, expand plots to 4 and fills with 0 before averaging
+    ## … and subsequently averaged per plot across years.
+    group_by(plotid, tax, taxid) %>%
+    dplyr::summarize(ba_ha = mean(ba_ha, na.rm = T)) %>%
+    ungroup() %>%
     
+    complete(plotid, nesting(tax, taxid), fill = list(ba_ha = 0)) %>% ## colSums(is.na()) ## there are only NAs for 1 tax
+    drop_na()
+    
+  D_geo <- Data_seedlings_fullgrid %>%
+    dplyr::select(plotid, WGS_E, WGS_N) %>%
+    na.omit() %>%
+    unique()
+  
+  D_s <- left_join(D, D_geo, by = "plotid") %>%
+    filter(!(is.na(WGS_E)|is.na(WGS_N))) %>%
+    st_as_sf(crs = "+proj=longlat +datum=WGS84 +no_defs", coords = c("WGS_E", "WGS_N"))
+  
+  ## table(is.na(D_s$WGS_E), is.na(D_s$WGS_N)) ## There are very few empty geometries
+  ## isempty <- sf::st_is_empty(D_s$geometry) # table(isempty)
+  ## D_s <- D_s[!isempty,]
+  # plot(D_s["ba_ha"])
+  
+  D_s %<>%
     mutate(coord = paste(geometry)) %>%
-    group_by(coord) %>%
+    group_by(coord, taxid, tax) %>%
     summarize(ba_ha = mean(ba_ha))
   
-  ## plot(S_fullgrid["ba_ha"])
+  subsetTaxon <- function(t, D = D_s) {
+    O <- filter(D, tax == t)
+    attr(O, "taxon") <- t
+    return(O)
+  }
   
-  attr(BA_fullgrid, "taxon") <- taxon
+  data <- lapply(taxon_s, subsetTaxon)
   
-  ## Return average ba_a per cluster with NA plots == 0 and NA clusters == 0, but only of the clusters with proptery 16
-  ## Also subset to abundance from 2012
-  ## Check whether the grid is really complete
-  
-  return(BA_fullgrid)
+  return(data)
 }
 
 
+## predictSeedlingsSurfaces --------------------------------
+# fits  <- tar_read("fits_Seedlings_s")
+
+predictSeedlingsSurfaces <- function(fits) {
+  
+  SK <- raster::getData("GADM", country = "SK", level = 0, path = "Data/")
+  R <- raster::raster(raster::extent(bbox(SK)), resolution = c(0.01, 0.01))
+  crs(R) <- crs(SK)
+  Coords <- rasterToPoints(R, spatial = TRUE) %>%
+    as.data.frame()
+  R$X <- Coords$x
+  R$Y <- Coords$y
+  R <- raster::mask(R, SK) # plot(R)
+  
+  # P <- raster::predict(R, fit); plot(P, col = viridis::viridis(255))
+  surfaces <- lapply(fits, function(f) raster::predict(R, f, type = "response"))
+  names(surfaces) <- sapply(fits, function(f) attr(f, "taxon"))
+  
+  return(surfaces)
+}
+
+saveSeedlings_s <- function(Seedlings_s) {
+  path <- "Data/Seedlings_s.rds"
+  saveRDS(Seedlings_s, file = path)
+  return(path)
+}
+
 
 ## fitSeedlings --------------------------------
-# Seedlings  <- tar_read("Seedlings")
+# Seedlings_s  <- tar_read("Seedlings_s")
 
-fitSeedlings <- function(Seedlings, fitpath = "Fits.nosync") {
+fitSeedlings <- function(Seedlings_s, fitpath = "Fits.nosync") {
   
   ## count_ha = r*BA / (1+BA_sum)
   ## log(count_ha) = log(r * BA) + log(1/1+BA_sum)
   
-  fit_seedlings <- brms::brm(count_ha ~ ba_ha + 1 + offset(log(ba_ha_sum_p1_inv)) + (1 | plotid),
+  fit_seedlings <- brms::brm(count_ha ~ ba_ha + s_Fagus.sylvatica + 0, # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
                              family = negbinomial,
-                             data = Seedlings[Seedlings$tax == "Fagus.sylvatica",],
+                             data = Seedlings_s[Seedlings_s$tax == "Fagus.sylvatica",],
                              cores = getOption("mc.cores", 4))
   ggsave(file.path(fitpath, "Pairs_Seedlings_Fagus.sylvatica.png"), pairs(fit_seedlings))
   message("Summary of the the fit for Fagus seedlings:")
   print(summary(fit_seedlings))
   
-  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + 1 + offset(log(ba_ha_sum_p1_inv)) + (1 | plotid),
+  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + s_other + 0, # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
                                    family = negbinomial,
-                                   data = Seedlings[Seedlings$tax == "other",],
+                                   data = Seedlings_s[Seedlings_s$tax == "other",],
                                    cores = getOption("mc.cores", 4))
   
   ggsave(file.path(fitpath, "Pairs_Seedlings_other.png"), pairs(fit_seedlings_other))
