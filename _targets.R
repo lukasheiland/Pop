@@ -63,7 +63,7 @@ targets_settings <- list(
                prior_c_j_log = c(-8, 3),
                ## prior_g_log,
                ## prior_h_log,
-               prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
+               # prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                # prior_r_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                prior_s_log = c(-3, 2)
              )
@@ -120,6 +120,9 @@ list(
                format = "file"),
     tar_target(file_SK,
                "Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds",
+               format = "file"),
+    tar_target(file_SK,
+               "Inventory.nosync/SK NIML/Data/SK_NIML_complete_fullgrid.rds",
                format = "file")
     # tar_target(file_Taxa,
     #            'Inventory.nosync/Taxa/Taxa.csv',
@@ -135,7 +138,8 @@ list(
     tar_target(Data_env, readRDS(file_DE_env)),
     tar_target(Data_geo, readRDS(file_DE_geo)),
     
-    tar_target(Data_seedlings, readRDS(file_SK))
+    tar_target(Data_seedlings, readRDS(file_SK)),
+    tar_target(Data_seedlings_fullgrid, readRDS(file_SK_fullgrid))
     
     # tar_target(Taxa, read.csv(file = file_Taxa, colClasses = c('factor')) %>% filter(!duplicated(tax.id)))
     ## tax.id is not unique in Taxa! Unique is however needed for left_join by tax.id (not by inventory specific ids)!
@@ -208,33 +212,29 @@ list(
     list(
       tar_target(Seedlings,
                  wrangleSeedlings(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
-      
-      ## for inclusion of splines:
-      # tar_target(Seedlings_BA_s,
-      #            constructConstantGrid_SK(taxon_s, Seedlings),
-      #            pattern = map(taxon_s),
-      #            iteration = "list"),
-      # tar_target(fits_Seedlings_s, ## fits_s each have an attribute "taxon"
-      #            fitS(Seedlings_BA_s),
-      #            pattern = map(Seedlings_BA_s),
-      #            iteration = "list"),
-      # tar_target(Seedlings_s,
-      #            predictS(fits_Seedlings_s, Seedlings),
-      #            iteration = "list"),
-      # tar_target(file_Seedlings_s,
-      #            saveStages_s(Seedlings_s),
-      #            format = "file"),
-      # tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
-      #            readRDS(file_Seedlings_s)),
-      # tar_target(surfaces_Seedlings_s,
-      #            predictSurfaces(fits_Seedlings_s),
-      #            iteration = "list"),
-      # tar_target(surfaceplots_Seedlings_s,
-      #            plotSurfaces(surfaces_Seedlings_s),
-      #            iteration = "list"),
-      
+      tar_target(seedlings_s,
+                 wrangleSeedlings_s(Data_seedlings_fullgrid, taxon_select = taxon_select, threshold_dbh = threshold_dbh),
+                 iteration = "list"),
+      tar_target(fits_Seedlings_s, ## fits_s each have an attribute "taxon"
+                 fitS(seedlings_s),
+                 pattern = map(seedlings_s),
+                 iteration = "list"),
+      tar_target(Seedlings_s,
+                 predictS(fits_Seedlings_s, Seedlings),
+                 iteration = "list"),
+      tar_target(file_Seedlings_s,
+                 saveSeedlings_s(Seedlings_s),
+                 format = "file"),
+      tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
+                 readRDS(file_Seedlings_s)),
+      tar_target(surfaces_Seedlings_s,
+                 predictSeedlingsSurfaces(fits_Seedlings_s),
+                 iteration = "list"),
+      tar_target(surfaceplots_Seedlings_s,
+                 plotSurfaces(surfaces_Seedlings_s),
+                 iteration = "list"),
       tar_target(fits_Seedlings,
-                 fitSeedlings(Seedlings))
+                 fitSeedlings(Seedlings_s))
     ),
     
     
