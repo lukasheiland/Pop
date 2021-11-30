@@ -139,7 +139,7 @@ list(
     tar_target(Data_geo, readRDS(file_DE_geo)),
     
     tar_target(Data_seedlings, readRDS(file_SK)),
-    tar_target(Data_seedlings_fullgrid, readRDS(file_SK))
+    tar_target(Data_seedlings_fullgrid, readRDS(file_SK_fullgrid))
     
     # tar_target(Taxa, read.csv(file = file_Taxa, colClasses = c('factor')) %>% filter(!duplicated(tax.id)))
     ## tax.id is not unique in Taxa! Unique is however needed for left_join by tax.id (not by inventory specific ids)!
@@ -213,7 +213,7 @@ list(
       tar_target(Seedlings,
                  wrangleSeedlings(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
       tar_target(seedlings_s,
-                 wrangleSeedlings_s(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh),
+                 wrangleSeedlings_s(Data_seedlings_fullgrid, taxon_select = taxon_select, threshold_dbh = threshold_dbh),
                  iteration = "list"),
       tar_target(fits_Seedlings_s, ## fits_s each have an attribute "taxon"
                  fitS(seedlings_s),
