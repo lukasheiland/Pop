@@ -326,7 +326,7 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   ## Matrices[draws, species]
   Draws_g <- fit_g$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
   Draws_h <- fit_h$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
-  Draws_seedlings <- posterior_samples(fits_Seedlings, fixed = F, pars = c("b_ba_ha$"))
+  Draws_seedlings <- posterior_samples(fits_Seedlings, fixed = F, pars = c("b_ba_ha$", "b_s_"))
   
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
@@ -343,7 +343,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   priors <- list(
     prior_g_log = bind_cols(pars_g), ## Matrix[N_species, (mu, sigma)]
     prior_h_log = bind_cols(pars_h),
-    prior_r_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("ba_ha")))
+    prior_r_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("b_ba_ha"))),
+    prior_l_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("b_s")))
   )
   
   data_stan_priors <- c(data_stan, priors)
