@@ -321,7 +321,7 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.n
 # fit_h  <- tar_read("fit_h")
 # fits_Seedlings  <- tar_read("fits_Seedlings")
 
-formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor = 1) {
+formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 1, widthfactor_reg = 1) {
   
   ## Matrices[draws, species]
   Draws_g <- fit_g$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
@@ -332,10 +332,13 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_seedlings <- lapply(Draws_seedlings, function(d) MASS::fitdistr(d, "normal")$estimate)
   
-  if(widthfactor != 1) {
-    pars_g <- lapply(pars_g, function(p) c(p["mean"], widthfactor*p["sd"]))
-    pars_h <- lapply(pars_h, function(p) c(p["mean"], widthfactor*p["sd"]))
-    pars_seedlings <- lapply(pars_seedlings, function(p) c(p["mean"], widthfactor*p["sd"]))
+  if(widthfactor_trans != 1) {
+    pars_g <- lapply(pars_g, function(p) c(p["mean"], widthfactor_trans*p["sd"]))
+    pars_h <- lapply(pars_h, function(p) c(p["mean"], widthfactor_trans*p["sd"]))
+  }
+  
+  if(widthfactor_reg != 1) {
+    pars_seedlings <- lapply(pars_seedlings, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
   }
   
   ## The model assumes array[2] vector[N_species] prior_*; which means that the vectors stretch over rows!
