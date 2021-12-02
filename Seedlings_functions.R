@@ -9,7 +9,7 @@
 
 wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh) {
   
-  if (taxon_select != "Fagus.sylvatica") stop("Prior pfor seedling regeneration rate r is only implemented for Fagus.sylvatica!")
+  if (taxon_select != "Fagus.sylvatica") stop("Prior for seedling regeneration rate r is only implemented for Fagus.sylvatica!")
   
   Data_seedlings <- Data_seedlings %>%
     mutate(tax = str_replace_all(taxon, " ", replacement = ".")) %>%
@@ -67,7 +67,7 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
 }
 
 
-## wrangleSeedlings_s --------------------------------
+## wrangleSeedlings --------------------------------
 # Data_seedlings_fullgrid  <- tar_read("Data_seedlings_fullgrid")
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
@@ -96,7 +96,7 @@ wrangleSeedlings_s <- function(Data_seedlings_fullgrid, taxon_select = taxon_sel
     dplyr::summarize(ba_ha = mean(ba_ha, na.rm = T)) %>%
     ungroup() %>%
     
-    complete(plotid, nesting(tax, taxid), fill = list(ba_ha = 0)) %>% ## colSums(is.na(D)) ## there are only NAs because of completion, where there had been plots without observations before 1 for each plot.
+    complete(plotid, nesting(tax, taxid), fill = list(ba_ha = 0)) %>% ## colSums(is.na()) ## there are only NAs for 1 tax
     drop_na()
     
   D_geo <- Data_seedlings_fullgrid %>%
@@ -132,6 +132,7 @@ wrangleSeedlings_s <- function(Data_seedlings_fullgrid, taxon_select = taxon_sel
 
 ## predictSeedlingsSurfaces --------------------------------
 # fits  <- tar_read("fits_Seedlings_s")
+
 predictSeedlingsSurfaces <- function(fits) {
   
   SK <- raster::getData("GADM", country = "SK", level = 0, path = "Data/")
@@ -145,13 +146,11 @@ predictSeedlingsSurfaces <- function(fits) {
   
   # P <- raster::predict(R, fit); plot(P, col = viridis::viridis(255))
   surfaces <- lapply(fits, function(f) raster::predict(R, f, type = "response"))
-  names(surfaces) <- paste0(sapply(fits, function(f) attr(f, "taxon")), "_SK")
+  names(surfaces) <- sapply(fits, function(f) attr(f, "taxon"))
   
   return(surfaces)
 }
 
-
-## saveSeedlings_s --------------------------------
 saveSeedlings_s <- function(Seedlings_s) {
   path <- "Data/Seedlings_s.rds"
   saveRDS(Seedlings_s, file = path)
@@ -167,16 +166,18 @@ fitSeedlings <- function(Seedlings_s, fitpath = "Fits.nosync") {
   ## count_ha = r*BA / (1+BA_sum)
   ## log(count_ha) = log(r * BA) + log(1/1+BA_sum)
   
-  fit_seedlings <- brms::brm(count_ha ~ ba_ha + s_Fagus.sylvatica + 0, # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
+  fit_seedlings <- brms::brm(count_ha ~ ba_ha + s_Fagus.sylvatica + 0 + (1 | plotid), # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
                              family = negbinomial,
+                             prior = set_prior("normal(0,1)", class = "sd", group = "plotid"),
                              data = Seedlings_s[Seedlings_s$tax == "Fagus.sylvatica",],
                              cores = getOption("mc.cores", 4))
   ggsave(file.path(fitpath, "Pairs_Seedlings_Fagus.sylvatica.png"), pairs(fit_seedlings))
   message("Summary of the the fit for Fagus seedlings:")
   print(summary(fit_seedlings))
   
-  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + s_other + 0, # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
+  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + s_other + 0 + (1 | plotid), # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
                                    family = negbinomial,
+                                   prior = set_prior("normal(0,1)", class = "sd", group = "plotid"),
                                    data = Seedlings_s[Seedlings_s$tax == "other",],
                                    cores = getOption("mc.cores", 4))
   
