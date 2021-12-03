@@ -24,7 +24,7 @@ source("Fit_functions.R")
 ### Options
 options(tidyverse.quiet = TRUE)
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
-             "lubridate", # "zoo",
+             "lubridate", "DescTools", # "zoo",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "bayesplot", "cowplot", "parallel", "DHARMa", "priorsense")
@@ -272,7 +272,13 @@ list(
                fitTransition(data_stan, which = "h", model_transitions)),
     
     tar_target(data_stan_priors,
-               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 2, widthfactor_reg = 5)), # priors
+               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 2, widthfactor_reg = 5)),
+    
+    tar_target(offsetname,
+               c("offset", "offset_avg", "offset_q1", "offset_q3")[2]),
+    
+    tar_target(data_stan_priors_offset,
+               selectOffset(offsetname, data_stan_priors)),
     
     tar_target(file_model_test,
                "Model_2021-03_ba/Model_ba_test.stan",
@@ -293,13 +299,13 @@ list(
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
     
     tar_target(fit_test,
-               drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.5, gpq = FALSE,
+               drawTest(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = FALSE,
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit_test_pq,
-               drawTest(model = model_test, data_stan = data_stan_priors, initfunc = 0.5, gpq = TRUE,
+               drawTest(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = TRUE,
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit,
-               draw(model = model, data_stan_priors, method = "mcmc",
+               draw(model = model, data_stan_priors_offset, method = "mcmc",
                     n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
     
     tar_target(stanfit_test,
