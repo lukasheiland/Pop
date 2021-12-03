@@ -21,13 +21,13 @@ library(future.callr)
 tar_make("fit_test_pq")
 
 tar_make_future(c("summary_test",
-           "residuals_test",
-           "plots_test",
-           "plots_denscheck_prior_test",
-           "plots_denscheck_posterior_test",
-           "sensitivity_test",
-           "plot_powerscale_test"),
-           workers = 7, reporter = "timestamp")
+                  "residuals_test",
+                  "plots_test",
+                  "plots_denscheck_prior_test",
+                  "plots_denscheck_posterior_test",
+                  "sensitivity_test",
+                  "plot_powerscale_test"),
+                workers = 10, reporter = "timestamp")
 
 
 ## alternatives
