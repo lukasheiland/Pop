@@ -494,8 +494,7 @@ drawTest <- function(model, data_stan, initfunc = 0.5, gpq = FALSE,
   if (!dir.exists(fitpath)) {
     dir.create(fitpath)
   }
-  
-  
+
   if(match.arg(method) == "variational") {
     
     fit <- model$variational(data = data_stan,
@@ -526,6 +525,15 @@ drawTest <- function(model, data_stan, initfunc = 0.5, gpq = FALSE,
                         # output_basename = ,
                         init = initfunc, iter_sampling = iter_sampling)
   }
+  
+  ## Write an empty file to indicate the used offset
+  if ( !is.null(attr(data_stan, "offsetname")) ) {
+    basename <- fit$output_files()[1] %>%
+      basename() %>%
+      tools::file_path_sans_ext() %>%
+      str_replace("-[1-9]-", "-x-")
+    file.create(file.path(fitpath, paste0(basename, "_", attr(data_stan, "offsetname"), ".txt")), showWarnings = TRUE)
+  } 
   
   return(fit)
 }
