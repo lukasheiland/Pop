@@ -145,8 +145,12 @@ prepareBigData <- function(B, B_status,
     dplyr::select(-accountfortaxamethods) %>%
     
     ## Offset after completion with zeroes.
-    group_by(tax, obsid) %>%
+    group_by(methodid, obsid, tax, taxid, stage) %>%
     mutate(count_ba_survey = mean(count_ha/ba_ha, na.rm = T)) %>%
+    ## Average area per tax, stage, methodid
+    dplyr::mutate(area_0_avg = weighted.mean(area_obs, w = count_ha, na.rm = TRUE),
+                  area_0_q1 = DescTools::Quantile(area_obs, weights = count_ha, probs = 0.25, na.rm = T, names = F),
+                  area_0_q3 = DescTools::Quantile(area_obs, weights = count_ha, probs = 0.75, na.rm = T, names = F)) %>%
     ungroup() %>%
     
     mutate(iszero = count_ha == 0) %>%
@@ -157,6 +161,18 @@ prepareBigData <- function(B, B_status,
                             iszero & stage == "B" ~ area_0 * count_ba_survey,
                             !iszero & (stage == "A") ~ area_obs,
                             !iszero & (stage == "B") ~ offset_ba_ha)) %>%
+    
+    mutate(offset_avg = case_when(!iszero ~ offset,
+                                  iszero & stage == "A" ~ area_0_avg,
+                                  iszero & stage == "B" ~ area_0_avg * count_ba_survey)) %>%
+                                  
+    mutate(offset_q1 = case_when(!iszero ~ offset,
+                                 iszero & stage == "A" ~ area_0_q1,
+                                 iszero & stage == "B" ~ area_0_q1 * count_ba_survey)) %>%
+    
+    mutate(offset_q3 = case_when(!iszero ~ offset,
+                                 iszero & stage == "A" ~ area_0_q3,
+                                 iszero & stage == "B" ~ area_0_q3 * count_ba_survey)) %>%
     
     droplevels() %>%
     ## stage creation will yield NA stages for when dbh is NA (for completed species)
@@ -212,6 +228,7 @@ prepareSmallData <- function(J,
     mutate(iszero = count_ha == 0) %>%
     mutate(offset = case_when(iszero ~ area_0,
                               !iszero ~ area_obs)) %>%
+    mutate(offset_avg = offset, offset_q1 = offset, offset_q3 = offset) %>% ## for compatibility with different offsets in big trees
 
     dplyr::mutate(stage = factor("J")) %>%
     droplevels()
@@ -253,13 +270,8 @@ joinStages <- function(B, J,
     ## plot(I(count_obs/area_obs) ~ count_ha, data = BA)
     ## plot(I(offset_ba_ha * ba_ha) ~ count_obs, data = BA); abline(0,1)
   
-  Stages <- dplyr::bind_rows(J, B, BA) %>%
-    mutate(ba_ha = replace(ba_ha, is.nan(ba_ha), NA),
-           ba_obs = replace(ba_obs, is.nan(ba_obs), NA),
-           area_obs = replace(area_obs, is.nan(area_obs), NA),
-           offset_ba_ha = replace(offset_ba_ha, is.nan(offset_ba_ha), NA),
-           count_obs = replace(count_obs, is.nan(count_obs), NA),
-           count_ha = replace(count_ha, is.nan(count_ha), NA))
+  Stages <- dplyr::bind_rows(J, B, BA)
+  Stages[is.na(Stages)] <- NA # replace NaNs (is.na returns TRUE for NaNs!)
 
   ## Print the averages
   # Print <- dplyr::select(Stages, stage, methodid, tax, area_avg_method) %>%

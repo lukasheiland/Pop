@@ -358,6 +358,21 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
 }
 
 
+## formatPriors --------------------------------
+# data_stan_priors  <- tar_read("data_stan_priors")
+# offsetname  <- tar_read("offsetname")
+selectOffset <- function(offsetname, data_stan_priors) {
+  
+  L <- attr(data_stan_priors, "Long")
+  data_stan_priors_offset <- data_stan_priors
+  data_stan_priors_offset$offset <- L[,offsetname[1], drop = T]
+  
+  attr(data_stan_priors_offset, "Long") <- L
+  attr(data_stan_priors_offset, "offsetname") <- offsetname
+  
+  return(data_stan_priors_offset)
+}
+
 
 #### Returns viable start values ---------------------------
 # getInits <- function() {
