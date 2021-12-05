@@ -62,7 +62,7 @@ targets_settings <- list(
                prior_c_b_log = c(-3, 3),
                prior_c_j_log = c(-5, 3),
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
-               prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
+               # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
                # prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                # prior_r_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                prior_s_log = c(-4, 3)
@@ -272,7 +272,7 @@ list(
                fitTransition(data_stan, which = "h", model_transitions)),
 
     tar_target(data_stan_priors,
-               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 5, widthfactor_reg = 10)),
+               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 10, widthfactor_reg = 10)),
     
     tar_target(offsetname,
                c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
