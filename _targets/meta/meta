@@ -106,7 +106,6 @@ file_DE_big_status|stem|ae0f974436e6977a|4afe50c6c7015484|ef46db3751d8e999|74220
 radius_max|stem|b35aa22c1781c4ed|e9dfe26516914502|ef46db3751d8e999|-1596622531||t18964.530890213s|b6d2e014b07bc296|51|rds|vector|||0.003||
 file_model_transitions|stem|0c8e554a9eafc7d1|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18941.8569560185s|5d521c54c4b9868f|1097|file|vector|||0.001||
 file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18937.6577345002s|e684589703d38eb9|5533814|file|vector|||1.968||
-weakpriors|stem|bcda5b801a59ac90|c0befcadc7dae11b|9ee3ac5a8444da29|-1879221107||t18964.5308913253s|bce99b594ffe2eda|128|rds|vector|||0.001||
 file_SK|stem|c61922c94e8fdfc0|813dfca83fca4164|ef46db3751d8e999|236759130|Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds|t18959.7178546689s|207064028bda051e|968167|file|vector|||0.002||
 Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t18857.5695906611s|02e584d87ae1e0d3|23277361|rds|vector|||12.618||
 taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t18964.5308936657s|e3871644244b3637|115|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|0.003||
@@ -119,7 +118,7 @@ data_stan|stem|23c004022c2f38e9|0dfd980f22e35cc7|1b347b1506d5d415|1263995833||t1
 fit_g|stem|1de91a82593a900f|255e3515660b75a6|7ea8641b4186711d|128175024||t18964.5368160059s|7996ba5adf8f875c|11933879|rds|vector|||17.778||
 fit_h|stem|ce1402f942fa3d1a|ca8b86a90da6d4a5|7ea8641b4186711d|468382782||t18964.5369876624s|384757aa8924592a|9203410|rds|vector|||13.753||
 data_stan_priors_offset|stem|c8611bc99f3067a5|93304eaf3cc05984|c68b64fd12c598f6|-44048254||t18964.5371025605s|e0f7535469024cea|811937|rds|vector|||0.002||
-data_stan_priors|stem|b61bf6464f71388e|73d36acf688dca19|420087d0b1b4f831|1623270232||t18964.5499724179s|b4031294c8adcbbc|811760|rds|vector|||3.916||
+file_Stages_s|stem|29d8a777c15d4cac|ee9329b222cb6f7a|21962e8bc84cdf22|-1399817009|Data/Stages_s.rds|t18964.5589860209s|278b89ebc1fb4c1c|44463180|file|vector|||15.961||
 formatStanData|function|56118415bffb78bd||||||||||||||
 prepareSmallData|function|b0078b5b76b7d331||||||||||||||
 joinStages|function|7397d1cb556dd863||||||||||||||
@@ -149,7 +148,7 @@ selectOffset|function|5a06a764ca826b73||||||||||||||
 package|object|202af5d6a260a946||||||||||||||
 fitTransition|function|886f3caa0132aa08||||||||||||||
 prepareBigData|function|31a8b38b541e3a37||||||||||||||
-drawTest|function|b1e8907b81b3f606||||||||||||||
+drawTest|function|fa6d943490d467c7||||||||||||||
 formatPriors|function|6064883efad64586||||||||||||||
 targets_settings|object|0d07194e69ab2e21||||||||||||||
 wrangleSeedlings|function|cd7e1217ce1881d1||||||||||||||
@@ -158,6 +157,7 @@ scaleResiduals|function|6be3a8d3a5a8ab5a||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 addPackage|function|d45c347b66cce55c||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
-seedlings_s|stem|64fc6640dba5322b|a0f0214426cbce9e|cbcb32046cb8f698|1933224778||t18964.5585885726s|a5d94ecfb396d531|98761|rds|list||seedlings_s_bf258a90*seedlings_s_15471546|47.694||
-Seedlings_s|stem|e3b56bae0aa0e97d|46a9595e49329d8a|0072c904f97bccd4|-142007958||t18964.5587023021s|bf3f3f70ef253c14|71621|rds|list|||8.165||
-file_Stages_s|stem|29d8a777c15d4cac|ee9329b222cb6f7a|21962e8bc84cdf22|-1399817009|Data/Stages_s.rds|t18964.5589860209s|278b89ebc1fb4c1c|44463180|file|vector|||15.961||
+weakpriors|stem|bcda5b801a59ac90|c0befcadc7dae11b|9ee3ac5a8444da29|-1879221107||t18964.9454075762s|bce99b594ffe2eda|128|rds|vector|||10.587||
+seedlings_s|stem|64fc6640dba5322b|a0f0214426cbce9e|cbcb32046cb8f698|1933224778||t18964.9458204868s|a5d94ecfb396d531|98761|rds|list||seedlings_s_bf258a90*seedlings_s_15471546|34.311||
+Seedlings_s|stem|e3b56bae0aa0e97d|46a9595e49329d8a|0072c904f97bccd4|-142007958||t18964.9459131557s|bf3f3f70ef253c14|71621|rds|list|||7.365||
+data_stan_priors|stem|473d73c14c5b5331|a78962a5bad6b4a2|420087d0b1b4f831|1623270232||t18964.9460120187s|bbd71547ee6da50d|811762|rds|vector|||1.74||
