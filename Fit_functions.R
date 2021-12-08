@@ -364,6 +364,14 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
 selectOffset <- function(offsetname, data_stan_priors) {
   
   L <- attr(data_stan_priors, "Long")
+  
+  Offset_0 <- L %>%
+    filter(count_ha == 0) %>%
+    group_by(obsid, tax, stage) %>%
+    summarize_at(c("offset", "offset_avg", "offset_q1", "offset_q3"), .funs = function(x) mean(x, na.rm = T))
+  
+  write.csv(Summary_offset, "Publish/Offset_0_averages.csv")
+  
   data_stan_priors_offset <- data_stan_priors
   data_stan_priors_offset$offset <- L[,offsetname[1], drop = T]
   
