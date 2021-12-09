@@ -20,6 +20,7 @@ plan(callr) ## "It is crucial that future::plan() is called in the target script
 source("Wrangling_functions.R")
 source("Seedlings_functions.R")
 source("Fit_functions.R")
+source("Model_2021-03_ba/Sim_ba posterior_functions.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
