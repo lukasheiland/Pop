@@ -370,7 +370,7 @@ selectOffset <- function(offsetname, data_stan_priors) {
     group_by(obsid, tax, stage) %>%
     summarize_at(c("offset", "offset_avg", "offset_q1", "offset_q3"), .funs = function(x) mean(x, na.rm = T))
   
-  write.csv(Summary_offset, "Publish/Offset_0_averages.csv")
+  write.csv(Offset_0, "Publish/Offset_0_averages.csv")
   
   data_stan_priors_offset <- data_stan_priors
   data_stan_priors_offset$offset <- L[,offsetname[1], drop = T]
