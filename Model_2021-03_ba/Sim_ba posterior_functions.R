@@ -79,16 +79,16 @@ iterateModel <- function(initialstate,
 # parname <- tar_read("parname")
 # data_stan_priors <- tar_read("data_stan_priors")
 
-simulateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = seq(1, 501, by = 10), thinstep = 1, mean = FALSE) {
+simulateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = seq(1, 501, by = 10), thinstep = 1, usemean = FALSE) {
   
   parname <- setdiff(parname, c("phi_obs", "sigma_l"))
   parname_sans_log <- gsub("_log$", "", parname)
   
-  Draws <- cmdstanfit$draws(variables = c(parname, "state_init_log"), format = "draws_list") %>%
+  Draws <- cmdstanfit$draws(variables = c(parname, "state_init_log", "L_loc"), format = "draws_list") %>%
     thin_draws(thin = thinstep)
   
   # Makes pars to be a nested list/data.frame[[parameters]][[draws]]
-  if(mean) {
+  if(usemean) {
 
     M <- cmdstanfit$summary(variables = parname) %>%
       dplyr::select(variable, mean)
@@ -108,20 +108,37 @@ simulateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = s
     pars <- lapply(pars, as.data.frame)
   }
   
-  State_init <- subset_draws(Draws, variable = "state_init_log") %>%
-    as_draws_rvars() %$%
+  D_loc <- subset_draws(Draws, variable = c("state_init_log", "L_loc")) %>%
+    as_draws_rvars()
+  
+  L_loc <- D_loc$L_loc
+  
+  State_init <- D_loc %$%
     state_init_log %>%
     exp()
   
-  iterateModel_draws <- function(state_init, pars, time) {
-    S <- as_draws_matrix(state_init)
-    lapply(1:nrow(S), function(i) iterateModel(c(S[i,]), pars = pars[[i]], time))
+  ## Nested simulations: locs/draws
+  
+  iterateModel_draws <- function(state_init, l_loc, pars, time, usemean) {
+    S <- if(usemean) mean(state_init) else as_draws_matrix(state_init)
+    
+    ## Assign local parameters to draws
+    L <- if(usemean) mean(l_loc) else as_draws_matrix(l_loc)
+    pars <- lapply(1:length(pars), function(i) within(pars[[i]], l <- c(L[i,])))
+    
+    return( lapply(1:nrow(S), function(i) iterateModel(c(S[i,]), pars = pars[[i]], time)) )
   }
   
-  # State_init <- State_init[10:11,]
-  # time <- 1:300
+  iterateLocs <- function(i, S, L, p, t, um) {
+    iterateModel_draws(S[i,], L[i,], pars = p, time = t, usemean = um)
+  }
   
-  sims <- future.apply::future_apply(State_init, 1, iterateModel_draws, pars = pars, time = time, simplify = F) # a nested list[locs, draws] of matrices[times]
+  # State_init <- State_init[10:12,]
+  # L_loc <- L_loc[10:12,]
+  # time <- 1:5
+  
+  sims <- future.apply::future_sapply(1:nrow(L_loc), iterateLocs,
+                                      S = State_init, L = L_loc, p = pars, t = time, um = usemean, simplify = F) # a nested list[locs, draws] of matrices[times]
   sims <- lapply(sims, bind_rows, .id = "draw")
   sims <- bind_rows(sims, .id = "loc")
   
@@ -147,12 +164,20 @@ plotTrajectories <- function(Trajectories) {
     # filter(time > 1) %>%
     mutate(grp = interaction(loc, tax, draw), tax = as.factor(tax))
   
-  aes_lines <- aes(x = time, y = abundance, group = grp, col = tax, alpha = 0.001)
+  aes_lines <- aes(x = time, y = abundance, group = grp, col = tax)
   
   plot <- ggplot(Trajectories, aes_lines) +
-    geom_line() +
-    facet_wrap(~stage)
+    geom_line(size = 0.1, alpha = 0.01) +
+    facet_wrap(~stage) +
+    theme_minimal()
   
+  basename <- cmdstanfit$output_files()[1] %>%
+    basename() %>%
+    tools::file_path_sans_ext() %>%
+    str_replace("-[1-9]-", "-x-")
+  
+  ggsave(paste0("Publish/", basename, "_equilines", ".png"), plot, dev = "png", height = 14, width = 20)
+
   return(plot)
 }
 
