@@ -5,7 +5,6 @@
 # remotes::install_github("ropensci/stantargets")
 # cmdstanr::install_cmdstan()
 
-
 ### Library
 library(targets)
 library(tarchetypes)
@@ -31,8 +30,9 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "cowplot", "parallel", "DHARMa", "priorsense",
              "future.apply")
 tar_option_set(packages = package)
-addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
+### Operation system
+onserver <- Sys.info()["sysname"] != "Darwin"
 
 # Pipeline ----------------------------------------------------------------
 
@@ -196,11 +196,11 @@ list(
                  iteration = "list"),
       
       tar_target(file_Stages_s,
-                 saveStages_s(Stages_s),
+                 if(onserver) "Data/Stages_s.rds" else saveStages_s(Stages_s),
                  format = "file"),
       tar_target(Data_Stages_s,
                  readRDS(file_Stages_s)),
-          ## explicit side effect for later use on other machines
+      ## explicit side effect for later use on other machines
       
       tar_target(surfaces_s,
                  predictSurfaces(fits_s),
@@ -208,7 +208,7 @@ list(
       tar_target(surfaceplots_s,
                  plotSurfaces(surfaces_s),
                  iteration = "list")
-      ),
+    ),
     
     ## The seedlings pipeline
     list(
@@ -225,7 +225,7 @@ list(
                  predictS(fits_Seedlings_s, Seedlings),
                  iteration = "list"),
       tar_target(file_Seedlings_s,
-                 saveSeedlings_s(Seedlings_s),
+                 if(onserver) "Data/Seedlings_s.rds" else saveSeedlings_s(Seedlings_s),
                  format = "file"),
       tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
                  readRDS(file_Seedlings_s)),
@@ -236,15 +236,15 @@ list(
                  plotSurfaces(surfaces_Seedlings_s),
                  iteration = "list"),
       tar_target(fits_Seedlings,
-                 fitSeedlings(Data_Seedlings_s))
-      ),
-
+                 fitSeedlings(Data_Seedlings_s)) 
+    ),
+    
     
     tar_target(Stages_select,
-               selectClusters(Stages_s, predictor_select, selectpred = F)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
-
+               selectClusters(Data_Stages_s, predictor_select, selectpred = F)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
+    
     tar_target(Stages_select_pred,
-               selectClusters(Stages_s, predictor_select, selectpred = T)), ## Selection based on whether environmental variables are there
+               selectClusters(Data_Stages_s, predictor_select, selectpred = T)), ## Selection based on whether environmental variables are there
     
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
@@ -269,10 +269,10 @@ list(
     
     tar_target(fit_g,
                fitTransition(data_stan, which = "g", model_transitions)),
-
+    
     tar_target(fit_h,
                fitTransition(data_stan, which = "h", model_transitions)),
-
+    
     tar_target(data_stan_priors,
                formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 10, widthfactor_reg = 10)),
     
@@ -291,7 +291,7 @@ list(
     
     tar_target(model_test,
                cmdstan_model(file_model_test) #, cpp_options = list(stan_opencl = TRUE)
-               ),
+    ),
     tar_target(model,
                cmdstan_model(file_model)),
     
@@ -299,7 +299,7 @@ list(
                drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.5, gpq = FALSE,)),
     tar_target(plots_denscheck_priorsim_test,
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
-
+    
     tar_target(fit_test,
                drawTest(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = FALSE,
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
@@ -314,9 +314,9 @@ list(
                readStanfit(fit_test_pq)),
     tar_target(stanfit,
                readStanfit(fit)),
-
+    
     targets_parname,
-
+    
     tar_target(summary_test,
                summarizeFit(fit_test_pq, exclude = c(helpers_exclude, rep_exclude))),
     tar_target(summary,
@@ -332,7 +332,7 @@ list(
     #            readStanfit(fit_test, purge = TRUE)),
     # tar_target(stanfit_plotting,
     #            readStanfit(fit, purge = TRUE)),
-
+    
     tar_target(plots_test,
                plotStanfit(stanfit_test, exclude = exclude)),
     tar_target(plots,
@@ -359,13 +359,13 @@ list(
     ## Sensitivity analysis
     tar_target(sensitivity_test, testSensitivity(fit_test_pq, include = parname)),
     tar_target(plot_powerscale_test, plotSensitivity(fit_test_pq, include = parname))
-
+    
   ),
   
   
   ## Standalone generated quantities
   list(
-
+    
     tar_target(file_gq,
                paste0(tools::file_path_sans_ext(file_model),"_gq.stan"), format = "file"),
     tar_target(model_gq,
@@ -380,7 +380,7 @@ list(
     #            readStanfit(fit_gq_test)),
     # tar_target(draws_gq_test,
     #            extractDraws(rstanfit_gq_test, exclude = helpers_exclude)),
-
+    
   )
 )
 
