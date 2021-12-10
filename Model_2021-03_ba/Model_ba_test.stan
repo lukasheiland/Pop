@@ -511,9 +511,9 @@ model {
   //   Beta_s[, spec] ~ normal(prior_Beta_s[1, ], prior_Beta_s[2, ]);
   // }
   
-  for(loc in 1:N_locs) {
-    state_init_log[loc] ~ normal(Prior_state_init_log[loc], 1);
-  }
+  //  for(loc in 1:N_locs) {
+  //    state_init_log[loc] ~ normal(Prior_state_init_log[loc], 1);
+  //  }
 
 
 
