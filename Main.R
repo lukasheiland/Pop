@@ -26,8 +26,9 @@ tar_make_future(c("summary_test",
                   "plots_denscheck_prior_test",
                   "plots_denscheck_posterior_test",
                   "sensitivity_test",
-                  "plot_powerscale_test"),
-                workers = 10, reporter = "timestamp")
+                  "plot_powerscale_test",
+                  "plot_trajectories"),
+                workers = 12, reporter = "timestamp")
 
 
 ## alternatives
