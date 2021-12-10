@@ -313,7 +313,7 @@ data {
   // assumes vertex form f(x,y) == a_1*(x−p)^2 + a_2*(y−q)^2 + z
   // and parameters vector[z, p, q, a_1, a_2]
   
-  array[N_locs] vector[N_pops] prior_state_init_log;
+  array[N_locs] vector[N_pops] Prior_state_init_log;
 
   vector[2] prior_b_log;
   vector[2] prior_c_a_log;
@@ -512,7 +512,7 @@ model {
   // }
   
   for(loc in 1:N_locs) {
-    state_init_log[loc] ~ normal(prior_state_init_log[loc], 1);
+    state_init_log[loc] ~ normal(Prior_state_init_log[loc], 1);
   }
 
 
@@ -619,7 +619,7 @@ generated quantities {
   //  	}
   //  }
  
-  y_hat_prior = unpack(prior_state_init_log, time_max, times,
+  y_hat_prior = unpack(Prior_state_init_log, time_max, times,
                        vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
                        ba_a_avg, ba_a_upper,
                        n_obs, n_yhat, // varying numbers per loc
@@ -694,7 +694,7 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | prior_state_init_log[loc,], 1);
+      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], 1);
     }
     
     // [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]
