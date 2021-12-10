@@ -128,10 +128,12 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     group_by(loc) %>%
     mutate(t = unique(t), .groups = "drop") ## This way its certain, that there is one time per obsid
   
-  Timetable <- table(S_times$res_t)
-  message("Table of residual times in years throug timestep reduction: ")
-  write.csv("Publish/Residual_times.csv")
-  print(Timetable)
+  if (timestep != 1) {
+    Timetable <- table(S_times$res_t)
+    message("Table of residual times in years throug timestep reduction: ")
+    write.csv("Publish/Residual_times.csv")
+    print(Timetable)
+  }
   
   ## Format: [N_locs] — locations
   S_locs <- S %>%
@@ -192,12 +194,22 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   
   
   #### Prepare priors
-  prior_state_init_log <- filter(S, isy0) %>%
+  Prior_state_init_log <- filter(S, isy0) %>%
     filter(stage %in% c("J", "A", "B")) %>%
-    group_by(pop) %>%
+    group_by(pop, loc) %>% ## for global: group_by(pop, loc) %>%
     summarize(y = log(mean(y, na.rm = T))) %>% ## log(mean()) is imperfect and itroduces a small bias, but median won't work because of the many zeroes
-    pull(y)
-  
+    ungroup() %>%
+    dplyr::mutate(y = na_if(y, -Inf)) %>%
+    group_by(pop) %>%
+    dplyr::mutate(y_min = min(y, na.rm = T)) %>%
+    dplyr::mutate(y = dplyr::coalesce(y, y_min)) %>%
+    dplyr::select(-y_min) %>%
+    ungroup() %>%
+    pivot_wider(names_from = pop, values_from = y) %>%
+    arrange(loc) %>%
+    dplyr::select(-loc) %>%
+    as.matrix()
+
   
   #### The stan-formatted list
   data <- list(
@@ -254,7 +266,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     
     
     #### priors
-    prior_state_init_log = prior_state_init_log,
+    Prior_state_init_log = Prior_state_init_log,
     
     ## the transitions.
     L_g = nrow(G),
