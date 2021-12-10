@@ -349,10 +349,10 @@ list(
     ## Posterior simulations
     tar_target(Trajectories,
                simulateTrajectories(cmdstanfit = fit_test_pq, data_stan_priors, parname,
-                                    time = seq(1, 401, by = 10), thinstep = 10, mean = F)),
+                                    time = seq(1, 401, by = 10), thinstep = 10, usemean = F)),
     tar_target(Trajectories_mean,
                simulateTrajectories(cmdstanfit = fit_test_pq, data_stan_priors, parname,
-                                    time = seq(1, 401, by = 10), thinstep = 10, mean = T)),
+                                    time = seq(1, 401, by = 10), thinstep = 10, usemean = T)),
     tar_target(plot_trajectories,
                plotTrajectories(Trajectories)),
     
