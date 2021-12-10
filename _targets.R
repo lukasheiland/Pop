@@ -300,10 +300,10 @@ list(
     tar_target(plots_denscheck_priorsim_test,
                plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
     
-    tar_target(fit_test,
+    tar_target(fit_test_sansgq,
                drawTest(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = FALSE,
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
-    tar_target(fit_test_pq,
+    tar_target(fit_test,
                drawTest(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = TRUE,
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
     tar_target(fit,
@@ -311,14 +311,14 @@ list(
                     n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
     
     tar_target(stanfit_test,
-               readStanfit(fit_test_pq)),
+               readStanfit(fit_test)),
     tar_target(stanfit,
                readStanfit(fit)),
     
     targets_parname,
     
     tar_target(summary_test,
-               summarizeFit(fit_test_pq, exclude = c(helpers_exclude, rep_exclude))),
+               summarizeFit(fit_test, exclude = c(helpers_exclude, rep_exclude))),
     tar_target(summary,
                summarizeFit(fit, exclude = c(helpers_exclude, rep_exclude))),
     
@@ -329,7 +329,7 @@ list(
     
     ## Posterior plots
     # tar_target(stanfit_test_plotting,
-    #            readStanfit(fit_test, purge = TRUE)),
+    #            readStanfit(fit_test_sansgq, purge = TRUE)),
     # tar_target(stanfit_plotting,
     #            readStanfit(fit, purge = TRUE)),
     
@@ -340,25 +340,25 @@ list(
     
     ## Posterior predictive tests
     tar_target(residuals_test,
-               scaleResiduals(cmdstanfit = fit_test_pq, data_stan_priors)),
+               scaleResiduals(cmdstanfit = fit_test, data_stan_priors)),
     tar_target(plots_denscheck_prior_test,
-               plotDensCheck(cmdstanfit = fit_test_pq, data_stan_priors, check = "prior")),
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
     tar_target(plots_denscheck_posterior_test,
-               plotDensCheck(cmdstanfit = fit_test_pq, data_stan_priors, check = "posterior")),
+               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior")),
     
     ## Posterior simulations
     tar_target(Trajectories,
-               simulateTrajectories(cmdstanfit = fit_test_pq, data_stan_priors, parname,
+               simulateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
                                     time = seq(1, 401, by = 10), thinstep = 10, usemean = F)),
     tar_target(Trajectories_mean,
-               simulateTrajectories(cmdstanfit = fit_test_pq, data_stan_priors, parname,
+               simulateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
                                     time = seq(1, 401, by = 10), thinstep = 10, usemean = T)),
     tar_target(plot_trajectories,
                plotTrajectories(Trajectories)),
     
     ## Sensitivity analysis
-    tar_target(sensitivity_test, testSensitivity(fit_test_pq, include = parname)),
-    tar_target(plot_powerscale_test, plotSensitivity(fit_test_pq, include = parname))
+    tar_target(sensitivity_test, testSensitivity(fit_test, include = parname)),
+    tar_target(plot_powerscale_test, plotSensitivity(fit_test, include = parname))
     
   ),
   

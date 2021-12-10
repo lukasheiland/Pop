@@ -361,9 +361,8 @@ predictS <- function(fits, Stages_env) {
 
 
 ## predictSurfaces --------------------------------
-# BA_s  <- tar_read("BA_s")
 # fits  <- tar_read("fits_s")
-predictSurfaces <- function(fits, BA_s) {
+predictSurfaces <- function(fits) {
 
   Ger <- raster::getData("GADM", country = "DE", level = 0, path = "Data/")
   R <- raster::raster(raster::extent(bbox(Ger)), resolution = c(0.01, 0.01))
