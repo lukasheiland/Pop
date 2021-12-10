@@ -151,6 +151,13 @@ simulateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = s
            state_fix = first(abundance[isconverged])) %>%
     ungroup()
   
+  basename <- cmdstanfit$output_files()[1] %>%
+    basename() %>%
+    tools::file_path_sans_ext() %>%
+    str_replace("-[1-9]-", "-x-")
+  
+  attr(sims, "basename") <- basename
+  
   return(sims)
 }
 
@@ -171,11 +178,8 @@ plotTrajectories <- function(Trajectories) {
     facet_wrap(~stage) +
     theme_minimal()
   
-  basename <- cmdstanfit$output_files()[1] %>%
-    basename() %>%
-    tools::file_path_sans_ext() %>%
-    str_replace("-[1-9]-", "-x-")
-  
+  basename <- attr(Trajectories, "basename")
+  if(is.null(basename)) basename <- "Model"
   ggsave(paste0("Publish/", basename, "_equilines", ".png"), plot, dev = "png", height = 14, width = 20)
 
   return(plot)
