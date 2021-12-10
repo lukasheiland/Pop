@@ -5,7 +5,6 @@
 # remotes::install_github("ropensci/stantargets")
 # cmdstanr::install_cmdstan()
 
-
 ### Library
 library(targets)
 library(tarchetypes)
@@ -31,8 +30,9 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "cowplot", "parallel", "DHARMa", "priorsense",
              "future.apply")
 tar_option_set(packages = package)
-addPackage <- function(name) { c(targets::tar_option_get("packages"), as.character(name)) }
 
+### Operation system
+onserver <- Sys.info()["sysname"] != "Darwin"
 
 # Pipeline ----------------------------------------------------------------
 
@@ -196,7 +196,7 @@ list(
                  iteration = "list"),
       
       tar_target(file_Stages_s,
-                 "Data/Stages_s.rds", ## server! ## on other machine: saveStages_s(Stages_s),
+                 if(onserver) "Data/Stages_s.rds" else saveStages_s(Stages_s),
                  format = "file"),
       tar_target(Data_Stages_s,
                  readRDS(file_Stages_s)),
@@ -225,7 +225,7 @@ list(
                  predictS(fits_Seedlings_s, Seedlings),
                  iteration = "list"),
       tar_target(file_Seedlings_s,
-                 "Data/Seedlings_s.rds", ## server! ## on other machine saveSeedlings_s(Seedlings_s),
+                 if(onserver) "Data/Seedlings_s.rds" else saveSeedlings_s(Seedlings_s),
                  format = "file"),
       tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
                  readRDS(file_Seedlings_s)),
