@@ -121,14 +121,14 @@ offsetname|stem|78ea79b1d18f6b4f|5fbc9d84b12f6a92|f2d0562274fe86e6|1802663475||t
 seedlings_s|stem|64fc6640dba5322b|a0f0214426cbce9e|cbcb32046cb8f698|1933224778||t18970.9255309529s|a5d94ecfb396d531|98761|rds|list||seedlings_s_bf258a90*seedlings_s_15471546|40.89||
 Seedlings_s|stem|e3b56bae0aa0e97d|46a9595e49329d8a|0072c904f97bccd4|-142007958||t18970.9256554351s|bf3f3f70ef253c14|71621|rds|list|||10.191||
 data_stan_priors_offset|stem|df1c94b8399f819d|93304eaf3cc05984|14acd9e5f0a0d607|-44048254||t18970.9256626823s|eeaa7789933f90be|811912|rds|vector|||0.044||
-formatStanData|function|d318bf04e4401e95||||||||||||||
+formatStanData|function|299fe2d6813ff3af||||||||||||||
 prepareSmallData|function|b0078b5b76b7d331||||||||||||||
 joinStages|function|7397d1cb556dd863||||||||||||||
 plotDensCheck|function|f5c7e5c6b9f1a2a8||||||||||||||
 iterateModel|function|f6997a8ec1a281ac||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
 readStanfit|function|5fb977364933b1e8||||||||||||||
-targets_parname|object|c3037a815807b6cc||||||||||||||
+targets_parname|object|896ba4a4a1fde9ba||||||||||||||
 wrangleSeedlings_s|function|784cc575022a6a0e||||||||||||||
 fitS|function|b1d146216eef03f2||||||||||||||
 countTransitions|function|658905ce538460fd||||||||||||||
@@ -162,5 +162,5 @@ addPackage|function|d45c347b66cce55c||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 plotTrajectories|function|0a0ba88213816033||||||||||||||
 simulateTrajectories|function|1eded863a910e0b3||||||||||||||
-file_model_test|stem|1fb6d706f3a88732|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18971.6948413379s|e72488598f4eb170|32408|file|vector|||11.77||
-model_test|stem|44a71988cb9f3baf|a3aa00c06cce5e55|7a0855087ebca49b|-1162399619||t18971.6962644501s|7eb702857c4c6cf5|7437|rds|vector|||54.986||
+file_model_test|stem|e78a8acbc89fda69|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18971.8275363716s|2ed26c5b67e0273c|32513|file|vector|||10.053||
+model_test|stem|39476b5126e6edd7|a3aa00c06cce5e55|aa08e8f52e357cd5|-1162399619||t18971.828429377s|0bddb9a13bf20967|7439|rds|vector|||54.05||
