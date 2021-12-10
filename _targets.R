@@ -80,7 +80,7 @@ targets_parname <- list(
   tar_target(helpers_exclude,
              c("vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "area_zeta", "area_zeta_prior", "phi_obs_rep", "phi_obs_rep_prior", "zeta_prior_rep", "zeta_rep",
-               "log_prior", "log_lik", "lp__")),
+               "log_prior", "log_lik", "lp__", "state_init_log_raw")),
   tar_target(rep_exclude,
              c("phi_obs_rep", "phi_obs_rep_prior", "zeta_prior_rep", "zeta_rep",
                "y_hat_rep", "y_hat_prior_rep", "y_hat_rep_offset", "y_hat_prior_rep_offset")),

@@ -24,7 +24,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   ba_a_avg <- Stages %>%
     filter(stage == "A") %>%
     group_by(tax) %>%
-    summarize(ba_a_avg = mean(ba_ha/count_ha, na.rm = T)) %>% ## [(ba/ha)/(1/ha) == ba/ha * ha == ba/1]
+    summarize(ba_a_avg = mean(ba_obs, na.rm = T)) %>% ## [(ba/ha)/(1/ha) == ba/ha * ha == ba/1]
     pull(ba_a_avg, name = tax)
   
   
@@ -76,6 +76,13 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
       stage == "A" ~ count_obs, # count_ha_r,
       stage == "B" ~ count_obs, # ba_ha_r
       stage == "BA" ~ as.double(ba_ha_r)
+    )) %>%
+    
+    mutate(y_prior = case_when(
+      stage == "J" ~ count_ha, # count_ha_r,
+      stage == "A" ~ count_ha, # count_ha_r,
+      stage == "B" ~ as.double(ba_ha), # ba_ha_r
+      stage == "BA" ~ as.double(ba_ha)
     )) %>%
     
     ## Different levels of observation error were assumed per species and for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
@@ -197,15 +204,15 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   Prior_state_init_log <- filter(S, isy0) %>%
     filter(stage %in% c("J", "A", "B")) %>%
     group_by(pop, loc) %>% ## for global: group_by(pop, loc) %>%
-    summarize(y = log(mean(y, na.rm = T))) %>% ## log(mean()) is imperfect and itroduces a small bias, but median won't work because of the many zeroes
+    summarize(y_prior = log(mean(y_prior, na.rm = T))) %>% ## log(mean()) is imperfect and itroduces a small bias, but median won't work because of the many zeroes
     ungroup() %>%
-    dplyr::mutate(y = na_if(y, -Inf)) %>%
+    dplyr::mutate(y_prior = na_if(y_prior, -Inf)) %>%
     group_by(pop) %>%
-    dplyr::mutate(y_min = min(y, na.rm = T)) %>%
-    dplyr::mutate(y = dplyr::coalesce(y, y_min)) %>%
-    dplyr::select(-y_min) %>%
+    dplyr::mutate(y_prior_min = min(y_prior, na.rm = T)) %>%
+    dplyr::mutate(y_prior = dplyr::coalesce(y_prior, y_prior_min)) %>%
+    dplyr::select(-y_prior_min) %>%
     ungroup() %>%
-    pivot_wider(names_from = pop, values_from = y) %>%
+    pivot_wider(names_from = pop, values_from = y_prior) %>%
     arrange(loc) %>%
     dplyr::select(-loc) %>%
     as.matrix()

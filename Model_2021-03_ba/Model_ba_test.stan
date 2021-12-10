@@ -405,13 +405,14 @@ parameters {
   // matrix[N_pops, timespan_max] u[N_locs];
   
   ///
-  array[N_locs] vector[N_pops] state_init_log;
+  array[N_locs] vector[N_pops] state_init_log_raw;
 }
 
 
 transformed parameters {
 
   array[N_locs] vector<lower=0>[N_species] L_loc;
+  array[N_locs] vector[N_pops] state_init_log;
   // vector[L_y] offset_zeta;
   
   
@@ -429,6 +430,8 @@ transformed parameters {
     
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ] + // The smooth effect
                        sigma_l .* L_random_log[loc, ]'); // non-centered loc-level random intercept 
+                   
+    state_init_log[loc] = state_init_log_raw[loc] * 0.2;
   }
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
@@ -439,6 +442,7 @@ transformed parameters {
   //  		offset_zeta[j] = offset[j];
   //  	}
   //  }
+  
   
   vector<lower=0>[L_yhat] y_hat = unpack(state_init_log, time_max, times,
                                 b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
@@ -452,6 +456,7 @@ transformed parameters {
   vector[L_y] y_hat_rep_offset = y_hat_rep .* offset; // offset_zeta
   vector[L_y] phi_obs_rep = phi_obs[rep_obsmethodTax2y];
   // vector[L_y] theta_obs_rep = theta_obs[rep_obsmethodTax2y];
+  
 }
 
 
@@ -511,11 +516,9 @@ model {
   //   Beta_s[, spec] ~ normal(prior_Beta_s[1, ], prior_Beta_s[2, ]);
   // }
   
-  //  for(loc in 1:N_locs) {
-  //    state_init_log[loc] ~ normal(Prior_state_init_log[loc], 1);
-  //  }
-
-
+   for(loc in 1:N_locs) {
+     state_init_log_raw[loc] ~ std_normal();
+   }
 
 
   //—————————————————————————————————————————————————————————————————————//
@@ -694,7 +697,7 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], 1);
+      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], 0.2);
     }
     
     // [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]
