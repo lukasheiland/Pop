@@ -163,21 +163,24 @@ saveSeedlings_s <- function(Seedlings_s) {
 
 fitSeedlings <- function(Seedlings_s, fitpath = "Fits.nosync") {
   
+  ## predictions are on the log scale!
+  Seedlings_s %<>% 
+    mutate(s_Fagus.sylvatica = exp(s_Fagus.sylvatica), s_other = exp(s_other))
   ## count_ha = r*BA / (1+BA_sum)
   ## log(count_ha) = log(r * BA) + log(1/1+BA_sum)
   
-  fit_seedlings <- brms::brm(count_ha ~ ba_ha + s_Fagus.sylvatica + 0 + (1 | plotid), # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
+  fit_seedlings <- brms::brm(count_ha ~ ba_ha + s_Fagus.sylvatica + 1 + (1 | plotid), # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
                              family = negbinomial,
-                             prior = set_prior("normal(0,1)", class = "sd", group = "plotid"),
+                             prior = set_prior("cauchy(0,10)", class = "sd", group = "plotid"),
                              data = Seedlings_s[Seedlings_s$tax == "Fagus.sylvatica",],
                              cores = getOption("mc.cores", 4))
   ggsave(file.path(fitpath, "Pairs_Seedlings_Fagus.sylvatica.png"), pairs(fit_seedlings))
   message("Summary of the the fit for Fagus seedlings:")
   print(summary(fit_seedlings))
   
-  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + s_other + 0 + (1 | plotid), # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
+  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + s_other + 1 + (1 | plotid), # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
                                    family = negbinomial,
-                                   prior = set_prior("normal(0,1)", class = "sd", group = "plotid"),
+                                   prior = set_prior("cauchy(0,10)", class = "sd", group = "plotid"),
                                    data = Seedlings_s[Seedlings_s$tax == "other",],
                                    cores = getOption("mc.cores", 4))
   

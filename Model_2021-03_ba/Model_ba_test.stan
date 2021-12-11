@@ -432,7 +432,7 @@ transformed parameters {
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ] + // The smooth effect
                        sigma_l .* L_random_log[loc, ]'); // non-centered loc-level random intercept 
                    
-    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] * 1;
+    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [0.5, 0.5, 1, 1, 2, 2]';
   }
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
@@ -469,7 +469,7 @@ model {
   
   //// Hyperpriors
 
-  phi_obs_inv_sqrt ~ normal(rep_vector(0.0, 6), [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]); // Observation error for neg_binomial
+  phi_obs_inv_sqrt ~ normal(rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.05, 0.02]); // Observation error for neg_binomial; levels: "F.j"  "o.j"  "F.a"  "o.a"  "F.ba" "o.ba"
   	// Levels of obsmethodTax: j.F a.F ba.F j.o a.o ba.o
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
   
@@ -589,7 +589,7 @@ generated quantities {
   // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_vector(prior_r_log[1], N_species), rep_vector(prior_r_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_vector(prior_s_log[1], N_species), rep_vector(prior_s_log[2], N_species)));
   
-  array[N_obsmethodTax] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_vector(0.0, 6), [1, 1, 0.1, 1, 1, 0.1])); // [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]
+  array[N_obsmethodTax] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.05, 0.02])); // 
   
   // special case L
   array[N_locs] vector<lower=0>[N_species] L_loc_prior;
@@ -699,12 +699,11 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], 1);
+      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [0.5, 0.5, 1, 1, 2, 2]);
     }
     
-    // [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]
     log_prior = log_prior +
-    		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [1, 1, 0.1, 1, 1, 0.1]) +
+    		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.05, 0.02]) +
 	  		  normal_lpdf(sigma_l | 0, 1) +		  
 	  		  normal_lpdf(to_vector(L_random_log) | 0, 1) +
 	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
