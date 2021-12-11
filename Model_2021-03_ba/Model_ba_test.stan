@@ -406,6 +406,7 @@ parameters {
   
   ///
   array[N_locs] vector[N_pops] state_init_log_raw;
+  // vector<lower=0>[N_pops] sigma_state_init;
 }
 
 
@@ -431,7 +432,7 @@ transformed parameters {
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ] + // The smooth effect
                        sigma_l .* L_random_log[loc, ]'); // non-centered loc-level random intercept 
                    
-    state_init_log[loc] = state_init_log_raw[loc] * 1;
+    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] * 1;
   }
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
@@ -475,6 +476,7 @@ model {
   // ... for special offset L
   to_vector(L_random_log) ~ std_normal(); // Random intercept for l
   sigma_l ~ std_normal(); // Regularizing half-cauchy on sigma for random slope for l  ## cauchy(0, 2);
+  // sigma_state_init ~ std_normal();
 
 
   // sigma_process ~ normal(0, 0.01);
@@ -622,7 +624,7 @@ generated quantities {
   //  	}
   //  }
  
-  y_hat_prior = unpack(Prior_state_init_log, time_max, times,
+  y_hat_prior = unpack(state_init_log, time_max, times,
                        vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
                        ba_a_avg, ba_a_upper,
                        n_obs, n_yhat, // varying numbers per loc

@@ -6,17 +6,21 @@ library(visNetwork)
 library(future)
 library(future.callr)
 
+# Orientation -----------------------------------------------------------------
+onserver <- Sys.info()["sysname"] != "Darwin"
 
 # Pre-targets sourcing ----------------------------------------------------
 ## assumed to have run and produced output files:
 # source("Inventory.nosync/Main.R")
-
 
 # Make targets pipeline -----------------------------------------------------------------
 # tar_glimpse()
 # M <- tar_manifest(fields = c("name", "command"))
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
+
+tar_make_future(c("data_stan_priors_offset"),
+                workers = if(onserver) 12 else 3, reporter = "timestamp")
 
 tar_make("fit_test")
 
@@ -28,14 +32,7 @@ tar_make_future(c("summary_test",
                   "sensitivity_test",
                   "plot_powerscale_test",
                   "plot_trajectories"),
-                workers = 12, reporter = "timestamp")
-
-
-## alternatives
-# plan(multisession)
-# future(tar_make(names = "predict_splines")) # just as a future
-
-# tar_make_future(names = "Stages_s") # parallel
+                workers = if(onserver) 12 else 3, reporter = "timestamp")
 
 
 # Inspect pipeline ----------------------------------------------------------------
@@ -43,16 +40,14 @@ network <- tar_visnetwork(targets_only = T, exclude = contains(c("file_", "thres
 network %>%
   visHierarchicalLayout(direction = "LR", levelSeparation = 100, nodeSpacing = 120, edgeMinimization = T, blockShifting = T, parentCentralization = T)
 
-## More
-# tar_visnetwork(targets_only = F, exclude = starts_with("file"))
-
 
 # Commit target meta to current branch ---------------------------------------------
-system("git branch --show-current")
-system("git commit -m 'targets meta' _targets/meta/meta")
+onbranch <- system("git branch --show-current", intern = T)
+oncorrectbranch <- xor(onserver & onbranch == "server",
+                     !onserver & onbranch != "server")
+if (oncorrectbranch) system("git commit -m 'targets meta' _targets/meta/meta") else message("Wrong branch for comitting meta!")
 
-# Inspect results ----------------------------------------------------------------
-tar_load(c("summary_test", "stanfit_test"))
-shinystan::launch_shinystan(stanfit_test)
 
+# Load results ----------------------------------------------------------------
+tar_load(c("summary_test", "fit_test"))
 
