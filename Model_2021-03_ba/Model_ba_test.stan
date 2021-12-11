@@ -431,7 +431,7 @@ transformed parameters {
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ] + // The smooth effect
                        sigma_l .* L_random_log[loc, ]'); // non-centered loc-level random intercept 
                    
-    state_init_log[loc] = state_init_log_raw[loc] * 0.2;
+    state_init_log[loc] = state_init_log_raw[loc] * 1;
   }
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
@@ -480,7 +480,7 @@ model {
   // sigma_process ~ normal(0, 0.01);
   // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
   // alpha_obs_inv ~ normal(0, 0.1); // Observation error for gamma
-  // zeta ~ normal(0, 0.2);
+  // zeta ~ normal(0, 1);
 
   
   
@@ -697,7 +697,7 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], 0.2);
+      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], 1);
     }
     
     // [0.2, 0.6, 0.05, 0.2, 0.6, 0.02]
