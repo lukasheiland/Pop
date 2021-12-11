@@ -81,3 +81,4 @@ Inventory.nosync/
 Upload.sh
 
 _targets/meta/meta
+_commit.sh
