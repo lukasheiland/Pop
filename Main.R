@@ -18,7 +18,7 @@ library(future.callr)
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
 
-tar_make("fit_test_pq")
+tar_make("fit_test")
 
 tar_make_future(c("summary_test",
                   "residuals_test",
