@@ -111,8 +111,6 @@ weakpriors|stem|bcda5b801a59ac90|c0befcadc7dae11b|9ee3ac5a8444da29|-1879221107||
 parname|stem|6685dee141b9dab3|e2d5630f3421ee8a|a3dad144c40657ed|-1053533873||t18970.4863431064s|f55bdaeb17afeaf9|102|rds|vector|||11.302||
 offsetname|stem|78ea79b1d18f6b4f|5fbc9d84b12f6a92|f2d0562274fe86e6|1802663475||t18970.9250324315s|8a2d295a6f6be5b7|61|rds|vector|||10.571||
 addPackage|function|d45c347b66cce55c||||||||||||||
-file_model_test|stem|e78a8acbc89fda69|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18971.8275363716s|2ed26c5b67e0273c|32513|file|vector|||10.053||
-model_test|stem|39476b5126e6edd7|a3aa00c06cce5e55|aa08e8f52e357cd5|-1162399619||t18971.828429377s|0bddb9a13bf20967|7439|rds|vector|||54.05||
 seedlings_s|stem|64fc6640dba5322b|a0f0214426cbce9e|cbcb32046cb8f698|1933224778||t18972.0526272248s|a5d94ecfb396d531|98761|rds|list||seedlings_s_bf258a90*seedlings_s_15471546|49.797||
 Seedlings_s|stem|e3b56bae0aa0e97d|46a9595e49329d8a|0072c904f97bccd4|-142007958||t18972.052715974s|bf3f3f70ef253c14|71621|rds|list|||6.709||
 file_Seedlings_s|stem|e3b56bae0aa0e97d|7ab73f6b1c2c0890|6de95c551d9f5fad|1895998084|Data/Seedlings_s.rds|t18972.05271625s|bf3f3f70ef253c14|71621|file|vector|||0.016||
@@ -124,7 +122,7 @@ fit_g|stem|c7df95b506b42856|255e3515660b75a6|0bcdacb5c5ef922f|128175024||t18972.
 fit_h|stem|7fab08e12b7b8207|ca8b86a90da6d4a5|0bcdacb5c5ef922f|468382782||t18972.0540537143s|72be7ebcc87dcb6d|9203413|rds|vector|||10.924||
 data_stan_priors|stem|55b6c5bf34198fd6|a78962a5bad6b4a2|42bf41105119f278|1623270232||t18972.0541109773s|0a399656082af7c6|844199|rds|vector|||0.7||
 data_stan_priors_offset|stem|e068b88fb11eda15|93304eaf3cc05984|d9c6b49f9644cc5a|-44048254||t18972.054116128s|2f327c7de8db626f|844342|rds|vector|||0.048||
-formatStanData|function|299fe2d6813ff3af||||||||||||||
+formatStanData|function|b00b1e0be30f1208||||||||||||||
 prepareSmallData|function|b0078b5b76b7d331||||||||||||||
 joinStages|function|7397d1cb556dd863||||||||||||||
 plotDensCheck|function|f5c7e5c6b9f1a2a8||||||||||||||
@@ -163,5 +161,7 @@ targets_settings|object|8310c1e3e2c1f075||||||||||||||
 formatPriors|function|6064883efad64586||||||||||||||
 wrangleSeedlings|function|cd7e1217ce1881d1||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
-plotTrajectories|function|0a0ba88213816033||||||||||||||
+plotTrajectories|function|bcf7777c1c5d2fab||||||||||||||
 simulateTrajectories|function|1eded863a910e0b3||||||||||||||
+file_model_test|stem|9b3d29abb87e4b37|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18972.7894629685s|b5661b387866feed|32657|file|vector|||9.877||
+model_test|stem|dfabccc8e753acca|a3aa00c06cce5e55|a94b775395940a92|-1162399619||t18972.7902828822s|89dea1b195f7b777|7438|rds|vector|||54.23||
