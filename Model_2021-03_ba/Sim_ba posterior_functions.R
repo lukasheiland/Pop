@@ -169,9 +169,10 @@ plotTrajectories <- function(Trajectories) {
   
   Trajectories %<>%
     # filter(time > 1) %>%
-    mutate(grp = interaction(loc, tax, draw), tax = as.factor(tax))
+    mutate(grp = interaction(loc, tax, draw), tax = as.factor(tax)) %>%
+    mutate(abundace_log = log(abundance))
   
-  aes_lines <- aes(x = time, y = abundance, group = grp, col = tax)
+  aes_lines <- aes(x = time, y = abundace_log, group = grp, col = tax)
   
   plot <- ggplot(Trajectories, aes_lines) +
     geom_line(size = 0.1, alpha = 0.01) +
