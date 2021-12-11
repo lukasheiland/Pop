@@ -24,7 +24,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   ba_a_avg <- Stages %>%
     filter(stage == "A") %>%
     group_by(tax) %>%
-    summarize(ba_a_avg = mean(ba_obs, na.rm = T)) %>% ## [(ba/ha)/(1/ha) == ba/ha * ha == ba/1]
+    summarize(ba_a_avg = mean(ba_obs/count_obs, na.rm = T)) %>% ## [(ba/ha)/(1/ha) == ba/ha * ha == ba/1]
     pull(ba_a_avg, name = tax)
   
   
@@ -87,7 +87,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     
     ## Different levels of observation error were assumed per species and for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
     mutate(obsmethod = fct_recode(stage, "j" = "J", "a" = "A", "ba" = "B", "ba" = "BA")) %>%
-    mutate(obsmethodTax = interaction(obsmethod, substr(tax, 1, 1))) %>% 
+    mutate(obsmethodTax = interaction(substr(tax, 1, 1), obsmethod)) %>% 
     
     ## pop is just an id for the initial states vector
     mutate(pop = interaction(tax, stage)) %>%
