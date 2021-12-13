@@ -182,10 +182,12 @@ fitSeedlings <- function(Seedlings_s, fitpath = "Fits.nosync") {
     
     fit_seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4))
     
+    var <- c("k_log", "l_log", "r_log", "phi")
+    
     ggsave(file.path(fitpath, paste0("Pairs_Seedlings_", tax, ".png")),
-           mcmc_pairs(fit_seedlings$draws(variables = c("k_log", "l_log", "r_log", "phi"))))
+           mcmc_pairs(fit_seedlings$draws(variables = var)))
     message("Summary of the the fit for ", tax, ":")
-    print(fit_seedlings$summary())
+    print(fit_seedlings$summary(variables = var))
     
     return(fit_seedlings)
   }
@@ -219,12 +221,12 @@ fitSeedlings <- function(Seedlings_s, fitpath = "Fits.nosync") {
     
     model {
       // priors
-      target += std_normal_lpdf(phi_inv_sqrt);
+      target += normal_lpdf(phi_inv_sqrt | 0, 1);
       // target += std_normal_lpdf(sigma_k_loc);
       // target += std_normal_lpdf(k_loc_log_raw);
-      target += normal_lpdf(k_log | 0, 1);
-      target += normal_lpdf(l_log | 0, 1);
-      target += normal_lpdf(r_log | 0, 1);
+      target += normal_lpdf(k_log | 3, 2);
+      target += normal_lpdf(l_log | 0, 2);
+      target += normal_lpdf(r_log | 1, 2);
       
       // likelihood
       target += neg_binomial_2_lpmf(y | y_hat, phi);
