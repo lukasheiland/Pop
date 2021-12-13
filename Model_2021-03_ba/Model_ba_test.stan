@@ -323,6 +323,7 @@ data {
   array[2] vector[N_species] prior_g_log;
   array[2] vector[N_species] prior_h_log;
   
+  array[2] vector[N_species] prior_k_log;
   array[2] vector[N_species] prior_l_log;
   array[2] vector[N_species] prior_r_log;
   
@@ -377,8 +378,10 @@ parameters {
   vector<upper=0>[N_species] h_log;
   vector[N_species] s_log;
   
-  vector[N_species] r_log;
+  vector[N_species] k_log;
   vector[N_species] l_log;
+  vector[N_species] r_log;
+
   
   // … dependent on environment. Matrix for convenient matrix multiplication
   // matrix[N_beta, N_species] Beta_c_j;
@@ -387,8 +390,8 @@ parameters {
   // matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
   
   //// Special case l  
-  matrix[N_locs, N_species] L_random_log; // array[N_locs] vector[N_species] L_random_log; // here real array is used for compatibility with to_vector
-  vector<lower=0>[N_species] sigma_l;
+  matrix[N_locs, N_species] K_loc_log_raw; // array[N_locs] vector[N_species] K_loc_log_raw; // here real array is used for compatibility with to_vector
+  vector<lower=0>[N_species] sigma_k_loc;
   
   
   //// Errors
@@ -413,6 +416,7 @@ parameters {
 transformed parameters {
 
   array[N_locs] vector<lower=0>[N_species] L_loc;
+  array[N_locs] vector<lower=0>[N_species] K_loc;
   array[N_locs] vector[N_pops] state_init_log;
   // vector[L_y] offset_zeta;
   
@@ -428,9 +432,12 @@ transformed parameters {
     // vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
   
   for(loc in 1:N_locs) {
-    
-    L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ] + // The smooth effect
-                       sigma_l .* L_random_log[loc, ]'); // non-centered loc-level random intercept 
+  
+  	K_loc[loc, ] = exp(k_log + sigma_k_loc .* K_loc_log_raw[loc, ]');
+    L_loc[loc, ] = K_loc[loc, ] + exp(l_log + L_smooth_log[loc, ]);
+    	// k + l * L_smooth
+    	// k == exp(k_log + normal(k_loc, sigma)) // intercept, with non-centered loc-level random intercepts
+    	// l * L_smooth == exp(l_log + L_smooth_log)
                    
     state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [0.5, 0.5, 1, 1, 2, 2]';
   }
@@ -474,8 +481,8 @@ model {
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
   
   // ... for special offset L
-  to_vector(L_random_log) ~ std_normal(); // Random intercept for l
-  sigma_l ~ std_normal(); // Regularizing half-cauchy on sigma for random slope for l  ## cauchy(0, 2);
+  to_vector(K_loc_log_raw) ~ std_normal(); // Random intercept for l
+  sigma_k_loc ~ std_normal(); // Regularizing half-cauchy on sigma for random slope for l  ## cauchy(0, 2);
   // sigma_state_init ~ std_normal();
 
 
@@ -502,7 +509,7 @@ model {
   g_log ~ normal(prior_g_log[1,], prior_g_log[2,]);
   h_log ~ normal(prior_h_log[1,], prior_h_log[2,]);
 
-  
+  k_log ~ normal(prior_k_log[1], prior_k_log[2]);
   l_log ~ normal(prior_l_log[1], prior_l_log[2]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
   
@@ -573,6 +580,7 @@ generated quantities {
   vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
   vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
   
+  vector[N_species] k_log_prior = to_vector(normal_rng(prior_k_log[1,], prior_k_log[2,]));
   vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));
   
@@ -593,17 +601,15 @@ generated quantities {
   
   // special case L
   array[N_locs] vector<lower=0>[N_species] L_loc_prior;
-  array[N_locs, N_species] real L_random_log_prior;  
-  vector<lower=0>[N_species] sigma_l_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_species), rep_vector(1, N_species)))));
+  array[N_locs, N_species] real K_loc_log_raw_prior;  
+  vector<lower=0>[N_species] sigma_k_loc_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_species), rep_vector(1, N_species)))));
   // vector<lower=0>[N_protocol] zeta_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_protocol), rep_vector(0.2, N_protocol)))));
   
   for(loc in 1:N_locs) {
   
-    L_random_log_prior[loc,] = normal_rng(rep_vector(0, N_species), rep_vector(1, N_species));
-    L_loc_prior[loc, ] = exp(l_log_prior + L_smooth_log[loc, ] +
-                             sigma_l_prior .* to_vector(L_random_log_prior[loc, ]));
-                         
-    
+    K_loc_log_raw_prior[loc,] = normal_rng(rep_vector(0, N_species), rep_vector(1, N_species));
+    L_loc_prior[loc, ] = exp(k_log_prior + sigma_k_loc_prior .* to_vector(K_loc_log_raw_prior[loc, ])) + exp(l_log_prior + L_smooth_log[loc, ]);
+
   }
   
   
@@ -704,14 +710,15 @@ generated quantities {
     
     log_prior = log_prior +
     		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.05, 0.02]) +
-	  		  normal_lpdf(sigma_l | 0, 1) +		  
-	  		  normal_lpdf(to_vector(L_random_log) | 0, 1) +
+	  		  normal_lpdf(sigma_k_loc | 0, 1) +		  
+	  		  normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
 	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
 	  		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) +
 	  		  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) +
 	  		  normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) +
 	  		  normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
 	  		  normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
+	  		  normal_lpdf(k_log | prior_k_log[1], prior_k_log[2]) +
 	  		  normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
 	  		  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
 	  		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // joint prior specification, sum of all logpriors // normal_lpdf(zeta | rep_vector(0.0, 5), rep_vector(0.2, 5)) + log(2) +
