@@ -164,31 +164,84 @@ saveSeedlings_s <- function(Seedlings_s) {
 fitSeedlings <- function(Seedlings_s, fitpath = "Fits.nosync") {
   
   ## predictions are on the log scale!
-  Seedlings_s %<>% 
-    mutate(s_Fagus.sylvatica = exp(s_Fagus.sylvatica), s_other = exp(s_other))
-  ## count_ha = r*BA / (1+BA_sum)
-  ## log(count_ha) = log(r * BA) + log(1/1+BA_sum)
+  # Seedlings_s %<>% 
+  #   mutate(s_Fagus.sylvatica = exp(s_Fagus.sylvatica), s_other = exp(s_other))
+
+  fitModel <- function(tax) {
+    
+   S  <- Seedlings_s[Seedlings_s$tax == tax,] %>% st_drop_geometry()
+    
+    data_seedlings <- list(
+      N = nrow(S),
+      # N_locs = length(unique(S$plotid)),
+      # rep_loc = as.integer(as.factor(S$plotid)), ## These are all the same anyway!
+      y = round(as.integer(S$count_ha)),
+      l_smooth_log = S[, paste0("s_", tax), drop = T], ## predictions are on the log scale!
+      ba_log = log(S$ba_ha) ## predictions are on the log scale!
+    )
+    
+    fit_seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4))
+    
+    ggsave(file.path(fitpath, paste0("Pairs_Seedlings_", tax, ".png")),
+           mcmc_pairs(fit_seedlings$draws(variables = c("k_log", "l_log", "r_log", "phi"))))
+    message("Summary of the the fit for ", tax, ":")
+    print(fit_seedlings$summary())
+    
+    return(fit_seedlings)
+  }
   
-  fit_seedlings <- brms::brm(count_ha ~ ba_ha + s_Fagus.sylvatica + 1 + (1 | plotid), # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
-                             family = negbinomial,
-                             prior = set_prior("cauchy(0,10)", class = "sd", group = "plotid"),
-                             data = Seedlings_s[Seedlings_s$tax == "Fagus.sylvatica",],
-                             cores = getOption("mc.cores", 4))
-  ggsave(file.path(fitpath, "Pairs_Seedlings_Fagus.sylvatica.png"), pairs(fit_seedlings))
-  message("Summary of the the fit for Fagus seedlings:")
-  print(summary(fit_seedlings))
+
+  code_seedlings <- "
+    data {
+      int<lower=1> N;
+      // int<lower=1> N_locs;
+      // array[N] int<lower=1> rep_loc;
+      array[N] int y;
+      vector[N] l_smooth_log;
+      vector[N] ba_log;
+    }
+    
+    parameters {
+      real k_log;
+      // real<lower=0> sigma_k_loc;
+      // vector[N_locs] k_loc_log_raw;
+      real l_log;
+      real r_log;
+      real<lower=0> phi_inv_sqrt;
+    }
+    
+    transformed parameters {
+      real<lower=0> phi = inv_square(phi_inv_sqrt);
+      vector<lower=0>[N] y_hat = exp(k_log) + // + k_loc_log_raw[rep_loc] * sigma_k_loc
+                                 exp(l_log + l_smooth_log) +
+                                 exp(r_log + ba_log); // exp(log(a) + log(b)) + exp(log(b) + log(c)) == a*b + b*c
+    }
+    
+    model {
+      // priors
+      target += std_normal_lpdf(phi_inv_sqrt);
+      // target += std_normal_lpdf(sigma_k_loc);
+      // target += std_normal_lpdf(k_loc_log_raw);
+      target += normal_lpdf(k_log | 0, 1);
+      target += normal_lpdf(l_log | 0, 1);
+      target += normal_lpdf(r_log | 0, 1);
+      
+      // likelihood
+      target += neg_binomial_2_lpmf(y | y_hat, phi);
+    }
+  "
+  model_seedlings <- cmdstanr::cmdstan_model(stan_file = write_stan_file(code_seedlings))
   
-  fit_seedlings_other <- brms::brm(count_ha ~ ba_ha + s_other + 1 + (1 | plotid), # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
-                                   family = negbinomial,
-                                   prior = set_prior("cauchy(0,10)", class = "sd", group = "plotid"),
-                                   data = Seedlings_s[Seedlings_s$tax == "other",],
-                                   cores = getOption("mc.cores", 4))
+  # fit_seedlings <- brms::brm(count_ha ~ ba_ha + s_Fagus.sylvatica + 1 + (1 | plotid), # + offset(log(ba_ha_sum_p1_inv)), # + (1 | plotid),
+  #                            family = negbinomial,
+  #                            prior = set_prior("cauchy(0,10)", class = "sd", group = "plotid"),
+  #                            data = Seedlings_s[Seedlings_s$tax == "Fagus.sylvatica",],
+  #                            cores = getOption("mc.cores", 4))
   
-  ggsave(file.path(fitpath, "Pairs_Seedlings_other.png"), pairs(fit_seedlings_other))
-  message("Summary of the the fit for other seedlings:")
-  print(summary(fit_seedlings_other))
   
-  return(list(Fagus.sylvatica = fit_seedlings, other = fit_seedlings_other))
+  fits_seedlings <- lapply(c("Fagus.sylvatica", "other"), fitModel)
+  
+  return(fits_seedlings)
   
 }
 
