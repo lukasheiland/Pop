@@ -274,7 +274,7 @@ list(
                fitTransition(data_stan, which = "h", model_transitions)),
     
     tar_target(data_stan_priors,
-               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 10, widthfactor_reg = 10)),
+               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 2, widthfactor_reg = 3)),
     
     tar_target(offsetname,
                c("offset", "offset_avg", "offset_q1", "offset_q3")[4]),
@@ -306,9 +306,9 @@ list(
     tar_target(fit_test,
                drawTest(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = TRUE,
                         method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
-    tar_target(fit,
-               draw(model = model, data_stan_priors_offset, method = "mcmc",
-                    n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
+    # tar_target(fit,
+    #            draw(model = model, data_stan_priors_offset, method = "mcmc",
+    #                 n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
     
     tar_target(stanfit_test,
                readStanfit(fit_test)),
