@@ -654,13 +654,29 @@ generated quantities {
   array[N_locs] int converged = rep_array(9, N_locs); // tolerance has been reached
   array[N_locs] real iterations_fix = rep_array(0, N_locs);
   array[N_locs] vector[N_genstates+N_species+1] state_fix = rep_array(rep_vector(0, N_genstates+N_species+1), N_locs); // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
+  array[N_locs] vector[N_species] ba_init = rep_array(rep_vector(0, N_species), N_locs);
+  array[N_locs] int dominant_init = converged;
+  array[N_locs] int major_init = converged;
+  array[N_locs] vector[N_species] ba_fix = ba_init;
   array[N_locs] int dominant_fix = converged;
   array[N_locs] int major_fix = converged;
-  
+
 
   //// Declarations of quantities for sensitivity checks (as global variables).
   real log_prior = 0; // this is zero to prevent NaNs from being in the sum.
   vector[L_y] log_lik = rep_vector(0, L_y);
+  
+  //// Rate tests -------------------------------------
+  int greater_b = b_log[1] > b_log[2];
+  int greater_c_a = c_a_log[1] > c_a_log[2];
+  int greater_c_b = c_b_log[1] > c_b_log[2];
+  int greater_c_j = c_j_log[1] > c_j_log[2];
+  int greater_g = g_log[1] > g_log[2];
+  int greater_h = h_log[1] > h_log[2];
+  int greater_l = l_log[1] > l_log[2];
+  int greater_k = k_log[1] > k_log[2];
+  int greater_r = r_log[1] > r_log[2];
+  int greater_s = s_log[1] > s_log[2];
 
 
   //// The conditional generation -------------------------------------
@@ -670,8 +686,13 @@ generated quantities {
     // Posterior quantities --------------------------------------------//
     //—————————————————————————————————————————————————————————————————//
     
+    
     //// Fix point iteration -------------------------------------------
     for(loc in 1:N_locs) {
+    
+      ba_init[loc] = exp(state_init_log[loc, (N_pops+1):N_genstates]);
+      dominant_init[loc] = (ba_init[loc, 1]/ba_init[loc, 2]) > 3; // BA_1 > 75%
+      major_init[loc] = ba_init[loc, 1] > ba_init[loc, 2]; // BA_1 > 50%
       
       //// fix point, given parameters
       state_fix[loc] = iterateFix(exp(state_init_log[loc]),
@@ -686,9 +707,10 @@ generated quantities {
       converged[loc] = iterations_fix[loc] < fixiter_max;
       
       if (converged[loc]) { // && convergent[loc]
-        
-        dominant_fix[loc] = state_fix[loc, N_pops+1]/state_fix[loc, N_genstates] > 3; // BA_1 > 75%
-        major_fix[loc] = state_fix[loc, N_pops+1] > state_fix[loc, N_genstates]; // BA_1 > 50%
+
+        ba_fix[loc] = state_fix[loc, (N_pops+1):N_genstates];
+        dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // BA_1 > 75%
+        major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // BA_1 > 50%
         
       }
       
@@ -697,9 +719,9 @@ generated quantities {
      //    } 
   
     }
-  
-  
-  
+    
+
+
     //———————————————————————————————————————————————————————————————————//
     // Sensitivity analysis --------------------------------------------//
     //—————————————————————————————————————————————————————————————————//
