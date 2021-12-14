@@ -79,7 +79,7 @@ iterateModel <- function(initialstate,
 # parname <- tar_read("parname")
 # data_stan_priors <- tar_read("data_stan_priors")
 
-simulateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = seq(1, 501, by = 10), thinstep = 1, usemean = FALSE) {
+simulateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = seq(1, 5001, by = 100), thinstep = 1, usemean = FALSE) {
   
   parname <- setdiff(parname, c("phi_obs", "sigma_l"))
   parname_sans_log <- gsub("_log$", "", parname)

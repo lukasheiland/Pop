@@ -758,7 +758,7 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
     Fixpoint <- Fixpoint[, popstatesinfixpoint]
     attr(Fixpoint, "dimnames")$variable <- rep(c(paste("pop", 1:data_stan_priors$N_pops), paste("total ba", 1:data_stan_priors$N_species)), each = data_stan_priors$N_locs)
     
-    fixplot <- bayesplot::mcmc_areas_ridges(Fixpoint)
+    fixplot <- bayesplot::mcmc_areas_ridges(log(Fixpoint))
     
     densplots <- c(densplots, list("equilibria" = fixplot))
       
