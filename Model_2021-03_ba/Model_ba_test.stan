@@ -439,7 +439,7 @@ transformed parameters {
     	// k == exp(k_log + normal(k_loc, sigma)) // intercept, with non-centered loc-level random intercepts
     	// l * L_smooth == exp(l_log + L_smooth_log)
                    
-    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [0.5, 0.5, 1, 1, 2, 2]';
+    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [0.1, 0.1, 2, 2, 3, 3]';
   }
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
@@ -705,7 +705,7 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [0.5, 0.5, 1, 1, 2, 2]);
+      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [0.1, 0.1, 2, 2, 3, 3]);
     }
     
     log_prior = log_prior +
