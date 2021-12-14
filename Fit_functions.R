@@ -731,32 +731,34 @@ plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c(
     if (is.null(draws)) {
       Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix")
       Fixpoint <- cmdstanfit$draws(variables = "state_fix", format = "draws_matrix")
-      fixpointconverged <- cmdstanfit$draws(variables = "converged", format = "draws_matrix")
+      # fixpointconverged <- cmdstanfit$draws(variables = "converged", format = "draws_matrix")
       
     } else {
       Sim <- draws$y_hat_rep
       
       ## untested:
-      Fixpoint <- draws$state_fix
-      fixpointconverged <- draws$converged
+      ## Fixpoint <- draws$state_fix
+      ## fixpointconverged <- draws$converged
     }
   }
   
-  completerows <- complete.cases(Sim)
-  Sim <- Sim[completerows,]
-  attr(Sim, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
+  ## Don't!
+  # completerows <- complete.cases(Sim)
+  # Sim <- Sim[completerows,]
+  # attr(Sim, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
   densplots <- list("predictions" = bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = grp))
   
   if (match.arg(check) == "posterior") {
-    Fixpoint <- Fixpoint[completerows,]
-    attr(Fixpoint, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
+    ## Don't!
+    # Fixpoint <- Fixpoint[completerows,]
+    # attr(Fixpoint, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
     # fixpointconverged <- fixpointconverged[completerows,]
     # attr(fixpointconverged, "dimnames")$draw <- attr(fixpointconverged, "dimnames")$draw[completerows]
-    popstatesinfixpoint <- rep(c(rep(T, data_stan_priors$N_pops + data_stan_priors$N_species), rep(F, data_stan_priors$N_species + 1)), data_stan_priors$N_locs)
+    popstatesinfixpoint <- rep(c(rep(T, data_stan_priors$N_pops + data_stan_priors$N_species), rep(F, data_stan_priors$N_species + 1)), each = data_stan_priors$N_locs)
     Fixpoint <- Fixpoint[, popstatesinfixpoint]
-    attr(Fixpoint, "dimnames")$variable <- rep(c(paste("log pop", 1:data_stan_priors$N_pops), paste("log ba", 1:data_stan_priors$N_species)), data_stan_priors$N_locs)
+    attr(Fixpoint, "dimnames")$variable <- rep(c(paste("pop", 1:data_stan_priors$N_pops), paste("total ba", 1:data_stan_priors$N_species)), each = data_stan_priors$N_locs)
     
-    fixplot <- bayesplot::mcmc_areas_ridges(log(Fixpoint))
+    fixplot <- bayesplot::mcmc_areas_ridges(Fixpoint)
     
     densplots <- c(densplots, list("equilibria" = fixplot))
       
