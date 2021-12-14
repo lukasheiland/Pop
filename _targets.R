@@ -349,12 +349,14 @@ list(
     ## Posterior simulations
     tar_target(Trajectories,
                simulateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
-                                    time = seq(1, 5001, by = 250), thinstep = 40, usemean = F)),
+                                    time = seq(1, 5001, by = 250), thinstep = 50, usemean = F)),
     tar_target(Trajectories_mean,
                simulateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
-                                    time = seq(1, 5001, by = 250), thinstep = 40, usemean = T)),
+                                    time = seq(1, 5001, by = 250), thinstep = 50, usemean = T)),
     tar_target(plot_trajectories,
                plotTrajectories(Trajectories)),
+    tar_target(plot_trajectories_mean,
+               plotTrajectories(Trajectories_mean)),
     
     ## Sensitivity analysis
     tar_target(sensitivity_test, testSensitivity(fit_test, include = parname)),
