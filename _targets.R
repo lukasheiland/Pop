@@ -281,7 +281,7 @@ list(
                formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 2, widthfactor_reg = 3)),
     
     tar_target(offsetname,
-               c("offset", "offset_avg", "offset_q1", "offset_q3")[4]),
+               c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
     
     tar_target(data_stan_priors_offset,
                selectOffset(offsetname, data_stan_priors)),
