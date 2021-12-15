@@ -2,18 +2,87 @@
 # Posterior hypothesis tests -----------------------------------------------------
 # ————————————————————————————————————————————————————————————————————————————————— #
 
-## plotFix --------------------------------
+## flattenLocVar --------------------------------
+## helper for all variables that have structure array[N_locs] int/real
+# cmdstanfit <- tar_read("fit_test")
+flattenLocVar <- function(name, locmeans = FALSE) {
+  n_locs <- data_stan_priors$N_locs
+  
+  Draws <- cmdstanfit$draws(variables = name, format = "draws_matrix")
+  n_draws <- if (locmeans) 1 else nrow(Draws)
+  n_i <- cmdstanfit$metadata()$stan_variable_sizes[[name]][2]
+  if(is.na(n_i)) n_i <- 1
+  
+  ## rep party
+  loc <- rep(rep(1:n_locs, n_i), each = n_draws)
+  i <- rep(rep(1:n_i, each = n_locs), each = n_draws)
+  draw <- rep(1:n_draws, n_i * n_locs)
+  
+  Draws %<>%
+    as.matrix() %>%
+    { if (locmeans) colMeans(.) else c(.) } %>%
+    set_names(NULL) %>%
+    data.frame(value = ., loc = loc, i = i, draw = draw, var = name) %>%
+    { if (locmeans) dplyr::select(., -i, -draw) else . }
+  
+  return(Draws)
+}
+
+
+## tabulateFreqConverged --------------------------------
 # cmdstanfit <- tar_read("fit_test")
 # data_stan_priors <- tar_read("data_stan_priors")
 
-plotFix <- function(cmdstanfit, data_stan_priors) {
+tabulateFreqConverged <- function(cmdstanfit, data_stan_priors) {
   
-  draws <- cmdstanfit$draws(variables = c("major_init", "major_fix", "ba_init", "ba_fix"), format = "rvars")
+  n_locs <- data_stan_priors$N_locs
+  Freq_converged <- flattenLocVar("converged", locmeans = T)
   
-  # violin plot(ba_fix ~ tax, col = major_fix)
-
+  message(sum(Freq_converged$value != 1), " of ", n_locs, " locations have not always converged to fixpoint.")
+  return(Freq_converged)
 }
 
+
+## tabulateStateDraws --------------------------------
+# cmdstanfit <- tar_read("fit_test")
+# data_stan_priors <- tar_read("data_stan_priors")
+
+tabulateStateDraws <- function(cmdstanfit, data_stan_priors) {
+  
+  statename <- c("major_init", "major_fix", "ba_init", "ba_fix")
+  
+  Table_states <- lapply(statename, flattenLocVar)
+  Table_states <- lapply(Table_states, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, i <- 2)) else S )
+  Table_states %<>%
+    bind_rows() %>%
+    mutate(tax = factor(c("Fagus", "other")[i]))
+  
+  Table_states$value[Table_states$value == 9] <- NA
+  
+  return(Table_states)
+}
+
+## plotStateDraws --------------------------------
+# cmdstanfit <- tar_read("Table_states")
+
+plotStateDraws <- function(Table_states) {
+  
+  # S <- pivot_wider(Table_states, names_from = "var") %>%
+  #   mutate(major_fix = as.logical(major_fix), major_fix = as.logical(major_fix))
+  #   
+  # 
+  # ggplot(S, aes(x = tax, y = ba_fix, col = major_fix)) +
+  #   geom_violin(trim = FALSE)
+  #   # geom_jitter(position = position_jitter(0.2))
+  
+  W <- filter(Table_states, str_starts(var, "ba")) %>%
+    rename(when = var)
+  
+  whendiagram <- ggplot(W, aes(x = when, y = log(value), col = tax)) +
+    geom_violin(trim = FALSE)
+  
+  return(whendiagram)
+}
 
 
 # ————————————————————————————————————————————————————————————————————————————————— #
@@ -106,16 +175,16 @@ simulateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = s
   
   # Makes pars to be a nested list/data.frame[[parameters]][[draws]]
   if(usemean) {
-
+    
     M <- cmdstanfit$summary(variables = parname) %>%
       dplyr::select(variable, mean)
     parmeans <- sapply(parname, function(n) M$mean[str_starts(M$variable, n)], USE.NAMES = T, simplify = F)
     pars <- sapply(parname, function(n) { if(str_ends(n, "_log")) exp(parmeans[[n]]) else parmeans[[n]] }, USE.NAMES = T, simplify = F)
     names(pars) <- parname_sans_log
     pars <- list(pars)
-
+    
   } else {
-
+    
     D <- subset_draws(Draws, variable = parname) %>%
       as_draws_matrix() %>%
       as.data.frame() %>%
@@ -182,24 +251,26 @@ simulateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = s
 ## plotTrajectories --------------------------------
 # Trajectories <- tar_read("Trajectories")
 
-plotTrajectories <- function(Trajectories) {
+plotTrajectories <- function(Trajectories, thicker = FALSE) {
   
   Trajectories %<>%
-    # filter(time > 1) %>%
+    group_by(loc, tax, stage, draw) %>%
+    filter(any(isconverged)) %>%
+    mutate(time_shifted = time - time_fix) %>%
     mutate(grp = interaction(loc, tax, draw), tax = as.factor(tax)) %>%
-    mutate(abundace_log = log(abundance))
+    mutate(abundance_log = log(abundance))
   
-  aes_lines <- aes(x = time, y = abundace_log, group = grp, col = tax)
+  aes_lines <- aes(x = time_shifted, y = abundance_log, group = grp, col = tax)
   
   plot <- ggplot(Trajectories, aes_lines) +
-    geom_line(size = 0.1, alpha = 0.01) +
+    { if(thicker) geom_line(size = 0.5, alpha = 0.1) else geom_line(size = 0.1, alpha = 0.01) } +
     facet_wrap(~stage) +
     theme_minimal()
   
   basename <- attr(Trajectories, "basename")
   if(is.null(basename)) basename <- "Model"
   ggsave(paste0("Publish/", basename, "_equilines", ".png"), plot, dev = "png", height = 14, width = 20)
-
+  
   return(plot)
 }
 

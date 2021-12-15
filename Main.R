@@ -22,7 +22,7 @@ onserver <- Sys.info()["sysname"] != "Darwin"
 tar_make_future(c("data_stan_priors_offset"),
                 workers = if(onserver) 12 else 3, reporter = "timestamp")
 
-tar_make("fit_test")
+tar_make(c("fit_test", "Trajectories")) ## These are parallelized internally
 
 tar_make_future(c("summary_test",
                   "residuals_test",
@@ -31,7 +31,8 @@ tar_make_future(c("summary_test",
                   "plots_denscheck_posterior_test",
                   "sensitivity_test",
                   "plot_powerscale_test",
-                  "plot_trajectories"),
+                  "plot_trajectories",
+                  "plot_trajectories_mean"),
                 workers = if(onserver) 12 else 3, reporter = "timestamp")
 
 
