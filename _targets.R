@@ -27,7 +27,8 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "lubridate", "DescTools", # "zoo",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "mgcv", "MASS",
-             "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "cowplot", "parallel", "DHARMa", "priorsense",
+             "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "parallel", "DHARMa", "priorsense",
+             "cowplot",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -355,11 +356,11 @@ list(
                                     time = seq(1, 5001, by = 250), thinstep = 50, usemean = F)),
     tar_target(Trajectories_mean,
                simulateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
-                                    time = seq(1, 5001, by = 250), thinstep = 50, usemean = T)),
+                                    time = seq(1, 5001, by = 125), thinstep = 25, usemean = T)),
     tar_target(plot_trajectories,
                plotTrajectories(Trajectories)),
     tar_target(plot_trajectories_mean,
-               plotTrajectories(Trajectories_mean)),
+               plotTrajectories(Trajectories_mean, thicker = T)),
     
     ## Sensitivity analysis
     tar_target(sensitivity_test, testSensitivity(fit_test, include = parname)),
