@@ -690,7 +690,8 @@ generated quantities {
     //// Fix point iteration -------------------------------------------
     for(loc in 1:N_locs) {
     
-      ba_init[loc] = exp(state_init_log[loc, (N_pops+1):N_genstates]);
+      ba_init[loc] = exp(state_init_log[loc, (N_pops-N_species+1):N_pops]) + // State B
+                     ba_a_avg .* exp(state_init_log[loc, (N_species+1):(N_species+N_species)]); // State A * ba
       dominant_init[loc] = (ba_init[loc, 1]/ba_init[loc, 2]) > 3; // BA_1 > 75%
       major_init[loc] = ba_init[loc, 1] > ba_init[loc, 2]; // BA_1 > 50%
       
