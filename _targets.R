@@ -1,4 +1,7 @@
-# Targets setup -----------------------------------------------------------
+# ————————————————————————————————————————————————————————————————————————————————— #
+# Targets setup ------------------------------------------------------------------------
+# ————————————————————————————————————————————————————————————————————————————————— #
+
 ### Installation
 # remotes::install_github("ropensci/targets")
 # remotes::install_github("ropensci/tarchetypes")
@@ -17,9 +20,9 @@ plan(callr) ## "It is crucial that future::plan() is called in the target script
 
 ### Source the functions
 source("Wrangling_functions.R")
-source("Seedlings_functions.R")
+source("Fit_seedlings_functions.R")
 source("Fit_functions.R")
-source("Model_2021-03_ba/Sim_ba posterior_functions.R")
+source("Posterior_functions.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
@@ -35,10 +38,13 @@ tar_option_set(packages = package)
 ### Operation system
 onserver <- Sys.info()["sysname"] != "Darwin"
 
-# Pipeline ----------------------------------------------------------------
 
-## Inner pipelines
 
+# ————————————————————————————————————————————————————————————————————————————————— #
+# Inner pipelines -----------------------------------------------------------------
+# ————————————————————————————————————————————————————————————————————————————————— #
+
+## Settings pipeline ------------------------------------------------------
 targets_settings <- list(
   
   ## Threshold to discriminate A and B [mm]
@@ -61,9 +67,9 @@ targets_settings <- list(
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
                prior_b_log = c(-3, 3),
-               prior_c_a_log = c(-5, 4),
-               prior_c_b_log = c(-5, 4),
-               prior_c_j_log = c(-7, 5),
+               prior_c_a_log = c(-5, 3),
+               prior_c_b_log = c(-5, 3),
+               prior_c_j_log = c(-7, 4),
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
                # prior_k_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
@@ -71,10 +77,49 @@ targets_settings <- list(
                # prior_r_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                prior_s_log = c(-3, 3)
              )
-  )
+          )
 )
 
 
+
+## Paths pipeline ------------------------------------------------------
+targets_paths <- list(
+  
+  ## Directories
+  tar_target(dir_fit, file.path("Fits.nosync/")),
+  tar_target(dir_publish, file.path("Publish/")),
+  
+  ## Data files
+  tar_target(file_DE_big,
+             "Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds",
+             format = "file"),
+  tar_target(file_DE_big_status,
+             "Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds",
+             format = "file"),
+  tar_target(file_DE_small,
+             "Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds",
+             format = "file"),
+  tar_target(file_DE_env,
+             'Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds',
+             format = "file"),
+  tar_target(file_DE_geo,
+             'Inventory.nosync/DE BWI/Data/DE_BWI_geo.rds',
+             format = "file"),
+  tar_target(file_SK,
+             "Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds",
+             format = "file"),
+  tar_target(file_SK_fullgrid,
+             "Inventory.nosync/SK NIML/Data/SK_NIML_complete_fullgrid.rds",
+             format = "file")
+  # tar_target(file_Taxa,
+  #            'Inventory.nosync/Taxa/Taxa.csv',
+  #            format = "file")
+  
+)
+
+
+
+## Parameter spec pipeline ------------------------------------------------------
 targets_parname <- list(
   
   tar_target(pars_exclude,
@@ -102,40 +147,10 @@ targets_parname <- list(
 )
 
 
-## The master pipeline
-list(
-  
-  targets_settings,
-  
-  ## State data files
-  # tar_load(starts_with("file"))
-  list(
-    tar_target(file_DE_big,
-               "Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds",
-               format = "file"),
-    tar_target(file_DE_big_status,
-               "Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds",
-               format = "file"),
-    tar_target(file_DE_small,
-               "Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds",
-               format = "file"),
-    tar_target(file_DE_env,
-               'Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds',
-               format = "file"),
-    tar_target(file_DE_geo,
-               'Inventory.nosync/DE BWI/Data/DE_BWI_geo.rds',
-               format = "file"),
-    tar_target(file_SK,
-               "Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds",
-               format = "file"),
-    tar_target(file_SK_fullgrid,
-               "Inventory.nosync/SK NIML/Data/SK_NIML_complete_fullgrid.rds",
-               format = "file")
-    # tar_target(file_Taxa,
-    #            'Inventory.nosync/Taxa/Taxa.csv',
-    #            format = "file")
-  ),
-  
+
+## Wrangling pipeline ------------------------------------------------------
+targets_wrangling <- list(
+
   ## Read data files
   # tar_load(starts_with("Data"))
   list(
@@ -152,6 +167,7 @@ list(
     ## tax.id is not unique in Taxa! Unique is however needed for left_join by tax.id (not by inventory specific ids)!
   ),
   
+  
   ## Env data
   # tar_load(starts_with("Env"))
   list(
@@ -164,13 +180,13 @@ list(
                summarizeEnvByCluster(Env_clean, predictor_select))
   ),
   
-  
+
   ## Stage abundance data
-  # tar_load(starts_with("S"))
   list(
     tar_target(Data_big_area,
                prepareBigData(Data_big, Data_big_status,
-                              taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max)),
+                              taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max,
+                              tablepath = dir_publish)),
     
     tar_target(Data_small_area,
                prepareSmallData(Data_small, taxon_select = taxon_select)),
@@ -211,7 +227,7 @@ list(
                  predictSurfaces(fits_s),
                  iteration = "list"),
       tar_target(surfaceplots_s,
-                 plotSurfaces(surfaces_s),
+                 plotSurfaces(surfaces_s, path = dir_publish),
                  iteration = "list")
     ),
     
@@ -238,10 +254,10 @@ list(
                  predictSeedlingsSurfaces(fits_Seedlings_s),
                  iteration = "list"),
       tar_target(surfaceplots_Seedlings_s,
-                 plotSurfaces(surfaces_Seedlings_s),
+                 plotSurfaces(surfaces_Seedlings_s, path = dir_publish),
                  iteration = "list"),
       tar_target(fits_Seedlings,
-                 fitSeedlings(Data_Seedlings_s)) 
+                 fitSeedlings(Data_Seedlings_s, fitpath = dir_fit)) 
     ),
     
     
@@ -256,142 +272,162 @@ list(
     
     tar_target(Stages_scaled_pred,
                scaleData(Stages_select_pred, predictor_select)) # After selection, so that scaling includes selected plots .
-  ),
-  
-  
-  ## Model fit
-  list(
-    
-    tar_target(data_stan,
-               formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh, timestep = 1, parfactor = 1)),
-    
-    tar_target(file_model_transitions,
-               "Model_2021-03_ba/Model_transitions.stan",
-               format = "file"),
-    
-    tar_target(model_transitions,
-               cmdstan_model(file_model_transitions)),
-    
-    tar_target(fit_g,
-               fitTransition(data_stan, which = "g", model_transitions)),
-    
-    tar_target(fit_h,
-               fitTransition(data_stan, which = "h", model_transitions)),
-    
-    tar_target(data_stan_priors,
-               formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 2, widthfactor_reg = 3)),
-    
-    tar_target(offsetname,
-               c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
-    
-    tar_target(data_stan_priors_offset,
-               selectOffset(offsetname, data_stan_priors)),
-    
-    tar_target(file_model_test,
-               "Model_2021-03_ba/Model_ba_test.stan",
-               format = "file"),
-    tar_target(file_model,
-               "Model_2021-03_ba/Model_ba.stan",
-               format = "file"),
-    
-    tar_target(model_test,
-               cmdstan_model(file_model_test) #, cpp_options = list(stan_opencl = TRUE)
-    ),
-    tar_target(model,
-               cmdstan_model(file_model)),
-    
-    ## Prior predictive tests that rely on currently out-commented generated quantities
-    # tar_target(priorsim_test,
-    #            drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.5, gpq = FALSE,)),
-    # tar_target(plots_denscheck_priorsim_test,
-    #            plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
-    
-    tar_target(fit_test_sansgq,
-               drawTest(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = FALSE,
-                        method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
-    tar_target(fit_test,
-               drawTest(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = TRUE,
-                        method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500)),
-    # tar_target(fit,
-    #            draw(model = model, data_stan_priors_offset, method = "mcmc",
-    #                 n_chains = 4, iter_warmup = 800, iter_sampling = 500, initfunc = 0.5)),
-    
-    tar_target(stanfit_test,
-               readStanfit(fit_test)),
-    tar_target(stanfit,
-               readStanfit(fit)),
-    
-    targets_parname,
-    
-    tar_target(summary_test,
-               summarizeFit(fit_test, exclude = c(helpers_exclude, rep_exclude))),
-    tar_target(summary,
-               summarizeFit(fit, exclude = c(helpers_exclude, rep_exclude))),
-    
-    tar_target(draws_test,
-               extractDraws(stanfit_test, exclude = helpers_exclude)),
-    tar_target(draws,
-               extractDraws(stanfit, exclude = helpers_exclude)),
-    
-    ## Posterior plots
-    # tar_target(stanfit_test_plotting,
-    #            readStanfit(fit_test_sansgq, purge = TRUE)),
-    # tar_target(stanfit_plotting,
-    #            readStanfit(fit, purge = TRUE)),
-    
-    tar_target(plots_test,
-               plotStanfit(stanfit_test, exclude = exclude)),
-    tar_target(plots,
-               plotStanfit(stanfit, exclude = exclude)),
-    
-    ## Prior predictive tests that rely on currently out-commented generated quantities
-    # tar_target(plots_denscheck_prior_test,
-    #            plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
-    
-    ## Posterior predictive tests
-    tar_target(residuals_test,
-               scaleResiduals(cmdstanfit = fit_test, data_stan_priors)),
-    
-    tar_target(plots_denscheck_posterior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior")),
-    
-    ## Posterior simulations
-    tar_target(Trajectories,
-               simulateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
-                                    time = seq(1, 5001, by = 250), thinstep = 50, usemean = F)),
-    tar_target(Trajectories_mean,
-               simulateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
-                                    time = seq(1, 5001, by = 125), thinstep = 25, usemean = T)),
-    tar_target(plot_trajectories,
-               plotTrajectories(Trajectories)),
-    tar_target(plot_trajectories_mean,
-               plotTrajectories(Trajectories_mean, thicker = T)),
-    
-    ## Sensitivity analysis
-    tar_target(sensitivity_test, testSensitivity(fit_test, include = parname)),
-    tar_target(plot_powerscale_test, plotSensitivity(fit_test, include = parname))
-    
-  ),
-  
-  
-  ## Standalone generated quantities
-  list(
-    
-    tar_target(file_gq,
-               paste0(tools::file_path_sans_ext(file_model),"_gq.stan"), format = "file"),
-    tar_target(model_gq,
-               cmdstan_model(file_gq)),
-    tar_target(fit_gq,
-               model_gq$generate_quantities(fitted_params = fit$output_files(),
-                                            data = data_stan_priors,
-                                            output_dir = "Fits.nosync/",
-                                            parallel_chains = getOption("mc.cores", 4)))
-    
-    # tar_target(rstanfit_gq_test,
-    #            readStanfit(fit_gq_test)),
-    # tar_target(draws_gq_test,
-    #            extractDraws(rstanfit_gq_test, exclude = helpers_exclude)),
-    
   )
 )
+
+
+
+## Fitting pipeline ------------------------------------------------------
+targets_fits <- list(
+  tar_target(data_stan,
+             formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh, timestep = 1, parfactor = 1)),
+  
+  tar_target(file_model_transitions,
+             "Model_2021-03_ba/Model_transitions.stan",
+             format = "file"),
+  
+  tar_target(model_transitions,
+             cmdstan_model(file_model_transitions)),
+  
+  tar_target(fit_g,
+             fitTransition(data_stan, which = "g", model_transitions, fitpath = dir_fit)),
+  
+  tar_target(fit_h,
+             fitTransition(data_stan, which = "h", model_transitions, fitpath = dir_fit)),
+  
+  tar_target(data_stan_priors,
+             formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 2, widthfactor_reg = 3)),
+  
+  tar_target(offsetname,
+             c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
+  
+  tar_target(data_stan_priors_offset,
+             selectOffset(offsetname, data_stan_priors)),
+  
+  tar_target(file_model_test,
+             "Model_2021-03_ba/Model_ba_test.stan",
+             format = "file"),
+  tar_target(file_model,
+             "Model_2021-03_ba/Model_ba.stan",
+             format = "file"),
+  
+  tar_target(model_test,
+             cmdstan_model(file_model_test) #, cpp_options = list(stan_opencl = TRUE)
+             ),
+  tar_target(model,
+             cmdstan_model(file_model)),
+  
+  ## Prior predictive tests that rely on currently out-commented generated quantities
+  # tar_target(priorsim_test,
+  #            drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.5, gpq = FALSE, fitpath = dir_fit)),
+  # tar_target(plots_predictions_priorsim_test,
+  #            plotPredictions(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
+
+  tar_target(fit_test_sansgq,
+             fitModel(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = FALSE,
+                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit)),
+  tar_target(fit_test,
+             fitModel(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = TRUE,
+                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit)),
+  tar_target(basename_fit_test,
+             getBaseName(fit_test))
+)
+
+
+
+## Posterior pipeline ------------------------------------------------------
+targets_posterior <- list(
+  
+  ## Extract
+  tar_target(stanfit_test,
+             extractStanfit(cmdstanfit = fit_test)),
+  tar_target(draws_test,
+             extractDraws(stanfit = stanfit_test, exclude = helpers_exclude)),
+  # tar_target(stanfit_test_plotting,
+  #            extractStanfit(fit_test_sansgq, purge = TRUE)),
+  
+  
+  ## Summarize
+  tar_target(summary_test,
+             summarizeFit(cmdstanfit = fit_test, exclude = c(helpers_exclude, rep_exclude), path = dir_publish)),
+  tar_target(Freq_converged_test,
+             summarizeFreqConverged(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
+  
+  
+  ## Generate
+  tar_target(residuals_test,
+             generateResiduals(cmdstanfit = fit_test, data_stan_priors)),
+  tar_target(Trajectories_test,
+             generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
+                                  time = seq(1, 5001, by = 250), thinstep = 50, usemean = F)),
+  tar_target(Trajectories_mean_test,
+             generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
+                                  time = seq(1, 5001, by = 125), thinstep = 25, usemean = T)),
+  
+  ## Formatted posterior data stuctures
+  tar_target(Twostates_test,
+             formatTwoStates(cmdstanfit = fit_test, data_stan_priors)),
+  
+  
+  ## Plot
+  tar_target(plots_test,
+             plotStanfit(stanfit = stanfit_test, exclude = exclude, path = dir_publish, basename = basename_fit_test)),
+  ## Prior predictive tests that rely on currently out-commented generated quantities
+  # tar_target(plots_predictions_prior_test,
+  #            plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
+  tar_target(plots_predictions_posterior_test,
+             plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "posterior", path = dir_publish)),
+  tar_target(plots_twostates_test,
+             plotTwoStates(cmdstanfit = fit_test, path = dir_publish)),
+  tar_target(plot_trajectories_test,
+             plotTrajectories(Trajectories_test, path = dir_publish, basename = basename_fit_test)),
+  tar_target(plot_trajectories_mean_test,
+             plotTrajectories(Trajectories_mean_test, thicker = T, path = dir_publish, basename = basename_fit_test)),
+  tar_target(plot_powerscale_test,
+             plotSensitivity(cmdstanfit = fit_test, include = parname, path = dir_publish)),
+  
+  
+  ## Test
+  tar_target(sensitivity_test,
+             testSensitivity(fit_test, include = parname, path = dir_publish))
+)
+
+
+
+## Standalone generated quantities pipeline -----------------------------------
+# targets_sgq <- list(
+#   
+#   tar_target(file_gq,
+#              paste0(tools::file_path_sans_ext(file_model),"_gq.stan"), format = "file"),
+#   tar_target(model_gq,
+#              cmdstan_model(file_gq)),
+#   tar_target(fit_gq,
+#              model_gq$generate_quantities(fitted_params = fit$output_files(),
+#                                           data = data_stan_priors,
+#                                           output_dir = dir_fit,
+#                                           parallel_chains = getOption("mc.cores", 4)))
+#   
+#   # tar_target(rstanfit_gq_test,
+#   #            extractStanfit(fit_gq_test)),
+#   # tar_target(draws_gq_test,
+#   #            extractDraws(rstanfit_gq_test, exclude = helpers_exclude)),
+#   
+# )
+
+
+
+# ————————————————————————————————————————————————————————————————————————————————— #
+# Outer pipeline -----------------------------------------------------------------
+# ————————————————————————————————————————————————————————————————————————————————— #
+
+list(
+  
+  targets_settings,
+  targets_paths,
+  targets_wrangling,
+  targets_parname,
+  targets_fits,
+  targets_posterior
+  
+  )
 

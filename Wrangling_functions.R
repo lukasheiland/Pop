@@ -8,10 +8,12 @@
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
 # radius_max <- tar_read("radius_max")
+# dir_publish  <- tar_read("dir_publish")
 prepareBigData <- function(B, B_status,
                            taxon_select,
                            threshold_dbh, radius_max,
-                           id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
+                           id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
+                           tablepath
                            ) {
   
   ## Areas and radii
@@ -34,7 +36,7 @@ prepareBigData <- function(B, B_status,
               nrow = 4, byrow = T,
               dimnames = list(c("radius_max[cm]", "area_max [ha]", "area_0 [ha]", "dbh_max [mm]"), c("A", "B")))
   
-  saveRDS(M, "Publish/Areas_average.csv")
+  write.csv(M, file.path(tablepath, "Areas_average.csv"))
   print(M)
   
   id_select_B <- intersect(names(B), id_select) %>% setdiff("treeid") ## make sure to always exclude treeid for good grouping
@@ -246,12 +248,11 @@ prepareSmallData <- function(J,
 # J  <- tar_read("Data_small_area")
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
-
-
+# dir_publish  <- tar_read("dir_publish")
 joinStages <- function(B, J,
                        taxon_select,
                        threshold_dbh,
-                       id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
+                       id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time") #, tablepath = dir_publish
                        ) {
 
   id_select_B <- intersect(names(B), id_select) %>% setdiff("treeid") ## make sure to always exclude treeid for good grouping
@@ -281,7 +282,7 @@ joinStages <- function(B, J,
   #   filter(!is.na(stage)) %>%
   #   arrange(stage, methodid)
   # 
-  # write.csv(Print, "Publish/Areas_average_method.csv")
+  # write.csv(Print, file.path(tablepath, "Areas_average_method.csv"))
   # cat("The calculated average areas in ha for the methods are …")
   # print(as.data.frame(Print))
   
@@ -380,9 +381,10 @@ predictSurfaces <- function(fits) {
   return(surfaces)
 }
 
-
-## surfaces <- tar_read(surfaces_Seedlings_s)
-plotSurfaces <- function(surfaces) {
+## plotSurfaces ------------------------------------
+# surfaces <- tar_read(surfaces_Seedlings_s)
+# path  <- tar_read("dir_publish")
+plotSurfaces <- function(surfaces, path) {
   
   plotRaster <- function(r) {
     require(rasterVis)
@@ -395,7 +397,7 @@ plotSurfaces <- function(surfaces) {
 
   surfaceplots <- lapply(surfaces, function(s) plotRaster(s))
   
-  mapply(function(p, n) ggsave(paste0("Publish/", "Surface_", n, ".png"), p, device = "png", width = 15, height = 10), surfaceplots, names(surfaceplots))
+  mapply(function(p, n) ggsave(paste0(path, "/", "Surface_", n, ".png"), p, device = "png", width = 15, height = 10), surfaceplots, names(surfaceplots))
   
   return(surfaceplots)
 }
@@ -404,6 +406,7 @@ plotSurfaces <- function(surfaces) {
 saveStages_s <- function(Stages_s) {
   
   path <- "Data/Stages_s.rds"
+  if(!dir.exists(Data)) dir.create("Data")
   saveRDS(Stages_s, file = path)
   return(path)
 }
