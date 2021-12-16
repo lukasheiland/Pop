@@ -2,10 +2,10 @@
 # Posterior hypothesis tests -----------------------------------------------------
 # ————————————————————————————————————————————————————————————————————————————————— #
 
-## flattenLocVar --------------------------------
+## flattenLocPosterior --------------------------------
 ## helper for all variables that have structure array[N_locs] int/real
 # cmdstanfit <- tar_read("fit_test")
-flattenLocVar <- function(name, locmeans = FALSE) {
+flattenLocPosterior <- function(name, locmeans = FALSE) {
   n_locs <- data_stan_priors$N_locs
   
   Draws <- cmdstanfit$draws(variables = name, format = "draws_matrix")
@@ -36,38 +36,38 @@ flattenLocVar <- function(name, locmeans = FALSE) {
 tabulateFreqConverged <- function(cmdstanfit, data_stan_priors) {
   
   n_locs <- data_stan_priors$N_locs
-  Freq_converged <- flattenLocVar("converged", locmeans = T)
+  Freq_converged <- flattenLocPosterior("converged", locmeans = T)
   
   message(sum(Freq_converged$value != 1), " of ", n_locs, " locations have not always converged to fixpoint.")
   return(Freq_converged)
 }
 
 
-## tabulateStateDraws --------------------------------
+## extractStates --------------------------------
 # cmdstanfit <- tar_read("fit_test")
 # data_stan_priors <- tar_read("data_stan_priors")
 
-tabulateStateDraws <- function(cmdstanfit, data_stan_priors) {
+extractStates <- function(cmdstanfit, data_stan_priors) {
   
   statename <- c("major_init", "major_fix", "ba_init", "ba_fix")
   
-  Table_states <- lapply(statename, flattenLocVar)
-  Table_states <- lapply(Table_states, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, i <- 2)) else S )
-  Table_states %<>%
+  States_post <- lapply(statename, flattenLocPosterior)
+  States_post <- lapply(States_post, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, i <- 2)) else S )
+  States_post %<>%
     bind_rows() %>%
     mutate(tax = factor(c("Fagus", "other")[i]))
   
-  Table_states$value[Table_states$value == 9] <- NA
+  States_post$value[States_post$value == 9] <- NA
   
-  return(Table_states)
+  return(States_post)
 }
 
 ## plotStateDraws --------------------------------
-# cmdstanfit <- tar_read("Table_states")
+# cmdstanfit <- tar_read("States_post")
 
-plotStateDraws <- function(Table_states) {
+plotStateDraws <- function(States_post) {
   
-  # S <- pivot_wider(Table_states, names_from = "var") %>%
+  # S <- pivot_wider(States_post, names_from = "var") %>%
   #   mutate(major_fix = as.logical(major_fix), major_fix = as.logical(major_fix))
   #   
   # 
@@ -75,13 +75,23 @@ plotStateDraws <- function(Table_states) {
   #   geom_violin(trim = FALSE)
   #   # geom_jitter(position = position_jitter(0.2))
   
-  W <- filter(Table_states, str_starts(var, "ba")) %>%
-    rename(when = var)
+  W <- filter(States_post, str_starts(var, "ba")) %>%
+    rename(when = var) %>%
+    group_by(when, loc, draw) %>%
+    mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
+    ungroup()
   
   whendiagram <- ggplot(W, aes(x = when, y = log(value), col = tax)) +
     geom_violin(trim = FALSE)
   
-  return(whendiagram)
+  testplot <- ggplot(W, aes(x = when, y = diff_ba)) +
+    geom_violin(trim = FALSE)
+  
+  stateplots <- list(whendiagram, testplot)
+  
+  ## ggsave
+  
+  return(stateplots)
 }
 
 

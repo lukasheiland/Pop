@@ -343,6 +343,8 @@ data {
   
   // array[2] vector[N_species] prior_l_log;
   
+  //// nu from student-t for weak priors
+  real nu_student;
 
 }
 
@@ -439,7 +441,7 @@ transformed parameters {
     	// k == exp(k_log + normal(k_loc, sigma)) // intercept, with non-centered loc-level random intercepts
     	// l * L_smooth == exp(l_log + L_smooth_log)
                    
-    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [0.1, 0.1, 2, 2, 3, 3]';
+    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [1, 1, 2, 2, 3, 3]';
   }
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
@@ -476,7 +478,7 @@ model {
   
   //// Hyperpriors
 
-  phi_obs_inv_sqrt ~ normal(rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.05, 0.02]); // Observation error for neg_binomial; levels: "F.j"  "o.j"  "F.a"  "o.a"  "F.ba" "o.ba"
+  phi_obs_inv_sqrt ~ normal(rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.1, 0.1]); // Observation error for neg_binomial; levels: "F.j"  "o.j"  "F.a"  "o.a"  "F.ba" "o.ba"
   	// Levels of obsmethodTax: j.F a.F ba.F j.o a.o ba.o
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
   
@@ -501,19 +503,19 @@ model {
   // c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
   // c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
   
-  b_log   ~ normal(prior_b_log[1], prior_b_log[2]);
-  c_a_log ~ normal(prior_c_a_log[1], prior_c_a_log[2]);
-  c_b_log ~ normal(prior_c_b_log[1], prior_c_b_log[2]);
-  c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]); // strong believe that c is smaller than s in trees
+  b_log   ~ student_t(nu_student, prior_b_log[1], prior_b_log[2]); // b_log ~ normal(prior_b_log[1], prior_b_log[2]);
+  c_a_log ~ student_t(nu_student, prior_c_a_log[1], prior_c_a_log[2]); // c_a_log ~ normal(prior_c_a_log[1], prior_c_a_log[2]);
+  c_b_log ~ student_t(nu_student, prior_c_b_log[1], prior_c_b_log[2]); // c_b_log ~ normal(prior_c_b_log[1], prior_c_b_log[2]);
+  c_j_log ~ student_t(nu_student, prior_c_j_log[1], prior_c_j_log[2]); // c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]);
   
   g_log ~ normal(prior_g_log[1,], prior_g_log[2,]);
   h_log ~ normal(prior_h_log[1,], prior_h_log[2,]);
 
   k_log ~ normal(prior_k_log[1], prior_k_log[2]);
   l_log ~ normal(prior_l_log[1], prior_l_log[2]);
-  r_log ~ normal(prior_r_log[1], prior_r_log[2]); // wanna constrain this a bit, otherwise the model will just fill up new trees and kill them off with g
+  r_log ~ normal(prior_r_log[1], prior_r_log[2]);
   
-  s_log ~ normal(prior_s_log[1], prior_s_log[2]);
+  s_log ~ student_t(nu_student, prior_s_log[1], prior_s_log[2]); // s_log ~ normal(prior_s_log[1], prior_s_log[2]);
 
   
   // same priors for both species
@@ -572,10 +574,10 @@ generated quantities {
   //———————————————————————————————————————————————————————————————————//    
   
   ///// Priors -----------------------------------
-  real b_log_prior = normal_rng(prior_b_log[1], prior_b_log[2]);
-  real c_a_log_prior = normal_rng(prior_c_a_log[1], prior_c_a_log[2]);
-  real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]);
-  real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]); // strong believe that c is smaller than s in trees
+  real b_log_prior = student_t_rng(nu_student, prior_b_log[1], prior_b_log[2]); // real b_log_prior = normal_rng(prior_b_log[1], prior_b_log[2]);
+  real c_a_log_prior = student_t_rng(nu_student, prior_c_a_log[1], prior_c_a_log[2]); // real c_a_log_prior = normal_rng(prior_c_a_log[1], prior_c_a_log[2]);
+  real c_b_log_prior = student_t_rng(nu_student, prior_c_b_log[1], prior_c_b_log[2]); // real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]);
+  real c_j_log_prior = student_t_rng(nu_student, prior_c_j_log[1], prior_c_j_log[2]); // real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]);
   
   vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
   vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
@@ -587,7 +589,7 @@ generated quantities {
   // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
   // real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]);
   
-  real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
+  real s_log_prior = student_t_rng(nu_student, prior_s_log[1], prior_s_log[2]); // real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
   
   vector[N_species] vector_b_log_prior = to_vector(normal_rng(rep_vector(prior_b_log[1], N_species), rep_vector(prior_b_log[2], N_species)));
   vector[N_species] vector_c_a_log_prior = to_vector(normal_rng(rep_vector(prior_c_a_log[1], N_species), rep_vector(prior_c_a_log[2], N_species)));
@@ -728,23 +730,24 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [0.1, 0.1, 2, 2, 3, 3]);
+      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [1, 1, 2, 2, 3, 3]);
     }
     
+    // joint prior specification, sum of all logpriors
     log_prior = log_prior +
-    		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.05, 0.02]) +
+    		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.1, 0.1]) +
 	  		  normal_lpdf(sigma_k_loc | 0, 1) +		  
 	  		  normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
-	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
-	  		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) +
-	  		  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) +
-	  		  normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) +
+	  		  student_t_lpdf(b_log | nu_student, prior_b_log[1], prior_b_log[2]) + // normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
+	  		  student_t_lpdf(c_a_log | nu_student, prior_c_a_log[1], prior_c_a_log[2]) + // normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) +
+	  		  student_t_lpdf(c_b_log | nu_student, prior_c_b_log[1], prior_c_b_log[2]) + // normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) +
+	  		  student_t_lpdf(c_j_log | nu_student, prior_c_j_log[1], prior_c_j_log[2]) + // normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) +
 	  		  normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
 	  		  normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
 	  		  normal_lpdf(k_log | prior_k_log[1], prior_k_log[2]) +
 	  		  normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
 	  		  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
-	  		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // joint prior specification, sum of all logpriors // normal_lpdf(zeta | rep_vector(0.0, 5), rep_vector(0.2, 5)) + log(2) +
+	  		  student_t_lpdf(s_log | nu_student, prior_s_log[1], prior_s_log[2]); // normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); 
 	      			  
     // for(l in 1:L_y) {
     //   log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs_rep[l], theta_obs_rep[l]);
