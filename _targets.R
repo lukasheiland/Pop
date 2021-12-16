@@ -44,7 +44,7 @@ targets_settings <- list(
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 200mm > B
-  tar_target(threshold_dbh, 150), ## [mm]
+  tar_target(threshold_dbh, 200), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
@@ -60,17 +60,16 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-5, 4),
+               prior_b_log = c(-3, 3),
                prior_c_a_log = c(-5, 4),
                prior_c_b_log = c(-5, 4),
-               prior_c_j_log = c(-6, 4),
+               prior_c_j_log = c(-7, 5),
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
                # prior_k_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                # prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                # prior_r_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
-               prior_s_log = c(-5, 4),
-               nu_student = 3
+               prior_s_log = c(-3, 3)
              )
   )
 )
@@ -301,10 +300,11 @@ list(
     tar_target(model,
                cmdstan_model(file_model)),
     
-    tar_target(priorsim_test,
-               drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.5, gpq = FALSE,)),
-    tar_target(plots_denscheck_priorsim_test,
-               plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
+    ## Prior predictive tests that rely on currently out-commented generated quantities
+    # tar_target(priorsim_test,
+    #            drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.5, gpq = FALSE,)),
+    # tar_target(plots_denscheck_priorsim_test,
+    #            plotDensCheck(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
     
     tar_target(fit_test_sansgq,
                drawTest(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = FALSE,
@@ -344,11 +344,14 @@ list(
     tar_target(plots,
                plotStanfit(stanfit, exclude = exclude)),
     
+    ## Prior predictive tests that rely on currently out-commented generated quantities
+    # tar_target(plots_denscheck_prior_test,
+    #            plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
+    
     ## Posterior predictive tests
     tar_target(residuals_test,
                scaleResiduals(cmdstanfit = fit_test, data_stan_priors)),
-    tar_target(plots_denscheck_prior_test,
-               plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
+    
     tar_target(plots_denscheck_posterior_test,
                plotDensCheck(cmdstanfit = fit_test, data_stan_priors, check = "posterior")),
     
