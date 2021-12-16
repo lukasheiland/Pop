@@ -344,7 +344,7 @@ data {
   // array[2] vector[N_species] prior_l_log;
   
   //// nu from student-t for weak priors
-  real nu_student;
+  // real nu_student;
 
 }
 
@@ -503,10 +503,10 @@ model {
   // c_a_log ~ normal(prior_c_a_log[1,], prior_c_a_log[2,]);
   // c_b_log ~ normal(prior_c_b_log[1,], prior_c_b_log[2,]);
   
-  b_log   ~ student_t(nu_student, prior_b_log[1], prior_b_log[2]); // b_log ~ normal(prior_b_log[1], prior_b_log[2]);
-  c_a_log ~ student_t(nu_student, prior_c_a_log[1], prior_c_a_log[2]); // c_a_log ~ normal(prior_c_a_log[1], prior_c_a_log[2]);
-  c_b_log ~ student_t(nu_student, prior_c_b_log[1], prior_c_b_log[2]); // c_b_log ~ normal(prior_c_b_log[1], prior_c_b_log[2]);
-  c_j_log ~ student_t(nu_student, prior_c_j_log[1], prior_c_j_log[2]); // c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]);
+  b_log ~ normal(prior_b_log[1], prior_b_log[2]); // b_log ~ student_t(nu_student, prior_b_log[1], prior_b_log[2]); // 
+  c_a_log ~ normal(prior_c_a_log[1], prior_c_a_log[2]); // c_a_log ~ student_t(nu_student, prior_c_a_log[1], prior_c_a_log[2]);
+  c_b_log ~ normal(prior_c_b_log[1], prior_c_b_log[2]); // c_b_log ~ student_t(nu_student, prior_c_b_log[1], prior_c_b_log[2]);
+  c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]); // c_j_log ~ student_t(nu_student, prior_c_j_log[1], prior_c_j_log[2]);
   
   g_log ~ normal(prior_g_log[1,], prior_g_log[2,]);
   h_log ~ normal(prior_h_log[1,], prior_h_log[2,]);
@@ -515,7 +515,7 @@ model {
   l_log ~ normal(prior_l_log[1], prior_l_log[2]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]);
   
-  s_log ~ student_t(nu_student, prior_s_log[1], prior_s_log[2]); // s_log ~ normal(prior_s_log[1], prior_s_log[2]);
+  s_log ~ normal(prior_s_log[1], prior_s_log[2]); // s_log ~ student_t(nu_student, prior_s_log[1], prior_s_log[2]);
 
   
   // same priors for both species
@@ -574,10 +574,10 @@ generated quantities {
   //———————————————————————————————————————————————————————————————————//    
   
   ///// Priors -----------------------------------
-  real b_log_prior = student_t_rng(nu_student, prior_b_log[1], prior_b_log[2]); // real b_log_prior = normal_rng(prior_b_log[1], prior_b_log[2]);
-  real c_a_log_prior = student_t_rng(nu_student, prior_c_a_log[1], prior_c_a_log[2]); // real c_a_log_prior = normal_rng(prior_c_a_log[1], prior_c_a_log[2]);
-  real c_b_log_prior = student_t_rng(nu_student, prior_c_b_log[1], prior_c_b_log[2]); // real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]);
-  real c_j_log_prior = student_t_rng(nu_student, prior_c_j_log[1], prior_c_j_log[2]); // real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]);
+  real b_log_prior = normal_rng(prior_b_log[1], prior_b_log[2]); // real b_log_prior = student_t_rng(nu_student, prior_b_log[1], prior_b_log[2]); 
+  real c_a_log_prior = normal_rng(prior_c_a_log[1], prior_c_a_log[2]); // real c_a_log_prior = student_t_rng(nu_student, prior_c_a_log[1], prior_c_a_log[2]);
+  real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]); // real c_b_log_prior = student_t_rng(nu_student, prior_c_b_log[1], prior_c_b_log[2]); 
+  real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]); // real c_j_log_prior = student_t_rng(nu_student, prior_c_j_log[1], prior_c_j_log[2]);
   
   vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
   vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
@@ -589,7 +589,7 @@ generated quantities {
   // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
   // real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]);
   
-  real s_log_prior = student_t_rng(nu_student, prior_s_log[1], prior_s_log[2]); // real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
+  real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]); // real s_log_prior = student_t_rng(nu_student, prior_s_log[1], prior_s_log[2]); // 
   
   vector[N_species] vector_b_log_prior = to_vector(normal_rng(rep_vector(prior_b_log[1], N_species), rep_vector(prior_b_log[2], N_species)));
   vector[N_species] vector_c_a_log_prior = to_vector(normal_rng(rep_vector(prior_c_a_log[1], N_species), rep_vector(prior_c_a_log[2], N_species)));
@@ -615,35 +615,35 @@ generated quantities {
   }
   
   
-  //// Prior simulation
-  vector<lower=0>[L_yhat] y_hat_prior;
-  vector<lower=0>[L_y] y_hat_prior_rep;
-  vector<lower=0>[L_y] y_hat_prior_rep_offset;
-  // vector<lower=0>[L_y] offset_zeta_prior;
-  array[L_y] real<lower=0> y_prior_sim;
-                   
-  //  vector<lower=0>[L_y] zeta_prior_rep = zeta_prior[rep_protocol2y];
-  
-  //  for(j in 1:L_y) {
-  //  	if (offset[j] == 0) {
-  //  		offset_zeta_prior[j] = zeta_prior_rep[j];
-  //  	} else {
-  //  		offset_zeta_prior[j] = offset[j];
-  //  	}
-  //  }
- 
-  y_hat_prior = unpack(state_init_log, time_max, times,
-                       vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
-                       ba_a_avg, ba_a_upper,
-                       n_obs, n_yhat, // varying numbers per loc
-                       N_species, N_pops, L_yhat, N_locs, // fixed numbers
-                       i_j, i_a, i_b);
- 
-  y_hat_prior_rep = y_hat_prior[rep_yhat2y];
-  y_hat_prior_rep_offset = y_hat_prior_rep .* offset; // offset_zeta_prior
-
-
-  y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsmethodTax2y]); // , [0, 0, 0]', L_y
+//  //// Prior simulation
+//  vector<lower=0>[L_yhat] y_hat_prior;
+//  vector<lower=0>[L_y] y_hat_prior_rep;
+//  vector<lower=0>[L_y] y_hat_prior_rep_offset;
+//  // vector<lower=0>[L_y] offset_zeta_prior;
+//  array[L_y] real<lower=0> y_prior_sim;
+//                   
+//  //  vector<lower=0>[L_y] zeta_prior_rep = zeta_prior[rep_protocol2y];
+//  
+//  //  for(j in 1:L_y) {
+//  //  	if (offset[j] == 0) {
+//  //  		offset_zeta_prior[j] = zeta_prior_rep[j];
+//  //  	} else {
+//  //  		offset_zeta_prior[j] = offset[j];
+//  //  	}
+//  //  }
+// 
+//  y_hat_prior = unpack(state_init_log, time_max, times,
+//                       vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
+//                       ba_a_avg, ba_a_upper,
+//                       n_obs, n_yhat, // varying numbers per loc
+//                       N_species, N_pops, L_yhat, N_locs, // fixed numbers
+//                       i_j, i_a, i_b);
+// 
+//  y_hat_prior_rep = y_hat_prior[rep_yhat2y];
+//  y_hat_prior_rep_offset = y_hat_prior_rep .* offset; // offset_zeta_prior
+//
+//
+//  y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsmethodTax2y]); // , [0, 0, 0]', L_y
   
   
   //—————————————————————————————————————————————————————————————————————————//
@@ -738,16 +738,16 @@ generated quantities {
     		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.1, 0.1]) +
 	  		  normal_lpdf(sigma_k_loc | 0, 1) +		  
 	  		  normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
-	  		  student_t_lpdf(b_log | nu_student, prior_b_log[1], prior_b_log[2]) + // normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) +
-	  		  student_t_lpdf(c_a_log | nu_student, prior_c_a_log[1], prior_c_a_log[2]) + // normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) +
-	  		  student_t_lpdf(c_b_log | nu_student, prior_c_b_log[1], prior_c_b_log[2]) + // normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) +
-	  		  student_t_lpdf(c_j_log | nu_student, prior_c_j_log[1], prior_c_j_log[2]) + // normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) +
+	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) + // student_t_lpdf(b_log | nu_student, prior_b_log[1], prior_b_log[2]) +
+	  		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) + // student_t_lpdf(c_a_log | nu_student, prior_c_a_log[1], prior_c_a_log[2]) +
+	  		  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) + // student_t_lpdf(c_b_log | nu_student, prior_c_b_log[1], prior_c_b_log[2]) +
+	  		  normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) + // student_t_lpdf(c_j_log | nu_student, prior_c_j_log[1], prior_c_j_log[2]) +
 	  		  normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
 	  		  normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
 	  		  normal_lpdf(k_log | prior_k_log[1], prior_k_log[2]) +
 	  		  normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
 	  		  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
-	  		  student_t_lpdf(s_log | nu_student, prior_s_log[1], prior_s_log[2]); // normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); 
+	  		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // student_t_lpdf(s_log | nu_student, prior_s_log[1], prior_s_log[2]);
 	      			  
     // for(l in 1:L_y) {
     //   log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs_rep[l], theta_obs_rep[l]);
