@@ -152,16 +152,19 @@ predictSeedlingsSurfaces <- function(fits) {
 }
 
 saveSeedlings_s <- function(Seedlings_s) {
+  
   path <- "Data/Seedlings_s.rds"
+  if(!dir.exists(Data)) dir.create("Data")
   saveRDS(Seedlings_s, file = path)
+  
   return(path)
 }
 
 
 ## fitSeedlings --------------------------------
 # Seedlings_s  <- tar_read("Seedlings_s")
-
-fitSeedlings <- function(Seedlings_s, fitpath = "Fits.nosync") {
+# fitpath  <- tar_read("dir_fit")
+fitSeedlings <- function(Seedlings_s, fitpath) {
   
   ## predictions are on the log scale!
   # Seedlings_s %<>% 

@@ -300,9 +300,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
 # data_stan  <- tar_read("data_stan")
 # which  <- "g"
 # model_transitions  <- tar_read("model_transitions")
-# fitpath <- "Fits.nosync/"
-
-fitTransition <- function(data_stan, which, model_transitions, fitpath = "Fits.nosync/") { # priors!
+# dir_fit <- tar_read("dir_fit")
+fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit) { # priors!
   
   isg <- (which == "g")
   
@@ -518,15 +517,15 @@ selectOffset <- function(offsetname, data_stan_priors) {
 
 
 
-## drawTest --------------------------------
+## fitModel --------------------------------
 # tar_make("data_stan")
 # data_stan <- tar_read("data_stan")
 # tar_make("testmodel")
 # model <- testmodel <- tar_read("testmodel")
-
-drawTest <- function(model, data_stan, initfunc = 0.5, gpq = FALSE,
+# dir_fit  <- tar_read("dir_fit")
+fitModel <- function(model, data_stan, initfunc = 0.5, gpq = FALSE,
                      method = c("mcmc", "variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
-                     fitpath = "Fits.nosync/") {
+                     fitpath = dir_fit) {
   
   require(cmdstanr)
   
@@ -567,295 +566,33 @@ drawTest <- function(model, data_stan, initfunc = 0.5, gpq = FALSE,
                         init = initfunc, iter_sampling = iter_sampling)
   }
   
+  basename <- fit$output_files()[1] %>%
+    basename() %>%
+    tools::file_path_sans_ext() %>%
+    str_replace("-[1-9]-", "-x-")
+  
   ## Write an empty file to indicate the used offset
   if ( !is.null(attr(data_stan, "offsetname")) ) {
-    basename <- fit$output_files()[1] %>%
-      basename() %>%
-      tools::file_path_sans_ext() %>%
-      str_replace("-[1-9]-", "-x-")
     file.create(file.path(fitpath, paste0(basename, "_", attr(data_stan, "offsetname"), ".txt")), showWarnings = TRUE)
   } 
   
-  return(fit)
-}
-
-
-## draw --------------------------------
-# data_stan_prior <- tar_read("data_stan_prior")
-
-draw <- function(model, data_stan, initfunc) {
+  attr(fit, "basename") <- basename
   
   return(fit)
 }
 
 
-
-## summarizeFit --------------------------------
-# fit <- tar_read("fit")
-# fit <- tar_read("fit_test")
-
-summarizeFit <- function(fit, exclude = NULL) {
-  
-  allpar <- fit$metadata()$stan_variables
-  includepar <- setdiff(allpar, exclude)
-  summary <- fit$summary(includepar)
-  
-  summarypath <- fit$output_files()[1] %>%
-    stringr::str_replace("-1-", "-x-") %>%
-    stringr::str_replace(".csv", "_summary.csv")
-  
-  write.csv(summary, summarypath)
-  
-  head(summary, 20) %>%
-    as.data.frame() %>%
-    print()
-  
-  return(summary)
-}
-
-
-## readStanfit --------------------------------
-# fit  <- tar_read("fit")
-# fit  <- tar_read("fit_test")
-## stanfit <- readStanfit(fit, purge = T)
-
-readStanfit <- function(fit, purge = FALSE) {
-  
-  outputfile <- fit$output_files()
-  stanfit <- rstan::read_stan_csv(outputfile)
-  
-  ## This is to purge draws with NaN values from the model for plotting. NaNs can arise in generated quantities ...
-  if (purge) {
-    draws <- stanfit@sim$samples
-    completerow <- lapply(draws, function(d) complete.cases(d)) %>% as.data.frame() %>% apply(1, all)
-    stanfit@sim$samples <- lapply(draws, function(D) {attr(D, "sampler_params") <-  attr(D, "sampler_params")[completerow,]; D[completerow,] })
-    
-    n_draws_complete <- sum(completerow)
-    n_draws <- stanfit@sim$n_save
-    diff_complete <- stanfit@sim$n_save - n_draws_complete
-    stanfit@sim$n_save <- rep(n_draws_complete, stanfit@sim$chains)
-    stanfit@sim$iter <- stanfit@sim$iter - diff_complete[1]
-    stanfit@sim$permutation <- lapply(stanfit@sim$permutation, function(p) p[!(p %in% n_draws[1]:n_draws_complete)])
-    
-    message("There were ", diff_complete[1], " draws with NaNs, that were purged from the fit.")
-  }
-  
-  return(stanfit)
-}
-
-
-## extractDraws --------------------------------
-# stanfit  <- tar_read("stanfit")
-# stanfit  <- tar_read("stanfit_test")
-# helpers_exclude  <- tar_read("helpers_exclude")
-
-
-extractDraws <- function(stanfit, exclude = helpers_exclude) {
-  
-  draws <- rstan::extract(stanfit, pars = exclude, include = F)
-  
-  return(draws)
-}
-
-
-## plotStanfit --------------------------------
-# stanfit  <- tar_read("stanfit")
-# stanfit  <- tar_read("stanfit_test")
-# stanfit  <- tar_read("stanfit_test_plotting")
-# exclude <- tar_read("exclude")
-
-## plotStanfit(stanfit, exclude)
-
-plotStanfit <- function(stanfit, exclude) {
-  
-  plotRidges <- function(startswith, fit = stanfit) {
-    bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith, ignore.case = F)))
-  }
-  
-  usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
-  basename <- attr(stanfit, "model_name") %>%
-    str_replace("-[1-9]-", "-x-")
-  parname <- setdiff(stanfit@model_pars, exclude)
-  parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]"))) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
-  parname_sansprior <- parname[!grepl("prior$", parname)]
-
-  
-  traceplot <- rstan::traceplot(stanfit, pars = parname_sansprior, include = T)
-  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior"))))
-  ridgeplots <- parallel::mclapply(parnamestart, plotRidges, mc.cores = getOption("mc.cores", 7L))
-  ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots)
-  
-  # parallelplot_c <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with(c("c_", "s_"))))
-  # parallelplot_others <- bayesplot::mcmc_parcoord(stanfit, pars = vars(!matches(c(exclude, "c_", "log_", "phi_", "lp_", "s_", "_prior"))))
-  
-  plots <- list(traceplot = traceplot,
-                ridgeplotgrid = ridgeplotgrid,
-                areasplot = areasplot) # parallelplot_c = parallelplot_c, parallelplot_others = parallelplot_others,
-  
-  mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".png"), p, device = "png"), plots, names(plots))
-
-  if(usedmcmc) {
-    
-    png(paste0("Fits.nosync/", basename, "_", "pairsplot", ".png"), width = 2600, height = 2600)
-    pairs(stanfit, pars = c(parname_sansprior, "lp__"), include = T)
-    dev.off()
-    
-  }
-
-  return(plots)
-}
-
-
-## plotDensCheck --------------------------------
-# cmdstanfit  <- tar_read("priorsim_test")
-# cmdstanfit  <- tar_read("fit_test")
-# data_stan_priors <- tar_read("data_stan_priors")
-# draws <- tar_read("draws_test") ## this is here as an option for plotting draw objects if the fit has NaNs in generated quantities
-
-plotDensCheck <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c("prior", "posterior")) {
-  
-  data <- data_stan_priors$y
-  Longdata <- attr(data_stan_priors, "Long")
-  grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
-
-  if(match.arg(check) == "prior") {
-    
-    if (is.null(draws)) {
-      Sim <- cmdstanfit$draws(variables = "y_prior_sim", format = "draws_matrix")
-    } else {
-      Sim <- draws$y_prior_sim
-    }
-    
-  } else if (match.arg(check) == "posterior") {
-    
-    if (is.null(draws)) {
-      Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix")
-      Fixpoint <- cmdstanfit$draws(variables = "state_fix", format = "draws_matrix")
-      # fixpointconverged <- cmdstanfit$draws(variables = "converged", format = "draws_matrix")
-      
-    } else {
-      Sim <- draws$y_hat_rep
-      
-      ## untested:
-      ## Fixpoint <- draws$state_fix
-      ## fixpointconverged <- draws$converged
-    }
-  }
-  
-  ## Don't!
-  # completerows <- complete.cases(Sim)
-  # Sim <- Sim[completerows,]
-  # attr(Sim, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
-  densplots <- list("predictions" = bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = grp))
-  
-  if (match.arg(check) == "posterior") {
-    ## Don't!
-    # Fixpoint <- Fixpoint[completerows,]
-    # attr(Fixpoint, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
-    # fixpointconverged <- fixpointconverged[completerows,]
-    # attr(fixpointconverged, "dimnames")$draw <- attr(fixpointconverged, "dimnames")$draw[completerows]
-    popstatesinfixpoint <- rep(c(rep(T, data_stan_priors$N_pops + data_stan_priors$N_species), rep(F, data_stan_priors$N_species + 1)), each = data_stan_priors$N_locs)
-    Fixpoint <- Fixpoint[, popstatesinfixpoint]
-    attr(Fixpoint, "dimnames")$variable <- rep(c(paste("pop", 1:data_stan_priors$N_pops), paste("total ba", 1:data_stan_priors$N_species)), each = data_stan_priors$N_locs)
-    
-    fixplot <- bayesplot::mcmc_areas_ridges(log(Fixpoint))
-    
-    densplots <- c(densplots, list("equilibria" = fixplot))
-      
-  }
-
+## getBaseName --------------------------------
+# cmdstanfit <- tar_read("fit_test")
+getBaseName <- function(cmdstanfit) {
   
   basename <- cmdstanfit$output_files()[1] %>%
     basename() %>%
     tools::file_path_sans_ext() %>%
     str_replace("-[1-9]-", "-x-")
   
-  plotname <- paste(names(densplots), check, sep = "_")
+  if(is.na(basename)) basename <- "Model_failed"
   
-  mapply(function(p, n) ggsave(paste0("Fits.nosync/", basename, "_", n, ".png"), p, device = "png", width = 15, height = 10), densplots, plotname)
-  ## cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria"), ncol = 1) #  axis = "b", align = "h"
-  
-  return(densplots)
-}
-
-
-## scaleResiduals --------------------------------
-# cmdstanfit  <- tar_read("fit_test")
-# cmdstanfit  <- tar_read("fit")
-# data_stan_priors  <- tar_read("data_stan_priors")
-
-scaleResiduals <- function(cmdstanfit, data_stan_priors) {
-  
-  Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
-  Sim[is.na(Sim)] <- 0
-  y <- data_stan_priors$y
-  y_hat <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix") %>% apply(2, median, na.rm = T)
-  y_hat[is.na(y_hat)] <- 0
-  
-  Longdata <- attr(data_stan_priors, "Long")
-  grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
-  
-  residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = y_hat, integerResponse = T)
-
-  basename <- cmdstanfit$output_files()[1] %>%
-    basename() %>%
-    tools::file_path_sans_ext() %>%
-    str_replace("-[1-9]-", "-x-")
-  
-  png(paste0("Fits.nosync/", basename, "_", "DHARMa", ".png"), width = 1600, height = 1000)
-  plot(residuals, quantreg = T, smoothScatter = F)
-  dev.off()
-  
-  # residuals_grouped <- recalculateResiduals(residuals, group = grp)
-  
-  png(paste0("Fits.nosync/", basename, "_", "DHARMa_grouped", ".png"), width = 2200, height = 800)
-  plot(residuals, form = grp, quantreg = T, smoothScatter = F)
-  dev.off()
-  
-  return(residuals)
-}
-
-
-## testSensitivity ------------------------------------------------------------
-# fit <- tar_read(fit_test_pq)
-# include <- tar_read(parname)
-
-## For CJSdist, we consider an ad hoc threshold ≥ 0.05 to be indicative of sensitivity. For a normal distribution, this corresponds to the mean differing by approximately more than 0.3 standard deviations,
-## or the standard deviation differing by a factor greater than approximately 0.3, when the power-scaling factor is changed by a factor of two.
-
-testSensitivity <- function(fit, include, measure = "cjs_dist") {
-  sensitivity <- powerscale_sensitivity(fit,
-                                        variables = include,
-                                        log_prior_fn = extract_log_prior, # require(priorsense)
-                                        div_measure = measure)
-  senspath <- fit$output_files()[1] %>%
-    stringr::str_replace("-1-", "-x-") %>%
-    stringr::str_replace(".csv", "_sensitivity.csv")
-  write.csv(sensitivity[[1]], senspath)
-  
-  return(sensitivity)
-}
-
-
-## plotSensitivity ------------------------------------------------------------
-# fit <- tar_read(fit_test)
-# include <- tar_read()
-plotSensitivity <- function(fit, include, measure = "cjs_dist") {
-  senssequence <- powerscale_sequence(fit,
-                                      variables = include,
-                                      log_prior_fn = extract_log_prior, # require(priorsense)
-                                      div_measure = measure)
-  
-  plot_powerscale <- powerscale_plot_dens(senssequence,
-                                          variables = names(senssequence$base_draws)[1:(length(senssequence$base_draws)-3)]) ## These are the variable names in "include", but with indices.
-  
-  basename <-  fit$output_files()[1] %>%
-    basename() %>%
-    tools::file_path_sans_ext() %>%
-    str_replace("-[1-9]-", "-x-")
-  
-  ggsave(paste0("Fits.nosync/", basename, "_", "sens_powerscale", ".pdf"), plot_powerscale, width = 42, height = 7)
-  
-  return(plot_powerscale)
+  return(basename)
 }
 
