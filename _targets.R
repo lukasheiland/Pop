@@ -356,7 +356,7 @@ targets_posterior <- list(
   
   ## Generate
   tar_target(residuals_test,
-             generateResiduals(cmdstanfit = fit_test, data_stan_priors)),
+             generateResiduals(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
   tar_target(Trajectories_test,
              generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname,
                                   time = seq(1, 5001, by = 250), thinstep = 50, usemean = F)),
