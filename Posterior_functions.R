@@ -532,6 +532,18 @@ plotParametersConditional <- function(cmdstanfit, parname, path) {
   freq_major <- cmdstanfit$draws(variables = "major_fix", format = "draws_matrix") %>%
     rowMeans()
   
+  ## Compare random effects
+  ## also: K_loc_log_raw * sigma_k_loc
+  # draws_L_major <- cmdstanfit$draws(variables = "L_loc") %>%
+  #   as_draws_rvars() %>%
+  #   resample_draws(weights = freq_major)
+  # draws_L_minor <- cmdstanfit$draws(variables = "L_loc") %>%
+  #   as_draws_rvars() %>%
+  #   resample_draws(weights = 1-freq_major)
+  # 
+  # diff <- draws_L_major[[1]] - draws_L_minor[[1]]
+
+  
   draws_par <- cmdstanfit$draws(variables = parname) %>%
     as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
   
