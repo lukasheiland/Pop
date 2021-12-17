@@ -484,7 +484,7 @@ model {
   
   // ... for special offset L
   to_vector(K_loc_log_raw) ~ std_normal(); // Random intercept for l
-  sigma_k_loc ~ std_normal(); // Regularizing half-cauchy on sigma for random slope for l  ## cauchy(0, 2);
+  sigma_k_loc ~ normal(0, 0.001); // std_normal(); // Regularizing half-cauchy on sigma for random slope for l  ## cauchy(0, 2);
   // sigma_state_init ~ std_normal();
 
 
@@ -604,7 +604,7 @@ generated quantities {
   // special case L
   array[N_locs] vector<lower=0>[N_species] L_loc_prior;
   array[N_locs, N_species] real K_loc_log_raw_prior;  
-  vector<lower=0>[N_species] sigma_k_loc_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_species), rep_vector(1, N_species)))));
+  vector<lower=0>[N_species] sigma_k_loc_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_species), rep_vector(0.001, N_species)))));
   // vector<lower=0>[N_protocol] zeta_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_protocol), rep_vector(0.2, N_protocol)))));
   
   for(loc in 1:N_locs) {
@@ -736,7 +736,7 @@ generated quantities {
     // joint prior specification, sum of all logpriors
     log_prior = log_prior +
     		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.1, 0.1]) +
-	  		  normal_lpdf(sigma_k_loc | 0, 1) +		  
+	  		  normal_lpdf(sigma_k_loc | 0, 0.001) +		  
 	  		  normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
 	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) + // student_t_lpdf(b_log | nu_student, prior_b_log[1], prior_b_log[2]) +
 	  		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) + // student_t_lpdf(c_a_log | nu_student, prior_c_a_log[1], prior_c_a_log[2]) +
