@@ -58,12 +58,12 @@ extractDraws <- function(stanfit, exclude = helpers_exclude) {
 ## formatLoc --------------------------------
 ## helper for all variables that have structure array[N_locs] int/real
 # cmdstanfit <- tar_read("fit_test")
-formatLoc <- function(name, locmeans = FALSE) {
-  n_locs <- data_stan_priors$N_locs
+formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors) {
+  n_locs <- data_stan_priors_$N_locs
   
-  Draws <- cmdstanfit$draws(variables = name, format = "draws_matrix")
+  Draws <- cmdstanfit_$draws(variables = name, format = "draws_matrix")
   n_draws <- if (locmeans) 1 else nrow(Draws)
-  n_i <- cmdstanfit$metadata()$stan_variable_sizes[[name]][2]
+  n_i <- cmdstanfit_$metadata()$stan_variable_sizes[[name]][2]
   if(is.na(n_i)) n_i <- 1
   
   ## rep party
@@ -89,15 +89,15 @@ formatTwoStates <- function(cmdstanfit, data_stan_priors) {
   
   statename <- c("major_init", "major_fix", "ba_init", "ba_fix")
   
-  States_post <- lapply(statename, formatLoc)
-  States_post <- lapply(States_post, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, {i <- 2})) else S )
-  States_post %<>%
+  Twostates <- lapply(statename, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
+  Twostates <- lapply(Twostates, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, {i <- 2})) else S )
+  Twostates %<>%
     bind_rows() %>%
     mutate(tax = factor(c("Fagus", "other")[i]))
   
-  States_post$value[States_post$value == 9] <- NA
+  Twostates$value[Twostates$value == 9] <- NA
   
-  return(States_post)
+  return(Twostates)
 }
 
 
@@ -131,12 +131,14 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, path) {
 # cmdstanfit <- tar_read("fit_test")
 # data_stan_priors <- tar_read("data_stan_priors")
 # path <- tar_read("dir_publish")
-summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path = NULL) {
+summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
   n_locs <- data_stan_priors$N_locs
-  Freq_converged <- formatLoc("converged", locmeans = T)
+  Freq_converged <- formatLoc("converged", locmeans = T, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
+  
+  write.csv(Freq_converged, file.path(path, paste0(basename_cmdstanfit, "Freq_fixpoint_converged.csv")))
   
   message(sum(Freq_converged$value != 1), " of ", n_locs, " locations have not always converged to fixpoint.")
   return(Freq_converged)
@@ -482,36 +484,82 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 
 
 ## plotTwoStates --------------------------------
-# cmdstanfit <- tar_read("States_post")
+# Twostates <- tar_read("Twostates_test")
 # path  <- tar_read("dir_publish")
 # basename  <- tar_read("basename_fit_test")
-plotTwoStates <- function(States_post, path, basename) {
+plotTwoStates <- function(Twostates, path, basename) {
   
-  # S <- pivot_wider(States_post, names_from = "var") %>%
-  #   mutate(major_fix = as.logical(major_fix), major_fix = as.logical(major_fix))
-  #   
-  # 
-  # ggplot(S, aes(x = tax, y = ba_fix, col = major_fix)) +
-  #   geom_violin(trim = FALSE)
-  #   # geom_jitter(position = position_jitter(0.2))
+  T_major <- pivot_wider(Twostates, names_from = "var") %>%
+    mutate(major_fix = as.logical(major_fix), major_fix = as.logical(major_fix))
+
+  plot_major <- ggplot(T_major, aes(x = tax, y = log(ba_fix), col = major_fix)) +
+    geom_violin(trim = FALSE) +
+    ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority")
+    # geom_jitter(position = position_jitter(0.2))
   
-  W <- filter(States_post, str_starts(var, "ba")) %>%
+  
+  T_when <- filter(Twostates, str_starts(var, "ba")) %>%
     rename(when = var) %>%
     group_by(when, loc, draw) %>%
     mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
     ungroup()
   
-  whendiagram <- ggplot(W, aes(x = when, y = log(value), col = tax)) +
-    geom_violin(trim = FALSE)
+  plot_when <- ggplot(T_when, aes(x = when, y = log(value), col = tax)) +
+    geom_violin(trim = FALSE) +
+    ggtitle("BA at equilibirum and at initial time")
   
-  testplot <- ggplot(W, aes(x = when, y = diff_ba)) +
-    geom_violin(trim = FALSE)
+  plot_diff <- ggplot(T_when, aes(x = when, y = diff_ba)) +
+    geom_violin(trim = FALSE) +
+    ggtitle("log_BA_Fagus - log_BA_other at equilibirum and at initial time")
   
-  stateplots <- list(whendiagram, testplot)
+  plots <- list(plot_twostates_major = plot_major, plot_twostates_when = plot_when, plot_twostates_diff = plot_diff)
   
-  ## ggsave
+  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".png"), p, device = "png"), plots, names(plots))
   
-  return(stateplots)
+  return(plots)
+}
+
+
+
+## plotParametersConditional --------------------------------
+# parname  <- tar_read("parname_sim")
+# cmdstanfit  <- tar_read("fit_test")
+# path  <- tar_read("dir_publish")
+plotParametersConditional <- function(cmdstanfit, parname, path) {
+  
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  
+  freq_major <- cmdstanfit$draws(variables = "major_fix", format = "draws_matrix") %>%
+    rowMeans()
+  
+  draws_par <- cmdstanfit$draws(variables = parname) %>%
+    as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
+  
+  draws_par_weighted_major <- posterior::resample_draws(draws_par, weights = freq_major, method = "simple") %>%
+    posterior::rename_variables(b_log_major = "b_log", c_a_log__major = "c_a_log", c_b_log_major = "c_b_log", 
+                                 c_j_log_major = "c_j_log", g_log_major = "g_log", h_log_major = "h_log", 
+                                 k_log_major = "k_log", l_log_major = "l_log", r_log_major = "r_log", 
+                                 s_log_major = "s_log")
+  draws_par_weighted_minor <- posterior::resample_draws(draws_par, weights = (1-freq_major), method = "simple") %>%
+    posterior::rename_variables(b_log_minor = "b_log", c_a_log__minor = "c_a_log", c_b_log_minor = "c_b_log", 
+                                 c_j_log_minor = "c_j_log", g_log_minor = "g_log", h_log_minor = "h_log", 
+                                 k_log_minor = "k_log", l_log_minor = "l_log", r_log_minor = "r_log", 
+                                 s_log_minor = "s_log")
+  d <- posterior::bind_draws(draws_par_weighted_major, draws_par_weighted_minor)
+  names_order <- names(d) %>% sort()
+  d <- d[names_order]
+  d_1 <- lapply(d, function(i) i[1]) %>% as_draws_array()
+  d_2 <- lapply(d, function(i) i[2]) %>% as_draws_array()
+  
+  plots_parameters_conditional <- list(
+    Fagus.sylvatica = bayesplot::mcmc_areas_ridges(d_1),
+    other = bayesplot::mcmc_areas_ridges(d_2)
+    )
+  
+  plotgrid <- cowplot::plot_grid(plotlist = plots_parameters_conditional, ncol = 2, labels = names(plots_parameters_conditional))
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_conditional", ".png"), plotgrid, dev = "png", height = 20, width = 24)
+
+  return(plots_parameters_conditional)
 }
 
 
@@ -539,6 +587,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename) {
   
   return(plot)
 }
+
 
 
 # ————————————————————————————————————————————————————————————————————————————————— #

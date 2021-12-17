@@ -143,7 +143,9 @@ targets_parname <- list(
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
   tar_target(parname,
              c("phi_obs", "sigma_k_loc",
-               "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "k_log", "l_log", "r_log", "s_log"))
+               "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "k_log", "l_log", "r_log", "s_log")),
+  tar_target(parname_sim,
+             setdiff(parname, c("phi_obs", "sigma_k_loc")))
 )
 
 
@@ -377,8 +379,10 @@ targets_posterior <- list(
   #            plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
   tar_target(plots_predictions_posterior_test,
              plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "posterior", path = dir_publish)),
+  tar_target(plots_parameters_conditional_test,
+             plotParametersConditional(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish)),
   tar_target(plots_twostates_test,
-             plotTwoStates(cmdstanfit = fit_test, path = dir_publish)),
+             plotTwoStates(Twostates_test, path = dir_publish, basename = basename_fit_test)),
   tar_target(plot_trajectories_test,
              plotTrajectories(Trajectories_test, path = dir_publish, basename = basename_fit_test)),
   tar_target(plot_trajectories_mean_test,
