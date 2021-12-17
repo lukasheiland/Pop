@@ -154,7 +154,7 @@ predictSeedlingsSurfaces <- function(fits) {
 saveSeedlings_s <- function(Seedlings_s) {
   
   path <- "Data/Seedlings_s.rds"
-  if(!dir.exists(Data)) dir.create("Data")
+  if(!dir.exists("Data")) dir.create("Data")
   saveRDS(Seedlings_s, file = path)
   
   return(path)

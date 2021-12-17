@@ -155,7 +155,7 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path = NULL) {
 # path  <- tar_read("dir_fit")
 generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
   
-  basename_cmdstanfit <- attr(basename_cmdstanfit, "basename")
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
 
   Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
   Sim[is.na(Sim)] <- 0
