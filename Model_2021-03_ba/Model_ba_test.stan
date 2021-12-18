@@ -391,9 +391,9 @@ parameters {
   // matrix[N_beta, N_species] Beta_r; // // (J+) flow into the system, dependent on env
   // matrix[N_beta, N_species] Beta_s; // (J-), here still unconstrained on log scale, shading affectedness of juveniles from A
   
-  //// Special case l  
-  matrix[N_locs, N_species] K_loc_log_raw; // array[N_locs] vector[N_species] K_loc_log_raw; // here real array is used for compatibility with to_vector
-  vector<lower=0>[N_species] sigma_k_loc;
+  //// Random intercepts for input k
+  // matrix[N_locs, N_species] K_loc_log_raw; // array[N_locs] vector[N_species] K_loc_log_raw; // here real array is used for compatibility with to_vector
+  // vector<lower=0>[N_species] sigma_k_loc;
   
   
   //// Errors
@@ -417,8 +417,12 @@ parameters {
 
 transformed parameters {
 
+  //// Random intercepts for input k
+  // array[N_locs] vector<lower=0>[N_species] K_loc;
+
   array[N_locs] vector<lower=0>[N_species] L_loc;
-  array[N_locs] vector<lower=0>[N_species] K_loc;
+  
+  
   array[N_locs] vector[N_pops] state_init_log;
   // vector[L_y] offset_zeta;
   
@@ -435,13 +439,18 @@ transformed parameters {
   
   for(loc in 1:N_locs) {
   
-  	K_loc[loc, ] = exp(k_log + sigma_k_loc .* K_loc_log_raw[loc, ]');
-    L_loc[loc, ] = K_loc[loc, ] + exp(l_log + L_smooth_log[loc, ]);
+  	//// Random intercept version
+  	// K_loc[loc, ] = exp(k_log + sigma_k_loc .* K_loc_log_raw[loc, ]');
+    // L_loc[loc, ] = K_loc[loc, ] + exp(l_log + L_smooth_log[loc, ]);
     	// k + l * L_smooth
     	// k == exp(k_log + normal(k_loc, sigma)) // intercept, with non-centered loc-level random intercepts
     	// l * L_smooth == exp(l_log + L_smooth_log)
+    	
+    L_loc[loc, ] = exp(k_log) + exp(l_log + L_smooth_log[loc, ]);
+    	// k + l * L_smooth
+    	// l * L_smooth == exp(l_log + L_smooth_log)
                    
-    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [1, 1, 2, 2, 3, 3]';
+    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [0.05, 0.05, 1, 1, 1, 1]';
   }
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
@@ -482,11 +491,11 @@ model {
   	// Levels of obsmethodTax: j.F a.F ba.F j.o a.o ba.o
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
   
-  // ... for special offset L
-  to_vector(K_loc_log_raw) ~ std_normal(); // Random intercept for l
-  sigma_k_loc ~ normal(0, 0.001); // std_normal(); // Regularizing half-cauchy on sigma for random slope for l  ## cauchy(0, 2);
+  // Random intercepts for input k
+  // to_vector(K_loc_log_raw) ~ std_normal(); // Random intercept for l
+  // sigma_k_loc ~ std_normal(); // Regularizing half-cauchy on sigma for random slope for l  ## cauchy(0, 2);
+  
   // sigma_state_init ~ std_normal();
-
 
   // sigma_process ~ normal(0, 0.01);
   // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
@@ -601,16 +610,21 @@ generated quantities {
   
   array[N_obsmethodTax] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.05, 0.02])); // 
   
-  // special case L
+  //// Random intercepts for input k
+  // array[N_locs, N_species] real K_loc_log_raw_prior;  
+
   array[N_locs] vector<lower=0>[N_species] L_loc_prior;
-  array[N_locs, N_species] real K_loc_log_raw_prior;  
-  vector<lower=0>[N_species] sigma_k_loc_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_species), rep_vector(0.001, N_species)))));
+  
+  // vector<lower=0>[N_species] sigma_k_loc_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_species), rep_vector(1, N_species)))));
   // vector<lower=0>[N_protocol] zeta_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_protocol), rep_vector(0.2, N_protocol)))));
   
   for(loc in 1:N_locs) {
-  
-    K_loc_log_raw_prior[loc,] = normal_rng(rep_vector(0, N_species), rep_vector(1, N_species));
-    L_loc_prior[loc, ] = exp(k_log_prior + sigma_k_loc_prior .* to_vector(K_loc_log_raw_prior[loc, ])) + exp(l_log_prior + L_smooth_log[loc, ]);
+  	
+  	//// Random intercept version
+    // K_loc_log_raw_prior[loc,] = normal_rng(rep_vector(0, N_species), rep_vector(1, N_species));
+    // L_loc_prior[loc, ] = exp(k_log_prior + sigma_k_loc_prior .* to_vector(K_loc_log_raw_prior[loc, ])) + exp(l_log_prior + L_smooth_log[loc, ]);
+
+    L_loc_prior[loc, ] = exp(k_log_prior) + exp(l_log_prior + L_smooth_log[loc, ]);
 
   }
   
@@ -730,14 +744,14 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [1, 1, 2, 2, 3, 3]);
+      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [0.05, 0.05, 1, 1, 1, 1]);
     }
     
     // joint prior specification, sum of all logpriors
     log_prior = log_prior +
     		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.1, 0.1]) +
-	  		  normal_lpdf(sigma_k_loc | 0, 0.001) +		  
-	  		  normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
+	  		  // normal_lpdf(sigma_k_loc | 0, 1) +		  
+	  		  // normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
 	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) + // student_t_lpdf(b_log | nu_student, prior_b_log[1], prior_b_log[2]) +
 	  		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) + // student_t_lpdf(c_a_log | nu_student, prior_c_a_log[1], prior_c_a_log[2]) +
 	  		  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) + // student_t_lpdf(c_b_log | nu_student, prior_c_b_log[1], prior_c_b_log[2]) +
