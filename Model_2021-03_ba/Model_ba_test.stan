@@ -450,7 +450,7 @@ transformed parameters {
     	// k + l * L_smooth
     	// l * L_smooth == exp(l_log + L_smooth_log)
                    
-    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [0.05, 0.05, 1, 1, 1, 1]';
+    state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [2, 2, 2, 2, 1, 1]';
   }
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
@@ -744,7 +744,7 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [0.05, 0.05, 1, 1, 1, 1]);
+      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [2, 2, 2, 2, 1, 1]);
     }
     
     // joint prior specification, sum of all logpriors

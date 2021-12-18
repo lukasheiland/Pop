@@ -204,13 +204,13 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   Prior_state_init_log <- filter(S, isy0) %>%
     filter(stage %in% c("J", "A", "B")) %>%
     group_by(pop, loc) %>% ## for global: group_by(pop, loc) %>%
-    summarize(y_prior = log(mean(y_prior, na.rm = T))) %>% ## log(mean()) is imperfect and itroduces a small bias, but median won't work because of the many zeroes
+    summarize(sd = sd(log(y_prior)), y_prior = log(mean(y_prior, na.rm = T))) %>% ## log(mean) is imperfect and introduces a small bias, median won't work because of the many zeroes
     ungroup() %>%
     dplyr::mutate(y_prior = na_if(y_prior, -Inf)) %>%
     group_by(pop) %>%
     dplyr::mutate(y_prior_min = min(y_prior, na.rm = T)) %>%
     dplyr::mutate(y_prior = dplyr::coalesce(y_prior, y_prior_min)) %>%
-    dplyr::select(-y_prior_min) %>%
+    dplyr::select(-y_prior_min, -sd) %>%
     ungroup() %>%
     pivot_wider(names_from = pop, values_from = y_prior) %>%
     arrange(loc) %>%
@@ -364,9 +364,9 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   }
   
   if(widthfactor_reg != 1) {
-    pars_k <- lapply(pars_k, function(p) c(p["mean"], widthfactor_trans*p["sd"]))
-    pars_l <- lapply(pars_l, function(p) c(p["mean"], widthfactor_trans*p["sd"]))
-    pars_r <- lapply(pars_r, function(p) c(p["mean"], widthfactor_trans*p["sd"]))
+    pars_k <- lapply(pars_k, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
+    pars_l <- lapply(pars_l, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
+    pars_r <- lapply(pars_r, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
     # pars_seedlings <- lapply(pars_seedlings, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
   }
   
