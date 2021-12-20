@@ -529,10 +529,30 @@ plotParametersConditional <- function(cmdstanfit, parname, path) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
+  isconverged <- cmdstanfit$draws(variables = "converged", format = "draws_matrix") %>%
+    apply(1, all)
+  
+  message("Dropped ", sum(!isconverged), " draw(s), because the simulations have not converged to fixpoint.")
+  
   freq_major <- cmdstanfit$draws(variables = "major_fix", format = "draws_matrix") %>%
+    subset_draws(draw = which(isconverged)) %>%
     rowMeans()
   
+
+  ## Compare random effects
+  ## also: K_loc_log_raw * sigma_k_loc
+  # draws_L_major <- cmdstanfit$draws(variables = "L_loc") %>%
+  #   as_draws_rvars() %>%
+  #   resample_draws(weights = freq_major)
+  # draws_L_minor <- cmdstanfit$draws(variables = "L_loc") %>%
+  #   as_draws_rvars() %>%
+  #   resample_draws(weights = 1-freq_major)
+  # 
+  # diff <- draws_L_major[[1]] - draws_L_minor[[1]]
+
+  
   draws_par <- cmdstanfit$draws(variables = parname) %>%
+    subset_draws(draw = which(isconverged)) %>%
     as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
   
   draws_par_weighted_major <- posterior::resample_draws(draws_par, weights = freq_major, method = "simple") %>%
@@ -540,7 +560,7 @@ plotParametersConditional <- function(cmdstanfit, parname, path) {
                                  c_j_log_major = "c_j_log", g_log_major = "g_log", h_log_major = "h_log", 
                                  k_log_major = "k_log", l_log_major = "l_log", r_log_major = "r_log", 
                                  s_log_major = "s_log")
-  draws_par_weighted_minor <- posterior::resample_draws(draws_par, weights = (1-freq_major), method = "simple") %>%
+  draws_par_weighted_minor <- posterior::resample_draws(draws_par, weights = 1 - freq_major, method = "simple") %>%
     posterior::rename_variables(b_log_minor = "b_log", c_a_log__minor = "c_a_log", c_b_log_minor = "c_b_log", 
                                  c_j_log_minor = "c_j_log", g_log_minor = "g_log", h_log_minor = "h_log", 
                                  k_log_minor = "k_log", l_log_minor = "l_log", r_log_minor = "r_log", 
