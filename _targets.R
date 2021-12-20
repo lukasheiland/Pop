@@ -75,7 +75,7 @@ targets_settings <- list(
                # prior_k_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                # prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                # prior_r_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
-               prior_s_log = c(-3, 3)
+               prior_s_log = c(-2, 3)
              )
           )
 )
