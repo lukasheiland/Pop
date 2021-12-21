@@ -189,7 +189,7 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 # parname <- tar_read("parname")
 # data_stan_priors <- tar_read("data_stan_priors")
 
-generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = locpars = "state_init_log",
+generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = "state_init_log",
                                  time = seq(1, 5001, by = 100), thinstep = 1, usemean = FALSE) {
   
   parname <- setdiff(parname, c("phi_obs", "sigma_l", "sigma_k_loc"))
