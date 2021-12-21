@@ -189,7 +189,8 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 # parname <- tar_read("parname")
 # data_stan_priors <- tar_read("data_stan_priors")
 
-generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = seq(1, 5001, by = 100), thinstep = 1, usemean = FALSE) {
+generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = locpars = "state_init_log",
+                                 time = seq(1, 5001, by = 100), thinstep = 1, usemean = FALSE) {
   
   parname <- setdiff(parname, c("phi_obs", "sigma_l", "sigma_k_loc"))
   parname_sans_log <- gsub("_log$", "", parname)
@@ -265,7 +266,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = s
   }
   
   
-  Draws <- cmdstanfit$draws(variables = c(parname, "state_init_log", "L_loc"), format = "draws_list") %>%
+  Draws <- cmdstanfit$draws(variables = c(parname, locparname), format = "draws_list") %>%
     thin_draws(thin = thinstep)
   
   # Makes pars to be a nested list/data.frame[[parameters]][[draws]]
@@ -289,37 +290,30 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, time = s
     pars <- lapply(pars, as.data.frame)
   }
   
-  D_loc <- subset_draws(Draws, variable = c("state_init_log", "L_loc")) %>%
-    as_draws_rvars()
-  
-  L_loc <- D_loc$L_loc
-  
-  State_init <- D_loc %$%
-    state_init_log %>%
-    exp()
-  
   ## Nested simulations: locs/draws
   
-  iterateModel_draws <- function(state_init, l_loc, pars, time, usemean) {
-    S_i <- if(usemean) mean(state_init) else as_draws_matrix(state_init)
+  iterateModel_draws <- function(locpars, pars, time, usemean) {
     
-    ## Assign local parameters to draws
-    L_l <- if(usemean) mean(l_loc) else as_draws_matrix(l_loc)
-    pars <- lapply(1:length(pars), function(i) within(pars[[i]], l <- c(L_l[i,])))
+    locpars <- lapply(locpars, function(x) if(usemean) mean(x) else as_draws_matrix(x))
+
+    ## Assign local parameters to draws, adopt manually if necessary
+    pars <- lapply(1:length(pars), function(i) within(pars[[i]], l <- c(locpars$L_loc[i,])))
     
-    return( lapply(1:nrow(S_i), function(i) iterateModel(c(S_i[i,]), pars = pars[[i]], time)) )
+    return( lapply(1:n_locs, function(i) iterateModel(c(locpars$state_init[i,]), pars = pars[[i]], time)) )
   }
   
-  iterateLocs <- function(i, S, L, p, t, um) {
-    iterateModel_draws(S[i,], L[i,], pars = p, time = t, usemean = um)
+  iterateLocs <- function(i, lp, p, t, um) {
+    iterateModel_draws(locpars = lapply(lp, function(x) x[i,]), pars = p, time = t, usemean = um)
   }
   
-  # State_init <- State_init[10:12,]
-  # L_loc <- L_loc[10:12,]
-  # time <- 1:1000
   
-  sims <- future_sapply(1:nrow(L_loc), iterateLocs,
-                        S = State_init, L = L_loc, p = pars, t = time, um = usemean, simplify = F) # a nested list[locs, draws] of matrices[times]
+  draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
+    as_draws_rvars()
+  draws_loc$state_init <- exp(draws_state_init_loc)
+  n_locs <- data_stan_priors$N_locs
+  
+  sims <- future_sapply(1:n_locs, iterateLocs,
+                        lp = draws_loc, p = pars, t = time, um = usemean, simplify = F) # a nested list[locs, draws] of matrices[times]
   sims <- lapply(sims, bind_rows, .id = "draw")
   sims <- bind_rows(sims, .id = "loc")
   
