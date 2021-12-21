@@ -521,11 +521,11 @@ plotTwoStates <- function(Twostates, path, basename) {
 
 
 
-## plotParametersConditional --------------------------------
+## plotConditional --------------------------------
 # parname  <- tar_read("parname_sim")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
-plotParametersConditional <- function(cmdstanfit, parname, path) {
+plotConditional <- function(cmdstanfit, parname, path) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -538,7 +538,7 @@ plotParametersConditional <- function(cmdstanfit, parname, path) {
     subset_draws(draw = which(isconverged)) %>%
     rowMeans()
   
-
+  
   ## Compare random effects
   ## also: K_loc_log_raw * sigma_k_loc
   # draws_L_major <- cmdstanfit$draws(variables = "L_loc") %>%
@@ -549,36 +549,48 @@ plotParametersConditional <- function(cmdstanfit, parname, path) {
   #   resample_draws(weights = 1-freq_major)
   # 
   # diff <- draws_L_major[[1]] - draws_L_minor[[1]]
-
+  
+  renameAll <- function(draws, suffix = "major") {
+    
+    name <- posterior::variables(draws)
+    name_new <- paste(name, suffix, sep = "_")
+    posterior::variables(draws) <- name_new
+    
+    return(draws)
+  }
+  
   
   draws_par <- cmdstanfit$draws(variables = parname) %>%
     subset_draws(draw = which(isconverged)) %>%
     as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
   
   draws_par_weighted_major <- posterior::resample_draws(draws_par, weights = freq_major, method = "simple") %>%
-    posterior::rename_variables(b_log_major = "b_log", c_a_log__major = "c_a_log", c_b_log_major = "c_b_log", 
-                                 c_j_log_major = "c_j_log", g_log_major = "g_log", h_log_major = "h_log", 
-                                 k_log_major = "k_log", l_log_major = "l_log", r_log_major = "r_log", 
-                                 s_log_major = "s_log")
+    renameAll(suffix = "major")
+  
   draws_par_weighted_minor <- posterior::resample_draws(draws_par, weights = 1 - freq_major, method = "simple") %>%
-    posterior::rename_variables(b_log_minor = "b_log", c_a_log__minor = "c_a_log", c_b_log_minor = "c_b_log", 
-                                 c_j_log_minor = "c_j_log", g_log_minor = "g_log", h_log_minor = "h_log", 
-                                 k_log_minor = "k_log", l_log_minor = "l_log", r_log_minor = "r_log", 
-                                 s_log_minor = "s_log")
+    renameAll(suffix = "minor")
+  
+  
   d <- posterior::bind_draws(draws_par_weighted_major, draws_par_weighted_minor)
   names_order <- names(d) %>% sort()
   d <- d[names_order]
+  
+  if (parname %in% c("L_loc")) {
+    ## just a smaller subset for random effects
+    d <- lapply(d, function(x) x[20:40,])
+  }
+  
   d_1 <- lapply(d, function(i) i[1]) %>% as_draws_array()
   d_2 <- lapply(d, function(i) i[2]) %>% as_draws_array()
   
   plots_parameters_conditional <- list(
     Fagus.sylvatica = bayesplot::mcmc_areas_ridges(d_1),
     other = bayesplot::mcmc_areas_ridges(d_2)
-    )
+  )
   
   plotgrid <- cowplot::plot_grid(plotlist = plots_parameters_conditional, ncol = 2, labels = names(plots_parameters_conditional))
   ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_conditional", ".png"), plotgrid, dev = "png", height = 20, width = 24)
-
+  
   return(plots_parameters_conditional)
 }
 
