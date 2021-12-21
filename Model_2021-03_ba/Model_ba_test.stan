@@ -37,7 +37,8 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(vector[] state_init_log, int[] time_max, int[] times,
-                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector[] L_loc, vector r_log, vector s_log,
+                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector k_log, vector r_log, vector s_log,
+                // vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector[] L_loc, vector r_log, vector s_log,
                 // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_log, vector h_log, vector[] L_loc, matrix R_log, matrix S_log,
                 vector ba_a_avg, real ba_a_upper,
                 int[] n_obs, int[] n_yhat,
@@ -58,7 +59,8 @@ functions {
                         
                         simulate(exp(state_init_log[loc]),
                                  time_max[loc],
-                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
+                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log),
+                                 // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
                                  i_j, i_a, i_b);
@@ -323,12 +325,14 @@ data {
   array[2] vector[N_species] prior_g_log;
   array[2] vector[N_species] prior_h_log;
   
-  array[2] vector[N_species] prior_k_log;
-  array[2] vector[N_species] prior_l_log;
-  array[2] vector[N_species] prior_r_log;
   
+  //// DECIDE FOR PRIOR STRUCTURE
+  array[2] vector[N_species] prior_k_log;
+  // vector[N_species] prior_k_log;
+  // array[2] vector[N_species] prior_l_log;
   // vector[2] prior_l_log;
-  // vector[2] prior_r_log;
+  array[2] vector[N_species] prior_r_log;
+  // vector[N_species] prior_r_log;
   
   vector[2] prior_s_log;
   
@@ -381,7 +385,7 @@ parameters {
   vector[N_species] s_log;
   
   vector[N_species] k_log;
-  vector[N_species] l_log;
+  // vector[N_species] l_log;
   vector[N_species] r_log;
 
   
@@ -440,13 +444,15 @@ transformed parameters {
   for(loc in 1:N_locs) {
   
   	//// Random intercept version
-  	// K_loc[loc, ] = exp(k_log + sigma_k_loc .* K_loc_log_raw[loc, ]');
-    // L_loc[loc, ] = K_loc[loc, ] + exp(l_log + L_smooth_log[loc, ]);
+  	//// K_loc[loc, ] = exp(k_log + sigma_k_loc .* K_loc_log_raw[loc, ]');
+    //// L_loc[loc, ] = K_loc[loc, ] + exp(l_log + L_smooth_log[loc, ]);
     	// k + l * L_smooth
     	// k == exp(k_log + normal(k_loc, sigma)) // intercept, with non-centered loc-level random intercepts
     	// l * L_smooth == exp(l_log + L_smooth_log)
     	
-    L_loc[loc, ] = exp(k_log) + exp(l_log + L_smooth_log[loc, ]);
+    
+    // L version
+    // L_loc[loc, ] = exp(k_log) + exp(l_log + L_smooth_log[loc, ]);
     	// k + l * L_smooth
     	// l * L_smooth == exp(l_log + L_smooth_log)
                    
@@ -464,7 +470,8 @@ transformed parameters {
   
   
   vector<lower=0>[L_yhat] y_hat = unpack(state_init_log, time_max, times,
-                                b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
+                                  b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, k_log, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
+                                // b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 // b_log, c_a_log, c_b_log, C_j_log, G_log, h_log, L_loc, R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat, // varying numbers per loc
@@ -521,7 +528,7 @@ model {
   h_log ~ normal(prior_h_log[1,], prior_h_log[2,]);
 
   k_log ~ normal(prior_k_log[1], prior_k_log[2]);
-  l_log ~ normal(prior_l_log[1], prior_l_log[2]);
+  // l_log ~ normal(prior_l_log[1], prior_l_log[2]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]);
   
   s_log ~ normal(prior_s_log[1], prior_s_log[2]); // s_log ~ student_t(nu_student, prior_s_log[1], prior_s_log[2]);
@@ -592,7 +599,7 @@ generated quantities {
   vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
   
   vector[N_species] k_log_prior = to_vector(normal_rng(prior_k_log[1,], prior_k_log[2,]));
-  vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
+  // vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));
   
   // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
@@ -613,20 +620,20 @@ generated quantities {
   //// Random intercepts for input k
   // array[N_locs, N_species] real K_loc_log_raw_prior;  
 
-  array[N_locs] vector<lower=0>[N_species] L_loc_prior;
+  // array[N_locs] vector<lower=0>[N_species] L_loc_prior;
   
   // vector<lower=0>[N_species] sigma_k_loc_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_species), rep_vector(1, N_species)))));
   // vector<lower=0>[N_protocol] zeta_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_protocol), rep_vector(0.2, N_protocol)))));
   
-  for(loc in 1:N_locs) {
+  // for(loc in 1:N_locs) {
   	
   	//// Random intercept version
-    // K_loc_log_raw_prior[loc,] = normal_rng(rep_vector(0, N_species), rep_vector(1, N_species));
-    // L_loc_prior[loc, ] = exp(k_log_prior + sigma_k_loc_prior .* to_vector(K_loc_log_raw_prior[loc, ])) + exp(l_log_prior + L_smooth_log[loc, ]);
+    //// K_loc_log_raw_prior[loc,] = normal_rng(rep_vector(0, N_species), rep_vector(1, N_species));
+    //// L_loc_prior[loc, ] = exp(k_log_prior + sigma_k_loc_prior .* to_vector(K_loc_log_raw_prior[loc, ])) + exp(l_log_prior + L_smooth_log[loc, ]);
 
-    L_loc_prior[loc, ] = exp(k_log_prior) + exp(l_log_prior + L_smooth_log[loc, ]);
+    // L_loc_prior[loc, ] = exp(k_log_prior) + exp(l_log_prior + L_smooth_log[loc, ]);
 
-  }
+  // }
   
   
 //  //// Prior simulation
@@ -689,7 +696,7 @@ generated quantities {
   int greater_c_j = c_j_log[1] > c_j_log[2];
   int greater_g = g_log[1] > g_log[2];
   int greater_h = h_log[1] > h_log[2];
-  int greater_l = l_log[1] > l_log[2];
+  // int greater_l = l_log[1] > l_log[2];
   int greater_k = k_log[1] > k_log[2];
   int greater_r = r_log[1] > r_log[2];
   int greater_s = s_log[1] > s_log[2];
@@ -759,7 +766,7 @@ generated quantities {
 	  		  normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
 	  		  normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
 	  		  normal_lpdf(k_log | prior_k_log[1], prior_k_log[2]) +
-	  		  normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
+	  		  // normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
 	  		  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
 	  		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // student_t_lpdf(s_log | nu_student, prior_s_log[1], prior_s_log[2]);
 	      			  

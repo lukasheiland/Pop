@@ -72,9 +72,11 @@ targets_settings <- list(
                prior_c_j_log = c(-7, 4),
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
-               # prior_k_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
+               # prior_k_log = c(0, 3),
+               prior_k_log = cbind(Fagus = c(0, 3), others = c(0, 3)),
                # prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
-               # prior_r_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
+               # prior_r_log = c(0, 3),
+               prior_r_log = cbind(Fagus = c(0, 3), others = c(0, 3)),
                prior_s_log = c(-2, 3)
              )
           )
@@ -142,8 +144,8 @@ targets_parname <- list(
   tar_target(exclude,
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
   tar_target(parname,
-             c("phi_obs", # "sigma_k_loc",
-               "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "k_log", "l_log", "r_log", "s_log")),
+             c("phi_obs", # "sigma_k_loc", # "l_log",
+               "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "k_log", "r_log", "s_log")),
   tar_target(parname_sim,
              setdiff(parname, c("phi_obs", "sigma_k_loc")))
 )
@@ -259,7 +261,8 @@ targets_wrangling <- list(
                  plotSurfaces(surfaces_Seedlings_s, path = dir_publish),
                  iteration = "list"),
       tar_target(fits_Seedlings,
-                 fitSeedlings(Data_Seedlings_s, fitpath = dir_fit)) 
+                 fitSeedlings(Data_Seedlings_s, fitpath = dir_fit),
+                 iteration = "list")
     ),
     
     
