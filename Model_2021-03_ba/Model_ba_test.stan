@@ -424,7 +424,7 @@ transformed parameters {
   //// Random intercepts for input k
   // array[N_locs] vector<lower=0>[N_species] K_loc;
 
-  array[N_locs] vector<lower=0>[N_species] L_loc;
+  // array[N_locs] vector<lower=0>[N_species] L_loc;
   
   
   array[N_locs] vector[N_pops] state_init_log;
@@ -720,7 +720,8 @@ generated quantities {
       
       //// fix point, given parameters
       state_fix[loc] = iterateFix(exp(state_init_log[loc]),
-                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
+                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log),
+                                  // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
                                   // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(h_log), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
                                   ba_a_avg, ba_a_upper,
                                   N_species, N_pops,
