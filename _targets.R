@@ -365,10 +365,10 @@ targets_posterior <- list(
              generateResiduals(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
   tar_target(Trajectories_test,
              generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = c("state_init_log"),
-                                  time = seq(1, 5001, by = 250), thinstep = 50, usemean = F)),
+                                  time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 50, usemean = F)),
   tar_target(Trajectories_mean_test,
              generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = c("state_init_log"),
-                                  time = seq(1, 5001, by = 125), thinstep = 25, usemean = T)),
+                                  time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 25, usemean = T)),
   
   ## Formatted posterior data stuctures
   tar_target(Twostates_test,
