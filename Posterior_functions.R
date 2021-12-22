@@ -190,7 +190,7 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 # data_stan_priors <- tar_read("data_stan_priors")
 
 generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = "state_init_log",
-                                 time = seq(1, 5001, by = 100), thinstep = 1, usemean = FALSE) {
+                                 time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 1, usemean = FALSE) {
   
   parname <- setdiff(parname, c("phi_obs", "sigma_l", "sigma_k_loc"))
   parname_sans_log <- gsub("_log$", "", parname)
@@ -209,7 +209,10 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     c_j <- pars$c_j # Length n_species vector
     g <- pars$g # Length n_species vector of transition rates.
     h <- pars$h # Length n_species vector of transition rates.
-    l <- pars$l # Length n_species vector of input rates.
+    
+    # l <- pars$l # Length n_species vector of input rates.
+    l <- pars$k # Length n_species vector of input rates.
+    
     r <- pars$r # Length n_species vector of input rates
     s <- pars$s # Length n_species vector of shading rates
     
@@ -295,11 +298,11 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   iterateModel_draws <- function(locpars, pars, time, usemean) {
     
     locpars <- lapply(locpars, function(x) if(usemean) mean(x) else as_draws_matrix(x))
-
+    
     ## Assign local parameters to draws, adopt manually if necessary
     pars <- lapply(1:length(pars), function(i) within(pars[[i]], l <- c(locpars$L_loc[i,])))
     
-    return( lapply(1:n_locs, function(i) iterateModel(c(locpars$state_init[i,]), pars = pars[[i]], time)) )
+    return( lapply(1:length(pars), function(i) iterateModel(c(locpars$state_init[i,]), pars = pars[[i]], time)) )
   }
   
   iterateLocs <- function(i, lp, p, t, um) {
@@ -309,7 +312,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   
   draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
     as_draws_rvars()
-  draws_loc$state_init <- exp(draws_state_init_loc)
+  draws_loc$state_init <- exp(draws_loc$state_init_log)
   n_locs <- data_stan_priors$N_locs
   
   sims <- future_sapply(1:n_locs, iterateLocs,
