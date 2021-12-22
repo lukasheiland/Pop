@@ -117,44 +117,38 @@ tabulateFreqConverged|function|42fd8f24b1f3c9d1||||||||||||||
 plots_denscheck_posterior_test|stem|9dde830cffd48da9|bbc638bd0648ce7b|e6b5d08da2fda9b3|812171098||t18977.8326032159s|61c24f2f5524e83f|74344606|rds|vector|||338.833|Removed 5803 rows containing nonfinite values stat_density.|
 dir_fit|stem|fbcb1cc6a393a2d5|6edb4c0accf3f5e3|f47bb13d95a320a1|-1519351870||t18977.9635794231s|93a4d4dc4116d568|64|rds|vector|||5.766||
 dir_publish|stem|adbf5e957d4413c7|e00f9557ba741f4a|f47bb13d95a320a1|1910222810||t18977.9635806268s|a44f74ecaf054496|60|rds|vector|||5.733||
-weakpriors|stem|d9863717b68644e2|be6ac4f559a92131|9ee3ac5a8444da29|-1879221107||t18977.9638674817s|7dead8e41ac4f62d|130|rds|vector|||5.764||
-fits_Seedlings|stem|3b32615ca3518739|dba35c61738a2403|c528c35e1c45e81b|809945682||t18977.9644695714s|c78d234f18511d11|291460|rds|vector|||50.87||
 Data_big_area|stem|e7740bf36e336d30|3f85c4389924c6e4|86882e83ff0cdc60|1906756081||t18977.964895224s|4ecc2a1e283e65c6|17975432|rds|vector|||44.284|all weights equal to zero|
 fit_g|stem|1dc0bb5dab32ce53|07b78dae8d3964ca|6bfc1244c63f6059|128175024||t18977.9654088869s|a7947babca5552ca|12490976|rds|vector|||16.718||
 fit_h|stem|268123b348c7f424|ffa7bcb3ba3f6a1c|6bfc1244c63f6059|468382782||t18977.9654214333s|30dff500ce4d4dcc|15259025|rds|vector|||16.993||
 Freq_converged_test|stem|b0e33a7b622ab9f5|2e591b42b70e2ca5|96db6368625e4acb|-1070284701||t18978.4602419396s|1e0c41a98502c370|1161|rds|vector|||15.363||
 extractParametersConditional|function|82df1c57f1972681||||||||||||||
 plot_parameters_conditional_test|stem|8bda4855697ba3f8|5a0f2994b8feb0cd|c1078a4cbd455a15|-1542482323||t18978.6390070468s|7e2edc91aa15f5a4|31362471|rds|vector|||30.38||
-parname|stem|1c77bfc28f5c4b27|7e8c306f7c6ed204|a3dad144c40657ed|-1053533873||t18979.5167401536s|f0d5811415b6b792|97|rds|vector|||5.88||
 parname_sim|stem|1a1ece45006d5358|e5a26df5069250c5|10a3671c1cc077f0|924448756||t18979.5167402925s|e7d9c43b1c994be3|87|rds|vector|||0.001||
-Twostates_test|stem|f1277e5ea5cf36d4|05366304baf9b807|72e541e4792e48d6|1850607635||t18979.6948908076s|38a5e8584ae52a89|8877943|rds|vector|||47.469||
-sensitivity_test|stem|2b75067a76554a51|0d38d214cf374056|fe9d41717b43d341|-16223955||t18979.6950259943s|a070f44eef8f2482|821|rds|vector|||61.472|collapsing to unique x values|
-plot_powerscale_test|stem|f5c46990d4dd1f43|b1b925041b7edb00|3c38d09ed691e8fd|461645073||t18979.695413591s|8e3390829a3d7261|69253066|rds|vector|||68.387|Computation failed in stat_densityweights must all be finite|
-residuals_test|stem|a7c5d1c807df2f40|ae72abdb8acf3ca2|2472279767032ebb|-1334224030||t18979.6955063698s|51e2858323e5ab8b|14646477|rds|vector|||80.684||
-plots_twostates_test|stem|1efbde13871a5f97|a2feabf2f185ffab|78f892a314cc4c48|2129742285||t18979.6958017433s|7ee57a23315620dc|176005522|rds|vector|||28.689||
-stanfit_test|stem|0c5dd58325f5ffd9|34001f1c4f114152|7664ed0a4092eb21|-1726047245||t18979.696777263s|7c775bbcce4fa9e2|343373693|rds|vector|||126.815||
 plots_test|stem|ccfd65d201b47434|8d0df35cf6eec450|1e320d7d0490de3c|1637481436||t18979.7154399621s|34ac1ea3ec8d8176|8297437437|rds|vector|||102.035||
 file_Seedlings_s|stem|e3b56bae0aa0e97d|7ab73f6b1c2c0890|10a83ceea51c7045|1895998084|Data/Seedlings_s.rds|t18979.8664908852s|bf3f3f70ef253c14|71621|file|vector|||6.041||
 file_Stages_s|stem|c44843525c27b523|4bbafa2144b1b6e6|745a8d74b4cdf4f0|-1399817009|Data/Stages_s.rds|t18979.862713113s|8054732a27db4df9|45900015|file|vector|||5.736||
 data_stan|stem|b4a6b3833f7d7e66|0dfd980f22e35cc7|429df2ae32357781|1263995833||t18979.8691882292s|938be7ee639a8f10|874205|rds|vector|||8.511||
-data_stan_priors|stem|286b403ecd61805a|047c612410fdcbac|d58981d1b71af65b|1623270232||t18979.8693402679s|e9d1021d121f9655|874573|rds|vector|||6.562||
-data_stan_priors_offset|stem|9a27d9c648e316bd|93304eaf3cc05984|8b08f2c4ad36ea61|-44048254||t18979.8694376301s|60dc5abd7c162c9e|874602|rds|vector|||6.237||
-file_model_test|stem|1987ebe4152d55c0|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18979.8688308642s|25b292321dc41ce2|35584|file|vector|||6.134||
-model_test|stem|4d0920c6dd341d66|a3aa00c06cce5e55|36097d936fe6cd38|-1162399619||t18979.8698115693s|ad70be90f0f1252f|7503|rds|vector|||24.702|cannot create file homelukasheilandProjectsPopModel_202103_baModel_ba_test, reason Text file busy|
-fit_test|stem|829d96864a637ef4|e99e6e05373bf41a|b828d1d8c44ed445|-1560265059||t18979.8983944718s|3e60168e784050bd|247708|rds|vector|||2469.318||
-summary_test|stem|0681d033b8eed3b8|d95c1c88e0a4c842|92d46fa4755be8b6|-908423816||t18979.9002530567s|3f5cf45435a84c47|932474|rds|vector|||160.513||
-basename_fit_test|stem|18b11238b3f6360f|5aea74d8a0b30f75|9b9fd624a57db493|-779128580||t18979.9003550022s|e7d9c43b1c994be3|87|rds|vector|||6.314||
 plots_parameters_conditional_test|stem|59b02cd42842b1b4|5a0f2994b8feb0cd|2b3601ac7b6315c0|1174978598||t18981.4354187677s|57db0814e1024173|62535139|rds|vector|||40.64||
-Trajectories_mean_test|stem|1676e5d99ff14809|d5c5cf911d11d611|59e5c20e2dc6acd4|1693771343||t18981.4406422957s|346d5cb941b2cd39|929944|rds|vector|||193.199||
 plot_trajectories_mean_test|stem|ea64e7215a133c97|427c9e3d37b94c35|5e9350086a8c0adf|-1727154408||t18981.440679472s|be06f176666cb1fe|4104024|rds|vector|||2.641||
+plotParametersConditional|function|075a505aeed5332f||||||||||||||
+weakpriors|stem|972e918e67896615|d6543bff45e2c3b9|d38fd9c4c2c5e51f|-1879221107||t18982.8220750602s|2721c650416a264a|204|rds|vector|||5.666||
+fits_Seedlings|stem|6ccb12ca26615c1e|dba35c61738a2403|c528c35e1c45e81b|809945682||t18982.8225920102s|7089bcf153cfb899|291448|rds|list|||50.032||
+data_stan_priors|stem|029e3b0d530839e2|047c612410fdcbac|669054ada67f9dff|1623270232||t18982.8227368729s|6eca3a7ff9cb6643|874545|rds|vector|||6.259||
+data_stan_priors_offset|stem|2e6e0c87201c3401|93304eaf3cc05984|70889942046ac13e|-44048254||t18982.8228252535s|d647b1a460928dd9|874568|rds|vector|||5.716||
+file_model_test|stem|5f81c462c612a3c6|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18982.8279310493s|a67a9432c53533f4|36350|file|vector|||5.871||
+model_test|stem|b8b763256113a2e1|a3aa00c06cce5e55|aa1156f1fc18e894|-1162399619||t18982.8283785079s|7cdea06f995a92f7|7499|rds|vector|||20.317||
+fit_test|stem|05f56a1da3e06c50|e99e6e05373bf41a|07ea0a014af98c03|-1560265059||t18982.846414999s|f5b0ebacfea0b04e|248091|rds|vector|||1558.121||
+summary_test|stem|bab959070d2a7cdc|d95c1c88e0a4c842|f2bfe205a06a7458|-908423816||t18982.8482883525s|eb1bc6ebe11aeefb|911386|rds|vector|||161.784||
+parname|stem|9d5dec62b902ee87|f18e4b335e6e8899|a3dad144c40657ed|-1053533873||t18982.8483850665s|9903306e1685fb67|94|rds|vector|||6.194||
+basename_fit_test|stem|b3f7fc1020f893b8|5aea74d8a0b30f75|77b98f5eb59bbcda|-779128580||t18982.8483886313s|e7d9c43b1c994be3|87|rds|vector|||5.932||
+Trajectories_mean_test|stem|1676e5d99ff14809|d5c5cf911d11d611|0ad33568613fb0d8|1693771343||t18981.4406422957s||929944|rds|vector|||17.792||Cant find the following variables in the output L_loc
 formatStanData|function|f10b3a7a9fdc4dfe||||||||||||||
 prepareSmallData|function|b0078b5b76b7d331||||||||||||||
-targets_paths|object|c2dd8beb46f50efa||||||||||||||
+targets_paths|object|76bb8468e97d0d3d||||||||||||||
 joinStages|function|7397d1cb556dd863||||||||||||||
 generateTrajectories|function|0e9fd1cd5d66eb84||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
-plotParametersConditional|function|075a505aeed5332f||||||||||||||
-targets_parname|object|1a1ac80d5e0a33dd||||||||||||||
+targets_parname|object|39b05368a2a11ef2||||||||||||||
 formatLoc|function|d23ab0d660ebec1c||||||||||||||
 wrangleSeedlings_s|function|784cc575022a6a0e||||||||||||||
 fitS|function|b1d146216eef03f2||||||||||||||
@@ -163,11 +157,11 @@ plotTwoStates|function|12ad5b72b6423c7b||||||||||||||
 countTransitions|function|658905ce538460fd||||||||||||||
 predictSurfaces|function|3eb087f154760704||||||||||||||
 fitSeedlings|function|5ddedeeb851ebf1d||||||||||||||
-targets_fits|object|05a3b59221e40f23||||||||||||||
+targets_fits|object|690cacac9cd871a2||||||||||||||
 plotSurfaces|function|1c0ca88eb7706abd||||||||||||||
 getBaseName|function|bc0f3afd657645b4||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
-targets_wrangling|object|d5a111ccba24506a||||||||||||||
+targets_wrangling|object|897ec52f3cc0dcd4||||||||||||||
 testSensitivity|function|caf845ea982e5d9c||||||||||||||
 plotSensitivity|function|f9d72a6289ca1187||||||||||||||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
@@ -186,14 +180,71 @@ package|object|502aae896c2d5f37||||||||||||||
 fitTransition|function|b7d57da1d9003513||||||||||||||
 prepareBigData|function|0dd61edfabb03695||||||||||||||
 fitModel|function|476d352acca5bdb7||||||||||||||
-targets_posterior|object|5a0337e06ac189a3||||||||||||||
+plotConditional|function|0941778131811246||||||||||||||
+targets_posterior|object|350a3993e3556d5f||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 generateResiduals|function|ee65238c9cfa3743||||||||||||||
 saveStages_s|function|fa4458d1e4dd1149||||||||||||||
 wrangleSeedlings|function|cd7e1217ce1881d1||||||||||||||
 formatPriors|function|c8c26c93fba5ceb3||||||||||||||
-targets_settings|object|b2e791ffd734be19||||||||||||||
+targets_settings|object|4b6ccf374d43a291||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 formatTwoStates|function|8f3e10eb32f70059||||||||||||||
 summarizeFreqConverged|function|2ee086d5470d2bea||||||||||||||
-plots_predictions_posterior_test|stem|194afecb663126a9|0d0dce247df7e7f1|44bcb7ad0e665445|1289869218||t18981.462736698s|435b9c16f55d26b1|74481747|rds|vector|||332.703|Removed 5803 rows containing nonfinite values stat_density.|
+Twostates_test|stem|9216cd1cdd580e3f|05366304baf9b807|0677c30ba4bc21a7|1850607635||t18982.8579737344s|e6d889b281570196|8945282|rds|vector|||45.632||
+sensitivity_test|stem|fc3550de74a120cb|0d38d214cf374056|be760f0faa8ea05c|-16223955||t18982.858102995s|54660a1f43b0f728|783|rds|vector|||59.375|Some Pareto k diagnostic values are too high. See helpparetokdiagnostic for details.|
+plot_powerscale_test|stem|3f3cb16d632be4f2|b1b925041b7edb00|5d182cc4e097c61e|461645073||t18982.8584524432s|9bf2a66f85357b75|62970543|rds|vector|||63.547|Computation failed in stat_densityweights must all be finite|
+residuals_test|stem|7d6ca0ad4c7bf185|ae72abdb8acf3ca2|c31fd35c6a4245f5|-1334224030||t18982.858580315s|e00171c60c533a89|14761171|rds|vector|||80.888||
+plots_twostates_test|stem|fe2c867b3e823f25|a2feabf2f185ffab|af7469a2f794634b|2129742285||t18982.8588882813s|5af8f8d89476f5ee|174997142|rds|vector|||28.515|Removed 938 rows containing nonfinite values stat_ydensity.|
+stanfit_test|stem|ca7523a5b62b8360|34001f1c4f114152|c98091c2b300b34f|-1726047245||t18982.8597310681s|8c3ac98e74b5d4a3|350841344|rds|vector|||117.779||
+plots_predictions_posterior_test|stem|18e740d61b9e80db|0d0dce247df7e7f1|0a02f7519b4b6cfa|1289869218||t18982.8618631281s|568832001215fcb4|74005583|rds|vector|||333.047|Removed 5803 rows containing nonfinite values stat_density.|
+formatStanData|function|f10b3a7a9fdc4dfe
+prepareSmallData|function|b0078b5b76b7d331
+targets_paths|object|c2dd8beb46f50efa
+joinStages|function|7397d1cb556dd863
+generateTrajectories|function|611ad758f6e0b8b5
+constructConstantGrid|function|33d54800694377c7
+targets_parname|object|8f65c529f8e93b1d
+formatLoc|function|d23ab0d660ebec1c
+wrangleSeedlings_s|function|784cc575022a6a0e
+fitS|function|b1d146216eef03f2
+plotPredictions|function|fe18d4f95e8a3814
+plotTwoStates|function|12ad5b72b6423c7b
+countTransitions|function|658905ce538460fd
+predictSurfaces|function|3eb087f154760704
+fitSeedlings|function|7e855a35b0371c7a
+targets_fits|object|05a3b59221e40f23
+plotSurfaces|function|1c0ca88eb7706abd
+getBaseName|function|bc0f3afd657645b4
+joinEnv|function|2488b8203673870c
+targets_wrangling|object|1cfa0e2adb3a494f
+testSensitivity|function|caf845ea982e5d9c
+plotSensitivity|function|f9d72a6289ca1187
+scaleData|function|0d0c01b1b3160a22
+summarizeEnvByCluster|function|5fcaa758babda781
+onserver|object|9e40f752d98efc7d
+selectClusters|function|e84b8a94cea77208
+plotTrajectories|function|da431305788e60fa
+predictSeedlingsSurfaces|function|44c809b12bbdfe6d
+saveSeedlings_s|function|59d33f1cf2682535
+predictS|function|77bcabfef1d8569c
+summarizeFit|function|8e8d8c2bfad4f316
+plotStanfit|function|0a19bac585299fbb
+selectOffset|function|b54325a6e33c293c
+extractStanfit|function|4b30186cd18f28f8
+package|object|502aae896c2d5f37
+fitTransition|function|b7d57da1d9003513
+prepareBigData|function|0dd61edfabb03695
+fitModel|function|476d352acca5bdb7
+plotConditional|function|0941778131811246
+targets_posterior|object|5080b5457c9be0fd
+extractDraws|function|3dff977b003c47b4
+generateResiduals|function|ee65238c9cfa3743
+saveStages_s|function|fa4458d1e4dd1149
+wrangleSeedlings|function|cd7e1217ce1881d1
+formatPriors|function|c8c26c93fba5ceb3
+targets_settings|object|0b843de3e1a5574d
+cleanEnv|function|06a0767a0f88a954
+formatTwoStates|function|8f3e10eb32f70059
+summarizeFreqConverged|function|2ee086d5470d2bea
+file_model_test|stem|5f81c462c612a3c6|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t18982.871330267s|a67a9432c53533f4|36350|file|vector|||5.871||
