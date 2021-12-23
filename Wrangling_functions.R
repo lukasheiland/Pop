@@ -293,6 +293,7 @@ joinStages <- function(B, J,
 
 ## fitS --------------------------------
 # BA_s <- tar_read("BA_s")
+# BA_s <- tar_read("seedlings_s")
 # BA <- BA_s[[1]]
 fitS <- function(BA) {
   
@@ -322,7 +323,7 @@ fitS <- function(BA) {
   # n_k_lat <- round(dist_lat / 8000)
   
   ### mgcv
-  fit <- mgcv::gam(ba_ha ~ s(Y, X, bs = "sos", k = 600), family = nb, data = BA_coordinates) ## The first argument is taken to be latitude (in degrees) and the second longitude (in degrees).
+  fit <- gam(ba_ha ~ s(Y, X, bs = "sos", k = 600), family = nb, data = BA_coordinates) ## The first argument is taken to be latitude (in degrees) and the second longitude (in degrees).
   
   attr(fit, "taxon") <- attr(BA, "taxon")
 
@@ -483,7 +484,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     dplyr::select(-n_plots) %>%
     
     ## get clusters with at least some Fagus
-    mutate(anyFagus = any(count_ha > 0 && tax == "Fagus.sylvatica")) %>%
+    mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica")) %>%
     ungroup()
   
     # unique(Stages_select$clusterid) %>% length() ## 456
@@ -509,7 +510,13 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
   
   message(paste(Stages_select %>% pull(clusterid) %>% unique() %>% length(), "clusters after selectClusters()."))
-  if(anyNA(Stages_select$time)) warning("selectClusters(): There are missing values in variable `time`.")
+  if(anyNA(Stages_select$time)) {
+    
+    n_na <- sum(is.na(Stages_select$time))
+    Stages_select %<>%
+      filter(!is.na(time))
+    warning("selectClusters(): There were ", n_na, " missing values in variable `time`. These rows have been dropped.")
+  }
   
   ## Filter clusters based on succession
   # Stages_select %<>%
