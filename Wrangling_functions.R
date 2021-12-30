@@ -512,10 +512,15 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
   message(paste(Stages_select %>% pull(clusterid) %>% unique() %>% length(), "clusters after selectClusters()."))
   if(anyNA(Stages_select$time)) {
     
-    n_na <- sum(is.na(Stages_select$time))
+    n_na <- Stages_select %>%
+      filter(is.na(time)) %>%
+      pull(clusterid) %>%
+      n_distinct()
+    
     Stages_select %<>%
       filter(!is.na(time))
-    warning("selectClusters(): There were ", n_na, " missing values in variable `time`. These rows have been dropped.")
+
+    warning("selectClusters(): There were ", n_na, " clusters with missing variable `time`. These clusters have been dropped.")
   }
   
   ## Filter clusters based on succession
