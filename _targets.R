@@ -72,10 +72,8 @@ targets_settings <- list(
                prior_c_j_log = c(-7, 4),
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
-               # prior_k_log = c(0, 3),
                # prior_k_log = cbind(Fagus = c(0, 3), others = c(0, 3)),
                # prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
-               # prior_r_log = c(0, 3),
                # prior_r_log = cbind(Fagus = c(0, 3), others = c(0, 3)),
                prior_s_log = c(-2, 3)
              )
@@ -137,9 +135,10 @@ targets_parname <- list(
              c("y_hat_prior", "y_hat_prior_rep", "y_hat_prior_rep_offset", "y_prior_sim")),
   tar_target(simnames_posterior,
              c("y_hat_rep", "y_hat_rep_offset", "y_sim", "y_hat_prior",
-               "converged", "iterations_fix", "state_fix", "fixiter_max",
-               "dominant_fix", "major_fix", "ba_fix",
                "dominant_init", "major_init", "ba_init",
+               "dominant_fix", "major_fix", "ba_fix", "J_fix", "A_fix", "B_fix", 
+               "converged_fix", "iterations_fix", "fixiter_max", "eps_ba_fix",
+               "sum_ko_b_fix", "sum_ko_c_a_fix", "sum_ko_c_b_fix", "sum_ko_c_j_fix", "sum_ko_g_fix", "sum_ko_h_fix", "sum_ko_l_fix", "sum_ko_r_fix", "sum_ko_s_fix",
                "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")),
   tar_target(exclude,
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
