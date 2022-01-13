@@ -355,7 +355,6 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
   
-  ## WATCH OUT INDICES (l_log)
   pars_k <- lapply(draws_seedlings[[1]], function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_r <- lapply(draws_seedlings[[2]], function(d) MASS::fitdistr(d, "normal")$estimate)
   # pars_l <- lapply(draws_seedlings[[3]], function(d) MASS::fitdistr(d, "normal")$estimate)
