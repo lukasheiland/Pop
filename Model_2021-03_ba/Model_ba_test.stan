@@ -33,11 +33,32 @@ functions {
     return State;
   }
   
+  
+  //// Difference equations
+  vector simulate_1(vector J, vector A, vector B,
+                    vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
+                    vector ba_a_avg, real ba_a_upper,
+                    int N_spec) {
+    
+    vector[N_spec] BA = (A .* ba_a_avg) + B;
+    real BA_sum = sum(BA);
+
+    /// Model (1 iteration)
+    vector[N_spec] J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+    vector[N_spec] A_1  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
+    vector[N_spec] B_1  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+    
+    vector[N_spec] ba_1 = (A_1 .* ba_a_avg) + B_1;
+    
+    return ba_1;
+  }
+  
+  
   //// ODE integration and data assignment to one long vector is wrapped into a function here because
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(vector[] state_init_log, int[] time_max, int[] times,
-                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector k_log, vector r_log, vector s_log,
+                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector l_log, vector r_log, vector s_log,
                 // vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector[] L_loc, vector r_log, vector s_log,
                 // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_log, vector h_log, vector[] L_loc, matrix R_log, matrix S_log,
                 vector ba_a_avg, real ba_a_upper,
@@ -59,7 +80,7 @@ functions {
                         
                         simulate(exp(state_init_log[loc]),
                                  time_max[loc],
-                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log),
+                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log),
                                  // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
@@ -82,52 +103,81 @@ functions {
   
   //// Difference equations simulated up to the fix point given a maximum tolerance over all states.
   // Expects a state vector[N_pops]
-  // returns a state vector of the form [J1, …, A1, …, B1, …, BA1, …, iterations]
-  vector iterateFix(vector state_0,
-                    vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
-                    vector ba_a_avg, real ba_a_upper,
-                    int N_spec, int N_pops,
-                    int[] i_j, int[] i_a, int[] i_b,
-                    real tolerance_fix, int fixiter_max) {
+  // returns a state vector of the form [J1, J2, A1, A2, B1, B2, BA1, BA2, eps_BA1, eps_BA2, iterations]
+  vector[] iterateFix(vector state_0,
+                      vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
+                      vector ba_a_avg, real ba_a_upper,
+                      int N_spec, int[] i_j, int[] i_a, int[] i_b,
+                      real tolerance_fix, int fixiter_max) {
                        
-    vector[N_pops+N_spec] s_0 = append_row(state_0, [0, 0]'); // two additional states for BA
+        
+    /// Summed up contributions, initialize with 0 to avoid NaNs
+    vector[N_spec] sum_ko_b = rep_vector(0.0, N_spec);
+    vector[N_spec] sum_ko_c_a = sum_ko_b;
+    vector[N_spec] sum_ko_c_b = sum_ko_b;
+    vector[N_spec] sum_ko_c_j = sum_ko_b;
+    vector[N_spec] sum_ko_g = sum_ko_b;
+    vector[N_spec] sum_ko_h = sum_ko_b;
+    vector[N_spec] sum_ko_l = sum_ko_b;
+    vector[N_spec] sum_ko_r = sum_ko_b;
+    vector[N_spec] sum_ko_s = sum_ko_b;
+
     
-    //// initialize while loop conditions
-    vector[N_pops+N_spec] s_1; 
-    vector[N_spec] eps_ba = [1.0, 1.0]'; // tolerance_fix is set to <upper=0.5>, that's why it is enough to set it to one for the while loop to run
+    /// initialize while loop conditions
+    vector[N_spec] J = state_0[i_j];
+    vector[N_spec] A = state_0[i_a];
+    vector[N_spec] B = state_0[i_b];
+    
+    vector[N_spec] J_1;
+    vector[N_spec] A_1;
+    vector[N_spec] B_1;
+    vector[N_spec] BA_1;
+
+    vector[N_spec] eps_ba = rep_vector(1.0, N_spec); // tolerance_fix is set to <upper=0.5>, that's why it is enough to set it to one for the while loop to run
     int i = 0;
     // int notconvergent = 1;
-    
+    vector[N_spec] KO = rep_vector(0.0, N_spec);
+
     
     while ( max(eps_ba) > tolerance_fix && i < fixiter_max ) { // if notconvergent were a good criterion: (notconvergent && max(eps_ba) > tolerance_fix)
-      
-      vector[N_spec] J;
-      vector[N_spec] A;
-      vector[N_spec] B;
-      
-      J = s_0[i_j];
-      A = s_0[i_a];
-      B = s_0[i_b];
-      
+            
       vector[N_spec] BA = A .* ba_a_avg + B;
-      vector[N_spec] BA_1;
       real BA_sum = sum(BA);
       
       // s_1[i_j]  =  ((r .* BA)/(1 + BA_sum) + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      s_1[i_j]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      s_1[i_a]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
-      s_1[i_b]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+      J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+      A_1  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
+      B_1  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
       
-      BA_1 =  s_1[i_a] .* ba_a_avg + s_1[i_b]; // New BA as additional state.
-      s_1[(N_pops+1):] = BA_1;
-      
+      BA_1 = A_1 .* ba_a_avg + B_1; // New BA as additional state.
+
       // notconvergent = (1 <= norm(jacobian(s_1[i_j[1]], s_1[i_j[2]], s_1[i_a[1]], s_1[i_a[2]], s_1[i_b[1]], s_1[i_b[2]], b[1], b[2], c_b[1], c_b[2], c_j[1], c_j[2], g[1], g[2], h[1], h[2], l[1], l[2], r[1], r[2], s[1], s[2], ba_a_avg, ba_a_upper)) );
       eps_ba = fabs((BA_1 - BA) ./ BA_1);
-      s_0 = s_1;
       i += 1;
+      
+      /// Summed up contributions
+      sum_ko_b += BA_1 - simulate_1(J, A, B, KO, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      sum_ko_c_a += BA_1 - simulate_1(J, A, B, b, KO, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      sum_ko_c_b += BA_1 - simulate_1(J, A, B, b, c_a, KO, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      sum_ko_c_j += BA_1 - simulate_1(J, A, B, b, c_a, c_b, KO, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      sum_ko_g += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, KO, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      sum_ko_h += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, g, KO, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      sum_ko_l += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, KO, r, s, ba_a_avg, ba_a_upper, N_spec);
+      sum_ko_r += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, KO, s, ba_a_avg, ba_a_upper, N_spec);
+      sum_ko_s += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, KO, ba_a_avg, ba_a_upper, N_spec);
+      
+      /// !
+      J = J_1;
+      A = A_1;
+      B = B_1;
     }
     
-    return append_row(s_1, append_row(eps_ba, i)); // int i gets cast to real
+    // array with 3 (states) + 1 (BA) + 1 (eps) + 1 (n_iter) + 9 (parameters) variables
+    array[15] vector[N_spec] fix = {J_1, A_1, B_1, BA_1,
+                                    eps_ba, rep_vector(i, N_spec), // int i gets cast to real
+                                    sum_ko_b, sum_ko_c_a, sum_ko_c_b, sum_ko_c_j, sum_ko_g, sum_ko_h, sum_ko_l, sum_ko_r, sum_ko_s};
+
+    return fix;
   }
   
   
@@ -324,9 +374,7 @@ data {
 
   array[2] vector[N_species] prior_g_log;
   array[2] vector[N_species] prior_h_log;
-  
-  
-  //// DECIDE FOR PRIOR STRUCTURE
+    
   array[2] vector[N_species] prior_k_log;
   // vector[N_species] prior_k_log;
   // array[2] vector[N_species] prior_l_log;
@@ -366,7 +414,8 @@ transformed data {
   // vector[N_pops] y0 [N_locs, N_plots] = y[ , , 1, ];
   
   //// Data for generated quantities
-  int N_genstates = N_pops + N_species;
+  int N_fix = N_species * 15; // an array of vectors[N_specices] { J, A, B, BA, eps, n_iter, 9 * diff_ko_parameter }
+
   real factor_log = log(parfactor/timestep);
   
 }
@@ -574,9 +623,7 @@ generated quantities {
   //—————————————————————————————————————————————————————————————————————//
   // Prediction  -------------------------------------------------------//
   //———————————————————————————————————————————————————————————————————//    
-	
-  // vector[N_locs] y_hat_temp;
-  // y_hat_temp = y_hat;
+
   array[L_y] real<lower=0> y_sim;
   
   //// y_hat_rep in transformed parameters
@@ -671,23 +718,6 @@ generated quantities {
   // pgq -------------------------------------------------------------------//
   //———————————————————————————————————————————————————————————————————————//
   
-  //// Declarations of posterior quantites (as global variables).
-  // … are directly initiated with zeroes or 9, so that there are never NaNs in generated quantities.
-  int fixiter_max = 5000; 
-  array[N_locs] int converged = rep_array(9, N_locs); // tolerance has been reached
-  array[N_locs] real iterations_fix = rep_array(0, N_locs);
-  array[N_locs] vector[N_genstates+N_species+1] state_fix = rep_array(rep_vector(0, N_genstates+N_species+1), N_locs); // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …, eps_ba1, …, iterations]
-  array[N_locs] vector[N_species] ba_init = rep_array(rep_vector(0, N_species), N_locs);
-  array[N_locs] int dominant_init = converged;
-  array[N_locs] int major_init = converged;
-  array[N_locs] vector[N_species] ba_fix = ba_init;
-  array[N_locs] int dominant_fix = converged;
-  array[N_locs] int major_fix = converged;
-
-
-  //// Declarations of quantities for sensitivity checks (as global variables).
-  real log_prior = 0; // this is zero to prevent NaNs from being in the sum.
-  vector[L_y] log_lik = rep_vector(0, L_y);
   
   //// Rate tests -------------------------------------
   int greater_b = b_log[1] > b_log[2];
@@ -700,7 +730,65 @@ generated quantities {
   int greater_k = k_log[1] > k_log[2];
   int greater_r = r_log[1] > r_log[2];
   int greater_s = s_log[1] > s_log[2];
+  
+  
+  //// Declarations of posterior quantites (as global variables).
+  // … are directly initiated with zeroes or 9, so that there are never NaNs in generated quantities.
+  
+  array[N_locs, N_fix] vector[N_species] Fix = rep_array(rep_vector(0, N_species), N_locs, N_fix); // N_locs arrays of vectors[N_specices] { J, A, B, BA, eps, n_iter, 9 * diff_ko_parameter }
+  
+  // array[N_locs] vector[N_pops] state_fix = rep_array(rep_vector(0.0, N_pops), N_locs); // state_fix is a vector [J1, …, A1, …, B1, …, BA1, …]
+  array[N_locs] vector[N_species] J_fix = rep_array(rep_vector(0.0, N_species), N_locs);
+  array[N_locs] vector[N_species] A_fix = J_fix;
+  array[N_locs] vector[N_species] B_fix = J_fix;
+  array[N_locs] vector[N_species] ba_init = J_fix;
+  array[N_locs] vector[N_species] ba_fix = J_fix;
+  
+  array[N_locs] vector[N_species] eps_ba_fix = J_fix;
+  array[N_locs] real iterations_fix = rep_array(0.0, N_locs);
 
+  array[N_locs] vector[N_species] sum_ko_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_c_a_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_c_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_c_j_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_g_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_h_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_l_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_r_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_s_fix = J_fix;
+  
+  int fixiter_max = 5000;
+  
+  array[N_locs] int converged_fix = rep_array(9, N_locs); // tolerance has been reached
+
+  array[N_locs] int dominant_init = converged_fix;
+  array[N_locs] int dominant_fix = converged_fix;
+  array[N_locs] int major_init = converged_fix;
+  array[N_locs] int major_fix = converged_fix;
+  
+  //// Declarations of counterfactual posterior quantities
+  /// still uses the old format
+
+  //  array[N_locs] vector[_] state_fix_ko_b = Fix?;
+  //  array[N_locs] vector[ ] state_fix_ko_c_a = ;
+  //  array[N_locs] vector[ ] state_fix_ko_c_j = ;
+  //  // array[N_locs] vector[ ] state_fix_ko_l = ;
+  //  array[N_locs] vector[ ] state_fix_ko_k = ;
+  //  array[N_locs] vector[ ] state_fix_ko_r = ;
+  //  array[N_locs] vector[ ] state_fix_ko_s = ;
+  //  
+  //  array[N_locs] vector[N_species] contrib_b = rep_array(rep_vector(0, N_species), N_locs);;
+  //  array[N_locs] vector[N_species] contrib_c_a = contrib_b;
+  //  array[N_locs] vector[N_species] contrib_c_j = contrib_b;
+  //  // array[N_locs] vector[N_species] contrib_l = contrib_b;
+  //  array[N_locs] vector[N_species] contrib_k = contrib_b;
+  //  array[N_locs] vector[N_species] contrib_r = contrib_b;
+  //  array[N_locs] vector[N_species] contrib_s = contrib_b;
+
+  //// Declarations of quantities for sensitivity checks (as global variables).
+  real log_prior = 0; // this is zero to prevent NaNs from being in the sum.
+  vector[L_y] log_lik = rep_vector(0, L_y);
+  
 
   //// The conditional generation -------------------------------------
   if (generateposteriorq) {
@@ -715,33 +803,70 @@ generated quantities {
     
       ba_init[loc] = exp(state_init_log[loc, (N_pops-N_species+1):N_pops]) + // State B
                      ba_a_avg .* exp(state_init_log[loc, (N_species+1):(N_species+N_species)]); // State A * ba
-      dominant_init[loc] = (ba_init[loc, 1]/ba_init[loc, 2]) > 3; // BA_1 > 75%
-      major_init[loc] = ba_init[loc, 1] > ba_init[loc, 2]; // BA_1 > 50%
       
-      //// fix point, given parameters
-      state_fix[loc] = iterateFix(exp(state_init_log[loc]),
-                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log),
-                                  // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
-                                  // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(h_log), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
-                                  ba_a_avg, ba_a_upper,
-                                  N_species, N_pops,
-                                  i_j, i_a, i_b,
-                                  tolerance_fix, fixiter_max);
-                                     
-      iterations_fix[loc] = state_fix[loc, N_genstates+N_species+1];
-      converged[loc] = iterations_fix[loc] < fixiter_max;
+      /// Booleans at init
+      dominant_init[loc] = (ba_init[loc, 1]/ba_init[loc, 2]) > 3; // ba_1 > 75%
+      major_init[loc] = ba_init[loc, 1] > ba_init[loc, 2]; // ba_1 > 50%
       
-      if (converged[loc]) { // && convergent[loc]
 
-        ba_fix[loc] = state_fix[loc, (N_pops+1):N_genstates];
-        dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // BA_1 > 75%
-        major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // BA_1 > 50%
-        
-      }
+      //// Simulate fix point, given parameters
+      Fix[loc] = iterateFix(exp(state_init_log[loc]),
+                            exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log),
+                            // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
+                            // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(h_log), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
+                            ba_a_avg, ba_a_upper,
+                            N_species, i_j, i_a, i_b,
+                            tolerance_fix, fixiter_max);
+                                     
+      iterations_fix[loc] = Fix[loc, 6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
+      converged_fix[loc] = iterations_fix[loc] < fixiter_max;
       
-     //    if (y_hat_temp[loc] > 1e+07) {
-     //    	y_hat_temp[loc] = 1e+07;
-     //    } 
+      if (converged_fix[loc]) { // && convergent[loc]
+      
+        //// unpack Fix
+        J_fix[loc] = Fix[loc, 1];
+        A_fix[loc] = Fix[loc, 2];
+        B_fix[loc] = Fix[loc, 3];
+        ba_fix[loc] = Fix[loc, 4];
+        eps_ba_fix[loc] = Fix[loc, 5];
+        
+        sum_ko_b_fix[loc] = Fix[loc, 7];
+        sum_ko_c_a_fix[loc] = Fix[loc, 8];
+        sum_ko_c_b_fix[loc] = Fix[loc, 9];
+        sum_ko_c_j_fix[loc] = Fix[loc, 10];
+        sum_ko_g_fix[loc] = Fix[loc, 11];
+        sum_ko_h_fix[loc] = Fix[loc, 12];
+        sum_ko_l_fix[loc] = Fix[loc, 13]; // k
+        sum_ko_r_fix[loc] = Fix[loc, 14];
+        sum_ko_s_fix[loc] = Fix[loc, 15];
+
+        /// Booleans at fixpoint
+        dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
+        major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
+        
+
+        //// Counterfactual fix point iteration ---------------------------
+        //// Uses still the old vector iterateFix method
+        
+        // vector[N_species] ko = rep_vector(0, N_species);
+        
+		//state_fix_ko_b[loc] = iterateFix(state_fix[loc, 1:N_pops], ko, exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_c_a[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), ko, exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_c_j[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), ko, exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_k[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), ko, exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//// state_fix_ko_l[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), ko, exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_r[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), ko, exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_s[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), ko, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//		
+		//contrib_b[loc] = ba_fix[loc] - state_fix_ko_b[loc, i_ba];
+		//contrib_c_a[loc] = ba_fix[loc] - state_fix_ko_c_a[loc, i_ba];
+		//contrib_c_j[loc] = ba_fix[loc] - state_fix_ko_c_j[loc, i_ba];
+		//contrib_k[loc] = ba_fix[loc] - state_fix_ko_k[loc, i_ba];
+		//// contrib_l[loc] = ba_fix[loc] - state_fix_ko_l[loc, i_ba];
+		//contrib_r[loc] = ba_fix[loc] - state_fix_ko_r[loc, i_ba];
+		//contrib_s[loc] = ba_fix[loc] - state_fix_ko_s[loc, i_ba];
+		
+      }
   
     }
     

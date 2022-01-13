@@ -136,7 +136,7 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
   n_locs <- data_stan_priors$N_locs
-  Freq_converged <- formatLoc("converged", locmeans = T, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
+  Freq_converged <- formatLoc("converged_fix", locmeans = T, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
   
   write.csv(Freq_converged, file.path(path, paste0(basename_cmdstanfit, "Freq_fixpoint_converged.csv")))
   
@@ -413,36 +413,26 @@ plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = 
     
     if (is.null(draws)) {
       Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix")
-      Fixpoint <- cmdstanfit$draws(variables = "state_fix", format = "draws_matrix")
-      # fixpointconverged <- cmdstanfit$draws(variables = "converged", format = "draws_matrix")
+      Fix <- cmdstanfit$draws(variables = c("J_fix", "A_fix", "B_fix", "ba_fix")) %>%
+        # subset_draws(draw = which(isconverged)) %>%
+        as_draws_rvars() # ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
       
     } else {
       Sim <- draws$y_hat_rep
       
-      ## untested:
-      ## Fixpoint <- draws$state_fix
-      ## fixpointconverged <- draws$converged
+      ## Fixpoint <- 
+      
     }
   }
-  
-  ## Don't!
-  # completerows <- complete.cases(Sim)
-  # Sim <- Sim[completerows,]
-  # attr(Sim, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
+
   densplots <- list("predictions" = bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = grp))
   
   if (match.arg(check) == "posterior") {
     
-    ## Don't!
-    # Fixpoint <- Fixpoint[completerows,]
-    # attr(Fixpoint, "dimnames")$draw <- attr(Sim, "dimnames")$draw[completerows]
-    # fixpointconverged <- fixpointconverged[completerows,]
-    # attr(fixpointconverged, "dimnames")$draw <- attr(fixpointconverged, "dimnames")$draw[completerows]
-    popstatesinfixpoint <- rep(c(rep(T, data_stan_priors$N_pops + data_stan_priors$N_species), rep(F, data_stan_priors$N_species + 1)), each = data_stan_priors$N_locs)
-    Fixpoint <- Fixpoint[, popstatesinfixpoint]
-    attr(Fixpoint, "dimnames")$variable <- rep(c(paste("pop", 1:data_stan_priors$N_pops), paste("total ba", 1:data_stan_priors$N_species)), each = data_stan_priors$N_locs)
-    
-    fixplot <- bayesplot::mcmc_areas_ridges(log(Fixpoint))
+    ## TODO!
+    ## Fix <- concatenate locs somehow
+
+    fixplot <- bayesplot::mcmc_areas_ridges(log(Fix))
     
     densplots <- c(densplots, list("equilibria" = fixplot))
     
@@ -526,7 +516,7 @@ plotConditional <- function(cmdstanfit, parname, path) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
-  isconverged <- cmdstanfit$draws(variables = "converged", format = "draws_matrix") %>%
+  isconverged <- cmdstanfit$draws(variables = "converged_fix", format = "draws_matrix") %>%
     apply(1, all)
   
   message("Dropped ", sum(!isconverged), " draw(s), because the simulations have not converged to fixpoint.")
