@@ -414,7 +414,7 @@ transformed data {
   // vector[N_pops] y0 [N_locs, N_plots] = y[ , , 1, ];
   
   //// Data for generated quantities
-  int N_fix = N_species * 15; // an array of vectors[N_specices] { J, A, B, BA, eps, n_iter, 9 * diff_ko_parameter }
+  int N_fix = 15; // an array of vectors[N_specices] { J, A, B, BA, eps, n_iter, 9 * diff_ko_parameter }
 
   real factor_log = log(parfactor/timestep);
   
