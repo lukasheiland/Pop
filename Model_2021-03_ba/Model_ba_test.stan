@@ -45,8 +45,8 @@ functions {
 
     /// Model (1 iteration)
     vector[N_spec] J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-    vector[N_spec] A_1  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
-    vector[N_spec] B_1  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+    vector[N_spec] A_1  =  (g .* J_1 + (A - h .*A )) ./ (1 + c_a*BA_sum);
+    vector[N_spec] B_1  =  (1+b).*((h .* A_1 * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
     
     vector[N_spec] ba_1 = (A_1 .* ba_a_avg) + B_1;
     
