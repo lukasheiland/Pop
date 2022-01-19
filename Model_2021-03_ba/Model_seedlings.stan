@@ -9,76 +9,75 @@ data {
   vector[N] offset;
   
   vector[N] ba;
+  vector[N] offset_scaled;
   // vector[N] l_smooth;
   // vector[N] ba_sum;
-  // vector[N] offset_scaled;
+  
 }
 
 
 parameters {
   
   real k_log;
-  // real l_log;
   real r_log;
-  
-  // real o_log; // slope for offset
-  vector[N_offset] o_log;
-  real<lower=0> sigma_o;
 
-  vector<lower=0, upper=1>[N_offset] theta;
-  vector<lower=0>[N_offset] phi_inv_sqrt;  
+  // real theta_logit;
+  vector[N_offset] theta_logit;
+  real m_logit;
+  
+  vector<lower=0>[N_offset] phi_inv_sqrt;
 }
 
 transformed parameters {
 
-      vector<lower=0>[N_offset] phi = inv_square(phi_inv_sqrt);
-      
-      //// k
-      vector<lower=0>[N] y_hat_ha = exp(k_log + o_log[rep_offset]) + exp(r_log) * ba;
-      
-      vector<lower=0>[N] y_hat =  y_hat_ha .* offset;
+  vector<lower=0>[N_offset] phi = inv_square(phi_inv_sqrt);
+
+  vector<lower=0>[N] y_hat_ha = exp(k_log) + exp(r_log) * ba;
+  vector<lower=0>[N] y_hat =  y_hat_ha .* offset;
+  
+  real m_logit_scaled = m_logit * 1e-4; // account for the fact, that y_hat is on the hectare scale, so that there are huge numbers. 1e-4 converts to the m^2 scale
+  
+  vector<lower=0, upper=1>[N] prob_0 = inv_logit(theta_logit[rep_offset] + m_logit_scaled * y_hat_ha);
 }
 
 
 model {
 
   //// Priors
-  theta ~ beta(2, 2);
+  theta_logit ~ normal(0, 2); // beta(2, 4);
+  m_logit ~ std_normal();
+  
   phi_inv_sqrt ~ std_normal();
   
-  k_log ~ normal(0, 2);
-  // l_log ~ normal(0, 2);
-  r_log ~ normal(0, 2);
-  // s_log ~ normal(0, 2);
+  k_log ~ normal(0, 3);
+  r_log ~ normal(0, 3);
+  
 
-  sigma_o ~ std_normal();
-  o_log ~ normal(0, sigma_o);
-  
- for (n in 1:N) {
+  //// Model
+  for (n in 1:N) {
    if (y[n] == 0)
-     target += log_sum_exp(bernoulli_lpmf(1 | theta[rep_offset[n]]),
-                           bernoulli_lpmf(0 | theta[rep_offset[n]])
-                             + poisson_lpmf(y[n] | y_hat[n]));
-   else
-     target += bernoulli_lpmf(0 | theta[rep_offset[n]])
-                 + neg_binomial_2_lpmf(y[n] | y_hat[n], phi[rep_offset[n]]);
-  }
-  
-  //// version without zi
-  // y ~ neg_binomial_2(y_hat, phi[rep_offset]);
-  
+      1 ~ bernoulli(prob_0[n]);
+    else {
+      0 ~ bernoulli(prob_0[n]);
+      y[n] ~ neg_binomial_2(y_hat[n], phi[rep_offset[n]]) T[1, ];
+    }
+   }
+   
 }
 
 
 generated quantities {
 
+  // Beware! Quick and dirty, not-completely correct implementation.
   array[N] int y_sim;
   
   for (n in 1:N) {
-    y_sim[n] = neg_binomial_2_rng(y_hat[n], phi[rep_offset[n]]) * !bernoulli_rng(theta[rep_offset[n]]);
+  	if(y[n] == 0) {
+	  	y_sim[n] = 0;
+  	} else {
+  		y_sim[n] = neg_binomial_2_rng(y_hat[n], phi[rep_offset[n]]); // 
+  		while(y_sim[n] == 0) y_sim[n] = neg_binomial_2_rng(y_hat[n], phi[rep_offset[n]]); // 
+  	}
   }
 
-  //// version without zi
- //  y_sim = neg_binomial_2_rng(y_hat, phi[rep_offset]);
-  
 }
