@@ -39,7 +39,7 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     ## OR (sizeclass == "big" & dbh >= 100) -> to maintain completeness I replace count with 0
     mutate(dropSmallBig = (sizeclass == "big" & dbh < 100)) %>%
     ## and filter(status != "Dead tree")
-    mutate(dropDead = (status == "Dead tree")) %>%
+    mutate(dropDead = (sizeclass == "big" & status == "Dead tree")) %>%
     
     mutate(drop = dropDead | dropSmallBig ) %>%
     droplevels()
@@ -50,23 +50,25 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
   ## The species-specific basal area of a plot was confined to living trees above the dbh >= 100mm.
   ## Only small trees with size class [10cm, 20cm), were included in the seedling counts.
   
-  ## According to the SK manual, the area of small tree counts is dependent on tree density!
-  
+  ## According to the SK manual, the area of small tree counts was extended depending on tree density!
   
   D_count <- D_filtered %>%
+    
+    ## Here are several options for setting the offset for zero observations
+    ## In the hurdle model, the fake offset area_0 will only get used as a factor level for determining the prob of getting a zero, not as an actual offset.
+    
     group_by(year, sizeclass) %>%
     mutate(median_area = quantile(area, prob = 0.5, na.rm = T, type = 1)) %>%
     mutate(min_area = min(area, na.rm = T)) %>%
-    mutate(max_area = max(area, na.rm = T)) %>%
+    mutate(max_area = max(area, na.rm = T)) %>% ## Zero observations are replaced with the max possible sampling area, because the circle of small tree was determined by small tree density: the greater the density the smaller the plot
     mutate(random_area = sample(area[!is.na(area)], size = 1)) %>%
     ungroup() %>%
     
-    ## Zero observations are replaced with the max possible sampling area, because the circle of small tree was determined by small tree density: the greater the density the smaller the plot
-    group_by(sizeclass, year, plotid) %>% # in 'small' this comes down to the same as group_by(sizeclass, tax, year) %>%
-    mutate(n_area = n_distinct(area, na.rm = T), # there are no 0s (due to full completion), mostly 1s, and a few 2s
-           area_0 = case_when(n_area == 1 ~ first(area[!is.na(area)]),
-                              n_area == 0 ~ first(min_area)
-                              # n_area > 1 ~ replace_na(weighted.mean(area, w = count_ha, na.rm = T), first(min_area)) ## This case is not present in the cleaned data
+    group_by(sizeclass, year, plotid) %>%
+    mutate(n_area = n_distinct(area[sizeclass == "small"], na.rm = T),
+           area_0 = case_when(n_area == 1 ~ first(area[!is.na(area)]), ## Here, even when there is a 0 the area of the other observed species is taken as a replacement.
+                              n_area == 0 ~ first(max_area) ## This is here as an option to set an offset for 0-observation plots
+                              # n_area > 1 ~ replace_na(weighted.mean(area, w = count_ha, na.rm = T), first(min_area)) ## This case is not present in the cleaned data. But this is an option to set the 0 to the average area, when there are multiple areas per plot.
                               )
            ) %>%
     
@@ -80,7 +82,7 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     group_by(plotid, year, tax, taxid, sizeclass) %>%
     dplyr::summarize(count_obs = sum(count, na.rm = T),
                      area_0 = first(area_0),
-                     area_obs = weighted.mean(area, w = count_ha, na.rm = T), # weighted.mean(area, w = count_ha, na.rm = T),
+                     area_obs = first(area[!is.na(area)]), ## with unique areas equivalent to: # area_obs = weighted.mean(area, w = count_ha, na.rm = T), # weighted.mean(area, w = count_ha, na.rm = T),
                      count_ha = sum(count_ha, na.rm = T),
                      ba_ha = sum(ba_ha, na.rm = T),
                      count_ha_sum = first(count_ha_sum),
@@ -89,8 +91,9 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     ungroup() %>%
     
     mutate(offset = if_else(is.na(area_obs), area_0, area_obs)) %>%
+    mutate(offset = if_else(is.na(area_obs), area_0, area_obs)) %>%
     
-    ## for bit trees, set the offset to NA
+    ## for big trees, set the offset to NA, might be superflouous now, but here for variant reasons.
     mutate(offset =  if_else(sizeclass == "small", offset, as.numeric(NA)),
            area_obs = if_else(sizeclass == "small", area_obs, as.numeric(NA))) %>%
     
@@ -106,10 +109,9 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
   D_count <- left_join(D_count, D_geo, by = "plotid") %>%
     filter(!(is.na(WGS_E)|is.na(WGS_N))) %>%
     st_as_sf(crs = "+proj=longlat +datum=WGS84 +no_defs", coords = c("WGS_E", "WGS_N"))   ## There are very few empty geometries, see in wrangleSeedlings_s()
-  
+
   return(D_count)
 }
-
 
 ## wrangleSeedlings_s --------------------------------
 # Data_seedlings_fullgrid  <- tar_read("Data_seedlings_fullgrid")
@@ -212,7 +214,7 @@ saveSeedlings_s <- function(Seedlings_s) {
 # Seedlings_s  <- tar_read("Seedlings_s")
 # fitpath  <- tar_read("dir_fit")
 fitSeedlings <- function(Seedlings_s, fitpath) {
-  
+
   #### fitModel() ---------------------
   #
   fitModel <- function(tax) {
@@ -220,15 +222,17 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
     S <- Seedlings_s[Seedlings_s$tax == tax,] %>%
       st_drop_geometry() %>%
       dplyr::select(plotid, year, sizeclass, count_obs, count_ha, offset, ba_ha, count_ha_sum, ba_ha_sum, s_other, s_Fagus.sylvatica) %>%
-      pivot_wider(id_cols = c("plotid", "year"), names_from = "sizeclass", values_from = c("count_obs", "count_ha", "ba_ha", "count_ha_sum", "ba_ha_sum", "offset", "s_other", "s_Fagus.sylvatica"))
-       # filter(ba_ha_sum_big > 0 & ba_ha_big > 0)
+      pivot_wider(id_cols = c("plotid", "year"),
+                  names_from = "sizeclass",
+                  values_from = c("count_obs", "count_ha", "ba_ha", "count_ha_sum", "ba_ha_sum", "offset", "s_other", "s_Fagus.sylvatica"))
 
     model_seedlings <- cmdstanr::cmdstan_model(stan_file = "Model_2021-03_ba/Model_seedlings.stan")
-    
+
     data_seedlings <- list(
       N = nrow(S),
       y = as.integer(S$count_obs_small),
       
+      ## In the hurdle model, the fake offset area_0 will only get used as a factor level for determining the prob of getting a zero. 
       offset = S$offset_small,
       offset_scaled = c(scale(S$offset_small)),
       rep_offset = as.integer(as.factor(S$offset_small)),
@@ -239,19 +243,20 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
       ba = S$ba_ha_big
     )
     
-    fit_Seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4), output_dir = fitpath)
+    fit_Seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4), output_dir = fitpath, init = 0.1)
     
     attr(fit_Seedlings, "data") <- data_seedlings
     attr(fit_Seedlings, "taxon") <- tax
     
-    var <- c("r_log", "k_log", "theta", "o_log")
+    var <- c("r_log", "k_log", "theta_logit", "m_logit", "phi") # "o_log"
     
     ggsave(file.path(fitpath, paste0("Pairs_Seedlings_", tax, ".png")),
            mcmc_pairs(fit_Seedlings$draws(variables = setdiff(var, "phi"))))
     
     s <- fit_Seedlings$summary(variables = var)
+
     write.csv(s, file.path(fitpath, paste0("Summary_Seedlings_", tax, ".csv")))
-    
+
     message("Summary of the the fit for ", tax, ":")
     print(s)
     
@@ -267,16 +272,15 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
     data_seedlings <- attr(fit_Seedlings, "data")
     
     y_sim <- fit_Seedlings$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
-    y_hat <- fit_Seedlings$draws(variables = "y_hat", format = "draws_matrix") %>% apply(2, median, na.rm = T)
+    # y_hat <- fit_Seedlings$draws(variables = "y_hat", format = "draws_matrix") %>% apply(2, median, na.rm = T) ## This does not work for zero-altered models
     y <- data_seedlings$y
     
     # plot(y_hat/data_seedlings$offset ~ data_seedlings$ba)
     
     is0 <- !data_seedlings$y
-    residuals <- DHARMa::createDHARMa(simulatedResponse = y_sim, observedResponse = y, fittedPredictedResponse = y_hat, integerResponse = T)
+    residuals <- DHARMa::createDHARMa(simulatedResponse = y_sim, observedResponse = y, integerResponse = T) # fittedPredictedResponse = y_hat
     
-    # testZeroInflation(residuals) ## only slightly fewer zeros in the data than you would expect, given the fitted Model
-    
+    # testZeroInflation(residuals)
     
     saveRDS(residuals, paste0(fitpath, "/Seedlings_", taxon, "_DHARMa", ".rds"))
 
@@ -286,6 +290,10 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
     
     png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa_ba.sum", ".png"), width = 1600, height = 1000)
     plotResiduals(residuals, form = data_seedlings$ba_sum, quantreg = T, smoothScatter = F)
+    dev.off()
+    
+    png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa_0", ".png"), width = 1600, height = 1000)
+    plotResiduals(residuals, form = is0, quantreg = T, smoothScatter = F)
     dev.off()
     
     png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa_ba", ".png"), width = 1600, height = 1000)
