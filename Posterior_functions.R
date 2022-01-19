@@ -420,7 +420,7 @@ plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = 
     } else {
       Sim <- draws$y_hat_rep
       
-      ## Fixpoint <- 
+      ## Fix <- 
       
     }
   }
@@ -428,14 +428,23 @@ plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = 
   densplots <- list("predictions" = bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = grp))
   
   if (match.arg(check) == "posterior") {
-    
-    ## TODO!
-    ## Fix <- concatenate locs somehow
 
-    fixplot <- bayesplot::mcmc_areas_ridges(log(Fix))
+    n_species <- 2
+    convertVectorToDrawsList <- function(x) {
+      lapply(1:length(x), function(i) as_draws_rvars(x[i]) )
+    }
     
+    fix_draws <- lapply(Fix, function(Rvar) lapply(1:n_species,
+                                                  function(i) do.call(function(...) bind_draws(... , along = "draw"), convertVectorToDrawsList(Rvar[,i, drop = T]))
+                                                  )
+                       )
+    fix_draws <- as_draws(lapply(fix_draws, function(f) do.call(cbind, lapply(f, function(l) l$x))))
+    fix_draws <- thin_draws(fix_draws, thin = 10)
+    
+    M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
+    fixplot <- bayesplot::mcmc_areas_ridges(log(M))
+
     densplots <- c(densplots, list("equilibria" = fixplot))
-    
   }
   
   plotname <- paste(names(densplots), check, sep = "_")
@@ -579,6 +588,43 @@ plotConditional <- function(cmdstanfit, parname, path) {
   ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_conditional", ".png"), plotgrid, dev = "png", height = 20, width = 24)
   
   return(plots_parameters_conditional)
+}
+
+
+## plotContributions --------------------------------
+# parname  <- tar_read("parname_sim")
+# cmdstanfit  <- tar_read("fit_test")
+# path  <- tar_read("dir_publish")
+plotContributions <- function(cmdstanfit, parname, path) {
+  
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  
+  parname <- str_remove(setdiff(parname, "k_log"), "_log")
+  contribname <- paste0("sum_ko_", parname, "_fix")
+  
+  C <- cmdstanfit$draws(variables = contribname) %>%
+    as_draws_rvars()
+  
+  n_species <- 2
+  
+  convertVectorToDrawsList <- function(x) {
+    lapply(1:length(x), function(i) as_draws_rvars(x[i]) )
+  }
+  
+  fix_draws <- lapply(C, function(Rvar) lapply(1:n_species,
+                                                 function(i) do.call(function(...) bind_draws(... , along = "draw"), convertVectorToDrawsList(Rvar[,i, drop = T]))
+                                               )
+                      )
+  fix_draws <- as_draws(lapply(fix_draws, function(f) do.call(cbind, lapply(f, function(l) l$x))))
+  fix_draws <- thin_draws(fix_draws, thin = 10)
+  
+  M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
+  
+  plot_contributions <- bayesplot::mcmc_areas_ridges(M)
+  
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", ".png"), plot_contributions, dev = "png", height = 30, width = 10)
+  
+  return(plot_contributions)
 }
 
 
