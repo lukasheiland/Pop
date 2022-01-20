@@ -243,7 +243,8 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
       ba = S$ba_ha_big
     )
     
-    fit_Seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4), output_dir = fitpath, init = 0.1)
+    getInits <- function(chain_id) return(list(k_log = 0.0, r_log = 1.0, theta_logit = rep(-1.0, data_seedlings$N_offset), m_logit = -2, phi_inv_sqrt = rep(10, data_seedlings$N_offset)))
+    fit_Seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4), output_dir = fitpath, init = getInits)
     
     attr(fit_Seedlings, "data") <- data_seedlings
     attr(fit_Seedlings, "taxon") <- tax

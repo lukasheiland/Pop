@@ -123,6 +123,15 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, path) {
     as.data.frame() %>%
     print()
   
+  drawconverged <- cmdstanfit$draws(variables = "converged_fix", format = "draws_matrix") %>%
+    apply(1, all)
+  
+  if (all(drawconverged)) {
+    message("All clusters in all draws have converged to the fix point, i.e. the population trajectories ran into an equilibrium.")
+  } else {
+    message("For ", sum(!drawconverged), " draws, not all of the clusters have converged to the fix point, i.e. not all population trajectories ran into an equilibrium.")
+  }
+  
   return(summary)
 }
 

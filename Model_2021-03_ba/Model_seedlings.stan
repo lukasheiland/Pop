@@ -10,7 +10,7 @@ data {
   
   vector[N] ba;
   vector[N] offset_scaled;
-  // vector[N] l_smooth;
+  vector<lower=0>[N] l_smooth;
   // vector[N] ba_sum;
   
 }

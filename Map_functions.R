@@ -1,7 +1,7 @@
 ## mapClusters --------------------------------
 # Stages_select <- tar_read(Stages_select)
 
-mapClusters <- function(Stages_select, pointcolor = "blue", path = dir_publish) {
+mapClusters <- function(Stages_select, pointcolor = "white", path = dir_publish) {
   
   ## ETRS89 Lambert Conformal Conic CRS
   projection <- crs("EPSG:3034")
@@ -28,18 +28,19 @@ mapClusters <- function(Stages_select, pointcolor = "blue", path = dir_publish) 
   ### Rayshader
   ## See tutorial at https://www.tylermw.com/adding-open-street-map-data-to-rayshader-maps-in-r/
   
-  # elevtexture <- create_texture(lightcolor = "#FFFBEF", shadowcolor = "#B0B0B0", leftcolor = "#ECECE0", rightcolor = "#ECECEA", centercolor = "white")
-  elevtexture <- "desert"
+  # spheretexture <- create_texture(lightcolor = "#FFFBEF", shadowcolor = "#B0B0B0", leftcolor = "#ECECE0", rightcolor = "#ECECEA", centercolor = "white")
+  spheretexture <- "imhof1"
+  elevtexture <- terrain.colors(256)
   
   
   map <- E %>%
-    height_shade() %>%
-    add_overlay(sphere_shade(E, sunangle = 315, texture = elevtexture,
-                             zscale = 4, colorintensity = 2), alphalayer = 0.5) %>%
+    height_shade(texture = elevtexture, range = c(-500, 1400)) %>% # 
+    add_overlay(sphere_shade(E, sunangle = 315, texture = spheretexture,
+                             zscale = 4, colorintensity = 5), alphalayer = 0.5) %>%
     add_shadow(texture_shade(E, detail = 8/10, contrast = 4, brightness = 100), 0.1) %>%
     
     add_overlay(generate_point_overlay(Clusters, extent = ext, heightmap = E,
-                                       pch = 1, color = pointcolor, size = 15), rescale_original = T) %>%
+                                       pch = 1, color = pointcolor, size = 30), rescale_original = T) %>%
     
     # add_overlay(generate_line_overlay(Area, extent = ext, heightmap = E)) %>%
     
