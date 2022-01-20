@@ -465,17 +465,17 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     mutate(isclear = sum(count_ha, na.rm = T) == 0) %>% ## sum will replace vectors with exclusively NAs with 0
     
     group_by(plotid) %>%
-    mutate(isclearcut_2002 = any(!isclear[obsid == "DE_BWI_1987"] & isclear[obsid == "DE_BWI_2002"]),
-           isclearcut_2012 = any(!isclear[obsid == "DE_BWI_2002"] & isclear[obsid == "DE_BWI_2012"]),
+    mutate(isclearcut_2002 = any( (!isclear[obsid == "DE_BWI_1987"]) & isclear[obsid == "DE_BWI_2002"]),
+           isclearcut_2012 = any( (!isclear[obsid == "DE_BWI_2002"]) & isclear[obsid == "DE_BWI_2012"]),
            isclearcut = isclearcut_2002 | isclearcut_2012) %>%
     filter(!isclearcut) %>%
       ## dropping 37 plots; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
     
     group_by(clusterid) %>%
     
-    ## subset to clusters with at least two surveys
+    ## subset to clusters with at least three surveys
     mutate(n_surveys = n_distinct(obsid)) %>%
-    filter(n_surveys >= 2) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
+    filter(n_surveys >= 3) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
     dplyr::select(-n_surveys) %>%
     
     ## subset to clusters with at least two plots
@@ -487,7 +487,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica")) %>%
     ungroup()
   
-    # unique(Stages_select$clusterid) %>% length() ## 456
+    # unique(Stages_select$clusterid) %>% length() ## 677
   
   # ## Selecting an equal no. of plots with and without Fagus
   # Stages_Fagus <- Stages_select %>%
