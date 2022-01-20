@@ -505,7 +505,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
   # # unique(Stages_select$clusterid) %>% length() ## 190
   
   ## Confined to clusters that have any seedlings of both taxa 
-  Stages_select %>%
+  Stages_select %<>%
     filter(anySmallFagus & anySmallOther) # %>% pull(clusterid) %>% unique() %>% length() ## 319 (out of 677)
   
   Stages_select %<>%
