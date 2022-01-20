@@ -128,7 +128,6 @@ plots_twostates_test|stem|fe2c867b3e823f25|a2feabf2f185ffab|af7469a2f794634b|212
 stanfit_test|stem|ca7523a5b62b8360|34001f1c4f114152|c98091c2b300b34f|-1726047245||t18982.8597310681s|8c3ac98e74b5d4a3|350841344|rds|vector|||117.779||
 plots_predictions_posterior_test|stem|18e740d61b9e80db|0d0dce247df7e7f1|0a02f7519b4b6cfa|1289869218||t18982.8618631281s|568832001215fcb4|74005583|rds|vector|||333.047|Removed 5803 rows containing nonfinite values stat_density.|
 taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t18810.760146226s|425d385953b3c542|67|rds|vector|||0.001||
-threshold_dbh|stem|b1b40ad4f285cecb|9196226201acf742|ef46db3751d8e999|1977269053||t18992.4470047454s|ded833868582137a|50|rds|vector|||0.003||
 fits_Seedlings_s_7f2564d0|branch|30945a0420896157|a9746bd949c31e92|7781ab04278ddf8d|-2048879821||t18992.4566298961s|7a261766b8a51cea|27438576|rds|list|fits_Seedlings_s||154.213||
 fits_Seedlings_s_5e5955a1|branch|f8ddf9c904588eaa|a9746bd949c31e92|325dc05375740e58|-751370568||t18992.459011257s|c7d1fbed2c374fb1|27366045|rds|list|fits_Seedlings_s||204.207||
 file_SK|stem|7507e5e6db32d6c6|813dfca83fca4164|ef46db3751d8e999|236759130|Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds|t18992.6515936875s|c4f0230669bdeffd|929450|file|vector|||12.545||
@@ -146,23 +145,18 @@ file_model_test|stem|8024298952a80262|e344941b51aafe21|ef46db3751d8e999|-1074015
 model_test|stem|4ece5945d5f835a6|a3aa00c06cce5e55|000b5e590c1ff259|-1162399619||t19003.5936875839s|31e26842a83d75ae|7435|rds|vector|||49.492||
 file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18937.6577345002s|e684589703d38eb9|5533814|file|vector|||1.968||
 file_model_transitions|stem|0c8e554a9eafc7d1|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18941.8569560185s|5d521c54c4b9868f|1097|file|vector|||0.001||
-radius_max|stem|b35aa22c1781c4ed|e9dfe26516914502|ef46db3751d8e999|-1596622531||t19005.9345327263s|b6d2e014b07bc296|51|rds|vector|||12.541||
 file_DE_geo|stem|fc11702de5751e68|60bce8164256a1d6|ef46db3751d8e999|-1810833906|Inventory.nosync/DE BWI/Data/DE_BWI_geo.rds|t18113.7914067473s|5f8cd763e5ac0a66|1266826|file|vector|||2.325||
 predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927||t18809.8784997507s|0e696b453c03de61|85|rds|vector|||1.703||
 file_DE_big_status|stem|ae0f974436e6977a|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18937.6580614102s|c78be29eeba71bae|16437186|file|vector|||0.001||
 file_DE_small|stem|2307d704c5a9a9b5|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18860.9349071086s|2895e6fb9317973a|15170066|file|vector|||2.772||
-dir_publish|stem|e7a3d6eef37f433c|e00f9557ba741f4a|f47bb13d95a320a1|1910222810||t19005.9345348366s|a44f74ecaf054496|60|rds|vector|||0.002||
 weakpriors|stem|ffb24210da0c04b8|902d665030a9857b|9ee3ac5a8444da29|-1879221107||t19005.9345350407s|7dead8e41ac4f62d|130|rds|vector|||0.005||
 file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18860.9370923003s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
 Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t18887.8905583143s|e684589703d38eb9|5533814|rds|vector|||4.625||
 model_transitions|stem|aed63dd5e7fd392b|6f5288cead19f3b4|e9da770e4852b7c7|-1275860683||t19005.9345377968s|67db5bef274e9bb6|7366|rds|vector|||0.019||
 Data_geo|stem|1e11998b9af424de|a5740b3bcb5e0ba0|855c9f9a61208aa8|-1122140380||t18814.5877954704s|e60015ce142a6e82|1266824|rds|vector|||0.311||
-taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t19005.9345383469s|e3871644244b3637|115|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|0.001||
-Data_big_status|stem|ae0f974436e6977a|eff25cb053505d95|69a84043a87fa2b3|813772221||t19005.9346947837s|c78be29eeba71bae|16437186|rds|vector|||6.925||
 Data_small|stem|2307d704c5a9a9b5|7ad74de1b1caac4c|db3a691ca8ffa423|-1821452620||t18857.5956333662s|2895e6fb9317973a|15170066|rds|vector|||38.821||
 Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t18857.5695906611s|02e584d87ae1e0d3|23277361|rds|vector|||12.618||
 Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t18829.9185465046s|102883cb8e914333|1060126|rds|vector|||0.013||
-Data_small_area|stem|a3e7cd6e4d2029c3|0a78a63659b2b6ca|d8ca7a6873ce28cf|1655197218||t19005.936361609s|00e2d4b357c92043|2993069|rds|vector|||93.794||
 Data_big_area|stem|051b8f716955db0d|3f85c4389924c6e4|fe62a5ff11d48068|1906756081||t19005.9373623264s|a354732cddf12b6e|17975430|rds|vector|||72.839|all weights equal to zero|
 Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|04617d440238533a|-1840226744||t19005.937926109s|9b01f5e608a77422|1022676|rds|vector|||1.406||
 file_Stages_s|stem|c44843525c27b523|4bbafa2144b1b6e6|d776e3ee028b685f|-1399817009|Data/Stages_s.rds|t19005.9382191192s|8054732a27db4df9|45900015|file|vector|||13.992||
@@ -173,26 +167,37 @@ data_stan_priors_offset|stem|2fb0a6bc30d168b4|93304eaf3cc05984|b3146b369c11906d|
 Seedlings|stem|5f3b2c2bde1faedf|e366b261bd7792c2|8a22828db4945e68|-185150805||t19011.4453052291s|a26d511760123eaf|52819|rds|vector|||11.301|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 file_Seedlings_s|stem|3bf21b7e318abaf1|7ab73f6b1c2c0890|7d7aa676f19c2bc6|1895998084|Data/Seedlings_s.rds|t19011.4457686521s|69348b56574365a3|66141|file|vector|||0.024||
 Data_Seedlings_s|stem|3bf21b7e318abaf1|852468eeb9c067aa|00f27ad6016aa574|-1136862534||t19011.4457691354s|69348b56574365a3|66141|rds|vector|||0.013||
+seedlings_s|stem|4d952a91bfaaaeec|a0f0214426cbce9e|6ae066f218780d6e|1933224778||t19011.5591597917s|2e9a235e3704a17b|99532|rds|list||seedlings_s_4680813a*seedlings_s_06959ea9|54.561|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Seedlings_s|stem|3bf21b7e318abaf1|46a9595e49329d8a|ffaa197b2ae043f1|-142007958||t19011.5592327303s|69348b56574365a3|66141|rds|list|||5.638||
+fits_Seedlings|stem|8e9c1ba43e34a359|dba35c61738a2403|ddababb7658078b6|809945682||t19011.5618666047s|cd006232089074ab|4896939|rds|list|||225.392||
+data_stan_priors|stem|24648b548a291908|047c612410fdcbac|4508d731800e35c6|1623270232||t19011.5619071146s|04d3fb54b5d7fbbb|1995020|rds|vector|||0.139||
+threshold_dbh|stem|b1b40ad4f285cecb|9196226201acf742|ef46db3751d8e999|1977269053||t19011.8927319333s|ded833868582137a|50|rds|vector|||0.003||
+dir_publish|stem|e7a3d6eef37f433c|e00f9557ba741f4a|f47bb13d95a320a1|1910222810||t19011.8927320843s|a44f74ecaf054496|60|rds|vector|||0.002||
+radius_max|stem|b35aa22c1781c4ed|e9dfe26516914502|ef46db3751d8e999|-1596622531||t19011.8927321835s|b6d2e014b07bc296|51|rds|vector|||12.541||
+Data_big_status|stem|ae0f974436e6977a|eff25cb053505d95|69a84043a87fa2b3|813772221||t19011.892881379s|c78be29eeba71bae|16437186|rds|vector|||6.925||
+taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t19011.892882165s|e3871644244b3637|115|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|0.001||
+Data_small_area|stem|a3e7cd6e4d2029c3|0a78a63659b2b6ca|d8ca7a6873ce28cf|1655197218||t19011.8943761751s|00e2d4b357c92043|2993069|rds|vector|||93.794||
 formatStanData|function|f10b3a7a9fdc4dfe||||||||||||||
 prepareSmallData|function|b0078b5b76b7d331||||||||||||||
-targets_paths|object|798640c8eeea0f90||||||||||||||
+targets_paths|object|bb027b6234ba098f||||||||||||||
 joinStages|function|7397d1cb556dd863||||||||||||||
 generateTrajectories|function|1a8278812892b9d1||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
-targets_parname|object|8a47a1f19c2f3f74||||||||||||||
+targets_parname|object|9bd9036e81866192||||||||||||||
 formatLoc|function|d23ab0d660ebec1c||||||||||||||
 wrangleSeedlings_s|function|debfad99e56a4210||||||||||||||
 fitS|function|1ba350bc7b2f92dd||||||||||||||
-plotPredictions|function|2e514910219e71b5||||||||||||||
+plotPredictions|function|a40df41fcc2f1bf9||||||||||||||
 plotTwoStates|function|12ad5b72b6423c7b||||||||||||||
 countTransitions|function|658905ce538460fd||||||||||||||
 predictSurfaces|function|3eb087f154760704||||||||||||||
 fitSeedlings|function|b4662cba24edda06||||||||||||||
-targets_fits|object|2ff0802c2f657fd9||||||||||||||
+targets_fits|object|f7488c8b8eb6c1ce||||||||||||||
 plotSurfaces|function|1c0ca88eb7706abd||||||||||||||
+plotContributions|function|4ca2009edfaf9bcd||||||||||||||
 getBaseName|function|bc0f3afd657645b4||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
-targets_wrangling|object|2f99d5374e614d67||||||||||||||
+targets_wrangling|object|49bd527ee5d7fa76||||||||||||||
 testSensitivity|function|caf845ea982e5d9c||||||||||||||
 plotSensitivity|function|f9d72a6289ca1187||||||||||||||
 scaleData|function|0d0c01b1b3160a22||||||||||||||
@@ -203,26 +208,24 @@ plotTrajectories|function|da431305788e60fa||||||||||||||
 predictSeedlingsSurfaces|function|44c809b12bbdfe6d||||||||||||||
 saveSeedlings_s|function|59d33f1cf2682535||||||||||||||
 predictS|function|77bcabfef1d8569c||||||||||||||
+mapClusters|function|c6ebb68acc5bd1d2||||||||||||||
 summarizeFit|function|8e8d8c2bfad4f316||||||||||||||
 plotStanfit|function|0a19bac585299fbb||||||||||||||
 selectOffset|function|b54325a6e33c293c||||||||||||||
 extractStanfit|function|4b30186cd18f28f8||||||||||||||
-package|object|502aae896c2d5f37||||||||||||||
+package|object|d79e46fdb2b24b5b||||||||||||||
 fitTransition|function|b7d57da1d9003513||||||||||||||
 prepareBigData|function|0dd61edfabb03695||||||||||||||
 fitModel|function|476d352acca5bdb7||||||||||||||
 plotConditional|function|c30058441bda446b||||||||||||||
-targets_posterior|object|821995ad9a40c743||||||||||||||
+targets_posterior|object|e84ebe25a9ddeeb6||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 generateResiduals|function|ee65238c9cfa3743||||||||||||||
 saveStages_s|function|fa4458d1e4dd1149||||||||||||||
 wrangleSeedlings|function|a0ee19f395d96c27||||||||||||||
 formatPriors|function|c8c97ce7f5be2ea7||||||||||||||
-targets_settings|object|8d1ac92e10f208ec||||||||||||||
+targets_settings|object|e5d28cb3f4818c16||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
 formatTwoStates|function|8f3e10eb32f70059||||||||||||||
 summarizeFreqConverged|function|787c796cb9a50343||||||||||||||
-seedlings_s|stem|4d952a91bfaaaeec|a0f0214426cbce9e|6ae066f218780d6e|1933224778||t19011.5591597917s|2e9a235e3704a17b|99532|rds|list||seedlings_s_4680813a*seedlings_s_06959ea9|54.561|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-Seedlings_s|stem|3bf21b7e318abaf1|46a9595e49329d8a|ffaa197b2ae043f1|-142007958||t19011.5592327303s|69348b56574365a3|66141|rds|list|||5.638||
-fits_Seedlings|stem|8e9c1ba43e34a359|dba35c61738a2403|ddababb7658078b6|809945682||t19011.5618666047s|cd006232089074ab|4896939|rds|list|||225.392||
-data_stan_priors|stem|24648b548a291908|047c612410fdcbac|4508d731800e35c6|1623270232||t19011.5619071146s|04d3fb54b5d7fbbb|1995020|rds|vector|||0.139||
+Map_select|stem|e2df866f90560474|ff5382e31a8ceae7|59b52cf85f425421|-1872424563||t19011.9343966467s|58a3930e38157685|661656101|rds|vector|||2100.98|Default of make_valid for output_classsf will be changed in the future see function details.|
