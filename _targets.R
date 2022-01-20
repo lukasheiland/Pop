@@ -20,6 +20,7 @@ plan(callr) ## "It is crucial that future::plan() is called in the target script
 
 ### Source the functions
 source("Wrangling_functions.R")
+source("Map_functions.R")
 source("Fit_seedlings_functions.R")
 source("Fit_functions.R")
 source("Posterior_functions.R")
@@ -29,6 +30,7 @@ options(tidyverse.quiet = TRUE)
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
              "lubridate", "DescTools", # "zoo",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
+             "eurostat", "elevatr", "rayshader", ## for mapping
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "parallel", "DHARMa", "priorsense",
              "cowplot",
@@ -136,7 +138,7 @@ targets_parname <- list(
   tar_target(simnames_posterior,
              c("y_hat_rep", "y_hat_rep_offset", "y_sim", "y_hat_prior",
                "dominant_init", "major_init", "ba_init",
-               "dominant_fix", "major_fix", "ba_fix", "J_fix", "A_fix", "B_fix", 
+               "Fix", "dominant_fix", "major_fix", "ba_fix", "J_fix", "A_fix", "B_fix", 
                "converged_fix", "iterations_fix", "fixiter_max", "eps_ba_fix",
                "sum_ko_b_fix", "sum_ko_c_a_fix", "sum_ko_c_b_fix", "sum_ko_c_j_fix", "sum_ko_g_fix", "sum_ko_h_fix", "sum_ko_l_fix", "sum_ko_r_fix", "sum_ko_s_fix",
                "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")),
@@ -275,7 +277,12 @@ targets_wrangling <- list(
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
     
     tar_target(Stages_scaled_pred,
-               scaleData(Stages_select_pred, predictor_select)) # After selection, so that scaling includes selected plots .
+               scaleData(Stages_select_pred, predictor_select)), # After selection, so that scaling includes selected plots 
+    
+    
+    tar_target(Map_select,
+               mapClusters(Stages_select, path = dir_publish)) # After selection, so that scaling includes selected plots 
+    
   )
 )
 
