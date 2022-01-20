@@ -361,7 +361,7 @@ targets_posterior <- list(
   
   ## Summarize
   tar_target(summary_test,
-             summarizeFit(cmdstanfit = fit_test, exclude = c(helpers_exclude, rep_exclude), path = dir_publish)),
+             summarizeFit(cmdstanfit = fit_test, exclude = c(helpers_exclude, rep_exclude, "Fix"), path = dir_publish)),
   tar_target(Freq_converged_test,
              summarizeFreqConverged(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
   
