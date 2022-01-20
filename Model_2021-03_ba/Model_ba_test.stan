@@ -155,16 +155,40 @@ functions {
       eps_ba = fabs((BA_1 - BA) ./ BA_1);
       i += 1;
       
+      
+      vector[N_spec] ba_ko_b = simulate_1(J, A, B, KO, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_c_a  = simulate_1(J, A, B, b, KO, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_c_b = simulate_1(J, A, B, b, c_a, KO, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_c_j = simulate_1(J, A, B, b, c_a, c_b, KO, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_g = simulate_1(J, A, B, b, c_a, c_b, c_j, KO, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, KO, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, KO, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, KO, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, KO, ba_a_avg, ba_a_upper, N_spec);
+      
+      
       /// Summed up contributions
-      sum_ko_b += BA_1 - simulate_1(J, A, B, KO, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      sum_ko_c_a += BA_1 - simulate_1(J, A, B, b, KO, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      sum_ko_c_b += BA_1 - simulate_1(J, A, B, b, c_a, KO, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      sum_ko_c_j += BA_1 - simulate_1(J, A, B, b, c_a, c_b, KO, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      sum_ko_g += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, KO, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      sum_ko_h += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, g, KO, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      sum_ko_l += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, KO, r, s, ba_a_avg, ba_a_upper, N_spec);
-      sum_ko_r += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, KO, s, ba_a_avg, ba_a_upper, N_spec);
-      sum_ko_s += BA_1 - simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, KO, ba_a_avg, ba_a_upper, N_spec);
+      sum_ko_b += BA_1 - ba_ko_b;
+      sum_ko_c_a += BA_1 - ba_ko_c_a;
+      sum_ko_c_b += BA_1 - ba_ko_c_b;
+      sum_ko_c_j += BA_1 - ba_ko_c_j;
+      sum_ko_g += BA_1 - ba_ko_g;
+      sum_ko_h += BA_1 - ba_ko_h;
+      sum_ko_l += BA_1 - ba_ko_l;
+      sum_ko_r += BA_1 - ba_ko_r;
+      sum_ko_s += BA_1 - ba_ko_s;
+      
+      /// Summed up proportional contributions
+	  // real BA_1_sum = sum(BA_1)
+	  // sum_ko_prop_b += (BA_1 - ba_ko_b)/BA_1_sum;
+	  // sum_ko_prop_c_a += (BA_1 - ba_ko_c_a)/BA_1_sum;
+	  // sum_ko_prop_c_b += (BA_1 - ba_ko_c_b)/BA_1_sum;
+	  // sum_ko_prop_c_j += (BA_1 - ba_ko_c_j)/BA_1_sum;
+	  // sum_ko_prop_g += (BA_1 - ba_ko_g)/BA_1_sum;
+	  // sum_ko_prop_h += (BA_1 - ba_ko_h)/BA_1_sum;
+	  // sum_ko_prop_l += (BA_1 - ba_ko_l)/BA_1_sum;
+	  // sum_ko_prop_r += (BA_1 - ba_ko_r)/BA_1_sum;
+	  // sum_ko_prop_s += (BA_1 - ba_ko_s)/BA_1_sum;
       
       /// !
       J = J_1;

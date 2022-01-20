@@ -36,7 +36,7 @@ prepareBigData <- function(B, B_status,
               nrow = 4, byrow = T,
               dimnames = list(c("radius_max[cm]", "area_max [ha]", "area_0 [ha]", "dbh_max [mm]"), c("A", "B")))
   
-  write.csv(M, file.path(tablepath, "Areas_average.csv"))
+  write.csv(M, file.path(tablepath, "Areas_truncation.csv"))
   print(M)
   
   id_select_B <- intersect(names(B), id_select) %>% setdiff("treeid") ## make sure to always exclude treeid for good grouping
@@ -483,11 +483,13 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     filter(n_plots > 2) %>%
     dplyr::select(-n_plots) %>%
     
-    ## get clusters with at least some Fagus
+    ## get clusters with at least some of both in small trees
     mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica")) %>%
+    mutate(anySmallFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage == "J")) %>%
+    mutate(anySmallOther = any(count_ha > 0 & tax == "other" & stage == "J")) %>%
     ungroup()
   
-    # unique(Stages_select$clusterid) %>% length() ## 677
+    # 
   
   # ## Selecting an equal no. of plots with and without Fagus
   # Stages_Fagus <- Stages_select %>%
@@ -502,9 +504,9 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
   # Stages_select <- bind_rows(Stages_other, Stages_Fagus)
   # # unique(Stages_select$clusterid) %>% length() ## 190
   
-  ## Confine to plots that have Fagus 
-  Stages_select %<>%
-    filter(anyFagus)
+  ## Confined to clusters that have any seedlings of both taxa 
+  Stages_select %>%
+    filter(anySmallFagus & anySmallOther) # %>% pull(clusterid) %>% unique() %>% length() ## 319 (out of 677)
   
   Stages_select %<>%
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
@@ -819,6 +821,77 @@ countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
   # filter(stage != "A")
   
   return(Stages_transitions)
+}
+
+
+## summarizeTaxa --------------------------------
+# Stages_select  <- tar_read("Stages_select")
+# Seedlings_s <- tar_read("Seedlings_s")
+# Data_seedlings <- tar_read(Data_seedlings)
+# Data_big <- tar_read("Data_big")
+
+summarizeTaxa <- function(Data_big, Data_seedlings, Stages_select, Seedlings_s, tablepath) {
+  
+  plot_select_DE <- Stages_select$plotid %>% unique()
+  plot_select_SK <- Seedlings_s$plotid %>% unique()
+  rm(Stages_select, Seedlings_s)
+  
+  ## Taxon frequencies were calculated by first averaging per plot over multiple surveys, and then calculating a total average over all plots.
+  
+  Summary_DE <- Data_big %>%
+    filter(plotid %in% plot_select_DE) %>%
+    
+    mutate(tax = str_replace(tax, "\\.", " ")) %>%
+    mutate(count_ha = count, ## count is already per hectare, countarea == 1
+           ba = pi * (dbh/2)^2 * 1e-6, # mm^2 to m^2)
+           ba_ha = ba * count_ha) %>% 
+
+    group_by(plotid, tax, obsid) %>%
+    summarize(ba_ha =  sum(ba_ha, na.rm = T)) %>%
+    
+    group_by(plotid, tax) %>%
+    summarize(ba_ha_plot =  mean(ba_ha, na.rm = T)) %>%
+    
+    group_by(plotid) %>%
+    mutate(ba_ha_total_plot = sum(ba_ha_plot, na.rm = T), frac_ba_ha_plot = ba_ha_plot/ba_ha_total_plot) %>%
+    
+    ungroup() %>%
+    mutate(ba_ha_total_avg = mean(ba_ha_total_plot, na.rm = T)) %>%
+    
+    group_by(tax) %>%
+    summarize(ba_ha_avg = mean(ba_ha_plot, na.rm = T),
+              frac_ba_ha_avg = mean(frac_ba_ha_plot, na.rm = T),
+              ba_ha_total_avg = first(ba_ha_total_avg)) %>%
+    filter(ba_ha_avg != 0) %>%
+    arrange(desc(frac_ba_ha_avg))
+  
+  Summary_SK <- Data_seedlings %>%
+    filter(sizeclass == "big") %>%
+    filter(plotid %in% plot_select_SK) %>%
+
+    group_by(plotid, taxon, year) %>%
+    summarize(ba_ha =  sum(ba_ha, na.rm = T)) %>%
+    
+    group_by(plotid, taxon) %>%
+    summarize(ba_ha_plot =  mean(ba_ha, na.rm = T)) %>%
+    
+    group_by(plotid) %>%
+    mutate(ba_ha_total_plot = sum(ba_ha_plot, na.rm = T), frac_ba_ha_plot = ba_ha_plot/ba_ha_total_plot) %>%
+    
+    ungroup() %>%
+    mutate(ba_ha_total_avg = mean(ba_ha_total_plot, na.rm = T)) %>%
+    
+    group_by(taxon) %>%
+    summarize(ba_ha_avg = mean(ba_ha_plot, na.rm = T),
+              frac_ba_ha_avg = mean(frac_ba_ha_plot, na.rm = T),
+              ba_ha_total_avg = first(ba_ha_total_avg)) %>%
+    filter(ba_ha_avg != 0) %>%
+    arrange(desc(frac_ba_ha_avg))
+  
+  write.csv(Summary_DE, file.path(tablepath, "Taxa_freq_DE.csv"))
+  write.csv(Summary_SK, file.path(tablepath, "Taxa_freq_SK.csv"))
+  
+  return(list(DE = Summary_DE, SK = Summary_SK))
 }
 
 

@@ -279,9 +279,11 @@ targets_wrangling <- list(
     tar_target(Stages_scaled_pred,
                scaleData(Stages_select_pred, predictor_select)), # After selection, so that scaling includes selected plots 
     
-    
+    ## Publishing
+    tar_target(Summary_taxa,
+               summarizeTaxa(Data_big, Data_seedlings, Stages_select, Seedlings_s, tablepath = dir_publish)),
     tar_target(Map_select,
-               mapClusters(Stages_select, path = dir_publish)) # After selection, so that scaling includes selected plots 
+               mapClusters(Stages_select, path = dir_publish))
     
   )
 )
@@ -361,7 +363,7 @@ targets_posterior <- list(
   
   ## Summarize
   tar_target(summary_test,
-             summarizeFit(cmdstanfit = fit_test, exclude = c(helpers_exclude, rep_exclude, "Fix"), path = dir_publish)),
+             summarizeFit(cmdstanfit = fit_test, exclude = c(helpers_exclude, rep_exclude), path = dir_publish)),
   tar_target(Freq_converged_test,
              summarizeFreqConverged(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
   
