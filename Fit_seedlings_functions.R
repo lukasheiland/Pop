@@ -28,6 +28,7 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     filter(!drop) %>%
     
     ## get only plots with at least some Fagus
+    ## Don't. Here this is on the plot, instead of the cluster level, selecting basically only Fagus plots.
     group_by(plotid) %>%
     mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica", na.rm = T)) %>%
     filter(anyFagus) %>%
@@ -57,11 +58,10 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     ## Here are several options for setting the offset for zero observations
     ## In the hurdle model, the fake offset area_0 will only get used as a factor level for determining the prob of getting a zero, not as an actual offset.
     
-    group_by(year, sizeclass) %>%
+    group_by(sizeclass) %>%
     mutate(median_area = quantile(area, prob = 0.5, na.rm = T, type = 1)) %>%
     mutate(min_area = min(area, na.rm = T)) %>%
     mutate(max_area = max(area, na.rm = T)) %>% ## Zero observations are replaced with the max possible sampling area, because the circle of small tree was determined by small tree density: the greater the density the smaller the plot
-    mutate(random_area = sample(area[!is.na(area)], size = 1)) %>%
     ungroup() %>%
     
     group_by(sizeclass, year, plotid) %>%
@@ -234,7 +234,7 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
       
       ## In the hurdle model, the fake offset area_0 will only get used as a factor level for determining the prob of getting a zero. 
       offset = S$offset_small,
-      offset_scaled = c(scale(S$offset_small)),
+      # offset_scaled = c(scale(S$offset_small)),
       rep_offset = as.integer(as.factor(S$offset_small)),
       N_offset = n_distinct(S$offset_small),
       
@@ -243,13 +243,13 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
       ba = S$ba_ha_big
     )
     
-    getInits <- function(chain_id) return(list(k_log = 0.0, r_log = 1.0, theta_logit = rep(-1.0, data_seedlings$N_offset), m_logit = -2, phi_inv_sqrt = rep(10, data_seedlings$N_offset)))
+    getInits <- function(chain_id) return(list(l_log = 0.1, r_log = 0.1, theta_logit = rep(-1.0, data_seedlings$N_offset), m_logit = -2, phi_inv_sqrt = rep(10, data_seedlings$N_offset)))
     fit_Seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4), output_dir = fitpath, init = getInits)
     
     attr(fit_Seedlings, "data") <- data_seedlings
     attr(fit_Seedlings, "taxon") <- tax
     
-    var <- c("r_log", "k_log", "theta_logit", "m_logit", "phi") # "o_log"
+    var <- c("r_log", "l_log", "theta_logit", "m_logit", "phi") # "o_log"
     
     ggsave(file.path(fitpath, paste0("Pairs_Seedlings_", tax, ".png")),
            mcmc_pairs(fit_Seedlings$draws(variables = setdiff(var, "phi"))))
