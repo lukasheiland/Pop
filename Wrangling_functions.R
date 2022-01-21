@@ -475,7 +475,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     
     ## subset to clusters with at least three surveys
     mutate(n_surveys = n_distinct(obsid)) %>%
-    filter(n_surveys >= 3) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
+    filter(n_surveys >= 2) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
     dplyr::select(-n_surveys) %>%
     
     ## subset to clusters with at least two plots
@@ -506,7 +506,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
   
   ## Confined to clusters that have any seedlings of both taxa 
   Stages_select %<>%
-    filter(anySmallFagus & anySmallOther) # %>% pull(clusterid) %>% unique() %>% length() ## 319 (out of 677)
+    filter(anySmallFagus & anySmallOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
   
   Stages_select %<>%
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))

@@ -525,7 +525,7 @@ selectOffset <- function(offsetname, data_stan_priors) {
 # tar_make("testmodel")
 # model <- testmodel <- tar_read("testmodel")
 # dir_fit  <- tar_read("dir_fit")
-fitModel <- function(model, data_stan, initfunc = 0.5, gpq = FALSE,
+fitModel <- function(model, data_stan, initfunc = 0.1, gpq = FALSE,
                      method = c("mcmc", "variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = dir_fit) {
   

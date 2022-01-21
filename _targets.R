@@ -71,13 +71,13 @@ targets_settings <- list(
                prior_b_log = c(-3, 3),
                prior_c_a_log = c(-5, 3),
                prior_c_b_log = c(-5, 3),
-               prior_c_j_log = c(-7, 4),
+               prior_c_j_log = c(-10, 3),
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
                # prior_k_log = cbind(Fagus = c(0, 3), others = c(0, 3)),
                # prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
                # prior_r_log = cbind(Fagus = c(0, 3), others = c(0, 3)),
-               prior_s_log = c(-2, 3)
+               prior_s_log = c(-3, 2)
              )
           )
 )
@@ -127,7 +127,8 @@ targets_parname <- list(
   tar_target(pars_exclude,
              c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
   tar_target(helpers_exclude,
-             c("vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
+             c("Fix",
+               "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "phi_obs_rep", "phi_obs_rep_prior",
                "log_prior", "log_lik", "lp__", "state_init_log_raw")),
   tar_target(rep_exclude,
@@ -310,7 +311,7 @@ targets_fits <- list(
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
-                          widthfactor_trans = 1, widthfactor_reg = 2)),
+                          widthfactor_trans = 1, widthfactor_reg = 1)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
@@ -333,15 +334,15 @@ targets_fits <- list(
   
   ## Prior predictive tests that rely on currently out-commented generated quantities
   # tar_target(priorsim_test,
-  #            drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.5, gpq = FALSE, fitpath = dir_fit)),
+  #            drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.1, gpq = FALSE, fitpath = dir_fit)),
   # tar_target(plots_predictions_priorsim_test,
   #            plotPredictions(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
 
   tar_target(fit_test_sansgq,
-             fitModel(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = FALSE,
+             fitModel(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.1, gpq = FALSE,
                       method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit)),
   tar_target(fit_test,
-             fitModel(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.5, gpq = TRUE,
+             fitModel(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.1, gpq = TRUE,
                       method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit)),
   tar_target(basename_fit_test,
              getBaseName(fit_test))
@@ -401,9 +402,9 @@ targets_posterior <- list(
              plotTrajectories(Trajectories_test, path = dir_publish, basename = basename_fit_test)),
   tar_target(plot_trajectories_mean_test,
              plotTrajectories(Trajectories_mean_test, thicker = T, path = dir_publish, basename = basename_fit_test)),
-  tar_target(plot_powerscale_test,
-             plotSensitivity(cmdstanfit = fit_test, include = parname, path = dir_publish)),
   
+  # tar_target(plot_powerscale_test,
+  #            plotSensitivity(cmdstanfit = fit_test, include = parname, path = dir_publish)),
   
   ## Test
   tar_target(sensitivity_test,
