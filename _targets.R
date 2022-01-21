@@ -146,8 +146,8 @@ targets_parname <- list(
   tar_target(exclude,
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
   tar_target(parname,
-             c("phi_obs", # "sigma_k_loc", # "l_log",
-               "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "k_log", "r_log", "s_log")),
+             c("phi_obs", # "sigma_k_loc", # "k_log",
+               "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
   tar_target(parname_sim,
              setdiff(parname, c("phi_obs", "sigma_k_loc")))
 )
@@ -311,7 +311,7 @@ targets_fits <- list(
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
-                          widthfactor_trans = 1, widthfactor_reg = 1)),
+                          widthfactor_trans = 1, widthfactor_reg = 2)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),

@@ -344,10 +344,10 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   ## Matrices[draws, species]
   Draws_g <- fit_g$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
   Draws_h <- fit_h$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
-  seedlingpar <- c("k_log", "r_log") # , "l_log"
-  draws_seedlings <- lapply(seedlingpar,
-                            function(v) lapply(fits_Seedlings, function(f, var = v) f$draws(variables = var, format = "draws_matrix") %>% as.data.frame())
-                            )
+  seedlingpar <- c("l_log", "r_log") # , "k_log"
+  draws_seedlings <- sapply(seedlingpar,
+                            function(v) lapply(fits_Seedlings, function(f, var = v) f$draws(variables = var, format = "draws_matrix") %>% as.data.frame()),
+                            simplify = F, USE.NAMES = T)
   draws_seedlings <- lapply(draws_seedlings, bind_cols)
   
   # Draws_seedlings <- posterior_samples(fits_Seedlings, fixed = F, pars = c("b_ba_ha$", "b_s_"))
@@ -355,9 +355,9 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
   
-  pars_k <- lapply(draws_seedlings[[1]], function(d) MASS::fitdistr(d, "normal")$estimate)
-  pars_r <- lapply(draws_seedlings[[2]], function(d) MASS::fitdistr(d, "normal")$estimate)
-  # pars_l <- lapply(draws_seedlings[[3]], function(d) MASS::fitdistr(d, "normal")$estimate)
+  pars_l <- lapply(draws_seedlings[["l_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
+  pars_r <- lapply(draws_seedlings[["r_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
+  # pars_k <- lapply(draws_seedlings[["k_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
     ## pars_seedlings <- lapply(Draws_seedlings, function(d) MASS::fitdistr(d, "normal")$estimate)
   
   if(widthfactor_trans != 1) {
@@ -366,9 +366,9 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   }
   
   if(widthfactor_reg != 1) {
-    pars_k <- lapply(pars_k, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
+    pars_l <- lapply(pars_l, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
     pars_r <- lapply(pars_r, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
-    # pars_l <- lapply(pars_l, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
+    # pars_k <- lapply(pars_k, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
       ## pars_seedlings <- lapply(pars_seedlings, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
   }
   
@@ -377,11 +377,9 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   priors <- list(
     prior_g_log = bind_cols(pars_g), ## Matrix[N_species, (mu, sigma)]
     prior_h_log = bind_cols(pars_h),
-    prior_k_log = bind_cols(pars_k),
+    prior_l_log = bind_cols(pars_l),
     prior_r_log = bind_cols(pars_r)
-    # prior_l_log = bind_cols(pars_l),
-      ## prior_r_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("b_ba_ha"))),
-      ## prior_l_log = bind_cols(dplyr::select(as.data.frame(pars_seedlings), contains("b_s")))
+    # prior_k_log = bind_cols(pars_k)
   )
   
   data_stan_priors <- c(data_stan, priors)

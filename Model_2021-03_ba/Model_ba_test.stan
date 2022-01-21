@@ -58,8 +58,8 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(vector[] state_init_log, int[] time_max, int[] times,
-                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector l_log, vector r_log, vector s_log,
-                // vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector[] L_loc, vector r_log, vector s_log,
+                // vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector l_log, vector r_log, vector s_log,
+                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector[] L_loc, vector r_log, vector s_log,
                 // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_log, vector h_log, vector[] L_loc, matrix R_log, matrix S_log,
                 vector ba_a_avg, real ba_a_upper,
                 int[] n_obs, int[] n_yhat,
@@ -80,8 +80,9 @@ functions {
                         
                         simulate(exp(state_init_log[loc]),
                                  time_max[loc],
-                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log),
-                                 // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
+                                 // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log),
+                                 exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
+                                 // ... etc. ,
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
                                  i_j, i_a, i_b);
@@ -399,9 +400,9 @@ data {
   array[2] vector[N_species] prior_g_log;
   array[2] vector[N_species] prior_h_log;
     
-  array[2] vector[N_species] prior_k_log;
+  // array[2] vector[N_species] prior_k_log;
   // vector[N_species] prior_k_log;
-  // array[2] vector[N_species] prior_l_log;
+  array[2] vector[N_species] prior_l_log;
   // vector[2] prior_l_log;
   array[2] vector[N_species] prior_r_log;
   // vector[N_species] prior_r_log;
@@ -457,8 +458,8 @@ parameters {
   vector<upper=0>[N_species] h_log;
   vector[N_species] s_log;
   
-  vector[N_species] k_log;
-  // vector[N_species] l_log;
+  // vector[N_species] k_log;
+  vector[N_species] l_log;
   vector[N_species] r_log;
 
   
@@ -494,10 +495,12 @@ parameters {
 
 transformed parameters {
 
-  //// Random intercepts for input k
+  //// Random intercepts for input k (assumes both K_loc and L_loc)
   // array[N_locs] vector<lower=0>[N_species] K_loc;
-
   // array[N_locs] vector<lower=0>[N_species] L_loc;
+  
+  //// L version: Local input
+  array[N_locs] vector<lower=0>[N_species] L_loc;
   
   
   array[N_locs] vector[N_pops] state_init_log;
@@ -524,12 +527,11 @@ transformed parameters {
     	// l * L_smooth == exp(l_log + L_smooth_log)
     	
     
-    // L version
-    // L_loc[loc, ] = exp(k_log) + exp(l_log + L_smooth_log[loc, ]);
-    	// k + l * L_smooth
-    	// l * L_smooth == exp(l_log + L_smooth_log)
+    //// L version
+    L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
                    
     state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [2, 2, 2, 2, 1, 1]';
+  
   }
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
@@ -543,8 +545,8 @@ transformed parameters {
   
   
   vector<lower=0>[L_yhat] y_hat = unpack(state_init_log, time_max, times,
-                                  b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, k_log, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
-                                // b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
+                                // b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, l_log, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
+                                b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 // b_log, c_a_log, c_b_log, C_j_log, G_log, h_log, L_loc, R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat, // varying numbers per loc
@@ -600,8 +602,8 @@ model {
   g_log ~ normal(prior_g_log[1,], prior_g_log[2,]);
   h_log ~ normal(prior_h_log[1,], prior_h_log[2,]);
 
-  k_log ~ normal(prior_k_log[1], prior_k_log[2]);
-  // l_log ~ normal(prior_l_log[1], prior_l_log[2]);
+  // k_log ~ normal(prior_k_log[1], prior_k_log[2]);
+  l_log ~ normal(prior_l_log[1], prior_l_log[2]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]);
   
   s_log ~ normal(prior_s_log[1], prior_s_log[2]); // s_log ~ student_t(nu_student, prior_s_log[1], prior_s_log[2]);
@@ -669,8 +671,8 @@ generated quantities {
   vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
   vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
   
-  vector[N_species] k_log_prior = to_vector(normal_rng(prior_k_log[1,], prior_k_log[2,]));
-  // vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
+  // vector[N_species] k_log_prior = to_vector(normal_rng(prior_k_log[1,], prior_k_log[2,]));
+  vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));
   
   // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
@@ -688,21 +690,24 @@ generated quantities {
   
   array[N_obsmethodTax] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.05, 0.02])); // 
   
-  //// Random intercepts for input k
-  // array[N_locs, N_species] real K_loc_log_raw_prior;  
+  //// Random intercept version for input k
+  // array[N_locs, N_species] real K_loc_log_raw_prior;
+  // array[N_locs] vector<lower=0>[N_species] L_loc_prior;  
 
+  //// L version
   // array[N_locs] vector<lower=0>[N_species] L_loc_prior;
   
   // vector<lower=0>[N_species] sigma_k_loc_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_species), rep_vector(1, N_species)))));
   // vector<lower=0>[N_protocol] zeta_prior = sqrt(square(to_vector(normal_rng(rep_vector(0, N_protocol), rep_vector(0.2, N_protocol)))));
   
   // for(loc in 1:N_locs) {
-  	
-  	//// Random intercept version
-    //// K_loc_log_raw_prior[loc,] = normal_rng(rep_vector(0, N_species), rep_vector(1, N_species));
-    //// L_loc_prior[loc, ] = exp(k_log_prior + sigma_k_loc_prior .* to_vector(K_loc_log_raw_prior[loc, ])) + exp(l_log_prior + L_smooth_log[loc, ]);
+ 	
+    //// Random intercept version
+    // K_loc_log_raw_prior[loc,] = normal_rng(rep_vector(0, N_species), rep_vector(1, N_species));
+    // L_loc_prior[loc, ] = exp(k_log_prior + sigma_k_loc_prior .* to_vector(K_loc_log_raw_prior[loc, ])) + exp(l_log_prior + L_smooth_log[loc, ]);
 
-    // L_loc_prior[loc, ] = exp(k_log_prior) + exp(l_log_prior + L_smooth_log[loc, ]);
+    //// L version
+    // L_loc_prior[loc, ] = exp(l_log_prior + L_smooth_log[loc, ]);
 
   // }
   
@@ -750,8 +755,8 @@ generated quantities {
   int greater_c_j = c_j_log[1] > c_j_log[2];
   int greater_g = g_log[1] > g_log[2];
   int greater_h = h_log[1] > h_log[2];
-  // int greater_l = l_log[1] > l_log[2];
-  int greater_k = k_log[1] > k_log[2];
+  int greater_l = l_log[1] > l_log[2];
+  // int greater_k = k_log[1] > k_log[2];
   int greater_r = r_log[1] > r_log[2];
   int greater_s = s_log[1] > s_log[2];
   
@@ -836,8 +841,8 @@ generated quantities {
 
       //// Simulate fix point, given parameters
       Fix[loc] = iterateFix(exp(state_init_log[loc]),
-                            exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log),
-                            // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
+                            // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log),
+                            exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
                             // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(h_log), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
                             ba_a_avg, ba_a_upper,
                             N_species, i_j, i_a, i_b,
@@ -875,13 +880,13 @@ generated quantities {
         
         // vector[N_species] ko = rep_vector(0, N_species);
         
-		//state_fix_ko_b[loc] = iterateFix(state_fix[loc, 1:N_pops], ko, exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//state_fix_ko_c_a[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), ko, exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//state_fix_ko_c_j[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), ko, exp(g_log), exp(h_log), exp(k_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_b[loc] = iterateFix(state_fix[loc, 1:N_pops], ko, exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_c_a[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), ko, exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_c_j[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), ko, exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
 		//state_fix_ko_k[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), ko, exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
 		//// state_fix_ko_l[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), ko, exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//state_fix_ko_r[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), ko, exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//state_fix_ko_s[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(k_log), exp(r_log), ko, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_r[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), ko, exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		//state_fix_ko_s[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), ko, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
 		//		
 		//contrib_b[loc] = ba_fix[loc] - state_fix_ko_b[loc, i_ba];
 		//contrib_c_a[loc] = ba_fix[loc] - state_fix_ko_c_a[loc, i_ba];
@@ -907,16 +912,18 @@ generated quantities {
     // // joint prior specification, sum of all logpriors
     // log_prior = log_prior +
     // 		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.1, 0.1]) +
-	//   		  // normal_lpdf(sigma_k_loc | 0, 1) +		  
+	//   		  //// Random intecept K version version
+	//            // normal_lpdf(sigma_k_loc | 0, 1) +		  
 	//   		  // normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
-	//   		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) + // student_t_lpdf(b_log | nu_student, prior_b_log[1], prior_b_log[2]) +
+	//   		  
+    //            normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) + // student_t_lpdf(b_log | nu_student, prior_b_log[1], prior_b_log[2]) +
 	//   		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) + // student_t_lpdf(c_a_log | nu_student, prior_c_a_log[1], prior_c_a_log[2]) +
 	//   		  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) + // student_t_lpdf(c_b_log | nu_student, prior_c_b_log[1], prior_c_b_log[2]) +
 	//   		  normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) + // student_t_lpdf(c_j_log | nu_student, prior_c_j_log[1], prior_c_j_log[2]) +
 	//   		  normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
 	//   		  normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
-	//   		  normal_lpdf(k_log | prior_k_log[1], prior_k_log[2]) +
-	//   		  // normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
+	//   		  // normal_lpdf(k_log | prior_k_log[1], prior_k_log[2]) +
+	//   		  normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
 	//   		  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
 	//   		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // student_t_lpdf(s_log | nu_student, prior_s_log[1], prior_s_log[2]);
 	//       			  
