@@ -809,9 +809,10 @@ generated quantities {
   //  array[N_locs] vector[N_species] contrib_r = contrib_b;
   //  array[N_locs] vector[N_species] contrib_s = contrib_b;
 
+  
   //// Declarations of quantities for sensitivity checks (as global variables).
-  real log_prior = 0; // this is zero to prevent NaNs from being in the sum.
-  vector[L_y] log_lik = rep_vector(0, L_y);
+  // real log_prior = 0; // this is zero to prevent NaNs from being in the sum.
+  // vector[L_y] log_lik = rep_vector(0, L_y);
   
 
   //// The conditional generation -------------------------------------
@@ -895,38 +896,37 @@ generated quantities {
     }
     
 
-
     //———————————————————————————————————————————————————————————————————//
     // Sensitivity analysis --------------------------------------------//
     //—————————————————————————————————————————————————————————————————//
   
-    for(loc in 1:N_locs) {
-      log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [2, 2, 2, 2, 1, 1]);
-    }
-    
-    // joint prior specification, sum of all logpriors
-    log_prior = log_prior +
-    		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.1, 0.1]) +
-	  		  // normal_lpdf(sigma_k_loc | 0, 1) +		  
-	  		  // normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
-	  		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) + // student_t_lpdf(b_log | nu_student, prior_b_log[1], prior_b_log[2]) +
-	  		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) + // student_t_lpdf(c_a_log | nu_student, prior_c_a_log[1], prior_c_a_log[2]) +
-	  		  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) + // student_t_lpdf(c_b_log | nu_student, prior_c_b_log[1], prior_c_b_log[2]) +
-	  		  normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) + // student_t_lpdf(c_j_log | nu_student, prior_c_j_log[1], prior_c_j_log[2]) +
-	  		  normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
-	  		  normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
-	  		  normal_lpdf(k_log | prior_k_log[1], prior_k_log[2]) +
-	  		  // normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
-	  		  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
-	  		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // student_t_lpdf(s_log | nu_student, prior_s_log[1], prior_s_log[2]);
-	      			  
-    // for(l in 1:L_y) {
-    //   log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs_rep[l], theta_obs_rep[l]);
+    // for(loc in 1:N_locs) {
+    //   log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [2, 2, 2, 2, 1, 1]);
     // }
-    
-    for(i in 1:L_y) {
-      log_lik[i] = neg_binomial_2_lpmf(y[i] | y_hat_rep_offset[i], phi_obs_rep[i]); // offset_zeta
-    }
+    // 
+    // // joint prior specification, sum of all logpriors
+    // log_prior = log_prior +
+    // 		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.1, 0.1]) +
+	//   		  // normal_lpdf(sigma_k_loc | 0, 1) +		  
+	//   		  // normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
+	//   		  normal_lpdf(b_log | prior_b_log[1], prior_b_log[2]) + // student_t_lpdf(b_log | nu_student, prior_b_log[1], prior_b_log[2]) +
+	//   		  normal_lpdf(c_a_log | prior_c_a_log[1], prior_c_a_log[2]) + // student_t_lpdf(c_a_log | nu_student, prior_c_a_log[1], prior_c_a_log[2]) +
+	//   		  normal_lpdf(c_b_log | prior_c_b_log[1], prior_c_b_log[2]) + // student_t_lpdf(c_b_log | nu_student, prior_c_b_log[1], prior_c_b_log[2]) +
+	//   		  normal_lpdf(c_j_log | prior_c_j_log[1], prior_c_j_log[2]) + // student_t_lpdf(c_j_log | nu_student, prior_c_j_log[1], prior_c_j_log[2]) +
+	//   		  normal_lpdf(g_log | prior_g_log[1,], prior_g_log[2,]) +
+	//   		  normal_lpdf(h_log | prior_h_log[1,], prior_h_log[2,]) +
+	//   		  normal_lpdf(k_log | prior_k_log[1], prior_k_log[2]) +
+	//   		  // normal_lpdf(l_log | prior_l_log[1], prior_l_log[2]) +
+	//   		  normal_lpdf(r_log | prior_r_log[1], prior_r_log[2]) +
+	//   		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // student_t_lpdf(s_log | nu_student, prior_s_log[1], prior_s_log[2]);
+	//       			  
+    // // for(l in 1:L_y) {
+    // //   log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs_rep[l], theta_obs_rep[l]);
+    // // }
+    // 
+    // for(i in 1:L_y) {
+    //   log_lik[i] = neg_binomial_2_lpmf(y[i] | y_hat_rep_offset[i], phi_obs_rep[i]); // offset_zeta
+    // }
   
   } // END: if(generateposteriorq)
 }
