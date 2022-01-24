@@ -224,12 +224,9 @@ targets_wrangling <- list(
                  predictS(fits_s, Stages_env),
                  iteration = "list"),
       
-      tar_target(file_Stages_s,
-                 if(onserver) "Data/Stages_s.rds" else saveStages_s(Stages_s),
-                 format = "file"),
-      tar_target(Data_Stages_s,
-                 readRDS(file_Stages_s)),
-      ## explicit side effect for later use on other machines
+      tar_skip(file_save_Stages_s, saveStages_s(Stages_s), skip = onserver),
+      tar_skip(file_read_Stages_s, "Data/Stages_s.rds", skip = !onserver, format = "file"),
+      tar_target(file_Stages_s, if (onserver) file_read_Stages_s else file_save_Stages_s),
       
       tar_target(surfaces_s,
                  predictSurfaces(fits_s),
@@ -253,10 +250,12 @@ targets_wrangling <- list(
       tar_target(Seedlings_s,
                  predictS(fits_Seedlings_s, Seedlings),
                  iteration = "list"),
-      tar_target(file_Seedlings_s,
-                 if(onserver) "Data/Seedlings_s.rds" else saveSeedlings_s(Seedlings_s),
-                 format = "file"),
-      tar_target(Data_Seedlings_s, ## explicit side effect for later use on other machines
+      
+      tar_skip(file_save_Seedlings_s, saveSeedlings_s(Seedlings_s), skip = onserver),
+      tar_skip(file_read_Seedlings_s, "Data/Seedlings_s.rds", skip = !onserver, format = "file"),
+      tar_target(file_Seedlings_s, if (onserver) file_read_Seedlings_s else file_save_Seedlings_s),
+
+      tar_target(Data_Seedlings_s,
                  readRDS(file_Seedlings_s)),
       tar_target(surfaces_Seedlings_s,
                  predictSeedlingsSurfaces(fits_Seedlings_s),

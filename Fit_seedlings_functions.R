@@ -206,6 +206,8 @@ saveSeedlings_s <- function(Seedlings_s) {
   if(!dir.exists("Data")) dir.create("Data")
   saveRDS(Seedlings_s, file = path)
   
+  message("Remember to upload: scp ~/Documents/Studium/Projects/Pop/Data/Seedlings_s.rds ssh 'lukasheiland@rhsbio7.uni-regensburg.de:/home/lukasheiland/Projects/Pop/Data'")
+  
   return(path)
 }
 
