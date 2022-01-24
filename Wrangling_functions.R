@@ -475,7 +475,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     
     ## subset to clusters with at least three surveys
     mutate(n_surveys = n_distinct(obsid)) %>%
-    filter(n_surveys >= 2) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
+    filter(n_surveys >= 3) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
     dplyr::select(-n_surveys) %>%
     
     ## subset to clusters with at least two plots
@@ -487,6 +487,8 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica")) %>%
     mutate(anySmallFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage == "J")) %>%
     mutate(anySmallOther = any(count_ha > 0 & tax == "other" & stage == "J")) %>%
+    mutate(anyBigFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage %in% c("A", "B"))) %>%
+    mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
     ungroup()
   
     # 
@@ -504,9 +506,9 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
   # Stages_select <- bind_rows(Stages_other, Stages_Fagus)
   # # unique(Stages_select$clusterid) %>% length() ## 190
   
-  ## Confined to clusters that have any seedlings of both taxa 
+  ## Confined to clusters with any observation of the taxa in defined sizeclasses
   Stages_select %<>%
-    filter(anySmallFagus & anySmallOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
+    filter(anySmallFagus & anySmallOther & anyBigFagus & anyBigOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
   
   Stages_select %<>%
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
