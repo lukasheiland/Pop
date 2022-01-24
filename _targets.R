@@ -74,10 +74,10 @@ targets_settings <- list(
                prior_c_j_log = c(-10, 3),
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
-               # prior_k_log = cbind(Fagus = c(0, 3), others = c(0, 3)),
-               # prior_l_log = cbind(Fagus = c(0, 2), others = c(0, 2)),
-               # prior_r_log = cbind(Fagus = c(0, 3), others = c(0, 3)),
-               prior_s_log = c(-3, 2)
+               # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
+               prior_l_log = cbind(Fagus = c(2, 0.5), others = c(8, 0.5)),
+               # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
+               prior_s_log = c(-5, 3)
              )
           )
 )
@@ -148,6 +148,8 @@ targets_parname <- list(
   tar_target(parname,
              c("phi_obs", # "sigma_k_loc", # "k_log",
                "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
+  tar_target(parname_loc,
+             c("state_init_log", "L_loc")),
   tar_target(parname_sim,
              setdiff(parname, c("phi_obs", "sigma_k_loc")))
 )
@@ -373,10 +375,10 @@ targets_posterior <- list(
   tar_target(residuals_test,
              generateResiduals(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
   tar_target(Trajectories_test,
-             generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = c("state_init_log"),
+             generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
                                   time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 50, usemean = F)),
   tar_target(Trajectories_mean_test,
-             generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = c("state_init_log"),
+             generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
                                   time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 25, usemean = T)),
   
   ## Formatted posterior data stuctures
