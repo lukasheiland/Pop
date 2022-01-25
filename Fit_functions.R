@@ -344,7 +344,7 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   ## Matrices[draws, species]
   Draws_g <- fit_g$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
   Draws_h <- fit_h$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
-  seedlingpar <- c("l_log", "r_log") # , "k_log"
+  seedlingpar <- c("r_log") # , "k_log", "l_log"
   draws_seedlings <- sapply(seedlingpar,
                             function(v) lapply(fits_Seedlings, function(f, var = v) f$draws(variables = var, format = "draws_matrix") %>% as.data.frame()),
                             simplify = F, USE.NAMES = T)
