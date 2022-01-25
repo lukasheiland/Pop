@@ -19,8 +19,6 @@ onserver <- Sys.info()["sysname"] != "Darwin"
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
 
-if (!onserver) tar_make(c("file_Seedlings_s", "file_Stages_s"))
-
 tar_make_future(c("data_stan_priors_offset"),
                 workers = if(onserver) 12 else 3, reporter = "timestamp")
 
