@@ -355,8 +355,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
   
-  pars_l <- lapply(draws_seedlings[["l_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_r <- lapply(draws_seedlings[["r_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
+  # pars_l <- lapply(draws_seedlings[["l_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
   # pars_k <- lapply(draws_seedlings[["k_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
     ## pars_seedlings <- lapply(Draws_seedlings, function(d) MASS::fitdistr(d, "normal")$estimate)
   
@@ -366,8 +366,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   }
   
   if(widthfactor_reg != 1) {
-    pars_l <- lapply(pars_l, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
     pars_r <- lapply(pars_r, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
+    # pars_l <- lapply(pars_l, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
     # pars_k <- lapply(pars_k, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
       ## pars_seedlings <- lapply(pars_seedlings, function(p) c(p["mean"], widthfactor_reg*p["sd"]))
   }
@@ -377,8 +377,8 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   priors <- list(
     prior_g_log = bind_cols(pars_g), ## Matrix[N_species, (mu, sigma)]
     prior_h_log = bind_cols(pars_h),
-    prior_l_log = bind_cols(pars_l),
     prior_r_log = bind_cols(pars_r)
+    # prior_l_log = bind_cols(pars_l),
     # prior_k_log = bind_cols(pars_k)
   )
   

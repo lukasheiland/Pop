@@ -188,8 +188,10 @@ prepareBigData <- function(B, B_status,
 ## prepareSmallData --------------------------------
 # J  <- tar_read("Data_small")
 # taxon_select <- tar_read("taxon_select")
+# regclass_select <- tar_read("regclass_select")
 prepareSmallData <- function(J,
                            taxon_select,
+                           regclass_select,
                            id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
                            ) {
   id_select_S <- intersect(names(J), id_select)
@@ -210,9 +212,7 @@ prepareSmallData <- function(J,
     ### subset to time-constant regclasses, NOTE: There are more here.
     ## levels(J$regclass)
     ## table(J$regclass,J$obsid)
-    ## here we select all 20cm height <= trees < 7mm dbh:
-    ## c("h[20,50)", "h[50,130)", "hd[130,Inf)[0,5)", "d[5,6)", "d[6,7)")
-    dplyr::filter(as.integer(regclass) %in% 1:5)  %>%
+    dplyr::filter(as.integer(regclass) %in% regclass_select)  %>%
     ## these classes are all present in all three obsids, but consider different amounts of plots: # %>% dplyr::group_by(regclass, obsid) %>% dplyr::summarize(count_ha = sum(count/countarea))
 
     dplyr::group_by(methodid) %>%
@@ -491,8 +491,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
     ungroup()
   
-    # 
-  
+
   # ## Selecting an equal no. of plots with and without Fagus
   # Stages_Fagus <- Stages_select %>%
   #   filter(anyFagus)
@@ -508,7 +507,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
   
   ## Confined to clusters with any observation of the taxa in defined sizeclasses
   Stages_select %<>%
-    filter(anySmallFagus & anySmallOther & anyBigFagus & anyBigOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
+    filter(anyFagus) # %>% pull(clusterid) %>% unique() %>% length() ## 635
   
   Stages_select %<>%
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
