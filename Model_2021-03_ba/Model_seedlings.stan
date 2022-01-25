@@ -18,7 +18,8 @@ data {
 
 parameters {
   
-  real l_log;
+  real k_log;
+  // real l_log;
   real r_log;
 
   // real theta_logit;
@@ -32,7 +33,8 @@ transformed parameters {
 
   vector<lower=0>[N_offset] phi = inv_square(phi_inv_sqrt);
 
-  vector<lower=0>[N] y_hat_ha = exp(l_log) * l_smooth + exp(r_log) * ba;
+  // vector<lower=0>[N] y_hat_ha = exp(l_log) * l_smooth + exp(r_log) * ba;
+  vector<lower=0>[N] y_hat_ha = exp(k_log) + exp(r_log) * ba;
   vector<lower=0>[N] y_hat =  y_hat_ha .* offset;
   
   real m_logit_scaled = m_logit * 1e-4; // account for the fact, that y_hat is on the hectare scale, so that there are huge numbers. 1e-4 converts to the m^2 scale
@@ -49,7 +51,8 @@ model {
   
   phi_inv_sqrt ~ std_normal();
   
-  l_log ~ normal(0, 3);
+  k_log ~ normal(0, 3);
+  // l_log ~ normal(0, 3);
   r_log ~ normal(0, 3);
   
 

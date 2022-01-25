@@ -27,8 +27,7 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     ungroup() %>%
     filter(!drop) %>%
     
-    ## get only plots with at least some Fagus
-    ## Don't. Here this is on the plot, instead of the cluster level, selecting basically only Fagus plots.
+    ## get only plots with at least some Fagus. This was discarded because in SK Fagus plots are much more often Fagus mono stands.
     # group_by(plotid) %>%
     # mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica", na.rm = T)) %>%
     # filter(anyFagus) %>%
@@ -67,7 +66,7 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     group_by(sizeclass, year, plotid) %>%
     mutate(n_area = n_distinct(area[sizeclass == "small"], na.rm = T),
            area_0 = case_when(n_area == 1 ~ first(area[!is.na(area)]), ## Here, even when there is a 0 the area of the other observed species is taken as a replacement.
-                              n_area == 0 ~ first(median_area) ## This is here as an option to set an offset for 0-observation plots
+                              n_area == 0 ~ first(max_area) ## This is here as an option to set an offset for 0-observation plots
                               # n_area > 1 ~ replace_na(weighted.mean(area, w = count_ha, na.rm = T), first(min_area)) ## This case is not present in the cleaned data. But this is an option to set the 0 to the average area, when there are multiple areas per plot.
                               )
            ) %>%

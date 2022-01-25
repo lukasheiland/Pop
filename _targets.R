@@ -63,6 +63,11 @@ targets_settings <- list(
   ## Vector of taxa to select. All others will be lumped into "other".
   tar_target(taxon_select, c("Fagus.sylvatica")),
   
+  ## Regeneration classes to include
+  ## here we select all 20cm height <= trees < 7mm dbh: regglass_select <- c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)
+  ## here we select all 20cm height <= trees < 5mm dbh
+  tar_target(regclass_select, c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3)), ## [mm]
+  
   ## Weakly informative priors.
   ## If provided, they are prioritzed over the fitted priors
   tar_target(weakpriors,
@@ -75,7 +80,7 @@ targets_settings <- list(
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
                # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_l_log = cbind(Fagus = c(2, 0.5), others = c(8, 0.5)),
+               prior_l_log = c(7, 1),
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
                prior_s_log = c(-5, 3)
              )
@@ -197,7 +202,7 @@ targets_wrangling <- list(
                               tablepath = dir_publish)),
     
     tar_target(Data_small_area,
-               prepareSmallData(Data_small, taxon_select = taxon_select)),
+               prepareSmallData(Data_small, taxon_select = taxon_select, regclass_select = regclass_select)),
     
     tar_target(Stages_transitions,
                countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select,
