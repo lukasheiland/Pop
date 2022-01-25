@@ -196,7 +196,6 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 ## generateTrajectories --------------------------------
 # cmdstanfit <- tar_read("fit_test")
 # parname <- tar_read("parname")
-# locparname <- tar_read("parname_loc")
 # data_stan_priors <- tar_read("data_stan_priors")
 
 generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = "state_init_log",
@@ -220,8 +219,8 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     g <- pars$g # Length n_species vector of transition rates.
     h <- pars$h # Length n_species vector of transition rates.
     
-    l <- pars$l # Length n_species vector of input rates.
-    # l <- pars$k # Length n_species vector of input rates.
+    # l <- pars$l # Length n_species vector of input rates.
+    l <- pars$k # Length n_species vector of input rates.
     
     r <- pars$r # Length n_species vector of input rates
     s <- pars$s # Length n_species vector of shading rates
@@ -605,12 +604,12 @@ plotConditional <- function(cmdstanfit, parname, path) {
 # parname  <- tar_read("parname_sim")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
-plotContributions <- function(cmdstanfit, parname, path) {
+plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
   parname <- str_remove(setdiff(parname, "k_log"), "_log")
-  contribname <- paste0("sum_ko_", parname, "_fix")
+  contribname <- if (plotprop) paste0("sum_ko_prop", parname, "_fix") else paste0("sum_ko_", parname, "_fix")
   
   C <- cmdstanfit$draws(variables = contribname) %>%
     as_draws_rvars()

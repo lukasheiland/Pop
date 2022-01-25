@@ -31,7 +31,7 @@ tar_make_future(c("summary_test",
                   "plots_denscheck_posterior_test",
                   "plots_conditional_test",
                   "plots_contributions_test",
-                  "plots_predictions_posterior_test",
+                  "plots_contributions_prop_test",
                   "plots_twostates_test",
                   "plot_trajectories_mean_test"),
                 workers = if(onserver) 12 else 3, reporter = "timestamp")

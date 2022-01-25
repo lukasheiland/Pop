@@ -65,8 +65,8 @@ targets_settings <- list(
   
   ## Regeneration classes to include
   ## here we select all 20cm height <= trees < 7mm dbh: regglass_select <- c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)
-  ## here we select all 20cm height <= trees < 5mm dbh
-  tar_target(regclass_select, c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3)), ## [mm]
+  ## These are all size classes that are consistent across the three surveys.
+  tar_target(regclass_select, c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)), ## [mm]
   
   ## Weakly informative priors.
   ## If provided, they are prioritzed over the fitted priors
@@ -80,7 +80,7 @@ targets_settings <- list(
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
                # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_l_log = c(7, 1),
+               prior_l_log = c(8, 1),
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
                prior_s_log = c(-5, 3)
              )
@@ -147,6 +147,7 @@ targets_parname <- list(
                "Fix", "dominant_fix", "major_fix", "ba_fix", "J_fix", "A_fix", "B_fix", 
                "converged_fix", "iterations_fix", "fixiter_max", "eps_ba_fix",
                "sum_ko_b_fix", "sum_ko_c_a_fix", "sum_ko_c_b_fix", "sum_ko_c_j_fix", "sum_ko_g_fix", "sum_ko_h_fix", "sum_ko_l_fix", "sum_ko_r_fix", "sum_ko_s_fix",
+               "sum_ko_prop_b_fix", "sum_ko_prop_c_a_fix", "sum_ko_prop_c_b_fix", "sum_ko_prop_c_j_fix", "sum_ko_prop_g_fix", "sum_ko_prop_h_fix", "sum_ko_prop_l_fix", "sum_ko_prop_r_fix", "sum_ko_prop_s_fix",
                "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")),
   tar_target(exclude,
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
@@ -397,6 +398,8 @@ targets_posterior <- list(
              plotConditional(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish)),
   tar_target(plots_contributions_test,
              plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish)),
+  tar_target(plots_contributions_prop_test,
+             plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, plotprop = T)),
   tar_target(plots_twostates_test,
              plotTwoStates(Twostates_test, path = dir_publish, basename = basename_fit_test)),
   tar_target(plot_trajectories_test,
