@@ -628,7 +628,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color
   fix_draws <- thin_draws(fix_draws, thin = 10)
   
   M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
-  I <- bayesplot::mcmc_intervals_data(M) %>%
+  I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.9) %>%
     mutate(p = parameter,
            parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
            tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus sylvatica" = "1", "other" = "2"),
