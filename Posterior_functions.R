@@ -604,7 +604,7 @@ plotConditional <- function(cmdstanfit, parname, path) {
 # parname  <- tar_read("parname_sim")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
-plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE) {
+plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color = c("#208E50", "#FFC800")) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -621,15 +621,35 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE) {
   }
   
   fix_draws <- lapply(C, function(Rvar) lapply(1:n_species,
-                                                 function(i) do.call(function(...) bind_draws(... , along = "draw"), convertVectorToDrawsList(Rvar[,i, drop = T]))
-                                               )
-                      )
+                                               function(i) do.call(function(...) bind_draws(... , along = "draw"), convertVectorToDrawsList(Rvar[,i, drop = T]))
+  )
+  )
   fix_draws <- as_draws(lapply(fix_draws, function(f) do.call(cbind, lapply(f, function(l) l$x))))
   fix_draws <- thin_draws(fix_draws, thin = 10)
   
   M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
+  I <- bayesplot::mcmc_intervals_data(M) %>%
+    mutate(p = parameter,
+           parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
+           tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus sylvatica" = "1", "other" = "2"),
+           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"))
+    ) %>%
+    mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
+    arrange(stage, parameter)
   
-  plot_contributions <- bayesplot::mcmc_areas_ridges(M)
+  
+  # plot_contributions <- bayesplot::mcmc_areas_ridges(M)
+  
+  pos <- position_nudge(y = (as.integer(I$tax) - 1.5) * 0.2)
+  
+  plot_contributions <- ggplot(I, aes(x = m, y = fct_reorder(parameter, as.numeric(stage)), color = tax, group = stage)) + 
+    geom_linerange(aes(xmin = l, xmax = h), size = 2, position = pos) +
+    geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
+    geom_point(color = "black", position = pos) +
+    coord_flip() +
+    scale_color_manual(values = color) +
+    geom_vline(xintercept = 0, linetype = "dashed")
+  
   
   ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", ".png"), plot_contributions, dev = "png", height = 30, width = 10)
   

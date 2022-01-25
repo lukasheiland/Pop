@@ -84,7 +84,9 @@ targets_settings <- list(
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
                prior_s_log = c(-5, 3)
              )
-          )
+          ),
+  
+  tar_target(twocolors, c("#208E50", "#FFC800"))
 )
 
 
@@ -396,10 +398,10 @@ targets_posterior <- list(
              plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "posterior", path = dir_publish)),
   tar_target(plots_conditional_test,
              plotConditional(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish)),
-  tar_target(plots_contributions_test,
-             plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish)),
-  tar_target(plots_contributions_prop_test,
-             plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, plotprop = T)),
+  tar_target(plot_contributions_test,
+             plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, color = twocolors)),
+  tar_target(plot_contributions_prop_test,
+             plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, plotprop = T, color = twocolors)),
   tar_target(plots_twostates_test,
              plotTwoStates(Twostates_test, path = dir_publish, basename = basename_fit_test)),
   tar_target(plot_trajectories_test,
