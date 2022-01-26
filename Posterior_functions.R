@@ -201,7 +201,7 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = "state_init_log",
                                  time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 1, usemean = FALSE) {
   
-  parname <- setdiff(parname, c("phi_obs", "sigma_l", "sigma_k_loc"))
+  parname <- setdiff(parname, c("phi_obs", "sigma_k_loc"))
   parname_sans_log <- gsub("_log$", "", parname)
   
   
