@@ -819,23 +819,8 @@ generated quantities {
   array[N_locs] int major_fix = converged_fix;
   
   //// Declarations of counterfactual posterior quantities
-  /// still uses the old format
-
-  //  array[N_locs] vector[_] state_fix_ko_b = Fix?;
-  //  array[N_locs] vector[ ] state_fix_ko_c_a = ;
-  //  array[N_locs] vector[ ] state_fix_ko_c_j = ;
-  //  // array[N_locs] vector[ ] state_fix_ko_l = ;
-  //  array[N_locs] vector[ ] state_fix_ko_k = ;
-  //  array[N_locs] vector[ ] state_fix_ko_r = ;
-  //  array[N_locs] vector[ ] state_fix_ko_s = ;
-  //  
-  //  array[N_locs] vector[N_species] contrib_b = rep_array(rep_vector(0, N_species), N_locs);;
-  //  array[N_locs] vector[N_species] contrib_c_a = contrib_b;
-  //  array[N_locs] vector[N_species] contrib_c_j = contrib_b;
-  //  // array[N_locs] vector[N_species] contrib_l = contrib_b;
-  //  array[N_locs] vector[N_species] contrib_k = contrib_b;
-  //  array[N_locs] vector[N_species] contrib_r = contrib_b;
-  //  array[N_locs] vector[N_species] contrib_s = contrib_b;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_s = Fix;
+  array[N_locs] vector[N_species] ba_fix_ko_s = J_fix;
 
   
   //// Declarations of quantities for sensitivity checks (as global variables).
@@ -910,26 +895,19 @@ generated quantities {
         
 
         //// Counterfactual fix point iteration ---------------------------
-        //// Uses still the old vector iterateFix method
         
-        // vector[N_species] ko = rep_vector(0, N_species);
+        vector[N_species] ko = rep_vector(0, N_species);
+        vector[N_pops] state_fix = append_row(append_row(J_fix[loc],  A_fix[loc]),  B_fix[loc]);
         
-		//state_fix_ko_b[loc] = iterateFix(state_fix[loc, 1:N_pops], ko, exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//state_fix_ko_c_a[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), ko, exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//state_fix_ko_c_j[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), ko, exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//state_fix_ko_k[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), ko, exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//// state_fix_ko_l[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), ko, exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//state_fix_ko_r[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), ko, exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//state_fix_ko_s[loc] = iterateFix(state_fix[loc, 1:N_pops], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), ko, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
-		//		
-		//contrib_b[loc] = ba_fix[loc] - state_fix_ko_b[loc, i_ba];
-		//contrib_c_a[loc] = ba_fix[loc] - state_fix_ko_c_a[loc, i_ba];
-		//contrib_c_j[loc] = ba_fix[loc] - state_fix_ko_c_j[loc, i_ba];
-		//contrib_k[loc] = ba_fix[loc] - state_fix_ko_k[loc, i_ba];
-		//// contrib_l[loc] = ba_fix[loc] - state_fix_ko_l[loc, i_ba];
-		//contrib_r[loc] = ba_fix[loc] - state_fix_ko_r[loc, i_ba];
-		//contrib_s[loc] = ba_fix[loc] - state_fix_ko_s[loc, i_ba];
-		
+		// Fix_ko_b[loc]
+		// Fix_ko_c_a[loc]
+		// Fix_ko_c_j[loc]
+		// Fix_ko_k[loc]
+		// Fix_ko_l[loc]
+		// Fix_ko_r[loc]
+		Fix_ko_s[loc] = iterateFix(state_fix, exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), ko, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
+      
       }
   
     }

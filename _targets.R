@@ -80,7 +80,7 @@ targets_settings <- list(
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
                # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_l_log = c(9, 2),
+               prior_l_log = c(8, 1),
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
                prior_s_log = c(-5, 3)
              )
@@ -134,7 +134,7 @@ targets_parname <- list(
   tar_target(pars_exclude,
              c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
   tar_target(helpers_exclude,
-             c("Fix",
+             c("Fix", "Fix_ko_s",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "phi_obs_rep", "phi_obs_rep_prior",
                "log_prior", "log_lik", "lp__", "state_init_log_raw")),
@@ -150,6 +150,7 @@ targets_parname <- list(
                "converged_fix", "iterations_fix", "fixiter_max", "eps_ba_fix",
                "sum_ko_b_fix", "sum_ko_c_a_fix", "sum_ko_c_b_fix", "sum_ko_c_j_fix", "sum_ko_g_fix", "sum_ko_h_fix", "sum_ko_l_fix", "sum_ko_r_fix", "sum_ko_s_fix",
                "sum_ko_prop_b_fix", "sum_ko_prop_c_a_fix", "sum_ko_prop_c_b_fix", "sum_ko_prop_c_j_fix", "sum_ko_prop_g_fix", "sum_ko_prop_h_fix", "sum_ko_prop_l_fix", "sum_ko_prop_r_fix", "sum_ko_prop_s_fix",
+               "Fix_ko_s", "ba_fix_ko_s",
                "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")),
   tar_target(exclude,
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
