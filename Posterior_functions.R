@@ -610,7 +610,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
   parname <- str_remove(setdiff(parname, "k_log"), "_log")
-  contribname <- if (plotprop) paste0("sum_ko_prop", parname, "_fix") else paste0("sum_ko_", parname, "_fix")
+  contribname <- if (plotprop) paste0("sum_ko_prop_", parname, "_fix") else paste0("sum_ko_", parname, "_fix")
   
   C <- cmdstanfit$draws(variables = contribname) %>%
     as_draws_rvars()
@@ -652,7 +652,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color
     geom_vline(xintercept = 0, linetype = "dashed")
   
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", ".png"), plot_contributions, dev = "png", height = 30, width = 10)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".png"), plot_contributions, dev = "png", height = 30, width = 10)
   
   return(plot_contributions)
 }

@@ -580,7 +580,7 @@ model {
   
   //// Hyperpriors
 
-  phi_obs_inv_sqrt ~ normal(rep_vector(0.0, 6), [0.2, 0.2, 0.6, 0.6, 0.1, 0.1]); // Observation error for neg_binomial; levels: "F.j"  "o.j"  "F.a"  "o.a"  "F.ba" "o.ba"
+  phi_obs_inv_sqrt ~ normal(rep_vector(0.0, 6), [0.1, 0.1, 0.6, 0.6, 0.1, 0.1]); // Observation error for neg_binomial; levels: "F.j"  "o.j"  "F.a"  "o.a"  "F.ba" "o.ba"
   	// Levels of obsmethodTax: j.F a.F ba.F j.o a.o ba.o
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
   
