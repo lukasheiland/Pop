@@ -197,6 +197,7 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 # cmdstanfit <- tar_read("fit_test")
 # parname <- tar_read("parname")
 # data_stan_priors <- tar_read("data_stan_priors")
+# locparname <- tar_read("parname_loc")
 
 generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = "state_init_log",
                                  time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 1, usemean = FALSE) {
@@ -219,8 +220,8 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     g <- pars$g # Length n_species vector of transition rates.
     h <- pars$h # Length n_species vector of transition rates.
     
-    # l <- pars$l # Length n_species vector of input rates.
-    l <- pars$k # Length n_species vector of input rates.
+    l <- pars$l # Length n_species vector of input rates.
+    # l <- pars$k # Length n_species vector of input rates.
     
     r <- pars$r # Length n_species vector of input rates
     s <- pars$s # Length n_species vector of shading rates
