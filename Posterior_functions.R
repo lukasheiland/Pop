@@ -82,22 +82,22 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 }
 
 
-## formatTwoStates --------------------------------
+## formatStates --------------------------------
 # cmdstanfit <- tar_read("fit_test")
 # data_stan_priors <- tar_read("data_stan_priors")
-formatTwoStates <- function(cmdstanfit, data_stan_priors) {
+formatStates <- function(cmdstanfit, data_stan_priors) {
   
-  statename <- c("major_init", "major_fix", "ba_init", "ba_fix")
+  statename <- c("major_init", "major_fix", "ba_init", "ba_fix", "ba_fix_ko_s")
   
-  Twostates <- lapply(statename, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
-  Twostates <- lapply(Twostates, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, {i <- 2})) else S )
-  Twostates %<>%
+  States <- lapply(statename, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
+  States <- lapply(States, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, {i <- 2})) else S )
+  States %<>%
     bind_rows() %>%
     mutate(tax = factor(c("Fagus", "other")[i]))
   
-  Twostates$value[Twostates$value == 9] <- NA
+  States$value[States$value == 9] <- NA
   
-  return(Twostates)
+  return(States)
 }
 
 
@@ -355,10 +355,13 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 # exclude <- tar_read("exclude")
 # path  <- tar_read("dir_fit")
 # basename  <- tar_read("basename_fit_test")
-plotStanfit <- function(stanfit, exclude, path, basename) {
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotStanfit <- function(stanfit, exclude, path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   plotRidges <- function(startswith, fit = stanfit) {
-    bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith, ignore.case = F)))
+    bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith, ignore.case = F))) +
+      themefun()
   }
   
   usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
@@ -372,7 +375,7 @@ plotStanfit <- function(stanfit, exclude, path, basename) {
   
   
   traceplot <- rstan::traceplot(stanfit, pars = parname_sansprior, include = T)
-  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior"))))
+  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
   ridgeplots <- parallel::mclapply(parnamestart, plotRidges, mc.cores = getOption("mc.cores", 7L))
   ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots)
   
@@ -403,6 +406,8 @@ plotStanfit <- function(stanfit, exclude, path, basename) {
 # data_stan_priors <- tar_read("data_stan_priors")
 # draws <- tar_read("draws_test") ## this is here as an option for plotting draw objects if the fit has NaNs in generated quantities
 # path  <- tar_read("dir_fit")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
 plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c("prior", "posterior"), path) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
@@ -489,23 +494,26 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 }
 
 
-## plotTwoStates --------------------------------
-# Twostates <- tar_read("Twostates_test")
+## plotStates --------------------------------
+# States <- tar_read("States_test")
 # path  <- tar_read("dir_publish")
 # basename  <- tar_read("basename_fit_test")
-# th  <- tar_read("themefunction")
-plotTwoStates <- function(Twostates, path, basename, color = c("#208E50", "#FFC800"), th = theme_fagus) {
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotStates <- function(States, path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
-  T_major <- pivot_wider(Twostates, names_from = "var") %>%
+  T_major <- pivot_wider(States, names_from = "var") %>%
     mutate(major_fix = as.logical(major_fix), major_fix = as.logical(major_fix))
 
   plot_major <- ggplot(T_major, aes(x = tax, y = log(ba_fix), col = major_fix)) +
     geom_violin(trim = FALSE) +
-    ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority")
+    ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
+    scale_color_manual(values = color) +
+    themefun()
     # geom_jitter(position = position_jitter(0.2))
   
   
-  T_when <- filter(Twostates, str_starts(var, "ba")) %>%
+  T_when <- filter(States, str_starts(var, "ba")) %>%
     rename(when = var) %>%
     group_by(when, loc, draw) %>%
     mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
@@ -514,14 +522,16 @@ plotTwoStates <- function(Twostates, path, basename, color = c("#208E50", "#FFC8
   plot_when <- ggplot(T_when, aes(x = when, y = log(value), col = tax)) +
     geom_violin(trim = FALSE) +
     ggtitle("BA at equilibirum and at initial time") +
-    th()
+    scale_color_manual(values = color) +
+    themefun()
   
-  plot_diff <- ggplot(T_when, aes(x = when, y = diff_ba)) +
-    geom_violin(trim = FALSE) +
-    ggtitle("log_BA_Fagus - log_BA_other at equilibirum and at initial time") +
-    th()
+  # plot_diff <- ggplot(T_when, aes(x = when, y = diff_ba)) +
+  #   geom_violin(trim = FALSE) +
+  #   ggtitle("log_BA_Fagus - log_BA_other at equilibirum and at initial time") +
+  #   scale_color_manual(values = color) +
+  #   themefun()
   
-  plots <- list(plot_twostates_major = plot_major, plot_twostates_when = plot_when, plot_twostates_diff = plot_diff)
+  plots <- list(plot_states_major = plot_major, plot_states_when = plot_when) # , plot_states_diff = plot_diff
   
   mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".png"), p, device = "png"), plots, names(plots))
   
@@ -534,7 +544,9 @@ plotTwoStates <- function(Twostates, path, basename, color = c("#208E50", "#FFC8
 # parname  <- tar_read("parname_sim")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
-plotConditional <- function(cmdstanfit, parname, path) {
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotConditional <- function(cmdstanfit, parname, path, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -593,8 +605,8 @@ plotConditional <- function(cmdstanfit, parname, path) {
   d_2 <- lapply(d, function(i) i[2]) %>% as_draws_array()
   
   plots_parameters_conditional <- list(
-    Fagus.sylvatica = bayesplot::mcmc_areas_ridges(d_1),
-    other = bayesplot::mcmc_areas_ridges(d_2)
+    Fagus.sylvatica = bayesplot::mcmc_areas_ridges(d_1) + themefun(),
+    other = bayesplot::mcmc_areas_ridges(d_2) + themefun(),
   )
   
   plotgrid <- cowplot::plot_grid(plotlist = plots_parameters_conditional, ncol = 2, labels = names(plots_parameters_conditional))
@@ -608,9 +620,10 @@ plotConditional <- function(cmdstanfit, parname, path) {
 # parname  <- tar_read("parname_sim")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
-# th  <- tar_read("themefunction")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
 
-plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color = c("#208E50", "#FFC800"), th = theme_fagus) {
+plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -653,9 +666,9 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color
     geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
     geom_point(color = "black", position = pos) +
     coord_flip() +
-    scale_color_manual(values = color) +
     geom_vline(xintercept = 0, linetype = "dashed") +
-    th()
+    scale_color_manual(values = color) +
+    themefun()
   
   ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".png"), plot_contributions, dev = "png", height = 30, width = 10)
   
@@ -666,7 +679,9 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color
 ## plotTrajectories --------------------------------
 # Trajectories <- tar_read("Trajectories_test")
 # path  <- tar_read("dir_publish")
-plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename) {
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,  color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   Trajectories %<>%
     group_by(loc, tax, stage, draw) %>%
@@ -680,7 +695,8 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename) {
   plot <- ggplot(Trajectories, aes_lines) +
     { if(thicker) geom_line(size = 0.5, alpha = 0.1) else geom_line(size = 0.1, alpha = 0.01) } +
     facet_wrap(~stage) +
-    theme_minimal()
+    scale_color_manual(values = color) +
+    themefun()
   
   if(is.null(basename)) basename <- "Model"
   ggsave(paste0(path, "/", basename, "_equilines", ".png"), plot, dev = "png", height = 14, width = 20)
