@@ -82,9 +82,9 @@ targets_settings <- list(
                # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
                # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
                # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_l_log = c(8, 1),
+               prior_l_log = c(8, 2),
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_s_log = c(-4, 2)
+               prior_s_log = c(-3, 2)
              )
           ),
   
@@ -320,7 +320,7 @@ targets_fits <- list(
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
-                          widthfactor_trans = 1, widthfactor_reg = 1.5)),
+                          widthfactor_trans = 1, widthfactor_reg = 2)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),

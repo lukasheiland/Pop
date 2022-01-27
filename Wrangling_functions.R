@@ -485,6 +485,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     
     ## get clusters with at least some of both in small trees
     mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica")) %>%
+    mutate(anyOther = any(count_ha > 0 & tax == "other")) %>%
     mutate(anySmallFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage == "J")) %>%
     mutate(anySmallOther = any(count_ha > 0 & tax == "other" & stage == "J")) %>%
     mutate(anyBigFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage %in% c("A", "B"))) %>%
@@ -507,7 +508,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
   
   ## Confined to clusters with any observation of the taxa in defined sizeclasses
   Stages_select %<>%
-    filter(anyFagus) # %>% pull(clusterid) %>% unique() %>% length() ## 635
+    filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
   
   Stages_select %<>%
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
