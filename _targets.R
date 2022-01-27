@@ -24,6 +24,8 @@ source("Map_functions.R")
 source("Fit_seedlings_functions.R")
 source("Fit_functions.R")
 source("Posterior_functions.R")
+source("Theme/Theme.R")
+
 
 ### Options
 options(tidyverse.quiet = TRUE)
@@ -33,7 +35,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "eurostat", "elevatr", "rayshader", ## for mapping
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "parallel", "DHARMa", "priorsense",
-             "cowplot",
+             "cowplot", "hrbrthemes",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -86,7 +88,9 @@ targets_settings <- list(
              )
           ),
   
-  tar_target(twocolors, c("#208E50", "#FFC800"))
+  tar_target(twocolors, c("#208E50", "#FFC800")),
+  tar_target(themefunction, theme_fagus)
+  
 )
 
 
@@ -402,9 +406,9 @@ targets_posterior <- list(
   tar_target(plot_contributions_test,
              plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, color = twocolors)),
   tar_target(plot_contributions_prop_test,
-             plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, plotprop = T, color = twocolors)),
+             plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, plotprop = T, color = twocolors, th = themefunction)),
   tar_target(plots_twostates_test,
-             plotTwoStates(Twostates_test, path = dir_publish, basename = basename_fit_test)),
+             plotTwoStates(Twostates_test, path = dir_publish, basename = basename_fit_test, color = twocolors, th = themefunction)),
   tar_target(plot_trajectories_test,
              plotTrajectories(Trajectories_test, path = dir_publish, basename = basename_fit_test)),
   tar_target(plot_trajectories_mean_test,

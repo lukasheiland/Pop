@@ -493,7 +493,8 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 # Twostates <- tar_read("Twostates_test")
 # path  <- tar_read("dir_publish")
 # basename  <- tar_read("basename_fit_test")
-plotTwoStates <- function(Twostates, path, basename) {
+# th  <- tar_read("themefunction")
+plotTwoStates <- function(Twostates, path, basename, color = c("#208E50", "#FFC800"), th = theme_fagus) {
   
   T_major <- pivot_wider(Twostates, names_from = "var") %>%
     mutate(major_fix = as.logical(major_fix), major_fix = as.logical(major_fix))
@@ -512,11 +513,13 @@ plotTwoStates <- function(Twostates, path, basename) {
   
   plot_when <- ggplot(T_when, aes(x = when, y = log(value), col = tax)) +
     geom_violin(trim = FALSE) +
-    ggtitle("BA at equilibirum and at initial time")
+    ggtitle("BA at equilibirum and at initial time") +
+    th()
   
   plot_diff <- ggplot(T_when, aes(x = when, y = diff_ba)) +
     geom_violin(trim = FALSE) +
-    ggtitle("log_BA_Fagus - log_BA_other at equilibirum and at initial time")
+    ggtitle("log_BA_Fagus - log_BA_other at equilibirum and at initial time") +
+    th()
   
   plots <- list(plot_twostates_major = plot_major, plot_twostates_when = plot_when, plot_twostates_diff = plot_diff)
   
@@ -605,7 +608,9 @@ plotConditional <- function(cmdstanfit, parname, path) {
 # parname  <- tar_read("parname_sim")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
-plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color = c("#208E50", "#FFC800")) {
+# th  <- tar_read("themefunction")
+
+plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color = c("#208E50", "#FFC800"), th = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -649,8 +654,8 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color
     geom_point(color = "black", position = pos) +
     coord_flip() +
     scale_color_manual(values = color) +
-    geom_vline(xintercept = 0, linetype = "dashed")
-  
+    geom_vline(xintercept = 0, linetype = "dashed") +
+    th()
   
   ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".png"), plot_contributions, dev = "png", height = 30, width = 10)
   
