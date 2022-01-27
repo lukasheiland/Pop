@@ -191,15 +191,17 @@ functions {
       
       /// Summed up proportional contributions
 	  real BA_1_sum = sum(BA_1);
-	  sum_ko_prop_b += (BA_1 - ba_ko_b)/BA_1_sum;
-	  sum_ko_prop_c_a += (BA_1 - ba_ko_c_a)/BA_1_sum;
-	  sum_ko_prop_c_b += (BA_1 - ba_ko_c_b)/BA_1_sum;
-	  sum_ko_prop_c_j += (BA_1 - ba_ko_c_j)/BA_1_sum;
-	  sum_ko_prop_g += (BA_1 - ba_ko_g)/BA_1_sum;
-	  sum_ko_prop_h += (BA_1 - ba_ko_h)/BA_1_sum;
-	  sum_ko_prop_l += (BA_1 - ba_ko_l)/BA_1_sum;
-	  sum_ko_prop_r += (BA_1 - ba_ko_r)/BA_1_sum;
-	  sum_ko_prop_s += (BA_1 - ba_ko_s)/BA_1_sum;
+	  vector[N_spec] BA_1_sum_prop = BA_1/BA_1_sum;
+
+	  sum_ko_prop_b += BA_1_sum_prop - ba_ko_b/BA_1_sum;
+	  sum_ko_prop_c_a += BA_1_sum_prop - ba_ko_c_a/BA_1_sum;
+	  sum_ko_prop_c_b += BA_1_sum_prop - ba_ko_c_b/BA_1_sum;
+	  sum_ko_prop_c_j += BA_1_sum_prop - ba_ko_c_j/BA_1_sum;
+	  sum_ko_prop_g += BA_1_sum_prop - ba_ko_g/BA_1_sum;
+	  sum_ko_prop_h += BA_1_sum_prop - ba_ko_h/BA_1_sum;
+	  sum_ko_prop_l += BA_1_sum_prop - ba_ko_l/BA_1_sum;
+	  sum_ko_prop_r += BA_1_sum_prop - ba_ko_r/BA_1_sum;
+	  sum_ko_prop_s += BA_1_sum_prop - ba_ko_s/BA_1_sum;
       
       /// !
       J = J_1;
