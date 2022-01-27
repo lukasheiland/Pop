@@ -390,7 +390,7 @@ targets_posterior <- list(
   
   ## Formatted posterior data stuctures
   tar_target(States_test,
-             formatTwoStates(cmdstanfit = fit_test, data_stan_priors)),
+             formatStates(cmdstanfit = fit_test, data_stan_priors)),
   
   
   ## Plot
@@ -407,8 +407,8 @@ targets_posterior <- list(
              plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, color = twocolors)),
   tar_target(plot_contributions_prop_test,
              plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, plotprop = T, color = twocolors, theme_fun = themefunction)),
-  tar_target(plots_twostates_test,
-             plotTwoStates(States_test, path = dir_publish, basename = basename_fit_test, color = twocolors, theme_fun = themefunction)),
+  tar_target(plots_states_test,
+             plotStates(States_test, path = dir_publish, basename = basename_fit_test, color = twocolors, theme_fun = themefunction)),
   tar_target(plot_trajectories_test,
              plotTrajectories(Trajectories_test, path = dir_publish, basename = basename_fit_test)),
   tar_target(plot_trajectories_mean_test,
