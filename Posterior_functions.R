@@ -357,7 +357,8 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 # basename  <- tar_read("basename_fit_test")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotStanfit <- function(stanfit, exclude, path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotStanfit <- function(stanfit, exclude, path, basename,
+                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   plotRidges <- function(startswith, fit = stanfit) {
     bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith, ignore.case = F))) +
@@ -406,8 +407,6 @@ plotStanfit <- function(stanfit, exclude, path, basename, color = c("#208E50", "
 # data_stan_priors <- tar_read("data_stan_priors")
 # draws <- tar_read("draws_test") ## this is here as an option for plotting draw objects if the fit has NaNs in generated quantities
 # path  <- tar_read("dir_fit")
-# color  <- tar_read("twocolors")
-# themefun  <- tar_read("themefunction")
 plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = c("prior", "posterior"), path) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
@@ -531,7 +530,7 @@ plotStates <- function(States, path, basename, color = c("#208E50", "#FFC800"), 
   #   scale_color_manual(values = color) +
   #   themefun()
   
-  plots <- list(plot_states_major = plot_major, plot_states_when = plot_when) # , plot_states_diff = plot_diff
+  plots <- list(plot_states_major = plot_major, plot_states_when = plot_when) # plot_states_diff = plot_diff
   
   mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".png"), p, device = "png"), plots, names(plots))
   
@@ -546,7 +545,8 @@ plotStates <- function(States, path, basename, color = c("#208E50", "#FFC800"), 
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotConditional <- function(cmdstanfit, parname, path, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotConditional <- function(cmdstanfit, parname, path,
+                            color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -606,7 +606,7 @@ plotConditional <- function(cmdstanfit, parname, path, color = c("#208E50", "#FF
   
   plots_parameters_conditional <- list(
     Fagus.sylvatica = bayesplot::mcmc_areas_ridges(d_1) + themefun(),
-    other = bayesplot::mcmc_areas_ridges(d_2) + themefun(),
+    other = bayesplot::mcmc_areas_ridges(d_2) + themefun()
   )
   
   plotgrid <- cowplot::plot_grid(plotlist = plots_parameters_conditional, ncol = 2, labels = names(plots_parameters_conditional))
@@ -623,7 +623,8 @@ plotConditional <- function(cmdstanfit, parname, path, color = c("#208E50", "#FF
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 
-plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
+                              color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -681,7 +682,8 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, color
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,  color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
+                             color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   Trajectories %<>%
     group_by(loc, tax, stage, draw) %>%
