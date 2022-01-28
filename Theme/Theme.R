@@ -8,8 +8,8 @@ extrafont::font_import(paths = "Theme/", prompt = F)
 # Themes ------------------------------------------------------------------
 
 theme_fagus <- function(...) {
-  hrbrthemes::theme_ipsum(...) +
-  # theme_linedraw(...) +
+  # hrbrthemes::theme_ipsum(...) +
+  theme_linedraw(...) +
     theme(text = element_text(size = 14, family = "TGL 0-17"))
   }
 
