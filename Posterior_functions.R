@@ -668,10 +668,12 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     geom_point(color = "black", position = pos) +
     coord_flip() +
     geom_vline(xintercept = 0, linetype = "dashed") +
+    scale_x_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 20) + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
+    labs(x = "Cumulative basal area [ha yr-1]", y = "parameter", title = "Contributions to the basal area") +
     scale_color_manual(values = color) +
     themefun()
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".png"), plot_contributions, dev = "png", height = 30, width = 10)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".pdf"), plot_contributions, dev = "pdf", height = 10, width = 10)
   
   return(plot_contributions)
 }

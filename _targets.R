@@ -35,7 +35,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "eurostat", "elevatr", "rayshader", ## for mapping
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "parallel", "DHARMa", "priorsense",
-             "cowplot", "hrbrthemes", "extrafont",
+             "cowplot", "hrbrthemes", "showtext", "ggallin",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -373,7 +373,7 @@ targets_posterior <- list(
   
   ## Summarize
   tar_target(summary_test,
-             summarizeFit(cmdstanfit = fit_test, exclude = c(helpers_exclude, rep_exclude), path = dir_publish)),
+             summarizeFit(cmdstanfit = fit_test, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc), path = dir_publish)),
   tar_target(Freq_converged_test,
              summarizeFreqConverged(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
   
