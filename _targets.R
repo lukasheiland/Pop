@@ -320,7 +320,7 @@ targets_fits <- list(
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
-                          widthfactor_trans = 1, widthfactor_reg = 1.5)),
+                          widthfactor_trans = 1, widthfactor_reg = 1)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
