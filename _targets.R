@@ -320,7 +320,7 @@ targets_fits <- list(
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
-                          widthfactor_trans = 1, widthfactor_reg = 1.5)),
+                          widthfactor_trans = 1, widthfactor_reg = 1)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
@@ -408,7 +408,7 @@ targets_posterior <- list(
   tar_target(plot_contributions_prop_test,
              plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, plotprop = T, color = twocolors, themefun = themefunction)),
   tar_target(plots_states_test,
-             plotStates(States_test, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
+             plotStates(States_test, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plot_trajectories_test,
              plotTrajectories(Trajectories_test, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plot_trajectories_mean_test,

@@ -9,6 +9,10 @@ font_add(family = "SF Compact Rounded", regular = "Theme/SF-Compact-Rounded-Regu
 
 theme_fagus <- function(...) {
   theme_linedraw(...) +   # hrbrthemes::theme_ipsum(...) +
+    theme(axis.title.x = element_text(margin = margin(t = 3)), #add margin to x-axis title
+          axis.title.y = element_text(margin = margin(r = 2.5)),
+          axis.text.x = element_text(margin = margin(t = 6)),
+          axis.text.y = element_text(margin = margin(r = 4.5)) ) +
     theme(text = element_text(size = 14, family = "Helvetica")) # theme(text = element_text(size = 14, family = "SF Compact Rounded")) # theme(text = element_text(size = 14, family = "TGL17"))
   }
 

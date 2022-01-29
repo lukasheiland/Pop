@@ -499,29 +499,47 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 # basename  <- tar_read("basename_fit_test")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotStates <- function(States, path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   T_major <- pivot_wider(States, names_from = "var") %>%
     mutate(major_fix = as.logical(major_fix), major_fix = as.logical(major_fix))
 
-  plot_major <- ggplot(T_major, aes(x = tax, y = log(ba_fix), col = major_fix)) +
-    geom_violin(trim = FALSE) +
+  plot_major <- ggplot(T_major, aes(x = major_fix, y = ba_fix, col = tax, fill = tax)) +
+    geom_violin(trim = T) +
+    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
     ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
     scale_color_manual(values = color) +
+    scale_fill_manual(values = color) +
     themefun()
     # geom_jitter(position = position_jitter(0.2))
   
-  
-  T_when <- filter(States, str_starts(var, "ba")) %>%
+  whenvar <- c("ba_init", "ba_fix")
+  T_when <- filter(States, var %in% whenvar) %>% # filter(States, str_starts(var, "ba")) %>%
     rename(when = var) %>%
+    mutate(when = factor(when, levels = whenvar)) %>%
     group_by(when, loc, draw) %>%
     mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
     ungroup()
   
-  plot_when <- ggplot(T_when, aes(x = when, y = log(value), col = tax)) +
-    geom_violin(trim = FALSE) +
+  plot_when <- ggplot(T_when, aes(x = when, y = value, col = tax, fill = tax)) +
+    geom_violin(trim = T) +
+    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
     ggtitle("BA at equilibirum and at initial time") +
     scale_color_manual(values = color) +
+    scale_fill_manual(values = color) +
+    themefun()
+  
+
+  T_all <- filter(States, var %in% allstatevars) %>%
+    rename(gq = var) %>%
+    mutate(gq = factor(gq, levels = allstatevars))
+  
+  plot_all <- ggplot(T_all, aes(x = gq, y = value, col = tax, fill = tax)) +
+    geom_violin(trim = T) +
+    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
+    ggtitle("BA") +
+    scale_color_manual(values = color) +
+    scale_fill_manual(values = color) +
     themefun()
   
   # plot_diff <- ggplot(T_when, aes(x = when, y = diff_ba)) +
@@ -530,9 +548,9 @@ plotStates <- function(States, path, basename, color = c("#208E50", "#FFC800"), 
   #   scale_color_manual(values = color) +
   #   themefun()
   
-  plots <- list(plot_states_major = plot_major, plot_states_when = plot_when) # plot_states_diff = plot_diff
+  plots <- list(plot_states_major = plot_major, plot_states_when = plot_when, plot_states_all = plot_all) # plot_states_diff = plot_diff
   
-  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".png"), p, device = "png"), plots, names(plots))
+  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf"), plots, names(plots))
   
   return(plots)
 }
@@ -668,7 +686,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     geom_point(color = "black", position = pos) +
     coord_flip() +
     geom_vline(xintercept = 0, linetype = "dashed") +
-    scale_x_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 20) + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
+    scale_x_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 15) + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
     labs(x = "Cumulative basal area [ha yr-1]", y = "parameter", title = "Contributions to the basal area") +
     scale_color_manual(values = color) +
     themefun()
