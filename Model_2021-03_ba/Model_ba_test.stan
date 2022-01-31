@@ -670,6 +670,15 @@ generated quantities {
   y_sim = neg_binomial_2_rng(y_hat_rep_offset, phi_obs_rep);
 
 
+  //—————————————————————————————————————————————————————————————————————//
+  // Averages over locations  ------------------------------------------//
+  //———————————————————————————————————————————————————————————————————//
+  vector[N_pops] avg_state_init;
+  vector[N_species] avg_L_loc;
+  
+  for (p in 1:N_pops) avg_state_init[p] = mean(exp(state_init_log[, p]));
+  for (s in 1:N_species) avg_L_loc[s] = mean(L_loc[, s]);
+
 
   //—————————————————————————————————————————————————————————————————————//
   // Prior predictive checks -------------------------------------------//
