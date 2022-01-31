@@ -35,7 +35,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "eurostat", "elevatr", "rayshader", ## for mapping
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "parallel", "DHARMa", "priorsense",
-             "cowplot", "hrbrthemes", "showtext", "ggallin",
+             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -141,6 +141,7 @@ targets_parname <- list(
              c("Fix", "Fix_ko_s",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "phi_obs_rep", "phi_obs_rep_prior",
+               "avg_state_init", "avg_L_loc",
                "log_prior", "log_lik", "lp__", "state_init_log_raw")),
   tar_target(rep_exclude,
              c("phi_obs_rep", "phi_obs_rep_prior",
@@ -383,10 +384,10 @@ targets_posterior <- list(
              generateResiduals(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
   tar_target(Trajectories_test,
              generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
-                                  time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 50, usemean = F)),
-  tar_target(Trajectories_mean_test,
+                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 50, average = "none")),
+  tar_target(Trajectories_avg_test,
              generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
-                                  time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 25, usemean = T)),
+                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws")), # c("none", "locsperdraws", "drawsperlocs"))
   
   ## Formatted posterior data stuctures
   tar_target(States_test,
@@ -396,6 +397,8 @@ targets_posterior <- list(
   ## Plot
   tar_target(plots_test,
              plotStanfit(stanfit = stanfit_test, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
+  tar_target(plots_parameters_test,
+             plotParameters(stanfit = stanfit_test, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   ## Prior predictive tests that rely on currently out-commented generated quantities
   # tar_target(plots_predictions_prior_test,
   #            plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
@@ -411,8 +414,8 @@ targets_posterior <- list(
              plotStates(States_test, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plot_trajectories_test,
              plotTrajectories(Trajectories_test, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
-  tar_target(plot_trajectories_mean_test,
-             plotTrajectories(Trajectories_mean_test, thicker = T, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
+  tar_target(plot_trajectories_avg_test,
+             plotTrajectories(Trajectories_avg_test, thicker = F, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   
   # tar_target(plot_powerscale_test,
   #            plotSensitivity(cmdstanfit = fit_test, include = parname, path = dir_publish)),

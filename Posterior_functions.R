@@ -199,14 +199,14 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 # data_stan_priors <- tar_read("data_stan_priors")
 # locparname <- tar_read("parname_loc")
 
-generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = "state_init_log",
-                                 time = c(seq(1, 491, by = 10), seq(500, 5000, by = 100)), thinstep = 1, usemean = FALSE) {
+generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = c("state_init_log", "L_loc"),
+                                 time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = c("none", "locsperdraws", "drawsperlocs")) {
   
   parname <- setdiff(parname, c("phi_obs", "sigma_k_loc"))
   parname_sans_log <- gsub("_log$", "", parname)
+  locparname_avg <- gsub("_log$", "", locparname) %>% paste0("avg_", .)
   
-  
-  ## iterateModel --------------------------------
+  ### iterateModel --------------------------------
   #
   iterateModel <- function(initialstate,
                            pars,
@@ -271,7 +271,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     State <- State[whichtimes,]
     
     if(match.arg(format) == "long") State <- data.frame(abundance = c(State),
-                                                        stage = rep(c("j", "a", "b"), each = n * length(times)),
+                                                        stage = factor(rep(c("J", "A", "B"), each = n * length(times)), levels = c("J", "A", "B")),
                                                         tax = rep(1:n, each = length(times)),
                                                         time = times)
     
@@ -279,11 +279,12 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   }
   
   
-  Draws <- cmdstanfit$draws(variables = c(parname, locparname), format = "draws_list") %>%
+  Draws <- cmdstanfit$draws(variables = c(parname, locparname, locparname_avg), format = "draws_list") %>%
     thin_draws(thin = thinstep)
   
-  # Makes pars to be a nested list/data.frame[[parameters]][[draws]]
-  if(usemean) {
+  ## Makes pars to be a nested list/data.frame[[parameters]][[draws]]
+  ## Distinction between when to average for local variables
+  if(match.arg(average) == "drawsperlocs") {
     
     M <- cmdstanfit$summary(variables = parname) %>%
       dplyr::select(variable, mean)
@@ -292,41 +293,66 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     names(pars) <- parname_sans_log
     pars <- list(pars)
     
-  } else {
+  } else if (match.arg(average) %in% c("none", "locsperdraws")) {
     
-    D <- subset_draws(Draws, variable = parname) %>%
+    D <- subset_draws(Draws, variable = c(parname)) %>%
       as_draws_matrix() %>%
       as.data.frame() %>%
       dplyr::mutate(across(contains("_log["), exp))
     pars <- split(D, 1:nrow(D))
     pars <- lapply(pars, function(p) matrix(c(as.matrix(p)), byrow = F, nrow = data_stan_priors$N_species, dimnames = list(NULL, parname_sans_log)))
     pars <- lapply(pars, as.data.frame)
+  
   }
   
-  ## Nested simulations: locs/draws
   
-  iterateModel_draws <- function(locpars, pars, time, usemean) {
+  ## Distinction between when to average for local variables
+  if (match.arg(average) %in% c("none", "drawsperlocs")) {
     
-    locpars <- lapply(locpars, function(x) if(usemean) mean(x) else as_draws_matrix(x))
+    draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
+      as_draws_rvars()
+    draws_loc$state_init <- exp(draws_loc$state_init_log)
+    n_locs <- data_stan_priors$N_locs
     
+  } else if (match.arg(average) == "locsperdraws") {
+    
+    draws_loc <- subset_draws(Draws, variable = locparname_avg) %>%
+      as_draws_rvars() %>%
+      lapply(as.matrix) %>%
+      lapply(t) ## make this a list of 1-rowed matrices
+    names(draws_loc) <- gsub("^avg_", "", locparname_avg)
+    
+    n_locs <- 1
+    
+  }
+  
+  
+  ### Nested simulations: locs/draws
+  
+  ### iterateModel_draws() --------------------------------
+  iterateModel_draws <- function(locpars, pars, time, averageperlocs) {
+    
+    if (averageperlocs) {
+      locpars <- lapply(locpars, mean, na.omit = T)
+    } else {
+      locpars <- lapply(locpars, as_draws_matrix)
+    }
+
     ## Assign local parameters to draws, adopt manually if necessary
     pars <- lapply(1:length(pars), function(i) within(pars[[i]], l <- c(locpars$L_loc[i,])))
     
     return( lapply(1:length(pars), function(i) iterateModel(c(locpars$state_init[i,]), pars = pars[[i]], time)) )
   }
   
-  iterateLocs <- function(i, lp, p, t, um) {
-    iterateModel_draws(locpars = lapply(lp, function(x) x[i,]), pars = p, time = t, usemean = um)
+  ### iterateLocs -------------------------
+  iterateLocs <- function(i, lp, p, t, avgperlocs) {
+    iterateModel_draws(locpars = lapply(lp, function(x) x[i,]), pars = p, time = t, averageperlocs = avgperlocs)
   }
   
-  
-  draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
-    as_draws_rvars()
-  draws_loc$state_init <- exp(draws_loc$state_init_log)
-  n_locs <- data_stan_priors$N_locs
-  
+
+  averagperlocs <- match.arg(average) == "drawsperlocs"
   sims <- future_sapply(1:n_locs, iterateLocs,
-                        lp = draws_loc, p = pars, t = time, um = usemean, simplify = F) # a nested list[locs, draws] of matrices[times]
+                        lp = draws_loc, p = pars, t = time, avg = averagperlocs, simplify = F) # a nested list[locs, draws] of matrices[times]
   sims <- lapply(sims, bind_rows, .id = "draw")
   sims <- bind_rows(sims, .id = "loc")
   
@@ -335,13 +361,15 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     mutate(diff = abundance - c(NA, abundance[1:(n()-1)]),
            absdiff = abs(diff),
            isconverged = replace_na(absdiff <= data_stan_priors$tolerance_fix, F),
+           isflat = replace_na(absdiff <= data_stan_priors$tolerance_fix * 10, F),
            time_fix = first(time[isconverged]),
-           state_fix = first(abundance[isconverged])) %>%
+           time_flat = first(time[isflat]),
+           state_fix = first(abundance[isconverged]),
+           state_flat = first(abundance[isflat])) %>%
     ungroup()
   
   return(sims)
 }
-
 
 
 # ————————————————————————————————————————————————————————————————————————————————— #
@@ -360,32 +388,19 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 plotStanfit <- function(stanfit, exclude, path, basename,
                         color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
-  plotRidges <- function(startswith, fit = stanfit) {
-    bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith, ignore.case = F))) +
-      themefun()
-  }
-  
   usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
   
   # basename <- attr(stanfit, "model_name") %>%
   #   str_replace("-[1-9]-", "-x-")
   
   parname <- setdiff(stanfit@model_pars, exclude)
-  parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]"))) # Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
   parname_sansprior <- parname[!grepl("prior$", parname)]
   
-  
   traceplot <- rstan::traceplot(stanfit, pars = parname_sansprior, include = T)
-  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
-  ridgeplots <- parallel::mclapply(parnamestart, plotRidges, mc.cores = getOption("mc.cores", 7L))
-  ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots)
-  
   # parallelplot_c <- bayesplot::mcmc_parcoord(stanfit, pars = vars(starts_with(c("c_", "s_"))))
   # parallelplot_others <- bayesplot::mcmc_parcoord(stanfit, pars = vars(!matches(c(exclude, "c_", "log_", "phi_", "lp_", "s_", "_prior"))))
   
-  plots <- list(traceplot = traceplot,
-                ridgeplotgrid = ridgeplotgrid,
-                areasplot = areasplot) # parallelplot_c = parallelplot_c, parallelplot_others = parallelplot_others,
+  plots <- list(traceplot = traceplot) # parallelplot_c = parallelplot_c, parallelplot_others = parallelplot_others,
   
   mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".png"), p, device = "png"), plots, names(plots))
   
@@ -397,6 +412,70 @@ plotStanfit <- function(stanfit, exclude, path, basename,
     
   }
   
+  return(plots)
+}
+
+
+## plotParameters --------------------------------
+# stanfit  <- tar_read("stanfit_test")
+# exclude <- tar_read("exclude")
+# path  <- tar_read("dir_fit")
+# basename  <- tar_read("basename_fit_test")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotParameters <- function(stanfit, exclude, path, basename,
+                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+
+  getRidgedata <- function(startswith, fit = stanfit) {
+    R <- bayesplot::mcmc_areas_ridges_data(fit, pars = vars(starts_with(startswith, ignore.case = F)))
+    R %<>%
+      mutate(tax = str_extract(parameter, '\\[[12]\\]$')) %>%
+      mutate(par = str_extract(parameter, '([a-z_])*')) %>%
+      mutate(prior = str_ends(parameter, 'prior(\\[[12]\\])*')) %>%
+      mutate(colorgroup = case_when(tax == '[1]' & prior ~ 'Fagus_prior',
+                                    tax == '[2]' & prior ~ 'other_prior',
+                                    tax == '[1]' & !prior ~ 'Fagus',
+                                    tax == '[2]' & !prior ~ 'other',
+                                    is.na(tax) & prior ~ 'prior'))
+    return(R)
+  }
+
+  
+  plotRidges <- function(Data) {
+    ggplot(Data, aes(y = parameter, height = scaled_density, x = x, col = tax, fill = tax)) +
+      geom_density_ridges(stat = "identity") +
+      scale_color_manual(values = color) +
+      scale_fill_manual(values = color) +
+      themefun()
+      
+      ## Add lines
+      ## Heights were scaled etc.
+  }
+  
+  # plotRidges <- function(startswith, fit = stanfit) {
+  #   bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith, ignore.case = F))) +
+  #     themefun()
+  # }
+  
+  parname <- setdiff(stanfit@model_pars, exclude)
+  parname_sansprior <- parname[!grepl("prior$", parname)]
+  
+  ## For later use in starts_with: Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
+  parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]")))
+  
+  
+  bayesplot::color_scheme_set("gray")
+  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
+  
+  ridgedata <- parallel::mclapply(parnamestart, getRidgedata, mc.cores = getOption("mc.cores", 9L))
+  ridgeplots <- lapply(ridgedata, plotRidges)
+  ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots)
+  
+  plots <- list(ridgeplotgrid = ridgeplotgrid, areasplot = areasplot)
+  
+  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", height = 16, width = 16), plots, names(plots))
+   
   return(plots)
 }
 
@@ -505,13 +584,14 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     mutate(major_fix = as.logical(major_fix), major_fix = as.logical(major_fix))
 
   plot_major <- ggplot(T_major, aes(x = major_fix, y = ba_fix, col = tax, fill = tax)) +
-    geom_violin(trim = T) +
+    geom_violin(trim = T, col = "black") +
     scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
     ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
     themefun()
     # geom_jitter(position = position_jitter(0.2))
+  
   
   whenvar <- c("ba_init", "ba_fix")
   T_when <- filter(States, var %in% whenvar) %>% # filter(States, str_starts(var, "ba")) %>%
@@ -521,10 +601,11 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
     ungroup()
   
-  plot_when <- ggplot(T_when, aes(x = when, y = value, col = tax, fill = tax)) +
-    geom_violin(trim = T) +
-    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
-    ggtitle("BA at equilibirum and at initial time") +
+  plot_when <- ggplot(T_when, aes(x = tax, y = value, col = tax, fill = tax)) + # without facet wrap: ggplot(T_when, aes(x = when, y = value, col = tax, fill = tax))
+    geom_violin(trim = T, col = "black") +
+    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 10) +
+    facet_wrap(~ when) +
+    ggtitle("BA at initial time and at equilibrium") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
     themefun()
@@ -534,23 +615,25 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     rename(gq = var) %>%
     mutate(gq = factor(gq, levels = allstatevars))
   
-  plot_all <- ggplot(T_all, aes(x = gq, y = value, col = tax, fill = tax)) +
-    geom_violin(trim = T) +
-    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
+  plot_all <- ggplot(T_all, aes(x = tax, y = value, col = tax, fill = tax)) +
+    geom_violin(trim = T, col = "black") +
+    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 10) +
+    facet_wrap(~ gq) +
     ggtitle("BA") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
     themefun()
   
   # plot_diff <- ggplot(T_when, aes(x = when, y = diff_ba)) +
-  #   geom_violin(trim = FALSE) +
+  #   geom_violin(trim = FALSE, col = "black") +
   #   ggtitle("log_BA_Fagus - log_BA_other at equilibirum and at initial time") +
   #   scale_color_manual(values = color) +
   #   themefun()
   
   plots <- list(plot_states_major = plot_major, plot_states_when = plot_when, plot_states_all = plot_all) # plot_states_diff = plot_diff
   
-  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf"), plots, names(plots))
+  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", width = 11, height = 8),
+         plots, names(plots))
   
   return(plots)
 }
@@ -628,7 +711,7 @@ plotConditional <- function(cmdstanfit, parname, path,
   )
   
   plotgrid <- cowplot::plot_grid(plotlist = plots_parameters_conditional, ncol = 2, labels = names(plots_parameters_conditional))
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_conditional", ".png"), plotgrid, dev = "png", height = 20, width = 24)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_conditional", ".pdf"), plotgrid, dev = "pdf", height = 20, width = 24)
   
   return(plots_parameters_conditional)
 }
@@ -691,14 +774,14 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     scale_color_manual(values = color) +
     themefun()
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".pdf"), plot_contributions, dev = "pdf", height = 10, width = 10)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".pdf"), plot_contributions, dev = "pdf", height = 8, width = 8)
   
   return(plot_contributions)
 }
 
 
 ## plotTrajectories --------------------------------
-# Trajectories <- tar_read("Trajectories_test")
+# Trajectories <- tar_read("Trajectories_avg_test")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
@@ -708,20 +791,26 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
   Trajectories %<>%
     group_by(loc, tax, stage, draw) %>%
     filter(any(isconverged)) %>%
-    mutate(time_shifted = time - time_fix) %>%
+    # filter(time >= 3) %>%
+    filter(time < 3000) %>%
+    mutate(time_shifted = time - time_fix, time_log = log(time)) %>% ## shifts the time, so that trajectories are aligned by fixpoint
     mutate(grp = interaction(loc, tax, draw), tax = as.factor(tax)) %>%
-    mutate(abundance_log = log(abundance))
+    ungroup()
   
-  aes_lines <- aes(x = time_shifted, y = abundance_log, group = grp, col = tax)
+  aes_lines <- aes(x = time, y = abundance, group = grp, col = tax)
   
   plot <- ggplot(Trajectories, aes_lines) +
-    { if(thicker) geom_line(size = 0.5, alpha = 0.1) else geom_line(size = 0.1, alpha = 0.01) } +
+    { if(thicker) geom_line(size = 0.5, alpha = 0.1) else geom_line(size = 0.2, alpha = 0.05) } +
     facet_wrap(~stage) +
+    coord_trans(y = "log2", x = "log2") + # coord_trans(y = "sqrt", x = "sqrt") +
+    scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 12)) +
+    # scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
     scale_color_manual(values = color) +
     themefun()
   
   if(is.null(basename)) basename <- "Model"
-  ggsave(paste0(path, "/", basename, "_equilines", ".png"), plot, dev = "png", height = 14, width = 20)
+  ggsave(paste0(path, "/", basename, "_trajectories", ".pdf"), plot, device = "pdf", height = 8, width = 12)
   
   return(plot)
 }
