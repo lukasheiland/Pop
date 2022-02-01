@@ -4,6 +4,7 @@
 # library(showtext)
 # font_add(family = "TGL17", regular = "Theme/tgl17.ttf")
 # font_add(family = "SF Compact Rounded", regular = "Theme/SF-Compact-Rounded-Regular.otf") # bold = "Theme/SF-Compact-Rounded-Medium.otf", r
+# font_add(family = "VAG Rounded", regular = "Theme/VAG Rounded Regular.ttf")
 
 # Themes ------------------------------------------------------------------
 
