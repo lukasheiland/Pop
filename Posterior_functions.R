@@ -95,7 +95,36 @@ formatStates <- function(cmdstanfit, data_stan_priors) {
     bind_rows() %>%
     mutate(tax = factor(c("Fagus", "other")[i]))
   
-  States$value[States$value == 9] <- NA
+  States$value[States$value == 9 & States$var %in% c("major_init", "major_fix")] <- NA
+  States$value[States$value == 0 & States$var %in% c("ba_init", "ba_fix")] <- NA # not ba_fix_ko_s
+  
+  Quantiles <- filter(States, var == "ba_init") %>%
+   group_by(draw, tax) %>%
+   mutate(avg_ba_init = mean(value, na.rm = T),
+          median_ba_init = quantile(value, prob = 0.5, type = 1, na.rm = T),
+          p10_ba_init = quantile(value, prob = 0.1, type = 1, na.rm = T),
+          p90_ba_init = quantile(value, prob = 0.9, type = 1, na.rm = T)) %>%
+   summarize(loc_median_draw = sample(loc[value == median_ba_init], 1), ## just in case that there might be more than 1, which is currently not the case
+             loc_p10_draw = sample(loc[value == p10_ba_init], 1),
+             loc_p90_draw = sample(loc[value == p90_ba_init], 1)
+             ) %>%
+    ## get the loc that is most frequently the median for both taxa
+    group_by(tax) %>%
+    mutate(loc_median = first(sort(table(loc_median_draw), decreasing = T)),
+           loc_p10 = first(sort(table(loc_p10_draw), decreasing = T)),
+           loc_p90 = first(sort(table(loc_p90_draw), decreasing = T)))
+  
+
+  # implement if used: match by draw and tax
+  States %<>%
+    left_join(Quantiles, by = c("draw", "tax")) %>%
+    mutate(is_loc_median = loc == loc_median,
+           is_loc_p10 = loc == loc_p10,
+           is_loc_p90 = loc == loc_p90,
+           # is_loc_avg_draw = loc == loc_avg_draw,
+           is_loc_median_draw = loc == loc_median_draw,
+           is_loc_p10_draw = loc == loc_p10_draw,
+           is_loc_p90_draw = loc == loc_p90_draw)
   
   return(States)
 }
@@ -200,7 +229,8 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 # locparname <- tar_read("parname_loc")
 
 generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = c("state_init_log", "L_loc"),
-                                 time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = c("none", "locsperdraws", "drawsperlocs")) {
+                                 time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1,
+                                 average = c("none", "locsperdraws_all", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
   
   parname <- setdiff(parname, c("phi_obs", "sigma_k_loc"))
   parname_sans_log <- gsub("_log$", "", parname)
@@ -284,7 +314,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   
   ## Makes pars to be a nested list/data.frame[[parameters]][[draws]]
   ## Distinction between when to average for local variables
-  if(match.arg(average) == "drawsperlocs") {
+  if(match.arg(average) == "drawsperlocs_all") {
     
     M <- cmdstanfit$summary(variables = parname) %>%
       dplyr::select(variable, mean)
@@ -293,7 +323,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     names(pars) <- parname_sans_log
     pars <- list(pars)
     
-  } else if (match.arg(average) %in% c("none", "locsperdraws")) {
+  } else if (match.arg(average) %in% c("none", "locsperdraws_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
     
     D <- subset_draws(Draws, variable = c(parname)) %>%
       as_draws_matrix() %>%
@@ -307,23 +337,82 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   
   
   ## Distinction between when to average for local variables
-  if (match.arg(average) %in% c("none", "drawsperlocs")) {
+  if (match.arg(average) %in% c("none", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
     
     draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
       as_draws_rvars()
     draws_loc$state_init <- exp(draws_loc$state_init_log)
     n_locs <- data_stan_priors$N_locs
     
-  } else if (match.arg(average) == "locsperdraws") {
+  }
+
+  if (match.arg(average) %in% c("locsperdraws_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
     
-    draws_loc <- subset_draws(Draws, variable = locparname_avg) %>%
+    draws_loc_avg <- subset_draws(Draws, variable = locparname_avg) %>%
       as_draws_rvars() %>%
       lapply(as.matrix) %>%
       lapply(t) ## make this a list of 1-rowed matrices
-    names(draws_loc) <- gsub("^avg_", "", locparname_avg)
+    names(draws_loc_avg) <- gsub("^avg_", "", locparname_avg)
     
-    n_locs <- 1
+    n_locs_avg <- 1
     
+  }
+  
+  ## Generate quantiles in any case!
+  draws_loc_q <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
+    posterior::as_draws()
+  
+  Quantiles_init <- draws_loc_q %>%
+    tidybayes::gather_draws(state_init_log[loc,pop]) %>%
+    group_by(pop, .draw, .iteration, .chain) %>%
+    summarize(pop = first(pop),
+              p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
+              median = quantile(.value, prob = 0.5, type = 1, na.rm = T),
+              p90 = quantile(.value, prob = 0.9, type = 1, na.rm = T),
+              loc_p10 = first(loc[.value == p10]),
+              loc_median = first(loc[.value == median]),
+              loc_p90 = first(loc[.value == p90]),
+              loc_p10_b = replace(loc_p10, pop < 5, NA),
+              loc_median_b = replace(loc_median, pop < 5, NA),
+              loc_p90_b = replace(loc_p90, pop < 5, NA)) %>%
+    ungroup()
+  
+  if (match.arg(average) == "locsperdraws_avgL_qInit") {
+    
+    ## Here 3 quantiles will be dealt with, as if they were locs
+    
+    L_loc_q <- draws_loc_q %>%
+      tidybayes::gather_draws(L_loc[loc,tax]) %>% # state_init_log[loc,pop]
+      group_by(tax, .draw, .iteration, .chain) %>%
+      summarize(p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
+                median = quantile(.value, prob = 0.5, type = 1, na.rm = T),
+                p90 = quantile(.value, prob = 0.9, type = 1, na.rm = T)) %>%
+      pivot_longer(any_of(c("p10", "median", "p90")), names_to = "quantile", values_to = "L_loc") %>%
+      mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
+      pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "tax"), values_from = "L_loc", names_glue = "L_loc[{loc},{tax}]") %>% 
+      as_draws_rvars()
+      
+    state_init_q <- Quantiles_init %>%
+      pivot_longer(any_of(c("p10", "median", "p90")), names_to = "quantile", values_to = "state_init") %>%
+      mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
+      mutate(state_init = exp(state_init)) %>% ## !!!
+      pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "pop"), values_from = "state_init", names_glue = "state_init[{loc},{pop}]") %>% 
+      as_draws_rvars()
+
+    draws_loc_q <- list(state_init = state_init_q$state_init, L_loc = L_loc_q$L_loc)
+    n_locs_q <- 3
+  }
+  
+  if (match.arg(average) == "locsperdraws_all") {
+    draws_loc <- draws_loc_avg
+    n_locs <- n_locs_avg
+  } else if (match.arg(average) == "locsperdraws_avgL") {
+    L_loc_avg_rep <- draws_loc_avg$L_loc[rep(1, n_locs),]
+    draws_loc$L_loc <- L_loc_avg_rep
+  } else if (match.arg(average) == "locsperdraws_avgL_qInit") {
+    L_loc_avg_rep <- draws_loc_avg$L_loc[rep(1, n_locs_q),]
+    draws_loc <- draws_loc_q
+    n_locs <- n_locs_q
   }
   
   
@@ -350,13 +439,20 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   }
   
 
-  averagperlocs <- match.arg(average) == "drawsperlocs"
+  averageperlocs <- match.arg(average) == "drawsperlocs_all"
   sims <- future_sapply(1:n_locs, iterateLocs,
-                        lp = draws_loc, p = pars, t = time, avg = averagperlocs, simplify = F) # a nested list[locs, draws] of matrices[times]
+                        lp = draws_loc, p = pars, t = time, avg = averageperlocs, simplify = F) # a nested list[locs, draws] of matrices[times]
   sims <- lapply(sims, bind_rows, .id = "draw")
-  sims <- bind_rows(sims, .id = "loc")
+  Sims <- bind_rows(sims, .id = "loc")
   
-  sims %<>%
+  Quantiles_init <- Quantiles_init %>% 
+    mutate(pop = as.character(pop),
+           stage = fct_recode(pop, "J" = "1", "J" = "2", "A" = "3", "A" = "4", "B" = "5", "B" = "6"),
+           tax = as.integer(fct_recode(pop, "1" = "1", "2" = "2", "1" = "3", "2" = "4", "1" = "5", "2" = "6"))) %>%
+    rename(draw = ".draw") %>%
+    dplyr::select(-c(".chain", "pop", ".iteration"))
+  
+  Sims <- Sims %>%
     group_by(loc, draw) %>%
     mutate(diff = abundance - c(NA, abundance[1:(n()-1)]),
            absdiff = abs(diff),
@@ -366,9 +462,11 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
            time_flat = first(time[isflat]),
            state_fix = first(abundance[isconverged]),
            state_flat = first(abundance[isflat])) %>%
-    ungroup()
+    ungroup() %>%
+    mutate(draw = as.integer(draw)) %>%
+    left_join(Quantiles_init, by = c("draw", "stage", "tax"))
   
-  return(sims)
+  return(Sims)
 }
 
 
@@ -580,8 +678,11 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 # themefun  <- tar_read("themefunction")
 plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
-  T_major <- pivot_wider(States, names_from = "var") %>%
-    mutate(major_fix = as.logical(major_fix), major_fix = as.logical(major_fix))
+  States <- States[!is.na(States$value),]
+  
+  T_major <- pivot_wider(States[1:6], names_from = "var", values_from = "value") %>%
+    na.omit() %>% ## implicit NAs appear through completion by pivot_wider
+    mutate(major_fix = as.logical(major_fix), major_init = as.logical(major_init))
 
   plot_major <- ggplot(T_major, aes(x = major_fix, y = ba_fix, col = tax, fill = tax)) +
     geom_violin(trim = T, col = "black") +
@@ -602,7 +703,12 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     ungroup()
   
   plot_when <- ggplot(T_when, aes(x = tax, y = value, col = tax, fill = tax)) + # without facet wrap: ggplot(T_when, aes(x = when, y = value, col = tax, fill = tax))
-    geom_violin(trim = T, col = "black") +
+    geom_violin(trim = T, col = "black", scale = "width") +
+    
+    # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 4, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_p10_draw,]) +
+    geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 3, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_median_draw,]) +
+    # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 2, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_p90_draw,]) +
+    
     scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 10) +
     facet_wrap(~ when) +
     ggtitle("BA at initial time and at equilibrium") +
@@ -743,34 +849,40 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
   
   fix_draws <- lapply(C, function(Rvar) lapply(1:n_species,
                                                function(i) do.call(function(...) bind_draws(... , along = "draw"), convertVectorToDrawsList(Rvar[,i, drop = T]))
-  )
-  )
+                                               )
+                      )
   fix_draws <- as_draws(lapply(fix_draws, function(f) do.call(cbind, lapply(f, function(l) l$x))))
   fix_draws <- thin_draws(fix_draws, thin = 10)
   
   M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
-  I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.9) %>%
+  I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
     mutate(p = parameter,
            parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
            tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus sylvatica" = "1", "other" = "2"),
-           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"))
+           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
+    mutate(stagepos = as.integer(as.character(fct_recode(stage, "1" = "J", "5" = "A", "7" = "B")))) %>%
+    mutate(parameter = ordered(parameter, c("l", "r", "c_j", "s", "g", "c_a", "h", "b", "c_b"))) %>%
+    mutate(parameter = fct_reorder(parameter, as.numeric(stage))) %>%
     arrange(stage, parameter)
-  
-  
+
   # plot_contributions <- bayesplot::mcmc_areas_ridges(M)
   
-  pos <- position_nudge(y = (as.integer(I$tax) - 1.5) * 0.2)
+  pos <- position_nudge(y = (as.integer(I$tax) - 1.5) * 0.3)
   
-  plot_contributions <- ggplot(I, aes(x = m, y = fct_reorder(parameter, as.numeric(stage)), color = tax, group = stage)) + 
-    geom_linerange(aes(xmin = l, xmax = h), size = 2, position = pos) +
-    geom_linerange(aes(xmin = ll, xmax = hh), position = pos) +
-    geom_point(color = "black", position = pos) +
+  plot_contributions <- ggplot(I, aes(x = m, y = parameter, yend = parameter,
+                                      color = tax, group = stage)) + 
+    geom_linerange(aes(xmin = l, xmax = h), size = 2.6, position = pos) +
+    # geom_segment(aes(x = l, xend = h), size = 3, lineend = "round", position = pos) + ## unfortunately the lineend
+    geom_segment(aes(x = ll, xend = hh), size = 1.2, lineend = "round", position = pos) +
+    geom_point(color = "black", position = pos, size = 1.7) +
     coord_flip() +
-    geom_vline(xintercept = 0, linetype = "dashed") +
+    geom_vline(xintercept = 0, linetype = 3, size = 0.6, col = "#222222") +
+    geom_hline(yintercept = c(4.5, 6.5), linetype = 1, size = 0.5, col = "#222222") +
+    geom_text(aes(y = stagepos, x = 1000, label = stage), size = 11, col = "#222222") +
     scale_x_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 15) + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
-    labs(x = "Cumulative basal area [ha yr-1]", y = "parameter", title = "Contributions to the basal area") +
+    labs(x = "Cumulative basal area [m2 ha-1]", y = "parameter", title = "Contributions to the basal area") +
     scale_color_manual(values = color) +
     themefun()
   
@@ -793,7 +905,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
     filter(any(isconverged)) %>%
     # filter(time >= 3) %>%
     filter(time < 3000) %>%
-    mutate(time_shifted = time - time_fix, time_log = log(time)) %>% ## shifts the time, so that trajectories are aligned by fixpoint
+    # mutate(time_shifted = time - time_fix, time_log = log(time)) %>% ## shifts the time, so that trajectories are aligned by fixpoint
     mutate(grp = interaction(loc, tax, draw), tax = as.factor(tax)) %>%
     ungroup()
   
@@ -802,7 +914,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
   plot <- ggplot(Trajectories, aes_lines) +
     { if(thicker) geom_line(size = 0.5, alpha = 0.1) else geom_line(size = 0.2, alpha = 0.05) } +
     facet_wrap(~stage) +
-    coord_trans(y = "log2", x = "log2") + # coord_trans(y = "sqrt", x = "sqrt") +
+    coord_trans(y = "sqrt", x = "sqrt") + # coord_trans(y = "log2", x = "log2") + # 
     scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
     scale_y_continuous(breaks = scales::pretty_breaks(n = 12)) +
     # scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
@@ -810,7 +922,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
     themefun()
   
   if(is.null(basename)) basename <- "Model"
-  ggsave(paste0(path, "/", basename, "_trajectories", ".pdf"), plot, device = "pdf", height = 8, width = 12)
+  ggsave(paste0(path, "/", basename, "_trajectories", ".png"), plot, device = "png", height = 8, width = 12)
   
   return(plot)
 }

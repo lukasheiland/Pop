@@ -34,7 +34,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "eurostat", "elevatr", "rayshader", ## for mapping
              "mgcv", "MASS",
-             "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "parallel", "DHARMa", "priorsense",
+             "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
              "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",
              "future.apply")
 tar_option_set(packages = package)
@@ -382,12 +382,21 @@ targets_posterior <- list(
   ## Generate
   tar_target(residuals_test,
              generateResiduals(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
-  tar_target(Trajectories_test,
-             generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
-                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 50, average = "none")),
+  # tar_target(Trajectories_test,
+  #            generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
+  #                                 time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 50, average = "none")),
   tar_target(Trajectories_avg_test,
              generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
-                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws")), # c("none", "locsperdraws", "drawsperlocs"))
+                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all")),
+  # tar_target(Trajectories_quantiles_test,
+  #            generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
+  #                                 time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_avgL_qInit")),
+            ### average options:
+            ## c("none",            # — no averaging. Paraneters in simulations vary per loc and draw
+            ## "locsperdraws_all",  # — average all loc-wise parameters per draw
+            ## "drawsperlocs_all",  # — average all parameters per loc, so that there is only one trajectory per cluster
+            ## "locsperdraws_avgL", # — average only "L_loc" per draw, so that there are initial values that vary with cluster
+            ## "locsperdraws_avgL_qInit", # — average only "L_loc" per draw, so that there are initial values that vary with cluster
   
   ## Formatted posterior data stuctures
   tar_target(States_test,
@@ -412,8 +421,6 @@ targets_posterior <- list(
              plotContributions(cmdstanfit = fit_test, parname = parname_sim, path = dir_publish, plotprop = T, color = twocolors, themefun = themefunction)),
   tar_target(plots_states_test,
              plotStates(States_test, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
-  tar_target(plot_trajectories_test,
-             plotTrajectories(Trajectories_test, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plot_trajectories_avg_test,
              plotTrajectories(Trajectories_avg_test, thicker = F, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   
