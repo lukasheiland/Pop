@@ -28,6 +28,7 @@ tar_make(c("fit_test", "summary_test")) ## parallelized internally
 tar_make_future(c("summary_test",
                   "residuals_test",
                   "plots_test",
+                  "plots_parameters_test",
                   "plots_conditional_test",
                   "plot_contributions_test",
                   "plot_contributions_prop_test",
