@@ -597,7 +597,7 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   
   ridgedata <- parallel::mclapply(parnamestart, getRidgedata, mc.cores = getOption("mc.cores", 9L))
   ridgeplots <- lapply(ridgedata, plotRidges)
-  ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots)
+  ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots,  align = "v")
   legendplot <- plotRidges(ridgedata[[1]], plotlegend = TRUE)
   
   plots <- list(ridgeplotgrid = ridgeplotgrid, areasplot = areasplot, ridge_legendplot = legendplot)
@@ -740,12 +740,16 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 2, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_p90_draw,]) +
     
     scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 10) +
-    facet_wrap(~ when) +
-    ggtitle("BA at initial time and at equilibrium") +
+    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
+                                                    ba_fix = "Equilibrium state"))) +
+    
+    labs(y = "basal area [m^2 ha^-1]") +
+    
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
-    themefun()
-  
+    
+    themefun() +
+    theme(axis.title.x = element_blank())
 
   T_all <- filter(States, var %in% allstatevars) %>%
     rename(gq = var) %>%
@@ -754,7 +758,9 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
   plot_all <- ggplot(T_all, aes(x = tax, y = value, col = tax, fill = tax)) +
     geom_violin(trim = T, col = "black") +
     scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 10) +
-    facet_wrap(~ gq) +
+    facet_wrap(~ gq, labeller = labeller(gq = c(ba_init = "Initial state",
+                                                ba_fix = "Equilibrium state",
+                                                ba_fix_ko_s = "Equilibrium state without s"))) +
     ggtitle("BA") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
@@ -937,13 +943,17 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
     filter(time < 3000) %>%
     # mutate(time_shifted = time - time_fix, time_log = log(time)) %>% ## shifts the time, so that trajectories are aligned by fixpoint
     mutate(grp = interaction(loc, tax, draw), tax = as.factor(tax)) %>%
-    ungroup()
+    ungroup() %>%
+    mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "other" = "2"))
   
   aes_lines <- aes(x = time, y = abundance, group = grp, col = tax)
   
   plot <- ggplot(Trajectories, aes_lines) +
     { if(thicker) geom_line(size = 0.5, alpha = 0.06) else geom_line(size = 0.2, alpha = 0.05) } +
-    facet_wrap(~stage, scales = "free_y") +
+    facet_wrap(~stage, scales = "free_y",
+               labeller = labeller(stage = c(J = "J (count [ha^-1])",
+                                             A = "A (count [ha^-1])",
+                                             B = "B (basal area [m^2 ha^-1])"))) +
     coord_trans(y = "sqrt", x = "sqrt") + # coord_trans(y = "log2", x = "log2") + # 
     scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
     scale_y_continuous(breaks = scales::pretty_breaks(n = 12)) +
@@ -952,7 +962,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
     themefun()
   
   if(is.null(basename)) basename <- "Model"
-  ggsave(paste0(path, "/", basename, "_trajectories", ".png"), plot, device = "png", height = 6, width = 12)
+  ggsave(paste0(path, "/", basename, "_trajectories", ".png"), plot, device = "png", height = 5.2, width = 12)
   
   return(plot)
 }
