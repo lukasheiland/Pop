@@ -32,7 +32,6 @@ options(tidyverse.quiet = TRUE)
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
              "lubridate", "DescTools", # "zoo",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
-             "eurostat", "elevatr", "rayshader", ## for mapping
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
              "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",
@@ -142,6 +141,7 @@ targets_parname <- list(
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "phi_obs_rep", "phi_obs_rep_prior",
                "avg_state_init", "avg_L_loc",
+               "fixiter_max", "fixiter_min", "eps_ba_fix",
                "log_prior", "log_lik", "lp__", "state_init_log_raw")),
   tar_target(rep_exclude,
              c("phi_obs_rep", "phi_obs_rep_prior",
@@ -152,9 +152,11 @@ targets_parname <- list(
              c("y_hat_rep", "y_hat_rep_offset", "y_sim", "y_hat_prior",
                "dominant_init", "major_init", "ba_init",
                "Fix", "dominant_fix", "major_fix", "ba_fix", "J_fix", "A_fix", "B_fix", 
-               "converged_fix", "iterations_fix", "fixiter_max", "eps_ba_fix",
-               "sum_ko_b_fix", "sum_ko_c_a_fix", "sum_ko_c_b_fix", "sum_ko_c_j_fix", "sum_ko_g_fix", "sum_ko_h_fix", "sum_ko_l_fix", "sum_ko_r_fix", "sum_ko_s_fix",
-               "sum_ko_prop_b_fix", "sum_ko_prop_c_a_fix", "sum_ko_prop_c_b_fix", "sum_ko_prop_c_j_fix", "sum_ko_prop_g_fix", "sum_ko_prop_h_fix", "sum_ko_prop_l_fix", "sum_ko_prop_r_fix", "sum_ko_prop_s_fix",
+               "converged_fix", "iterations_fix", "fixiter_max", "fixiter_min", "eps_ba_fix",
+               "sum_ko_1_b_fix", "sum_ko_1_c_a_fix", "sum_ko_1_c_b_fix", "sum_ko_1_c_j_fix", "sum_ko_1_g_fix", "sum_ko_1_h_fix", "sum_ko_1_l_fix", "sum_ko_1_r_fix", "sum_ko_1_s_fix",
+               "sum_ko_2_b_fix", "sum_ko_2_c_a_fix", "sum_ko_2_c_b_fix", "sum_ko_2_c_j_fix", "sum_ko_2_g_fix", "sum_ko_2_h_fix", "sum_ko_2_l_fix", "sum_ko_2_r_fix", "sum_ko_2_s_fix",
+               "sum_ko_1_prop_b_fix", "sum_ko_1_prop_c_a_fix", "sum_ko_1_prop_c_b_fix", "sum_ko_1_prop_c_j_fix", "sum_ko_1_prop_g_fix", "sum_ko_1_prop_h_fix", "sum_ko_1_prop_l_fix", "sum_ko_1_prop_r_fix", "sum_ko_1_prop_s_fix",
+               "sum_ko_2_prop_b_fix", "sum_ko_2_prop_c_a_fix", "sum_ko_2_prop_c_b_fix", "sum_ko_2_prop_c_j_fix", "sum_ko_2_prop_g_fix", "sum_ko_2_prop_h_fix", "sum_ko_2_prop_l_fix", "sum_ko_2_prop_r_fix", "sum_ko_2_prop_s_fix",
                "Fix_ko_s", "ba_fix_ko_s",
                "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")),
   tar_target(exclude,
@@ -296,7 +298,8 @@ targets_wrangling <- list(
     tar_target(Summary_taxa,
                summarizeTaxa(Data_big, Data_seedlings, Stages_select, Seedlings_s, tablepath = dir_publish)),
     tar_target(Map_select,
-               mapClusters(Stages_select, path = dir_publish))
+               mapClusters(Stages_select, path = dir_publish),
+               packages = c("eurostat", "elevatr", "rayshader"))
     
   )
 )

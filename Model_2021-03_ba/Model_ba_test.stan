@@ -109,29 +109,49 @@ functions {
                       vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
                       vector ba_a_avg, real ba_a_upper,
                       int N_spec, int[] i_j, int[] i_a, int[] i_b,
-                      real tolerance_fix, int fixiter_max) {
+                      real tolerance_fix, int fixiter_max, int fixiter_min, int N_fix) {
                        
         
     /// Summed up contributions, initialize with 0 to avoid NaNs
-    vector[N_spec] sum_ko_b = rep_vector(0.0, N_spec);
-    vector[N_spec] sum_ko_c_a = sum_ko_b;
-    vector[N_spec] sum_ko_c_b = sum_ko_b;
-    vector[N_spec] sum_ko_c_j = sum_ko_b;
-    vector[N_spec] sum_ko_g = sum_ko_b;
-    vector[N_spec] sum_ko_h = sum_ko_b;
-    vector[N_spec] sum_ko_l = sum_ko_b;
-    vector[N_spec] sum_ko_r = sum_ko_b;
-    vector[N_spec] sum_ko_s = sum_ko_b;
+    vector[N_spec] sum_ko_1_b = rep_vector(0.0, N_spec);
+    vector[N_spec] sum_ko_1_c_a = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_c_b = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_c_j = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_g = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_h = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_l = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_r = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_s = sum_ko_1_b;
     
-    vector[N_spec] sum_ko_prop_b = sum_ko_b;
-    vector[N_spec] sum_ko_prop_c_a = sum_ko_b;
-    vector[N_spec] sum_ko_prop_c_b = sum_ko_b;
-    vector[N_spec] sum_ko_prop_c_j = sum_ko_b;
-    vector[N_spec] sum_ko_prop_g = sum_ko_b;
-    vector[N_spec] sum_ko_prop_h = sum_ko_b;
-    vector[N_spec] sum_ko_prop_l = sum_ko_b;
-    vector[N_spec] sum_ko_prop_r = sum_ko_b;
-    vector[N_spec] sum_ko_prop_s = sum_ko_b;
+    vector[N_spec] sum_ko_2_b = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_c_a = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_c_b = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_c_j = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_g = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_h = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_l = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_r = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_s = sum_ko_1_b;
+    
+    vector[N_spec] sum_ko_1_prop_b = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_prop_c_a = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_prop_c_b = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_prop_c_j = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_prop_g = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_prop_h = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_prop_l = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_prop_r = sum_ko_1_b;
+    vector[N_spec] sum_ko_1_prop_s = sum_ko_1_b;
+    
+    vector[N_spec] sum_ko_2_prop_b = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_prop_c_a = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_prop_c_b = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_prop_c_j = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_prop_g = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_prop_h = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_prop_l = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_prop_r = sum_ko_1_b;
+    vector[N_spec] sum_ko_2_prop_s = sum_ko_1_b;
 
     
     /// initialize while loop conditions
@@ -147,10 +167,9 @@ functions {
     vector[N_spec] eps_ba = rep_vector(1.0, N_spec); // tolerance_fix is set to <upper=0.5>, that's why it is enough to set it to one for the while loop to run
     int i = 0;
     // int notconvergent = 1;
-    vector[N_spec] KO = rep_vector(0.0, N_spec);
-
+    // vector[N_spec] KO = rep_vector(0.0, N_spec);
     
-    while ( max(eps_ba) > tolerance_fix && i < fixiter_max ) { // if notconvergent were a good criterion: (notconvergent && max(eps_ba) > tolerance_fix)
+    while ( i < fixiter_min || (max(eps_ba) > tolerance_fix && i < fixiter_max) ) { // if notconvergent were a good criterion: (notconvergent && max(eps_ba) > tolerance_fix)
             
       vector[N_spec] BA = A .* ba_a_avg + B;
       real BA_sum = sum(BA);
@@ -167,41 +186,71 @@ functions {
       i += 1;
       
       
-      vector[N_spec] ba_ko_b = simulate_1(J, A, B, KO, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_c_a  = simulate_1(J, A, B, b, KO, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_c_b = simulate_1(J, A, B, b, c_a, KO, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_c_j = simulate_1(J, A, B, b, c_a, c_b, KO, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_g = simulate_1(J, A, B, b, c_a, c_b, c_j, KO, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, KO, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, KO, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, KO, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, KO, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_1_b = simulate_1(J, A, B, [0, b[2]]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_1_c_a  = simulate_1(J, A, B, b, [0, c_a[2]]', c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_1_c_b = simulate_1(J, A, B, b, c_a, [0, c_b[2]]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_1_c_j = simulate_1(J, A, B, b, c_a, c_b, [0, c_j[2]]', g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_1_g = simulate_1(J, A, B, b, c_a, c_b, c_j, [0, g[2]]', h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_1_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, [0, h[2]]', l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_1_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, [0, l[2]]', r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_1_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [0, r[2]]', s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_1_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [0, s[2]]', ba_a_avg, ba_a_upper, N_spec);
+      
+      vector[N_spec] ba_ko_2_b = simulate_1(J, A, B, [b[1], 0]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_2_c_a  = simulate_1(J, A, B, b, [c_a[1], 0]', c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_2_c_b = simulate_1(J, A, B, b, c_a, [c_b[1], 0]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_2_c_j = simulate_1(J, A, B, b, c_a, c_b, [c_j[1], 0]', g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_2_g = simulate_1(J, A, B, b, c_a, c_b, c_j, [g[1], 0]', h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_2_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, [h[1], 0]', l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_2_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, [l[1], 0]', r, s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_2_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [r[1], 0]', s, ba_a_avg, ba_a_upper, N_spec);
+      vector[N_spec] ba_ko_2_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [s[1], 0]', ba_a_avg, ba_a_upper, N_spec);
       
       
       /// Summed up contributions
-      sum_ko_b += BA_1 - ba_ko_b;
-      sum_ko_c_a += BA_1 - ba_ko_c_a;
-      sum_ko_c_b += BA_1 - ba_ko_c_b;
-      sum_ko_c_j += BA_1 - ba_ko_c_j;
-      sum_ko_g += BA_1 - ba_ko_g;
-      sum_ko_h += BA_1 - ba_ko_h;
-      sum_ko_l += BA_1 - ba_ko_l;
-      sum_ko_r += BA_1 - ba_ko_r;
-      sum_ko_s += BA_1 - ba_ko_s;
+      sum_ko_1_b += BA_1 - ba_ko_1_b;
+      sum_ko_1_c_a += BA_1 - ba_ko_1_c_a;
+      sum_ko_1_c_b += BA_1 - ba_ko_1_c_b;
+      sum_ko_1_c_j += BA_1 - ba_ko_1_c_j;
+      sum_ko_1_g += BA_1 - ba_ko_1_g;
+      sum_ko_1_h += BA_1 - ba_ko_1_h;
+      sum_ko_1_l += BA_1 - ba_ko_1_l;
+      sum_ko_1_r += BA_1 - ba_ko_1_r;
+      sum_ko_1_s += BA_1 - ba_ko_1_s;
+      
+      sum_ko_2_b += BA_1 - ba_ko_2_b;
+      sum_ko_2_c_a += BA_1 - ba_ko_2_c_a;
+      sum_ko_2_c_b += BA_1 - ba_ko_2_c_b;
+      sum_ko_2_c_j += BA_1 - ba_ko_2_c_j;
+      sum_ko_2_g += BA_1 - ba_ko_2_g;
+      sum_ko_2_h += BA_1 - ba_ko_2_h;
+      sum_ko_2_l += BA_1 - ba_ko_2_l;
+      sum_ko_2_r += BA_1 - ba_ko_2_r;
+      sum_ko_2_s += BA_1 - ba_ko_2_s;
       
       /// Summed up proportional contributions
 	  real BA_1_sum = sum(BA_1);
-	  vector[N_spec] BA_1_sum_prop = BA_1/BA_1_sum;
+	  real BA_rate = BA_1_sum/BA_sum;
 
-	  sum_ko_prop_b += BA_1_sum_prop - ba_ko_b/BA_1_sum;
-	  sum_ko_prop_c_a += BA_1_sum_prop - ba_ko_c_a/BA_1_sum;
-	  sum_ko_prop_c_b += BA_1_sum_prop - ba_ko_c_b/BA_1_sum;
-	  sum_ko_prop_c_j += BA_1_sum_prop - ba_ko_c_j/BA_1_sum;
-	  sum_ko_prop_g += BA_1_sum_prop - ba_ko_g/BA_1_sum;
-	  sum_ko_prop_h += BA_1_sum_prop - ba_ko_h/BA_1_sum;
-	  sum_ko_prop_l += BA_1_sum_prop - ba_ko_l/BA_1_sum;
-	  sum_ko_prop_r += BA_1_sum_prop - ba_ko_r/BA_1_sum;
-	  sum_ko_prop_s += BA_1_sum_prop - ba_ko_s/BA_1_sum;
+	  sum_ko_1_prop_b   += (ba_ko_1_b ./ BA) / BA_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
+	  sum_ko_1_prop_c_a += (ba_ko_1_c_a ./ BA) / BA_rate;
+	  sum_ko_1_prop_c_b += (ba_ko_1_c_b ./ BA) / BA_rate;
+	  sum_ko_1_prop_c_j += (ba_ko_1_c_j ./ BA) / BA_rate;
+	  sum_ko_1_prop_g   += (ba_ko_1_g ./ BA) / BA_rate;
+	  sum_ko_1_prop_h   += (ba_ko_1_h ./ BA) / BA_rate;
+	  sum_ko_1_prop_l   += (ba_ko_1_l ./ BA) / BA_rate;
+	  sum_ko_1_prop_r   += (ba_ko_1_r ./ BA) / BA_rate;
+	  sum_ko_1_prop_s   += (ba_ko_1_s ./ BA) / BA_rate;
+	  
+	  sum_ko_2_prop_b   += (ba_ko_2_b ./ BA) / BA_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
+	  sum_ko_2_prop_c_a += (ba_ko_2_c_a ./ BA) / BA_rate;
+	  sum_ko_2_prop_c_b += (ba_ko_2_c_b ./ BA) / BA_rate;
+	  sum_ko_2_prop_c_j += (ba_ko_2_c_j ./ BA) / BA_rate;
+	  sum_ko_2_prop_g   += (ba_ko_2_g ./ BA) / BA_rate;
+	  sum_ko_2_prop_h   += (ba_ko_2_h ./ BA) / BA_rate;
+	  sum_ko_2_prop_l   += (ba_ko_2_l ./ BA) / BA_rate;
+	  sum_ko_2_prop_r   += (ba_ko_2_r ./ BA) / BA_rate;
+	  sum_ko_2_prop_s   += (ba_ko_2_s ./ BA) / BA_rate;
       
       /// !
       J = J_1;
@@ -210,11 +259,15 @@ functions {
     }
     
     // array with 3 (states) + 1 (BA) + 1 (eps) + 1 (n_iter) + 9 (parameters) variables
-    array[15] vector[N_spec] fix = {J_1, A_1, B_1, BA_1,
-                                    eps_ba, rep_vector(i, N_spec), // int i gets cast to real
-                                    sum_ko_b, sum_ko_c_a, sum_ko_c_b, sum_ko_c_j, sum_ko_g, sum_ko_h, sum_ko_l, sum_ko_r, sum_ko_s,
-                                    sum_ko_prop_b, sum_ko_prop_c_a, sum_ko_prop_c_b, sum_ko_prop_c_j, sum_ko_prop_g, sum_ko_prop_h, sum_ko_prop_l, sum_ko_prop_r, sum_ko_prop_s};
-
+    array[N_fix] vector[N_spec] fix = {J_1, A_1, B_1, BA_1,
+                                       eps_ba, rep_vector(i, N_spec), // int i gets cast to real
+                                       //
+                                       sum_ko_1_b, sum_ko_1_c_a, sum_ko_1_c_b, sum_ko_1_c_j, sum_ko_1_g, sum_ko_1_h, sum_ko_1_l, sum_ko_1_r, sum_ko_1_s,
+                                       sum_ko_2_b, sum_ko_2_c_a, sum_ko_2_c_b, sum_ko_2_c_j, sum_ko_2_g, sum_ko_2_h, sum_ko_2_l, sum_ko_2_r, sum_ko_2_s,
+                                       //
+                                       sum_ko_1_prop_b, sum_ko_1_prop_c_a, sum_ko_1_prop_c_b, sum_ko_1_prop_c_j, sum_ko_1_prop_g, sum_ko_1_prop_h, sum_ko_1_prop_l, sum_ko_1_prop_r, sum_ko_1_prop_s,
+                                       sum_ko_2_prop_b, sum_ko_2_prop_c_a, sum_ko_2_prop_c_b, sum_ko_2_prop_c_j, sum_ko_2_prop_g, sum_ko_2_prop_h, sum_ko_2_prop_l, sum_ko_2_prop_r, sum_ko_2_prop_s};
+                                    
     return fix;
   }
   
@@ -452,7 +505,7 @@ transformed data {
   // vector[N_pops] y0 [N_locs, N_plots] = y[ , , 1, ];
   
   //// Data for generated quantities
-  int N_fix = 24; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter, 2 * 9 * diff_ko_parameter }
+  int N_fix = 42; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter, 2 * 2 * 9 diff_ko_parameter }
 
   real factor_log = log(parfactor/timestep);
   
@@ -799,28 +852,50 @@ generated quantities {
   array[N_locs] vector[N_species] eps_ba_fix = J_fix;
   array[N_locs] real iterations_fix = rep_array(0.0, N_locs);
 
-  array[N_locs] vector[N_species] sum_ko_b_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_c_a_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_c_b_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_c_j_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_g_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_h_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_l_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_r_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_s_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_c_a_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_c_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_c_j_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_g_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_h_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_l_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_r_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_s_fix = J_fix;
   
-  array[N_locs] vector[N_species] sum_ko_prop_b_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_prop_c_a_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_prop_c_b_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_prop_c_j_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_prop_g_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_prop_h_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_prop_l_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_prop_r_fix = J_fix;
-  array[N_locs] vector[N_species] sum_ko_prop_s_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_c_a_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_c_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_c_j_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_g_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_h_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_l_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_r_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_s_fix = J_fix;
+  
+  array[N_locs] vector[N_species] sum_ko_1_prop_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_prop_c_a_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_prop_c_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_prop_c_j_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_prop_g_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_prop_h_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_prop_l_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_prop_r_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_1_prop_s_fix = J_fix;
+  
+  array[N_locs] vector[N_species] sum_ko_2_prop_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_prop_c_a_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_prop_c_b_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_prop_c_j_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_prop_g_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_prop_h_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_prop_l_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_prop_r_fix = J_fix;
+  array[N_locs] vector[N_species] sum_ko_2_prop_s_fix = J_fix;
 
   
   int fixiter_max = 5000;
+  int fixiter_min = 500;
+
   
   array[N_locs] int converged_fix = rep_array(9, N_locs); // tolerance has been reached
 
@@ -865,7 +940,7 @@ generated quantities {
                             // exp(b_log), exp(c_a_log), exp(c_b_log), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(h_log), exp(L_loc[loc, ]), exp(R_log[loc,]'), exp(S_log[loc,]'),
                             ba_a_avg, ba_a_upper,
                             N_species, i_j, i_a, i_b,
-                            tolerance_fix, fixiter_max);
+                            tolerance_fix, fixiter_max, fixiter_min, N_fix);
                                      
       iterations_fix[loc] = Fix[loc, 6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
       converged_fix[loc] = iterations_fix[loc] < fixiter_max;
@@ -877,27 +952,48 @@ generated quantities {
         A_fix[loc] = Fix[loc, 2];
         B_fix[loc] = Fix[loc, 3];
         ba_fix[loc] = Fix[loc, 4];
-        eps_ba_fix[loc] = Fix[loc, 5];
+        eps_ba_fix[loc] = Fix[loc, 5];        
+        // Fix[loc, 6] is unpacked before
         
-        sum_ko_b_fix[loc] = Fix[loc, 7];
-        sum_ko_c_a_fix[loc] = Fix[loc, 8];
-        sum_ko_c_b_fix[loc] = Fix[loc, 9];
-        sum_ko_c_j_fix[loc] = Fix[loc, 10];
-        sum_ko_g_fix[loc] = Fix[loc, 11];
-        sum_ko_h_fix[loc] = Fix[loc, 12];
-        sum_ko_l_fix[loc] = Fix[loc, 13]; // k
-        sum_ko_r_fix[loc] = Fix[loc, 14];
-        sum_ko_s_fix[loc] = Fix[loc, 15];
+        sum_ko_1_b_fix[loc] = Fix[loc, 7];
+        sum_ko_1_c_a_fix[loc] = Fix[loc, 8];
+        sum_ko_1_c_b_fix[loc] = Fix[loc, 9];
+        sum_ko_1_c_j_fix[loc] = Fix[loc, 10];
+        sum_ko_1_g_fix[loc] = Fix[loc, 11];
+        sum_ko_1_h_fix[loc] = Fix[loc, 12];
+        sum_ko_1_l_fix[loc] = Fix[loc, 13]; // k
+        sum_ko_1_r_fix[loc] = Fix[loc, 14];
+        sum_ko_1_s_fix[loc] = Fix[loc, 15];
         
-        sum_ko_prop_b_fix[loc] = Fix[loc, 16];
-		sum_ko_prop_c_a_fix[loc] = Fix[loc, 17];
-		sum_ko_prop_c_b_fix[loc] = Fix[loc, 18];
-		sum_ko_prop_c_j_fix[loc] = Fix[loc, 19];
-		sum_ko_prop_g_fix[loc] = Fix[loc, 20];
-		sum_ko_prop_h_fix[loc] = Fix[loc, 21];
-		sum_ko_prop_l_fix[loc] = Fix[loc, 22];
-		sum_ko_prop_r_fix[loc] = Fix[loc, 23];
-		sum_ko_prop_s_fix[loc] = Fix[loc, 24];
+        sum_ko_2_b_fix[loc] = Fix[loc, 16];
+        sum_ko_2_c_a_fix[loc] = Fix[loc, 17];
+        sum_ko_2_c_b_fix[loc] = Fix[loc, 18];
+        sum_ko_2_c_j_fix[loc] = Fix[loc, 19];
+        sum_ko_2_g_fix[loc] = Fix[loc, 20];
+        sum_ko_2_h_fix[loc] = Fix[loc, 21];
+        sum_ko_2_l_fix[loc] = Fix[loc, 22];
+        sum_ko_2_r_fix[loc] = Fix[loc, 23];
+        sum_ko_2_s_fix[loc] = Fix[loc, 24];
+        
+        sum_ko_1_prop_b_fix[loc] = Fix[loc, 25];
+		sum_ko_1_prop_c_a_fix[loc] = Fix[loc, 26];
+		sum_ko_1_prop_c_b_fix[loc] = Fix[loc, 27];
+		sum_ko_1_prop_c_j_fix[loc] = Fix[loc, 28];
+		sum_ko_1_prop_g_fix[loc] = Fix[loc, 29];
+		sum_ko_1_prop_h_fix[loc] = Fix[loc, 30];
+		sum_ko_1_prop_l_fix[loc] = Fix[loc, 31];
+		sum_ko_1_prop_r_fix[loc] = Fix[loc, 32];
+		sum_ko_1_prop_s_fix[loc] = Fix[loc, 33];
+		
+		sum_ko_2_prop_b_fix[loc] = Fix[loc, 34];
+		sum_ko_2_prop_c_a_fix[loc] = Fix[loc, 35];
+		sum_ko_2_prop_c_b_fix[loc] = Fix[loc, 36];
+		sum_ko_2_prop_c_j_fix[loc] = Fix[loc, 37];
+		sum_ko_2_prop_g_fix[loc] = Fix[loc, 38];
+		sum_ko_2_prop_h_fix[loc] = Fix[loc, 39];
+		sum_ko_2_prop_l_fix[loc] = Fix[loc, 40];
+		sum_ko_2_prop_r_fix[loc] = Fix[loc, 41];
+		sum_ko_2_prop_s_fix[loc] = Fix[loc, 42];
 
 
         /// Booleans at fixpoint
@@ -916,7 +1012,7 @@ generated quantities {
 		// Fix_ko_k[loc]
 		// Fix_ko_l[loc]
 		// Fix_ko_r[loc]
-		Fix_ko_s[loc] = iterateFix(state_fix, exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), ko, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max);
+		Fix_ko_s[loc] = iterateFix(state_fix * 0.9, exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), ko, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
 		ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
       
       }
