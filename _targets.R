@@ -162,6 +162,8 @@ targets_parname <- list(
   tar_target(parname,
              c("phi_obs", # "sigma_k_loc", # "k_log",
                "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
+  tar_target(parname_plotorder,
+             c(l = "l_log", r = "r_log", c_j = "c_j_log", s = "s_log", g = "g_log", c_a = "c_a_log", h = "h_log", b = "b_log", c_b = "c_b_log" )),
   tar_target(parname_loc,
              c("state_init_log", "L_loc")),
   tar_target(parname_sim,
@@ -407,7 +409,7 @@ targets_posterior <- list(
   tar_target(plots_test,
              plotStanfit(stanfit = stanfit_test, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plots_parameters_test,
-             plotParameters(stanfit = stanfit_test, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
+             plotParameters(stanfit = stanfit_test, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   ## Prior predictive tests that rely on currently out-commented generated quantities
   # tar_target(plots_predictions_prior_test,
   #            plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
@@ -422,7 +424,7 @@ targets_posterior <- list(
   tar_target(plots_states_test,
              plotStates(States_test, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plot_trajectories_avg_test,
-             plotTrajectories(Trajectories_avg_test, thicker = F, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
+             plotTrajectories(Trajectories_avg_test, thicker = T, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   
   # tar_target(plot_powerscale_test,
   #            plotSensitivity(cmdstanfit = fit_test, include = parname, path = dir_publish)),

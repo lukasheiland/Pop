@@ -517,35 +517,67 @@ plotStanfit <- function(stanfit, exclude, path, basename,
 ## plotParameters --------------------------------
 # stanfit  <- tar_read("stanfit_test")
 # exclude <- tar_read("exclude")
+# parname <- tar_read("parname_plotorder")
 # path  <- tar_read("dir_fit")
 # basename  <- tar_read("basename_fit_test")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotParameters <- function(stanfit, exclude, path, basename,
+plotParameters <- function(stanfit, parname, exclude, path, basename,
                         color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  extendedcolor <- c(color, "#555555") # add a third neutral colour for inspecific priors
+  priorlinecolor <- c("#000000", "#000000")
+  prioralpha <- c(1, 0.3)
   
 
   getRidgedata <- function(startswith, fit = stanfit) {
-    R <- bayesplot::mcmc_areas_ridges_data(fit, pars = vars(starts_with(startswith, ignore.case = F)))
+    R <- bayesplot::mcmc_areas_data(fit,
+                                    pars = vars(starts_with(startswith, ignore.case = F)),
+                                    point_est = c("median"),
+                                    prob = 0.8)
+    
+    M <- bayesplot::mcmc_intervals_data(fit,
+                                        pars = vars(starts_with(startswith, ignore.case = F)))
+
     R %<>%
       mutate(tax = str_extract(parameter, '\\[[12]\\]$')) %>%
       mutate(par = str_extract(parameter, '([a-z_])*')) %>%
       mutate(prior = str_ends(parameter, 'prior(\\[[12]\\])*')) %>%
-      mutate(colorgroup = case_when(tax == '[1]' & prior ~ 'Fagus_prior',
-                                    tax == '[2]' & prior ~ 'other_prior',
+      mutate(group = case_when(tax == '[1]' & prior ~ 'Fagus prior',
+                                    tax == '[2]' & prior ~ 'other prior',
                                     tax == '[1]' & !prior ~ 'Fagus',
                                     tax == '[2]' & !prior ~ 'other',
-                                    is.na(tax) & prior ~ 'prior'))
+                                    is.na(tax) & prior ~ 'prior')) %>%
+      mutate(group = factor(group, levels = c('Fagus', 'other', 'Fagus prior', 'other prior', 'prior'), ordered = T)) %>%
+      mutate(arrangement = sort(as.integer(group), decreasing = T)) %>%
+      left_join(M[, c("parameter", "m")], by = "parameter")
+    
+      # group_by(parameter, tax) %>%
+      # mutate(m_d = median(x, na.rm = T), max_d = max(scaled_density, na.rm = T)) %>%
+      # ungroup()
+    
     return(R)
   }
 
   
-  plotRidges <- function(Data) {
-    ggplot(Data, aes(y = parameter, height = scaled_density, x = x, col = tax, fill = tax)) +
-      geom_density_ridges(stat = "identity") +
-      scale_color_manual(values = color) +
-      scale_fill_manual(values = color) +
-      themefun()
+  plotRidges <- function(Data, plotlegend = FALSE) {
+    
+    Data$parameter <- fct_reorder(Data$parameter, as.integer(Data$group), .desc = T)
+    
+    ggplot(Data, aes(y = parameter, height = scaled_density, x = x, col = prior, fill = tax, alpha = prior)) +
+      geom_density_ridges(stat = "identity", size = 0.8, rel_min_height = 0.01) +
+      geom_segment(aes(x = m, xend = m, y = parameter, yend = as.integer(parameter) + scaled_density), color = "black", linetype = 3, size = 0.5) +
+      scale_color_manual(values = priorlinecolor) +
+      scale_fill_manual(values = extendedcolor) +
+      scale_alpha_manual(values = prioralpha) +
+      
+      ggtitle(paste("log", str_remove(first(Data$par), "_log"))) +
+      scale_y_discrete(labels = function(parameter) Data$group[match(parameter, Data$parameter)], expand = expansion(mult = c(0.1, 1))) +
+
+      themefun() +
+      theme(axis.title.x = element_blank()) +
+      theme(axis.title.y = element_blank()) +
+      { if(!plotlegend) theme(legend.position="none") }
       
       ## Add lines
       ## Heights were scaled etc.
@@ -556,23 +588,21 @@ plotParameters <- function(stanfit, exclude, path, basename,
   #     themefun()
   # }
   
-  parname <- setdiff(stanfit@model_pars, exclude)
-  parname_sansprior <- parname[!grepl("prior$", parname)]
-  
-  ## For later use in starts_with: Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
-  parnamestart <- na.omit(unique(str_extract(parname, "^[a-z]_[ljab]")))
-  
-  
+  parname_sansprior <- parname # parname[!grepl("prior$", parname)]
+  parnamestart <- na.omit(unique(str_extract(parname_sansprior, "^[a-z]_[ljab]"))) ## For later use in starts_with: Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
+  parname <- c(parname, paste0(parname, "_prior"))
+
   bayesplot::color_scheme_set("gray")
   areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
   
   ridgedata <- parallel::mclapply(parnamestart, getRidgedata, mc.cores = getOption("mc.cores", 9L))
   ridgeplots <- lapply(ridgedata, plotRidges)
   ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots)
+  legendplot <- plotRidges(ridgedata[[1]], plotlegend = TRUE)
   
-  plots <- list(ridgeplotgrid = ridgeplotgrid, areasplot = areasplot)
+  plots <- list(ridgeplotgrid = ridgeplotgrid, areasplot = areasplot, ridge_legendplot = legendplot)
   
-  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", height = 16, width = 16), plots, names(plots))
+  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", height = 10, width = 12), plots, names(plots))
    
   return(plots)
 }
@@ -912,8 +942,8 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
   aes_lines <- aes(x = time, y = abundance, group = grp, col = tax)
   
   plot <- ggplot(Trajectories, aes_lines) +
-    { if(thicker) geom_line(size = 0.5, alpha = 0.1) else geom_line(size = 0.2, alpha = 0.05) } +
-    facet_wrap(~stage) +
+    { if(thicker) geom_line(size = 0.5, alpha = 0.06) else geom_line(size = 0.2, alpha = 0.05) } +
+    facet_wrap(~stage, scales = "free_y") +
     coord_trans(y = "sqrt", x = "sqrt") + # coord_trans(y = "log2", x = "log2") + # 
     scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
     scale_y_continuous(breaks = scales::pretty_breaks(n = 12)) +
@@ -922,7 +952,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
     themefun()
   
   if(is.null(basename)) basename <- "Model"
-  ggsave(paste0(path, "/", basename, "_trajectories", ".png"), plot, device = "png", height = 8, width = 12)
+  ggsave(paste0(path, "/", basename, "_trajectories", ".png"), plot, device = "png", height = 6, width = 12)
   
   return(plot)
 }
