@@ -1012,7 +1012,7 @@ generated quantities {
 		// Fix_ko_k[loc]
 		// Fix_ko_l[loc]
 		// Fix_ko_r[loc]
-		Fix_ko_s[loc] = iterateFix(state_fix * 0.9, exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), ko, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+		Fix_ko_s[loc] = iterateFix(exp(state_init_log[loc]), exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), ko, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
 		ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
       
       }

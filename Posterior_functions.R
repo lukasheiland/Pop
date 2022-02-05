@@ -860,7 +860,7 @@ plotConditional <- function(cmdstanfit, parname, path,
 
 
 ## plotContributions --------------------------------
-# parname  <- tar_read("parname_sim")
+# parname  <- tar_read("parname_plotorder")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
@@ -871,13 +871,13 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
+  n_species <- 2 ## is also used in functions below
+  parorder <- names(parname)
   parname <- str_remove(setdiff(parname, "k_log"), "_log")
-  contribname <- if (plotprop) paste0("sum_ko_prop_", parname, "_fix") else paste0("sum_ko_", parname, "_fix")
+  contribname <- if (plotprop) paste("sum_ko", rep(1:n_species, each = length(parname)), "prop", parname, "fix", sep = "_") else paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_")
   
   C <- cmdstanfit$draws(variables = contribname) %>%
     as_draws_rvars()
-  
-  n_species <- 2
   
   convertVectorToDrawsList <- function(x) {
     lapply(1:length(x), function(i) as_draws_rvars(x[i]) )
@@ -888,18 +888,19 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
                                                )
                       )
   fix_draws <- as_draws(lapply(fix_draws, function(f) do.call(cbind, lapply(f, function(l) l$x))))
-  fix_draws <- thin_draws(fix_draws, thin = 10)
+  # fix_draws <- thin_draws(fix_draws, thin = 10)
   
   M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
   I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
     mutate(p = parameter,
            parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
-           tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus sylvatica" = "1", "other" = "2"),
+           kotax = fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus sylvatica" = "1", "other" = "2"),
+           tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus sylvatica" = "1", "other" = "2"), # the last number in the string
            stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.integer(as.character(fct_recode(stage, "1" = "J", "5" = "A", "7" = "B")))) %>%
-    mutate(parameter = ordered(parameter, c("l", "r", "c_j", "s", "g", "c_a", "h", "b", "c_b"))) %>%
+    mutate(parameter = ordered(parameter, parorder)) %>%
     mutate(parameter = fct_reorder(parameter, as.numeric(stage))) %>%
     arrange(stage, parameter)
 
@@ -917,12 +918,14 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     geom_vline(xintercept = 0, linetype = 3, size = 0.6, col = "#222222") +
     geom_hline(yintercept = c(4.5, 6.5), linetype = 1, size = 0.5, col = "#222222") +
     geom_text(aes(y = stagepos, x = 1000, label = stage), size = 11, col = "#222222") +
-    scale_x_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 15) + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
-    labs(x = "Cumulative basal area [m2 ha-1]", y = "parameter", title = "Contributions to the basal area") +
+    facet_wrap(~kotax) +
     scale_color_manual(values = color) +
-    themefun()
+    themefun() +
+    theme(axis.title.x = element_blank()) +
+    scale_x_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 15) + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
+    labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions of parameters to the basal area")
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".pdf"), plot_contributions, dev = "pdf", height = 8, width = 8)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".pdf"), plot_contributions, dev = "pdf", height = 8, width = 12)
   
   return(plot_contributions)
 }
