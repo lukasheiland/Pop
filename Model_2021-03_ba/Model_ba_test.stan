@@ -44,9 +44,17 @@ functions {
     real BA_sum = sum(BA);
 
     /// Model (1 iteration)
+    /// First run: get limiting states
     vector[N_spec] J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
     vector[N_spec] A_1  =  (g .* J_1 + (A - h .*A )) ./ (1 + c_a*BA_sum);
     vector[N_spec] B_1  =  (1+b).*((h .* A_1 * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+    
+    real BA_sum_1 = sum(A_1 .* ba_a_avg + B_1);
+		
+	// Second run: use limiting states
+    J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J_1) + s*BA_sum_1); // use the states already generated before: J_1, BA_sum_1
+    A_1  =  (g .* J_1 + (A - h .*A )) ./ (1 + c_a*BA_sum_1);
+    B_1  =  (1+b).*((h .* A_1 * ba_a_upper) + B) ./ (1 + c_b*BA_sum_1);
     
     vector[N_spec] ba_1 = (A_1 .* ba_a_avg) + B_1;
     
@@ -262,8 +270,8 @@ functions {
     array[N_fix] vector[N_spec] fix = {J_1, A_1, B_1, BA_1,
                                        eps_ba, rep_vector(i, N_spec), // int i gets cast to real
                                        //
-                                       sum_ko_1_b, sum_ko_1_c_a, sum_ko_1_c_b, sum_ko_1_c_j, sum_ko_1_g, sum_ko_1_h, sum_ko_1_l, sum_ko_1_r, sum_ko_1_s,
-                                       sum_ko_2_b, sum_ko_2_c_a, sum_ko_2_c_b, sum_ko_2_c_j, sum_ko_2_g, sum_ko_2_h, sum_ko_2_l, sum_ko_2_r, sum_ko_2_s,
+                                       sum_ko_1_b/i, sum_ko_1_c_a/i, sum_ko_1_c_b/i, sum_ko_1_c_j/i, sum_ko_1_g/i, sum_ko_1_h/i, sum_ko_1_l/i, sum_ko_1_r/i, sum_ko_1_s/i,
+                                       sum_ko_2_b/i, sum_ko_2_c_a/i, sum_ko_2_c_b/i, sum_ko_2_c_j/i, sum_ko_2_g/i, sum_ko_2_h/i, sum_ko_2_l/i, sum_ko_2_r/i, sum_ko_2_s/i,
                                        //
                                        sum_ko_1_prop_b, sum_ko_1_prop_c_a, sum_ko_1_prop_c_b, sum_ko_1_prop_c_j, sum_ko_1_prop_g, sum_ko_1_prop_h, sum_ko_1_prop_l, sum_ko_1_prop_r, sum_ko_1_prop_s,
                                        sum_ko_2_prop_b, sum_ko_2_prop_c_a, sum_ko_2_prop_c_b, sum_ko_2_prop_c_j, sum_ko_2_prop_g, sum_ko_2_prop_h, sum_ko_2_prop_l, sum_ko_2_prop_r, sum_ko_2_prop_s};

@@ -566,7 +566,7 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
     
     ggplot(Data, aes(y = parameter, height = scaled_density, x = x, col = prior, fill = tax, alpha = prior)) +
       geom_density_ridges(stat = "identity", size = 0.8, rel_min_height = 0.01) +
-      geom_segment(aes(x = m, xend = m, y = parameter, yend = as.integer(parameter) + scaled_density), color = "black", linetype = 3, size = 0.5) +
+      geom_segment(aes(x = m, xend = m, y = parameter, yend = as.integer(parameter) + scaled_density), color = "black", linetype = 3, size = 0.3) +
       scale_color_manual(values = priorlinecolor) +
       scale_fill_manual(values = extendedcolor) +
       scale_alpha_manual(values = prioralpha) +
