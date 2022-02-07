@@ -104,9 +104,9 @@ formatStates <- function(cmdstanfit, data_stan_priors) {
           median_ba_init = quantile(value, prob = 0.5, type = 1, na.rm = T),
           p10_ba_init = quantile(value, prob = 0.1, type = 1, na.rm = T),
           p90_ba_init = quantile(value, prob = 0.9, type = 1, na.rm = T)) %>%
-   summarize(loc_median_draw = sample(loc[value == median_ba_init], 1), ## just in case that there might be more than 1, which is currently not the case
-             loc_p10_draw = sample(loc[value == p10_ba_init], 1),
-             loc_p90_draw = sample(loc[value == p90_ba_init], 1)
+   summarize(loc_median_draw = first(loc[value == median_ba_init]), ## just in case that there might be more than 1, which is currently not the case
+             loc_p10_draw = first(loc[value == p10_ba_init]),
+             loc_p90_draw = first(loc[value == p90_ba_init])
              ) %>%
     ## get the loc that is most frequently the median for both taxa
     group_by(tax) %>%
