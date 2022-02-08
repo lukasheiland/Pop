@@ -250,7 +250,7 @@ functions {
 	  sum_ko_1_prop_r   += (ba_ko_none ./ ba_ko_1_r) / ba_rate;
 	  sum_ko_1_prop_s   += (ba_ko_none ./ ba_ko_1_s) / ba_rate;
 
-	  sum_ko_2_prop_b   += (ba_ko_none / ba_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
+	  sum_ko_2_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
 	  sum_ko_2_prop_c_a += (ba_ko_none ./ ba_ko_2_c_a) / ba_rate;
 	  sum_ko_2_prop_c_b += (ba_ko_none ./ ba_ko_2_c_b) / ba_rate;
 	  sum_ko_2_prop_c_j += (ba_ko_none ./ ba_ko_2_c_j) / ba_rate;
