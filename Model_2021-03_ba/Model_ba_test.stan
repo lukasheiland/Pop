@@ -193,7 +193,8 @@ functions {
       eps_ba = fabs((BA_1 - BA) ./ BA_1);
       i += 1;
       
-      
+      vector[N_spec] ba_ko_none = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+
       vector[N_spec] ba_ko_1_b = simulate_1(J, A, B, [0, b[2]]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
       vector[N_spec] ba_ko_1_c_a  = simulate_1(J, A, B, b, [0, c_a[2]]', c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
       vector[N_spec] ba_ko_1_c_b = simulate_1(J, A, B, b, c_a, [0, c_b[2]]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
@@ -216,49 +217,48 @@ functions {
       
       
       /// Summed up contributions
-      sum_ko_1_b += BA_1 - ba_ko_1_b;
-      sum_ko_1_c_a += BA_1 - ba_ko_1_c_a;
-      sum_ko_1_c_b += BA_1 - ba_ko_1_c_b;
-      sum_ko_1_c_j += BA_1 - ba_ko_1_c_j;
-      sum_ko_1_g += BA_1 - ba_ko_1_g;
-      sum_ko_1_h += BA_1 - ba_ko_1_h;
-      sum_ko_1_l += BA_1 - ba_ko_1_l;
-      sum_ko_1_r += BA_1 - ba_ko_1_r;
-      sum_ko_1_s += BA_1 - ba_ko_1_s;
+      sum_ko_1_b += ba_ko_none - ba_ko_1_b;
+      sum_ko_1_c_a += ba_ko_none - ba_ko_1_c_a;
+      sum_ko_1_c_b += ba_ko_none - ba_ko_1_c_b;
+      sum_ko_1_c_j += ba_ko_none - ba_ko_1_c_j;
+      sum_ko_1_g += ba_ko_none - ba_ko_1_g;
+      sum_ko_1_h += ba_ko_none - ba_ko_1_h;
+      sum_ko_1_l += ba_ko_none - ba_ko_1_l;
+      sum_ko_1_r += ba_ko_none - ba_ko_1_r;
+      sum_ko_1_s += ba_ko_none - ba_ko_1_s;
       
-      sum_ko_2_b += BA_1 - ba_ko_2_b;
-      sum_ko_2_c_a += BA_1 - ba_ko_2_c_a;
-      sum_ko_2_c_b += BA_1 - ba_ko_2_c_b;
-      sum_ko_2_c_j += BA_1 - ba_ko_2_c_j;
-      sum_ko_2_g += BA_1 - ba_ko_2_g;
-      sum_ko_2_h += BA_1 - ba_ko_2_h;
-      sum_ko_2_l += BA_1 - ba_ko_2_l;
-      sum_ko_2_r += BA_1 - ba_ko_2_r;
-      sum_ko_2_s += BA_1 - ba_ko_2_s;
+      sum_ko_2_b += ba_ko_none - ba_ko_2_b;
+      sum_ko_2_c_a += ba_ko_none - ba_ko_2_c_a;
+      sum_ko_2_c_b += ba_ko_none - ba_ko_2_c_b;
+      sum_ko_2_c_j += ba_ko_none - ba_ko_2_c_j;
+      sum_ko_2_g += ba_ko_none - ba_ko_2_g;
+      sum_ko_2_h += ba_ko_none - ba_ko_2_h;
+      sum_ko_2_l += ba_ko_none - ba_ko_2_l;
+      sum_ko_2_r += ba_ko_none - ba_ko_2_r;
+      sum_ko_2_s += ba_ko_none - ba_ko_2_s;
       
       /// Summed up proportional contributions
-	  real BA_1_sum = sum(BA_1);
-	  real BA_rate = BA_1_sum/BA_sum;
+	  real ba_rate = sum(ba_ko_none)/BA_sum;
 
-	  sum_ko_1_prop_b   += (ba_ko_1_b ./ BA) / BA_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
-	  sum_ko_1_prop_c_a += (ba_ko_1_c_a ./ BA) / BA_rate;
-	  sum_ko_1_prop_c_b += (ba_ko_1_c_b ./ BA) / BA_rate;
-	  sum_ko_1_prop_c_j += (ba_ko_1_c_j ./ BA) / BA_rate;
-	  sum_ko_1_prop_g   += (ba_ko_1_g ./ BA) / BA_rate;
-	  sum_ko_1_prop_h   += (ba_ko_1_h ./ BA) / BA_rate;
-	  sum_ko_1_prop_l   += (ba_ko_1_l ./ BA) / BA_rate;
-	  sum_ko_1_prop_r   += (ba_ko_1_r ./ BA) / BA_rate;
-	  sum_ko_1_prop_s   += (ba_ko_1_s ./ BA) / BA_rate;
-	  
-	  sum_ko_2_prop_b   += (ba_ko_2_b ./ BA) / BA_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
-	  sum_ko_2_prop_c_a += (ba_ko_2_c_a ./ BA) / BA_rate;
-	  sum_ko_2_prop_c_b += (ba_ko_2_c_b ./ BA) / BA_rate;
-	  sum_ko_2_prop_c_j += (ba_ko_2_c_j ./ BA) / BA_rate;
-	  sum_ko_2_prop_g   += (ba_ko_2_g ./ BA) / BA_rate;
-	  sum_ko_2_prop_h   += (ba_ko_2_h ./ BA) / BA_rate;
-	  sum_ko_2_prop_l   += (ba_ko_2_l ./ BA) / BA_rate;
-	  sum_ko_2_prop_r   += (ba_ko_2_r ./ BA) / BA_rate;
-	  sum_ko_2_prop_s   += (ba_ko_2_s ./ BA) / BA_rate;
+	  sum_ko_1_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // 1. proportional ko decline rate (how much does the basal area grow in the non-ko model compared to the k.o. model), in proportion to 2. the total basal area proportional increment 
+	  sum_ko_1_prop_c_a += (ba_ko_none ./ ba_ko_1_c_a) / ba_rate; // ... will later be divided by number of iterations
+	  sum_ko_1_prop_c_b += (ba_ko_none ./ ba_ko_1_c_b) / ba_rate;
+	  sum_ko_1_prop_c_j += (ba_ko_none ./ ba_ko_1_c_j) / ba_rate;
+	  sum_ko_1_prop_g   += (ba_ko_none ./ ba_ko_1_g) / ba_rate;
+	  sum_ko_1_prop_h   += (ba_ko_none ./ ba_ko_1_h) / ba_rate;
+	  sum_ko_1_prop_l   += (ba_ko_none ./ ba_ko_1_l) / ba_rate;
+	  sum_ko_1_prop_r   += (ba_ko_none ./ ba_ko_1_r) / ba_rate;
+	  sum_ko_1_prop_s   += (ba_ko_none ./ ba_ko_1_s) / ba_rate;
+
+	  sum_ko_2_prop_b   += (ba_ko_none / ba_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
+	  sum_ko_2_prop_c_a += (ba_ko_none ./ ba_ko_2_c_a) / ba_rate;
+	  sum_ko_2_prop_c_b += (ba_ko_none ./ ba_ko_2_c_b) / ba_rate;
+	  sum_ko_2_prop_c_j += (ba_ko_none ./ ba_ko_2_c_j) / ba_rate;
+	  sum_ko_2_prop_g   += (ba_ko_none ./ ba_ko_2_g) / ba_rate;
+	  sum_ko_2_prop_h   += (ba_ko_none ./ ba_ko_2_h) / ba_rate;
+	  sum_ko_2_prop_l   += (ba_ko_none ./ ba_ko_2_l) / ba_rate;
+	  sum_ko_2_prop_r   += (ba_ko_none ./ ba_ko_2_r) / ba_rate;
+	  sum_ko_2_prop_s   += (ba_ko_none ./ ba_ko_2_s) / ba_rate;
       
       /// !
       J = J_1;
@@ -270,11 +270,11 @@ functions {
     array[N_fix] vector[N_spec] fix = {J_1, A_1, B_1, BA_1,
                                        eps_ba, rep_vector(i, N_spec), // int i gets cast to real
                                        //
-                                       sum_ko_1_b/i, sum_ko_1_c_a/i, sum_ko_1_c_b/i, sum_ko_1_c_j/i, sum_ko_1_g/i, sum_ko_1_h/i, sum_ko_1_l/i, sum_ko_1_r/i, sum_ko_1_s/i,
-                                       sum_ko_2_b/i, sum_ko_2_c_a/i, sum_ko_2_c_b/i, sum_ko_2_c_j/i, sum_ko_2_g/i, sum_ko_2_h/i, sum_ko_2_l/i, sum_ko_2_r/i, sum_ko_2_s/i,
+                                       sum_ko_1_b, sum_ko_1_c_a, sum_ko_1_c_b, sum_ko_1_c_j, sum_ko_1_g/i, sum_ko_1_h, sum_ko_1_l, sum_ko_1_r, sum_ko_1_s,
+                                       sum_ko_2_b, sum_ko_2_c_a, sum_ko_2_c_b, sum_ko_2_c_j, sum_ko_2_g/i, sum_ko_2_h, sum_ko_2_l, sum_ko_2_r, sum_ko_2_s,
                                        //
-                                       sum_ko_1_prop_b, sum_ko_1_prop_c_a, sum_ko_1_prop_c_b, sum_ko_1_prop_c_j, sum_ko_1_prop_g, sum_ko_1_prop_h, sum_ko_1_prop_l, sum_ko_1_prop_r, sum_ko_1_prop_s,
-                                       sum_ko_2_prop_b, sum_ko_2_prop_c_a, sum_ko_2_prop_c_b, sum_ko_2_prop_c_j, sum_ko_2_prop_g, sum_ko_2_prop_h, sum_ko_2_prop_l, sum_ko_2_prop_r, sum_ko_2_prop_s};
+                                       sum_ko_1_prop_b/i, sum_ko_1_prop_c_a/i, sum_ko_1_prop_c_b/i, sum_ko_1_prop_c_j/i, sum_ko_1_prop_g/i, sum_ko_1_prop_h/i, sum_ko_1_prop_l/i, sum_ko_1_prop_r/i, sum_ko_1_prop_s/i,
+                                       sum_ko_2_prop_b/i, sum_ko_2_prop_c_a/i, sum_ko_2_prop_c_b/i, sum_ko_2_prop_c_j/i, sum_ko_2_prop_g/i, sum_ko_2_prop_h/i, sum_ko_2_prop_l/i, sum_ko_2_prop_r/i, sum_ko_2_prop_s/i};
                                     
     return fix;
   }
