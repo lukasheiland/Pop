@@ -917,12 +917,12 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     coord_flip() +
     geom_vline(xintercept = 0, linetype = 3, size = 0.6, col = "#222222") +
     geom_hline(yintercept = c(4.5, 6.5), linetype = 1, size = 0.5, col = "#222222") +
-    geom_text(aes(y = stagepos, x = 1000, label = stage), size = 11, col = "#222222") +
+    geom_text(aes(y = stagepos, x = max(hh) - 200, label = stage), size = 11, col = "#222222") +
     facet_wrap(~kotax) +
     scale_color_manual(values = color) +
     themefun() +
     theme(axis.title.x = element_blank()) +
-    scale_x_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 15) + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
+    { if (!plotprop) scale_x_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 15) } + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
     labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions of parameters to the basal area")
   
   ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".pdf"), plot_contributions, dev = "pdf", height = 8, width = 12)
