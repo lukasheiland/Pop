@@ -843,7 +843,7 @@ plotScatter <- function(States, path, basename, color = c("#208E50", "#FFC800"),
 
 
 ## plotConditional --------------------------------
-# parname  <- tar_read("parname_sim")
+# parname  <- tar_read("parname_plotorder")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
@@ -904,6 +904,7 @@ plotConditional <- function(cmdstanfit, parname, path,
     d <- lapply(d, function(x) x[20:40,])
   }
   
+  ## Marginal plots
   d_1 <- lapply(d, function(i) i[1]) %>% as_draws_array()
   d_2 <- lapply(d, function(i) i[2]) %>% as_draws_array()
   
@@ -915,7 +916,37 @@ plotConditional <- function(cmdstanfit, parname, path,
   plotgrid <- cowplot::plot_grid(plotlist = plots_parameters_conditional, ncol = 2, labels = names(plots_parameters_conditional))
   ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_conditional", ".pdf"), plotgrid, dev = "pdf", height = 20, width = 24)
   
-  return(plots_parameters_conditional)
+  
+  ## Pairs plot
+  D <- d %>%
+    gather_draws(`.*`[i], regex = T) %>%
+    ungroup() %>%
+    mutate(major = if_else(str_ends(.variable, "_major"), "Fagus_major", "other_major")) %>%
+    mutate(tax = fct_recode(as.character(i), "Fagus" = "1", "other" = "2")) %>%
+    mutate(parameter = str_extract(.variable, "([a-z]|c_.+)_log")) %>%
+    mutate(parameter = factor(parameter, levels = parname)) %>%
+    pivot_wider(id_cols = c(".draw", "major"), names_from = c("parameter", "tax"), values_from = ".value")
+  
+  ## Custom density for colorscale
+  plotDensity <- function(data, mapping, ...) {
+    ggplot(data = data, mapping = mapping) +
+      geom_density(..., color = "black") +
+      scale_fill_manual(values = color)
+  }
+  
+  pairsplot <- ggpairs(D,
+                       mapping = aes(col = major, fill = major, alpha = 0.1),
+                       columns = 3:length(D),
+                       diag = list(continuous = plotDensity)
+                       ) +
+    scale_color_manual(values = color) +
+    scale_fill_manual(values = color) +
+    themefun() +
+    theme(panel.spacing = unit(0.1, "lines"))
+
+  ggsave(paste0(path, "/", basename, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 25, width = 22)
+  
+  return(c(plots_parameters_conditional, pairs = pairsplot))
 }
 
 
