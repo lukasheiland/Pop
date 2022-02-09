@@ -13,8 +13,9 @@ theme_fagus <- function(...) {
     theme(strip.background = element_rect_round(radius = unit(4, "pt")),
           panel.background = element_rect_round(radius = unit(4, "pt")),
           panel.border = element_rect_round(radius = unit(4, "pt"), size = rel(1.5)),
+          panel.spacing = unit(2, "lines"),
           
-          panel.grid = element_line(colour = "#222222"), ## only slightly less weight than full black
+          panel.grid = element_line(colour = "#444444"), ## only slightly less weight than full black
           axis.ticks = element_line(colour = "black", size = rel(0.8), lineend = "round"),
           axis.title.x = element_text(margin = margin(t = 3)), #add margin to x-axis title
           axis.title.y = element_text(margin = margin(r = 2.5)),
