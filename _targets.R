@@ -34,7 +34,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
-             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",
+             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist", "GGally",
              "future.apply")
 tar_option_set(packages = package)
 
