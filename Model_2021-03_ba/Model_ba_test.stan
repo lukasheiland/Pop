@@ -191,80 +191,86 @@ functions {
 
       // notconvergent = (1 <= norm(jacobian(s_1[i_j[1]], s_1[i_j[2]], s_1[i_a[1]], s_1[i_a[2]], s_1[i_b[1]], s_1[i_b[2]], b[1], b[2], c_b[1], c_b[2], c_j[1], c_j[2], g[1], g[2], h[1], h[2], l[1], l[2], r[1], r[2], s[1], s[2], ba_a_avg, ba_a_upper)) );
       eps_ba = fabs((BA_1 - BA) ./ BA_1);
-      i += 1;
       
-      vector[N_spec] ba_ko_none = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+      if (i < fixiter_min) {
+        vector[N_spec] ba_ko_none = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
 
-      vector[N_spec] ba_ko_1_b = simulate_1(J, A, B, [0, b[2]]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_1_c_a  = simulate_1(J, A, B, b, [0, c_a[2]]', c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_1_c_b = simulate_1(J, A, B, b, c_a, [0, c_b[2]]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_1_c_j = simulate_1(J, A, B, b, c_a, c_b, [0, c_j[2]]', g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_1_g = simulate_1(J, A, B, b, c_a, c_b, c_j, [0, g[2]]', h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_1_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, [0, h[2]]', l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_1_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, [0, l[2]]', r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_1_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [0, r[2]]', s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_1_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [0, s[2]]', ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_1_b = simulate_1(J, A, B, [0, b[2]]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_1_c_a  = simulate_1(J, A, B, b, [0, c_a[2]]', c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_1_c_b = simulate_1(J, A, B, b, c_a, [0, c_b[2]]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_1_c_j = simulate_1(J, A, B, b, c_a, c_b, [0, c_j[2]]', g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_1_g = simulate_1(J, A, B, b, c_a, c_b, c_j, [0, g[2]]', h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_1_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, [0, h[2]]', l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_1_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, [0, l[2]]', r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_1_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [0, r[2]]', s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_1_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [0, s[2]]', ba_a_avg, ba_a_upper, N_spec);
+        
+        vector[N_spec] ba_ko_2_b = simulate_1(J, A, B, [b[1], 0]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_2_c_a  = simulate_1(J, A, B, b, [c_a[1], 0]', c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_2_c_b = simulate_1(J, A, B, b, c_a, [c_b[1], 0]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_2_c_j = simulate_1(J, A, B, b, c_a, c_b, [c_j[1], 0]', g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_2_g = simulate_1(J, A, B, b, c_a, c_b, c_j, [g[1], 0]', h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_2_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, [h[1], 0]', l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_2_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, [l[1], 0]', r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_2_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [r[1], 0]', s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_ko_2_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [s[1], 0]', ba_a_avg, ba_a_upper, N_spec);
+        
+        
+        /// Summed up contributions
+        sum_ko_1_b += ba_ko_none - ba_ko_1_b;
+        sum_ko_1_c_a += ba_ko_none - ba_ko_1_c_a;
+        sum_ko_1_c_b += ba_ko_none - ba_ko_1_c_b;
+        sum_ko_1_c_j += ba_ko_none - ba_ko_1_c_j;
+        sum_ko_1_g += ba_ko_none - ba_ko_1_g;
+        sum_ko_1_h += ba_ko_none - ba_ko_1_h;
+        sum_ko_1_l += ba_ko_none - ba_ko_1_l;
+        sum_ko_1_r += ba_ko_none - ba_ko_1_r;
+        sum_ko_1_s += ba_ko_none - ba_ko_1_s;
+        
+        sum_ko_2_b += ba_ko_none - ba_ko_2_b;
+        sum_ko_2_c_a += ba_ko_none - ba_ko_2_c_a;
+        sum_ko_2_c_b += ba_ko_none - ba_ko_2_c_b;
+        sum_ko_2_c_j += ba_ko_none - ba_ko_2_c_j;
+        sum_ko_2_g += ba_ko_none - ba_ko_2_g;
+        sum_ko_2_h += ba_ko_none - ba_ko_2_h;
+        sum_ko_2_l += ba_ko_none - ba_ko_2_l;
+        sum_ko_2_r += ba_ko_none - ba_ko_2_r;
+        sum_ko_2_s += ba_ko_none - ba_ko_2_s;
+        
+        /// Summed up proportional contributions
+	    real ba_rate = sum(ba_ko_none)/BA_sum;
+  
+	    sum_ko_1_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // 1. proportional ko decline rate (how much does the basal area grow in the non-ko model compared to the k.o. model), in proportion to 2. the total basal area proportional increment 
+	    sum_ko_1_prop_c_a += (ba_ko_none ./ ba_ko_1_c_a) / ba_rate; // ... will later be divided by number of iterations
+	    sum_ko_1_prop_c_b += (ba_ko_none ./ ba_ko_1_c_b) / ba_rate;
+	    sum_ko_1_prop_c_j += (ba_ko_none ./ ba_ko_1_c_j) / ba_rate;
+	    sum_ko_1_prop_g   += (ba_ko_none ./ ba_ko_1_g) / ba_rate;
+	    sum_ko_1_prop_h   += (ba_ko_none ./ ba_ko_1_h) / ba_rate;
+	    sum_ko_1_prop_l   += (ba_ko_none ./ ba_ko_1_l) / ba_rate;
+	    sum_ko_1_prop_r   += (ba_ko_none ./ ba_ko_1_r) / ba_rate;
+	    sum_ko_1_prop_s   += (ba_ko_none ./ ba_ko_1_s) / ba_rate;
+  
+	    sum_ko_2_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
+	    sum_ko_2_prop_c_a += (ba_ko_none ./ ba_ko_2_c_a) / ba_rate;
+	    sum_ko_2_prop_c_b += (ba_ko_none ./ ba_ko_2_c_b) / ba_rate;
+	    sum_ko_2_prop_c_j += (ba_ko_none ./ ba_ko_2_c_j) / ba_rate;
+	    sum_ko_2_prop_g   += (ba_ko_none ./ ba_ko_2_g) / ba_rate;
+	    sum_ko_2_prop_h   += (ba_ko_none ./ ba_ko_2_h) / ba_rate;
+	    sum_ko_2_prop_l   += (ba_ko_none ./ ba_ko_2_l) / ba_rate;
+	    sum_ko_2_prop_r   += (ba_ko_none ./ ba_ko_2_r) / ba_rate;
+	    sum_ko_2_prop_s   += (ba_ko_none ./ ba_ko_2_s) / ba_rate;
       
-      vector[N_spec] ba_ko_2_b = simulate_1(J, A, B, [b[1], 0]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_2_c_a  = simulate_1(J, A, B, b, [c_a[1], 0]', c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_2_c_b = simulate_1(J, A, B, b, c_a, [c_b[1], 0]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_2_c_j = simulate_1(J, A, B, b, c_a, c_b, [c_j[1], 0]', g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_2_g = simulate_1(J, A, B, b, c_a, c_b, c_j, [g[1], 0]', h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_2_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, [h[1], 0]', l, r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_2_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, [l[1], 0]', r, s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_2_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [r[1], 0]', s, ba_a_avg, ba_a_upper, N_spec);
-      vector[N_spec] ba_ko_2_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [s[1], 0]', ba_a_avg, ba_a_upper, N_spec);
+      }
       
-      
-      /// Summed up contributions
-      sum_ko_1_b += ba_ko_none - ba_ko_1_b;
-      sum_ko_1_c_a += ba_ko_none - ba_ko_1_c_a;
-      sum_ko_1_c_b += ba_ko_none - ba_ko_1_c_b;
-      sum_ko_1_c_j += ba_ko_none - ba_ko_1_c_j;
-      sum_ko_1_g += ba_ko_none - ba_ko_1_g;
-      sum_ko_1_h += ba_ko_none - ba_ko_1_h;
-      sum_ko_1_l += ba_ko_none - ba_ko_1_l;
-      sum_ko_1_r += ba_ko_none - ba_ko_1_r;
-      sum_ko_1_s += ba_ko_none - ba_ko_1_s;
-      
-      sum_ko_2_b += ba_ko_none - ba_ko_2_b;
-      sum_ko_2_c_a += ba_ko_none - ba_ko_2_c_a;
-      sum_ko_2_c_b += ba_ko_none - ba_ko_2_c_b;
-      sum_ko_2_c_j += ba_ko_none - ba_ko_2_c_j;
-      sum_ko_2_g += ba_ko_none - ba_ko_2_g;
-      sum_ko_2_h += ba_ko_none - ba_ko_2_h;
-      sum_ko_2_l += ba_ko_none - ba_ko_2_l;
-      sum_ko_2_r += ba_ko_none - ba_ko_2_r;
-      sum_ko_2_s += ba_ko_none - ba_ko_2_s;
-      
-      /// Summed up proportional contributions
-	  real ba_rate = sum(ba_ko_none)/BA_sum;
-
-	  sum_ko_1_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // 1. proportional ko decline rate (how much does the basal area grow in the non-ko model compared to the k.o. model), in proportion to 2. the total basal area proportional increment 
-	  sum_ko_1_prop_c_a += (ba_ko_none ./ ba_ko_1_c_a) / ba_rate; // ... will later be divided by number of iterations
-	  sum_ko_1_prop_c_b += (ba_ko_none ./ ba_ko_1_c_b) / ba_rate;
-	  sum_ko_1_prop_c_j += (ba_ko_none ./ ba_ko_1_c_j) / ba_rate;
-	  sum_ko_1_prop_g   += (ba_ko_none ./ ba_ko_1_g) / ba_rate;
-	  sum_ko_1_prop_h   += (ba_ko_none ./ ba_ko_1_h) / ba_rate;
-	  sum_ko_1_prop_l   += (ba_ko_none ./ ba_ko_1_l) / ba_rate;
-	  sum_ko_1_prop_r   += (ba_ko_none ./ ba_ko_1_r) / ba_rate;
-	  sum_ko_1_prop_s   += (ba_ko_none ./ ba_ko_1_s) / ba_rate;
-
-	  sum_ko_2_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
-	  sum_ko_2_prop_c_a += (ba_ko_none ./ ba_ko_2_c_a) / ba_rate;
-	  sum_ko_2_prop_c_b += (ba_ko_none ./ ba_ko_2_c_b) / ba_rate;
-	  sum_ko_2_prop_c_j += (ba_ko_none ./ ba_ko_2_c_j) / ba_rate;
-	  sum_ko_2_prop_g   += (ba_ko_none ./ ba_ko_2_g) / ba_rate;
-	  sum_ko_2_prop_h   += (ba_ko_none ./ ba_ko_2_h) / ba_rate;
-	  sum_ko_2_prop_l   += (ba_ko_none ./ ba_ko_2_l) / ba_rate;
-	  sum_ko_2_prop_r   += (ba_ko_none ./ ba_ko_2_r) / ba_rate;
-	  sum_ko_2_prop_s   += (ba_ko_none ./ ba_ko_2_s) / ba_rate;
       
       /// !
       J = J_1;
       A = A_1;
       B = B_1;
-    }
+      
+      i += 1;
+
+    } // end while i < fixiter_max
     
     // array with 3 (states) + 1 (BA) + 1 (eps) + 1 (n_iter) + 9 (parameters) variables
     array[N_fix] vector[N_spec] fix = {J_1, A_1, B_1, BA_1,
@@ -273,8 +279,8 @@ functions {
                                        sum_ko_1_b, sum_ko_1_c_a, sum_ko_1_c_b, sum_ko_1_c_j, sum_ko_1_g/i, sum_ko_1_h, sum_ko_1_l, sum_ko_1_r, sum_ko_1_s,
                                        sum_ko_2_b, sum_ko_2_c_a, sum_ko_2_c_b, sum_ko_2_c_j, sum_ko_2_g/i, sum_ko_2_h, sum_ko_2_l, sum_ko_2_r, sum_ko_2_s,
                                        //
-                                       sum_ko_1_prop_b/i, sum_ko_1_prop_c_a/i, sum_ko_1_prop_c_b/i, sum_ko_1_prop_c_j/i, sum_ko_1_prop_g/i, sum_ko_1_prop_h/i, sum_ko_1_prop_l/i, sum_ko_1_prop_r/i, sum_ko_1_prop_s/i,
-                                       sum_ko_2_prop_b/i, sum_ko_2_prop_c_a/i, sum_ko_2_prop_c_b/i, sum_ko_2_prop_c_j/i, sum_ko_2_prop_g/i, sum_ko_2_prop_h/i, sum_ko_2_prop_l/i, sum_ko_2_prop_r/i, sum_ko_2_prop_s/i};
+                                       sum_ko_1_prop_b/fixiter_min, sum_ko_1_prop_c_a/fixiter_min, sum_ko_1_prop_c_b/fixiter_min, sum_ko_1_prop_c_j/fixiter_min, sum_ko_1_prop_g/fixiter_min, sum_ko_1_prop_h/fixiter_min, sum_ko_1_prop_l/fixiter_min, sum_ko_1_prop_r/fixiter_min, sum_ko_1_prop_s/fixiter_min,
+                                       sum_ko_2_prop_b/fixiter_min, sum_ko_2_prop_c_a/fixiter_min, sum_ko_2_prop_c_b/fixiter_min, sum_ko_2_prop_c_j/fixiter_min, sum_ko_2_prop_g/fixiter_min, sum_ko_2_prop_h/fixiter_min, sum_ko_2_prop_l/fixiter_min, sum_ko_2_prop_r/fixiter_min, sum_ko_2_prop_s/fixiter_min};
                                     
     return fix;
   }
@@ -951,7 +957,7 @@ generated quantities {
                             tolerance_fix, fixiter_max, fixiter_min, N_fix);
                                      
       iterations_fix[loc] = Fix[loc, 6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
-      converged_fix[loc] = iterations_fix[loc] < fixiter_max;
+      converged_fix[loc] = iterations_fix[loc] < fixiter_max; // (i starts at 0), when fixiter_max is reached the model ran 5001 times
       
       if (converged_fix[loc]) { // && convergent[loc]
       
