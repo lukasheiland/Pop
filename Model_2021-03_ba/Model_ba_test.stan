@@ -192,7 +192,8 @@ functions {
       // notconvergent = (1 <= norm(jacobian(s_1[i_j[1]], s_1[i_j[2]], s_1[i_a[1]], s_1[i_a[2]], s_1[i_b[1]], s_1[i_b[2]], b[1], b[2], c_b[1], c_b[2], c_j[1], c_j[2], g[1], g[2], h[1], h[2], l[1], l[2], r[1], r[2], s[1], s[2], ba_a_avg, ba_a_upper)) );
       eps_ba = fabs((BA_1 - BA) ./ BA_1);
       
-      if (i < fixiter_min) {
+      // if (i < fixiter_min) {
+      
         vector[N_spec] ba_ko_none = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
 
         vector[N_spec] ba_ko_1_b = simulate_1(J, A, B, [0, b[2]]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
@@ -260,7 +261,7 @@ functions {
 	    sum_ko_2_prop_r   += (ba_ko_none ./ ba_ko_2_r) / ba_rate;
 	    sum_ko_2_prop_s   += (ba_ko_none ./ ba_ko_2_s) / ba_rate;
       
-      }
+      // }
       
       
       /// !
