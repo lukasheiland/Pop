@@ -799,7 +799,8 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
          plots, names(plots))
   
   stateplotgrid <- cowplot::plot_grid(plot_when + theme(legend.position = "none"), plot_scatter, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.5, 1))
-  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".png"), stateplotgrid, device = "png", width = 8, height = 14)
+  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".png"), stateplotgrid, device = "png", width = 8, height = 11)
+  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".pdf"), stateplotgrid, device = "pdf", width = 8, height = 11)
   
   return(plots)
 }
