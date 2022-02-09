@@ -716,7 +716,7 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
 
   plot_major <- ggplot(T_major, aes(x = major_fix, y = ba_fix, col = tax, fill = tax)) +
     geom_violin(trim = T, col = "black") +
-    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
+    scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
     ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
@@ -739,7 +739,7 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 3, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_median_draw,]) +
     # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 2, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_p90_draw,]) +
     
-    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 10) +
+    scale_y_continuous(trans = "pseudo_log", n.breaks = 10) +
     facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
                                                     ba_fix = "Equilibrium state"))) +
     
@@ -751,13 +751,34 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     themefun() +
     theme(axis.title.x = element_blank())
 
+  
+  Scatter <- States %>%
+    filter(var %in% whenvar) %>% # filter(States, str_starts(var, "ba")) %>%
+    filter(!is.na(value)) %>%
+    rename(when = var) %>%
+    mutate(when = factor(when, levels = whenvar)) %>%
+    dplyr::select(tax, loc, value, when, draw) %>%
+    pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
+  
+  plot_scatter <- ggplot(Scatter, aes(x = ba_other, y = ba_Fagus)) +
+    geom_point(size = 0.1, alpha = 0.1) +
+    # geom_smooth(method='lm', formula = ba_Fagus ~ ba_other) +
+    
+    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
+                                                    ba_fix = "Equilibrium state"))) +
+    labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
+    scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
+    scale_x_continuous(trans = "pseudo_log", n.breaks = 8) +
+    themefun()
+  
+  
   T_all <- filter(States, var %in% allstatevars) %>%
     rename(gq = var) %>%
     mutate(gq = factor(gq, levels = allstatevars))
   
   plot_all <- ggplot(T_all, aes(x = tax, y = value, col = tax, fill = tax)) +
     geom_violin(trim = T, col = "black") +
-    scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 10) +
+    scale_y_continuous(trans = "pseudo_log", n.breaks = 10) +
     facet_wrap(~ gq, labeller = labeller(gq = c(ba_init = "Initial state",
                                                 ba_fix = "Equilibrium state",
                                                 ba_fix_ko_s = "Equilibrium state without s"))) +
@@ -772,9 +793,47 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
   #   scale_color_manual(values = color) +
   #   themefun()
   
-  plots <- list(plot_states_major = plot_major, plot_states_when = plot_when, plot_states_all = plot_all) # plot_states_diff = plot_diff
+  plots <- list(plot_states_major = plot_major, plot_states_when = plot_when, plot_states_scatter = plot_scatter, plot_states_all = plot_all) # plot_states_diff = plot_diff
   
   mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", width = 11, height = 8),
+         plots, names(plots))
+  
+  stateplotgrid <- cowplot::plot_grid(plot_when + theme(legend.position = "none"), plot_scatter, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.5, 1))
+  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".png"), stateplotgrid, device = "png", width = 8, height = 14)
+  
+  return(plots)
+}
+
+## plotScatter --------------------------------
+# States <- tar_read("States_test")
+# path  <- tar_read("dir_publish")
+# basename  <- tar_read("basename_fit_test")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotScatter <- function(States, path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  whenvar <- c("ba_init", "ba_fix")
+  
+  Scatter <- States %>%
+    filter(var %in% whenvar) %>% # filter(States, str_starts(var, "ba")) %>%
+    filter(!is.na(value)) %>%
+    rename(when = var) %>%
+    mutate(when = factor(when, levels = whenvar)) %>%
+    dplyr::select(tax, loc, value, when, draw) %>%
+    pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
+  
+  plot_scatter <- ggplot(Scatter, aes(x = ba_other, y = ba_Fagus)) +
+    geom_point(size = 0.1, alpha = 0.1) +
+    # geom_smooth(method='lm', formula = ba_Fagus ~ ba_other) +
+    
+    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
+                                                    ba_fix = "Equilibrium state"))) +
+    labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
+    scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
+    scale_x_continuous(trans = "pseudo_log", n.breaks = 8) +
+    themefun()
+  
+  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", width = 11, height = 5),
          plots, names(plots))
   
   return(plots)
@@ -927,7 +986,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     themefun() +
     theme(axis.title.x = element_blank()) +
 
-    { if (!plotprop) scale_x_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 15) } + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
+    { if (!plotprop) scale_x_continuous(trans = "pseudo_log", n.breaks = 15) } + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
     
     { if (plotprop) labs(x = "Average yearly increment in proportion to the total basal area increment [ ]", y = "Parameter", title = "Yearly propotional contributions to the basal") } +
     { if (!plotprop) labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions to the basal area") }
@@ -967,7 +1026,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
     coord_trans(y = "sqrt", x = "sqrt") + # coord_trans(y = "log2", x = "log2") + # 
     scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
     scale_y_continuous(breaks = scales::pretty_breaks(n = 12)) +
-    # scale_y_continuous(trans = ggallin::pseudolog10_trans, n.breaks = 8) +
+    # scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
     scale_color_manual(values = color) +
     themefun()
   
