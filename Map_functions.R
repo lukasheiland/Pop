@@ -1,6 +1,6 @@
 ## mapClusters --------------------------------
 # Stages_select <- tar_read(Stages_select)
-
+# library(eurostat); library(elevatr); library(rayshader)
 mapClusters <- function(Stages_select, pointcolor = "white", path = dir_publish) {
   
   ## ETRS89 Lambert Conformal Conic CRS
@@ -32,8 +32,10 @@ mapClusters <- function(Stages_select, pointcolor = "white", path = dir_publish)
   spheretexture <- "imhof1"
   elevtexture <- terrain.colors(256)
   
+  points <- ggplot(data = Clusters) +
+    geom_sf()
   
-  map <- E %>%
+  relief <- E %>%
     height_shade(texture = elevtexture, range = c(-500, 1400)) %>% # 
     add_overlay(sphere_shade(E, sunangle = 315, texture = spheretexture,
                              zscale = 4, colorintensity = 5), alphalayer = 0.5) %>%
@@ -47,7 +49,7 @@ mapClusters <- function(Stages_select, pointcolor = "white", path = dir_publish)
     ## add this after point overlay, otherwise it will make the background black
     add_shadow(lamb_shade(E, zscale = 10), 0)
   
-    
+  map <- relief # + points
 
   png(paste0(path, "/", "Map_clusters", ".png"), width = ncol(map), height = nrow(map))
   plot_map(map) ## Handed on to raster::plotRGB
