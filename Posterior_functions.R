@@ -937,7 +937,8 @@ plotConditional <- function(cmdstanfit, parname, path,
   pairsplot <- ggpairs(D,
                        mapping = aes(col = major, fill = major, alpha = 0.1),
                        columns = 3:length(D),
-                       diag = list(continuous = plotDensity)
+                       diag = list(continuous = plotDensity),
+                       upper = list(continuous = wrap("cor", size = 2))
                        ) +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
