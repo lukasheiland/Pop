@@ -26,10 +26,12 @@ theme_fagus <- function(...) {
     theme(text = element_text(size = 14, family = "Helvetica")) # theme(text = element_text(size = 14, family = "SF Compact Rounded")) # theme(text = element_text(size = 14, family = "TGL17"))
   }
 
-theme_empty <- function(){
+theme_empty <- function() {
+  theme_fagus() +
   theme(panel.grid = element_line(colour = "transparent"),
         panel.border = element_blank(),
         panel.background = element_blank(),
         axis.text = element_blank(),
+        axis.title = element_blank(),
         axis.ticks = element_blank())
   }
