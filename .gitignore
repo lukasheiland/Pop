@@ -2,6 +2,7 @@
 _targets/objects/*
 Data/*
 Publish/*
+Publish.nosync/*
 Fits/*
 /Fits.nosync/*
 */*/Fits.nosync/*

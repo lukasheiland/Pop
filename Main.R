@@ -19,7 +19,7 @@ onserver <- Sys.info()["sysname"] != "Darwin"
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
 
-tar_make_future(c("data_stan_priors_offset"),
+tar_make_future(c("data_stan_priors_offset", "file_Stages_s"),
                 workers = if(onserver) 12 else 3, reporter = "timestamp")
 
 tar_make(c("fit_test", "summary_test")) ## parallelized internally

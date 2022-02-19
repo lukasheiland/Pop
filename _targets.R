@@ -99,7 +99,7 @@ targets_paths <- list(
   
   ## Directories
   tar_target(dir_fit, file.path("Fits.nosync/")),
-  tar_target(dir_publish, file.path("Publish/")),
+  tar_target(dir_publish, file.path("Publish.nosync/")),
   
   ## Data files
   tar_target(file_DE_big,
