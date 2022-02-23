@@ -98,7 +98,6 @@ sensitivity_test|stem|fc3550de74a120cb|0d38d214cf374056|be760f0faa8ea05c|-162239
 plot_powerscale_test|stem|3f3cb16d632be4f2|b1b925041b7edb00|5d182cc4e097c61e|461645073||t18982.8584524432s|9bf2a66f85357b75|62970543|rds|vector|||63.547|Computation failed in stat_densityweights must all be finite|
 plots_twostates_test|stem|fe2c867b3e823f25|a2feabf2f185ffab|af7469a2f794634b|2129742285||t18982.8588882813s|5af8f8d89476f5ee|174997142|rds|vector|||28.515|Removed 938 rows containing nonfinite values stat_ydensity.|
 plots_predictions_posterior_test|stem|18e740d61b9e80db|0d0dce247df7e7f1|0a02f7519b4b6cfa|1289869218||t18982.8618631281s|568832001215fcb4|74005583|rds|vector|||333.047|Removed 5803 rows containing nonfinite values stat_density.|
-taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t18810.760146226s|425d385953b3c542|67|rds|vector|||0.001||
 fits_Seedlings_s_7f2564d0|branch|30945a0420896157|a9746bd949c31e92|7781ab04278ddf8d|-2048879821||t18992.4566298961s|7a261766b8a51cea|27438576|rds|list|fits_Seedlings_s||154.213||
 fits_Seedlings_s_5e5955a1|branch|f8ddf9c904588eaa|a9746bd949c31e92|325dc05375740e58|-751370568||t18992.459011257s|c7d1fbed2c374fb1|27366045|rds|list|fits_Seedlings_s||204.207||
 file_SK|stem|7507e5e6db32d6c6|813dfca83fca4164|ef46db3751d8e999|236759130|Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds|t18992.6515936875s|c4f0230669bdeffd|929450|file|vector|||12.545||
@@ -108,70 +107,24 @@ fits_Seedlings_s_9c918c67|branch|2ac937b92f351d80|a9746bd949c31e92|eab9058bfc634
 file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18937.6577345002s|e684589703d38eb9|5533814|file|vector|||1.968||
 file_model_transitions|stem|0c8e554a9eafc7d1|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t18941.8569560185s|5d521c54c4b9868f|1097|file|vector|||0.001||
 file_DE_geo|stem|fc11702de5751e68|60bce8164256a1d6|ef46db3751d8e999|-1810833906|Inventory.nosync/DE BWI/Data/DE_BWI_geo.rds|t18113.7914067473s|5f8cd763e5ac0a66|1266826|file|vector|||2.325||
-predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927||t18809.8784997507s|0e696b453c03de61|85|rds|vector|||1.703||
 file_DE_big_status|stem|ae0f974436e6977a|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18937.6580614102s|c78be29eeba71bae|16437186|file|vector|||0.001||
 file_DE_small|stem|2307d704c5a9a9b5|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18860.9349071086s|2895e6fb9317973a|15170066|file|vector|||2.772||
 file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18860.9370923003s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
-Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t18887.8905583143s|e684589703d38eb9|5533814|rds|vector|||4.625||
-Data_geo|stem|1e11998b9af424de|a5740b3bcb5e0ba0|855c9f9a61208aa8|-1122140380||t18814.5877954704s|e60015ce142a6e82|1266824|rds|vector|||0.311||
-Data_small|stem|2307d704c5a9a9b5|7ad74de1b1caac4c|db3a691ca8ffa423|-1821452620||t18857.5956333662s|2895e6fb9317973a|15170066|rds|vector|||38.821||
-Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t18857.5695906611s|02e584d87ae1e0d3|23277361|rds|vector|||12.618||
-Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t18829.9185465046s|102883cb8e914333|1060126|rds|vector|||0.013||
 Summary_taxa|stem|f89c969707b42311|092062dbf7d91d92|a437ceadddc2dc9e|1630755663||t19013.7624174702s|0a47333fcf72ed93|2743|rds|vector|||9.609||
 file_read_Stages_s|stem|c44843525c27b523|e81b897de9ff3795|ef46db3751d8e999|1770786454|Data/Stages_s.rds|t19013.0068054832s|8054732a27db4df9|45900015|file|vector|||10.723|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 fits_Seedlings_s_e0601555|branch||a9746bd949c31e92|2ce6e726127d30ef|89007316||||0|rds|list|fits_Seedlings_s||0.006||nicht anwendbare Methode für st_coordinates auf Objekt der Klasse list angewendet
 file_save_Stages_s|stem|c65fca92df3054cf|954db7fddb4ca587|447272cdd51a09ff|48096487||t19016.8827716698s|991ef619886270ed|69|rds|vector|||12.155||
 seedlings_s|stem|4d952a91bfaaaeec|a0f0214426cbce9e|6ae066f218780d6e|1933224778||t19016.9094451036s|2e9a235e3704a17b|99532|rds|list||seedlings_s_4680813a*seedlings_s_06959ea9|48.541|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-fits_Seedlings_s|pattern|03564e206ce40fba|f4cb976eb12ca454||-297493343||||54800217|rds|list||fits_Seedlings_s_dfca702c*fits_Seedlings_s_00110fb0|227.577||
 file_save_Seedlings_s|stem|e8c42a855de3d341|b79d51c83e3e0ce5|35608e5909d417ce|-243390045||t19016.9229387554s|c6fbfb9abe15abfd|72|rds|vector|||0.033||
 Map_select|stem|5230d0473da95952|ff5382e31a8ceae7|ba92ac585d6af38d|-1872424563||t19017.6144534555s|5f93f70c79b72e42|199241440|rds|vector|||429.863|Default of make_valid for output_classsf will be changed in the future see function details.|
 plotTwoStates|function|12ad5b72b6423c7b||||||||||||||
 formatTwoStates|function|8f3e10eb32f70059||||||||||||||
 rep_exclude|stem|2cf32af0ffead020|ed1c86075f17d5ac|a3dad144c40657ed|1847664984||t19019.5601332286s|4bab66ba4bee4440|108|rds|vector|||0.001||
-Data_small_area|stem|a3e7cd6e4d2029c3|a8bac5d0e8d100ab|0c58c75b95c038ba|1655197218||t19030.88885602s|00e2d4b357c92043|2993069|rds|vector|||125.444|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-Stages|stem|12b7f6aa035c488a|8ffac6f908a3e1b2|3f74175d93260fb8|-2131128411||t19030.8899498411s|343cd79e3d80bc2f|27344607|rds|vector|||50.423|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-Stages_env|stem|ed2f516b531ba63a|f77ba367cf3d8588|56935da082defec4|818674129||t19030.8912894382s|a6ef583bce805d50|40620225|rds|vector|||33.71|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-fits_Seedlings|stem|6855753cd9122bb9|dba35c61738a2403|3b2bc7ae33515933|809945682||t19030.8933751353s|1d1234dbe279e71e|6886359|rds|list|||591.305|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-BA_s_0f9992e0|branch|91a3d2061090cf65|24e1b38fab4a0ba5|549807c2e8d804eb|-855161044||t19030.8951472077s|654b941123e52021|558974|rds|list|BA_s||275.682|st_centroid assumes attributes are constant over geometries of x|
-BA_s_1a16fe79|branch|60178cff3d76a56f|24e1b38fab4a0ba5|9158e4b6bf5ef5f1|767687437||t19030.8953347569s|a7c280ab88262265|590243|rds|list|BA_s||272.265|st_centroid assumes attributes are constant over geometries of x|
-BA_s|pattern|a51feea2dd9363b3|24e1b38fab4a0ba5||-1199808003||||1149217|rds|list||BA_s_0f9992e0*BA_s_1a16fe79|547.947||
-fits_s_bcc40201|branch|71a774bdd449f260|badd00396212d798|a74dfcf656f3598e|-430164398||t19030.9035762593s|20b36ba083c1a0e5|28698061|rds|list|fits_s||702.618|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-fits_s_fa4d3b1b|branch|a80cb0da17229e23|badd00396212d798|3394dab3efb0b8c8|-1643923995||t19030.9046529929s|41763eef8c2e45e7|28665121|rds|list|fits_s||811.591|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-fits_s|pattern|4db263a8563c3a22|badd00396212d798||-1896541871||||57363182|rds|list||fits_s_fa4d3b1b*fits_s_bcc40201|1514.209||
-Stages_s|stem|c44843525c27b523|4551afc129106b1b|eaa70073622da2db|152872581||t19030.9068136164s|8054732a27db4df9|45900015|rds|list|||88.021|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-Data_Stages_s|stem|c44843525c27b523|62bcc9c51377714f|331a3cfb6dfa4257|964763136||t19030.9081033837s|8054732a27db4df9|45900015|rds|vector|||18.382|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-offsetname|stem|48f302dbae5bf703|016d9946cc457d6c|f2d0562274fe86e6|1802663475||t19030.8815944201s|00c37fc0166b3b11|58|rds|vector|||0.002||
 pars_exclude|stem|b7d886a0e46b7a27|1c00e1acf33f44e8|a3dad144c40657ed|-2058683567||t19030.9127734049s|6556730b296d7213|119|rds|vector|||10.02|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 parname_loc|stem|b3a24a9a0538b4d2|ede3ee6f4bb404f4|a3dad144c40657ed|-1407642067||t19030.912773605s|5507944482a0fcc9|73|rds|vector|||0||
-threshold_dbh|stem|b1b40ad4f285cecb|9196226201acf742|ef46db3751d8e999|1977269053||t19030.8815960242s|ded833868582137a|50|rds|vector|||0.003||
-dir_publish|stem|e7a3d6eef37f433c|e00f9557ba741f4a|f47bb13d95a320a1|1910222810||t19030.8817828082s|a44f74ecaf054496|60|rds|vector|||0.002||
-radius_max|stem|b35aa22c1781c4ed|e9dfe26516914502|ef46db3751d8e999|-1596622531||t19030.8817836263s|b6d2e014b07bc296|51|rds|vector|||12.541||
-regclass_select|stem|dab1ff4f7b1be297|54c72c068a27683f|a3dad144c40657ed|-201776155||t19030.8819738286s|37c5114db086cc97|136|rds|vector|||20.792|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-dir_fit|stem|482da82f9e3e25d5|6edb4c0accf3f5e3|f47bb13d95a320a1|-1519351870||t19030.886379954s|93a4d4dc4116d568|64|rds|vector|||11.687||
 simnames_prior|stem|3eef9e0a9e674e3a|dc925e066ee03273|a3dad144c40657ed|-1993142823||t19030.9127745264s|1701aa42bd45be76|89|rds|vector|||0.001||
-Data_seedlings_fullgrid|stem|809fa13ec9ce7b0e|494b544145cc3638|8e583401a66bffe4|-2043843808||t19030.8818793296s|fc28703884ef9afb|940983|rds|vector|||2.879||
-model_transitions|stem|aed63dd5e7fd392b|6f5288cead19f3b4|e9da770e4852b7c7|-1275860683||t19030.8826437622s|67db5bef274e9bb6|7366|rds|vector|||0.019||
-taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t19030.8821685783s|e3871644244b3637|115|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|0.001||
-Data_seedlings|stem|7507e5e6db32d6c6|81db27c755665335|77c4026916e7e3a6|-396571518||t19030.8822878091s|c4f0230669bdeffd|929450|rds|vector|||1.448||
-Data_big_status|stem|ae0f974436e6977a|eff25cb053505d95|69a84043a87fa2b3|813772221||t19030.8852465821s|c78be29eeba71bae|16437186|rds|vector|||6.925||
-seedlings_fullgrid|stem|4d952a91bfaaaeec|a0f0214426cbce9e|6ae066f218780d6e|-244538027||t19030.8826430461s|2e9a235e3704a17b|99532|rds|list||seedlings_fullgrid_4680813a*seedlings_fullgrid_06959ea9|41.433|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-Seedlings|stem|7f165e6f6e2e4e25|e366b261bd7792c2|b5280d6f55de9ba5|-185150805||t19030.8825849182s|e7f920a68f5d34f3|84977|rds|vector|||13.389|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-Data_big_area|stem|051b8f716955db0d|3f85c4389924c6e4|9bd4769bbfe5959b|1906756081||t19030.8882611354s|a354732cddf12b6e|17975430|rds|vector|||75.7|all weights equal to zero|
 fits_Seedlings_s_dfca702c|branch|19d5c765e7a633ea|f4cb976eb12ca454|0d74724e2ae10a06|-1376732046||t19030.9142669367s|a55c2ab5bf8fd284|27438976|rds|list|fits_Seedlings_s||127.402||
 fits_Seedlings_s_00110fb0|branch|2ac937b92f351d80|f4cb976eb12ca454|025c6923a44d539a|-446580887||t19030.9153796948s|fa0d88b395818c99|27361241|rds|list|fits_Seedlings_s||94.737||
-Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|04617d440238533a|-1840226744||t19030.8824403195s|9b01f5e608a77422|1022676|rds|vector|||1.406||
-Seedlings_s|stem|92e064e52e5858b7|46a9595e49329d8a|ed2b0d72fb079f89|-142007958||t19030.8857539334s|d45528eb1842c15a|108449|rds|vector|||5.854||
-file_Seedlings_s|stem|92e064e52e5858b7|75dfe1ce02358392|8f53d67ac5b10ac9|1895998084|Data/Seedlings_s.rds|t19030.8859374121s|d45528eb1842c15a|108449|file|vector|||0.035||
-Data_Seedlings_s|stem|92e064e52e5858b7|852468eeb9c067aa|b7265240d0d19271|-1136862534||t19030.8861567326s|d45528eb1842c15a|108449|rds|vector|||0.019||
-file_Stages_s|stem|c44843525c27b523|a57dca75f9964574|d354fe54888b7a9d|-1399817009|Data/Stages_s.rds|t19030.9156024056s|8054732a27db4df9|45900015|file|vector|||12.772||
-Stages_scaled|stem|f0f30c9ef738c55a|4084417319dea073|01c8355ffa8418f9|1092130661||t19019.9287581235s|38f953b5a8917f7f|1733910|rds|vector|||7.592||
-Stages_transitions|stem|31c572078ec637cb|a5e48a6eb89db6d3|f261e163e933cbe7|-173363864||t19019.9295368819s|167c8e63f2e84473|607865|rds|vector|||28.345||
-data_stan|stem|bc579dd16b06e68b|0dfd980f22e35cc7|d8a0c1cdcaac3812|1263995833||t19019.9297348933s|e829e6e08f0f1fdf|1278335|rds|vector|||13.711||
-fit_h|stem|5312111a7a6e8401|ffa7bcb3ba3f6a1c|e4e6a970c4ba05fa|468382782||t19019.9300824897s|325d19a9452b6198|23894999|rds|vector|||24.954||
-fit_g|stem|a2d6754e7dd347d3|07b78dae8d3964ca|e4e6a970c4ba05fa|128175024||t19019.9301038325s|ca204d77c8c29fdb|23001078|rds|vector|||25.936||
-weakpriors|stem|7a6026d80d71b4bc|ac5025df4f62555b|9ee3ac5a8444da29|-1879221107||t19021.5138543568s|f3963c450082b208|143|rds|vector|||6.057||
-data_stan_priors|stem|b49f528a211896ca|34e604c8f56e6443|293fbaa46c519672|1623270232||t19021.5140921372s|092c987790517da2|1278737|rds|vector|||6.039||
-data_stan_priors_offset|stem|ab90b73490344b82|93304eaf3cc05984|567bf1e9dddae9ce|-44048254||t19021.5141916754s|e1b98950486963cc|1278766|rds|vector|||6.282||
 plot_trajectories_mean_test|stem|4b68ef62b37424d7|c4922795f63a488e|b9e92e84e6d27ff1|-1727154408||t19021.6010903043s|7d1c090bf5f0cad1|2133675|rds|vector|||8.222||
 Trajectories_mean_test|stem|3a3263ea29cca4e1|920b20127895d709|3655467e13188afa|1693771343||t19021.6009626177s||4707556|rds|vector|||57.535||object avg_l_loc not found
 Trajectories_test|stem|42300766b6685576|7babc6b42904e30b|e701092cc6a186ee|-167286865||t19023.7393241117s|f8ed49a7f5347e43|9170233207|rds|vector|||1127.101||
@@ -203,18 +156,19 @@ plot_contributions_prop_test|stem|cae2782e1f74a57b|8611bcfd7eca16cb|b16f1e5b1355
 model_test|stem|46d7c43250265cad|a3aa00c06cce5e55|35263dc1512403ec|-1162399619||t19033.4619481915s|89dea1b195f7b777|7438|rds|vector|||80.96||
 >>>>>>> Stashed changes||||||||||||||||
 twocolors|stem|18b3bc1de399b6d7|5de9ab77fd7ab09f|a3dad144c40657ed|-1662788884||t19033.5525879559s|425d385953b3c542|67|rds|vector|||12.943|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-Stages_select|stem|41fb2335960029b8|8615338ec219976c|56bf73096d638f7f|-1427272822||t19033.863971765s|6fc19c6f19a7f0b6|1252817|rds|vector|||53.081|selectClusters There were 1 clusters with missing variable time. These clusters have been dropped.|
 themefunction|stem|71e66378d732bc67|add93fc0c5380017|a46fc67528f5eeb3|736163043||t19033.9508494594s|1d3248e1735e2915|450|rds|vector|||9.591|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 surfaces_s|stem|44afddf6c61f613a|9c323e9d6cce4fa7|8fd98bc087c07d0f|1427561905||t19034.6042394779s|c6f17744f37a2c00|6959134|rds|list|||1681.04|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+map_select|stem|1fddb8ed32143e5f|405ae3dfeac53ce5|d4d33b1643ab73f0|-1891313386||t19034.7166951943s|5833a6bac469d5e1|1246032955|rds|vector|||587.13|Removed 6558387 rows containing nonfinite values stat_spatial_rgb.|
+surfaceplots_s|stem|e9ab51b0e524823c|2f87aae1048479c8|b064678a05185bd4|-872562535||t19034.7761716782s|44ac345e9a5da9d1|16048939|rds|list|||14.05|True north is not meaningful without coord_sf|
 formatStanData|function|f10b3a7a9fdc4dfe||||||||||||||
 prepareSmallData|function|f090fae6e919e399||||||||||||||
-targets_paths|object|32d8de5793a4f375||||||||||||||
+targets_paths|object|f8ca0d6fa210d6e0||||||||||||||
 joinStages|function|7397d1cb556dd863||||||||||||||
 theme_fagus|function|32f50a117793eef2||||||||||||||
 generateTrajectories|function|e9534ff36e308d4a||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
-targets_parname|object|75e29f9f7e6e8c6f||||||||||||||
-targets_fits|object|27c367e7c7d28021||||||||||||||
+targets_parname|object|fefc971d7b229902||||||||||||||
+targets_fits|object|8ba4e86b779ce0d7||||||||||||||
 wrangleSeedlings_s|function|debfad99e56a4210||||||||||||||
 formatLoc|function|d23ab0d660ebec1c||||||||||||||
 fitS|function|1ba350bc7b2f92dd||||||||||||||
@@ -224,7 +178,7 @@ fitSeedlings|function|9bbe554f000adad9||||||||||||||
 predictSurfaces|function|3eb087f154760704||||||||||||||
 getBaseName|function|bc0f3afd657645b4||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
-targets_wrangling|object|0f75ed89a36aa685||||||||||||||
+targets_wrangling|object|75fda10142bb184e||||||||||||||
 testSensitivity|function|caf845ea982e5d9c||||||||||||||
 plotSensitivity|function|f9d72a6289ca1187||||||||||||||
 summarizeTaxa|function|6fa9d3f6aacf49de||||||||||||||
@@ -236,17 +190,17 @@ predictS|function|77bcabfef1d8569c||||||||||||||
 predictSeedlingsSurfaces|function|44c809b12bbdfe6d||||||||||||||
 saveSeedlings_s|function|8e0e388c0b59402f||||||||||||||
 summarizeFit|function|0e659ed8044cf8d7||||||||||||||
-selectOffset|function|b54325a6e33c293c||||||||||||||
+selectOffset|function|2bf99066384e8020||||||||||||||
 extractStanfit|function|4b30186cd18f28f8||||||||||||||
 package|object|4f9914679e63b156||||||||||||||
 fitTransition|function|b7d57da1d9003513||||||||||||||
 prepareBigData|function|c326577a0d554a48||||||||||||||
 fitModel|function|968f5182f090c8f3||||||||||||||
-targets_posterior|object|fbc08414f1d72c83||||||||||||||
+targets_posterior|object|37bb90bac7441c3a||||||||||||||
 saveStages_s|function|5fb7919e8bd60e0f||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 formatPriors|function|59337df89dbc4811||||||||||||||
-targets_settings|object|946277d7bf8a67a7||||||||||||||
+targets_settings|object|ebc3f5b027e155d3||||||||||||||
 wrangleSeedlings|function|d0b21d7b934c215b||||||||||||||
 generateResiduals|function|ee65238c9cfa3743||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
@@ -261,65 +215,55 @@ plotConditional|function|69f7d46070939b94||||||||||||||
 theme_empty|function|0d32fa2ccfba5c62||||||||||||||
 formatStates|function|298fe2c78a42062f||||||||||||||
 summarizeFreqConverged|function|787c796cb9a50343||||||||||||||
-plotSurfaces|function|77261b9aa4fd7bfc||||||||||||||
-mapClusters|function|27a853063f638b94||||||||||||||
-surfaceplots_s|stem|66a2a0eb2b39e728|2f87aae1048479c8|932f8d52643663df|-872562535||t19034.7085094624s|f036299f2f2d4e3f|16048815|rds|list|||16.276|True north is not meaningful without coord_sf|
-map_select|stem|1fddb8ed32143e5f|405ae3dfeac53ce5|d4d33b1643ab73f0|-1891313386||t19034.7166951943s|5833a6bac469d5e1|1246032955|rds|vector|||587.13|Removed 6558387 rows containing nonfinite values stat_spatial_rgb.|
-formatStanData|function|f10b3a7a9fdc4dfe
-prepareSmallData|function|f090fae6e919e399
-targets_paths|object|32d8de5793a4f375
-joinStages|function|7397d1cb556dd863
-theme_fagus|function|32f50a117793eef2
-generateTrajectories|function|e9534ff36e308d4a
-constructConstantGrid|function|33d54800694377c7
-targets_parname|object|75e29f9f7e6e8c6f
-targets_fits|object|27c367e7c7d28021
-wrangleSeedlings_s|function|debfad99e56a4210
-formatLoc|function|d23ab0d660ebec1c
-fitS|function|1ba350bc7b2f92dd
-plotPredictions|function|a40df41fcc2f1bf9
-countTransitions|function|658905ce538460fd
-fitSeedlings|function|9bbe554f000adad9
-predictSurfaces|function|3eb087f154760704
-getBaseName|function|bc0f3afd657645b4
-joinEnv|function|2488b8203673870c
-targets_wrangling|object|0f75ed89a36aa685
-testSensitivity|function|caf845ea982e5d9c
-plotSensitivity|function|f9d72a6289ca1187
-summarizeTaxa|function|6fa9d3f6aacf49de
-scaleData|function|0d0c01b1b3160a22
-onserver|object|1c6ff5e61609eb8e
-summarizeEnvByCluster|function|5fcaa758babda781
-selectClusters|function|b982a7b80b2aecea
-predictS|function|77bcabfef1d8569c
-predictSeedlingsSurfaces|function|44c809b12bbdfe6d
-saveSeedlings_s|function|8e0e388c0b59402f
-summarizeFit|function|0e659ed8044cf8d7
-selectOffset|function|b54325a6e33c293c
-extractStanfit|function|4b30186cd18f28f8
-package|object|4f9914679e63b156
-fitTransition|function|b7d57da1d9003513
-prepareBigData|function|c326577a0d554a48
-fitModel|function|968f5182f090c8f3
-targets_posterior|object|fbc08414f1d72c83
-saveStages_s|function|5fb7919e8bd60e0f
-extractDraws|function|3dff977b003c47b4
-formatPriors|function|59337df89dbc4811
-targets_settings|object|946277d7bf8a67a7
-wrangleSeedlings|function|d0b21d7b934c215b
-generateResiduals|function|ee65238c9cfa3743
-cleanEnv|function|06a0767a0f88a954
-plotScatter|function|5b991ef2548f648a
-theme_map|function|310f080e2e71693a
-plotContributions|function|a356c3aa93f3d70a
-plotStates|function|615cfe4c4487e76f
-plotParameters|function|ca82ecda72fdce7e
-plotTrajectories|function|5e5b38797bbecdec
-plotStanfit|function|221c8cec49124abb
-plotConditional|function|69f7d46070939b94
-theme_empty|function|0d32fa2ccfba5c62
-formatStates|function|298fe2c78a42062f
-summarizeFreqConverged|function|787c796cb9a50343
-plotSurfaces|function|f4687cd7182f6c59
-mapClusters|function|32bab7e13f6e693c
-surfaceplots_s|stem|e9ab51b0e524823c|2f87aae1048479c8|b064678a05185bd4|-872562535||t19034.7761716782s|44ac345e9a5da9d1|16048939|rds|list|||14.05|True north is not meaningful without coord_sf|
+plotSurfaces|function|f4687cd7182f6c59||||||||||||||
+mapClusters|function|32bab7e13f6e693c||||||||||||||
+offsetname|stem|48f302dbae5bf703|016d9946cc457d6c|f2d0562274fe86e6|1802663475||t19042.5416075337s|00c37fc0166b3b11|58|rds|vector|||17.627|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Data_geo|stem|1e11998b9af424de|a5740b3bcb5e0ba0|855c9f9a61208aa8|-1122140380||t19042.5416595823s|e60015ce142a6e82|1266824|rds|vector|||17.728|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Data_seedlings_fullgrid|stem|809fa13ec9ce7b0e|494b544145cc3638|8e583401a66bffe4|-2043843808||t19042.5417172007s|fc28703884ef9afb|940983|rds|vector|||18.546|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t19042.5417930416s|425d385953b3c542|67|rds|vector|||13.869|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+threshold_dbh|stem|b1b40ad4f285cecb|9196226201acf742|ef46db3751d8e999|1977269053||t19042.5418469007s|ded833868582137a|50|rds|vector|||13.428|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+dir_publish|stem|2da29c9384c48588|74847f6473686a7d|f47bb13d95a320a1|1910222810||t19042.5419002704s|425d385953b3c542|67|rds|vector|||13.743|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+radius_max|stem|b35aa22c1781c4ed|e9dfe26516914502|ef46db3751d8e999|-1596622531||t19042.5419852657s|b6d2e014b07bc296|51|rds|vector|||14.288|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+regclass_select|stem|dab1ff4f7b1be297|54c72c068a27683f|a3dad144c40657ed|-201776155||t19042.5421718173s|37c5114db086cc97|136|rds|vector|||13.588|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t19042.5424625534s|e684589703d38eb9|5533814|rds|vector|||15.644|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927||t19042.5426281864s|0e696b453c03de61|85|rds|vector|||12.001|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+seedlings_fullgrid|stem|7a33f1b55836bea5|a0f0214426cbce9e|6ae066f218780d6e|-244538027||t19042.5428378287s|59f2feda85cf8386|102504|rds|list||seedlings_fullgrid_951671dc*seedlings_fullgrid_5880a14f|77.853|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t19042.5428630394s|102883cb8e914333|1060126|rds|vector|||11.076|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t19042.5435053252s|02e584d87ae1e0d3|23277361|rds|vector|||33.994|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Data_seedlings|stem|7507e5e6db32d6c6|81db27c755665335|77c4026916e7e3a6|-396571518||t19042.543768809s|c4f0230669bdeffd|929450|rds|vector|||15.079|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Seedlings|stem|7f165e6f6e2e4e25|e366b261bd7792c2|b5280d6f55de9ba5|-185150805||t19042.5440364732s|e7f920a68f5d34f3|84977|rds|vector|||16.474|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t19042.5441957781s|e3871644244b3637|115|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|11.783|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|04617d440238533a|-1840226744||t19042.5444131468s|9b01f5e608a77422|1022676|rds|vector|||12.869|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+fits_Seedlings_s_fed6aa5a|branch|874848c9d72701db|f4cb976eb12ca454|c62cb6789d9b7f17|820652953||t19042.5445697315s|6e03bd47952a192b|27364711|rds|list|fits_Seedlings_s||136.675|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+model_transitions|stem|aed63dd5e7fd392b|6f5288cead19f3b4|e9da770e4852b7c7|-1275860683||t19042.5445733741s|67db5bef274e9bb6|7366|rds|vector|||11.887|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+weakpriors|stem|591d7934aae4e881|ac5025df4f62555b|9ee3ac5a8444da29|-1879221107||t19042.5447368754s|a02a8e2007330cdf|142|rds|vector|||12.271|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+fits_Seedlings_s_3d11a1d4|branch|1693dceb42962916|f4cb976eb12ca454|fb975ed488904c00|-828097626||t19042.5450030349s|ca1d3938ad7cc389|27443061|rds|list|fits_Seedlings_s||178.922|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+fits_Seedlings_s|pattern|21e28a2a62eeba4d|f4cb976eb12ca454||-297493343||||54807772|rds|list||fits_Seedlings_s_3d11a1d4*fits_Seedlings_s_fed6aa5a|315.597||
+Data_big_status|stem|ae0f974436e6977a|eff25cb053505d95|69a84043a87fa2b3|813772221||t19042.5453808096s|c78be29eeba71bae|16437186|rds|vector|||18.774|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Seedlings_s|stem|99ac0e6e2e8cbf58|46a9595e49329d8a|b0c0854cb3c104e5|-142007958||t19042.5457958094s|d4b818a5c4b96cab|108462|rds|vector|||18.902|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+file_Seedlings_s|stem|99ac0e6e2e8cbf58|75dfe1ce02358392|f73dfd3ab08fbdda|1895998084|Data/Seedlings_s.rds|t19042.5460012448s|d4b818a5c4b96cab|108462|file|vector|||15.337|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Data_Seedlings_s|stem|99ac0e6e2e8cbf58|852468eeb9c067aa|f70dcc699deebc78|-1136862534||t19042.546183554s|d4b818a5c4b96cab|108462|rds|vector|||13.08|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+dir_fit|stem|482da82f9e3e25d5|6edb4c0accf3f5e3|f47bb13d95a320a1|-1519351870||t19042.5463656929s|93a4d4dc4116d568|64|rds|vector|||13.561|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Data_big_area|stem|051b8f716955db0d|3f85c4389924c6e4|3f13503c75f740b2|1906756081||t19042.5482911126s|a354732cddf12b6e|17975430|rds|vector|||112.461|all weights equal to zero|
+Data_small|stem|2307d704c5a9a9b5|7ad74de1b1caac4c|db3a691ca8ffa423|-1821452620||t19042.5502675164s|2895e6fb9317973a|15170066|rds|vector|||78.952|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+fits_Seedlings|stem|be9e18f6b29eae9b|dba35c61738a2403|3701815b24483f1f|809945682||t19042.5530063102s|7835eb5825675ac7|6886353|rds|list|||564.066|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Data_small_area|stem|a3e7cd6e4d2029c3|a8bac5d0e8d100ab|0c58c75b95c038ba|1655197218||t19042.5545099122s|00e2d4b357c92043|2993069|rds|vector|||113.672|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Stages|stem|12b7f6aa035c488a|8ffac6f908a3e1b2|3f74175d93260fb8|-2131128411||t19042.5554655267s|343cd79e3d80bc2f|27344607|rds|vector|||41.504|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Stages_env|stem|ed2f516b531ba63a|f77ba367cf3d8588|56935da082defec4|818674129||t19042.5566113733s|a6ef583bce805d50|40620225|rds|vector|||28.236|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+BA_s_0f9992e0|branch|9f4c9b218f0cb5c9|24e1b38fab4a0ba5|549807c2e8d804eb|-855161044||t19042.5616437575s|a3fca71aaaded021|558949|rds|list|BA_s||390.464|st_centroid assumes attributes are constant over geometries of x|
+BA_s_1a16fe79|branch|a850893a298480e8|24e1b38fab4a0ba5|9158e4b6bf5ef5f1|767687437||t19042.5618353489s|a81fcc4e23d6711c|590200|rds|list|BA_s||388.835|st_centroid assumes attributes are constant over geometries of x|
+BA_s|pattern|39e1aa101a4527c2|24e1b38fab4a0ba5||-1199808003||||1149149|rds|list||BA_s_0f9992e0*BA_s_1a16fe79|779.299||
+fits_s_bcc40201|branch|f026f2543b7edc66|badd00396212d798|78f6842c3714db22|-430164398||t19042.5697271957s|4a974945d60c41c5|28697906|rds|list|fits_s||673.465|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+fits_s_fa4d3b1b|branch|6bbb54713c6cca58|badd00396212d798|520ee538cb0a5496|-1643923995||t19042.5707669425s|35f09f56305abca1|28665099|rds|list|fits_s||780.669|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+fits_s|pattern|fd1b9c19afee6270|badd00396212d798||-1896541871||||57363005|rds|list||fits_s_fa4d3b1b*fits_s_bcc40201|1454.134||
+Stages_s|stem|ad8845544933afd3|4551afc129106b1b|48ffd1ce02a09782|152872581||t19042.5729904605s|0ee84941e935abce|45899353|rds|list|||91.826|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+file_Stages_s|stem|ad8845544933afd3|a57dca75f9964574|05ec0931da458043|-1399817009|Data/Stages_s.rds|t19042.5735322468s|0ee84941e935abce|45899353|file|vector|||24.952|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Data_Stages_s|stem|ad8845544933afd3|62bcc9c51377714f|cf16399cbd44606d|964763136||t19042.5743576724s|0ee84941e935abce|45899353|rds|vector|||19.836|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Stages_select|stem|cc692ba7bc60db0f|8615338ec219976c|63f2be2b186431bf|-1427272822||t19042.5755382985s|2b7c862c263df41f|1252819|rds|vector|||60.014|selectClusters There were 1 clusters with missing variable time. These clusters have been dropped.|
+Stages_scaled|stem|2345ba314b8cf941|4084417319dea073|c7092c0da1e0f43c|1092130661||t19042.575874346s|4cc1c2a4482adea8|1739737|rds|vector|||10.869|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Stages_transitions|stem|15a66709441aaa06|a5e48a6eb89db6d3|20cb0b5b1268f270|-173363864||t19042.577117253s|9fd9366a2edebac4|611799|rds|vector|||49.804|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+data_stan|stem|baf5bb42614e9d9e|0dfd980f22e35cc7|4e3f879ef0a6574c|1263995833||t19042.577403229s|8a53b36b3ebac9bc|1286379|rds|vector|||19.452|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+fit_h|stem|59d888c065ff06ba|ffa7bcb3ba3f6a1c|2519b9adeb7fa889|468382782||t19042.5780619062s|fde7170a55c3f1c7|24474448|rds|vector|||48.461|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+fit_g|stem|fab5a46d8e1f4894|07b78dae8d3964ca|2519b9adeb7fa889|128175024||t19042.5781103486s|b415a915d5c6df37|24756135|rds|vector|||52.43|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+data_stan_priors|stem|4d8568a8009c1895|34e604c8f56e6443|878aedd9e533a6c5|1623270232||t19042.5784798995s|d6a67f1a81e38b7e|1286623|rds|vector|||12.811|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+data_stan_priors_offset|stem|27d04f8e5fa95754|93304eaf3cc05984|3b1a7ac14d8e44c0|-44048254||t19042.5786390886s|e00808d66f5c647d|1286653|rds|vector|||9.96|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
