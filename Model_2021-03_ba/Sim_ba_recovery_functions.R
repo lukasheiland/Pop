@@ -302,14 +302,14 @@ plotStatePairs <- function(standata) {
   
   D <- standata$Long %>%
     mutate(id = interaction(time, plot, loc)) %>%
-    select(stage, species, abundance, id, time) %>%
+    dplyr::select(stage, species, abundance, id, time) %>%
     pivot_wider(id_cols = c("id", "time"), names_from = c("stage", "species"), values_from = c("abundance"))
   
   plotlevel <- as.integer(as.factor(D$time))
   
   D %>% 
     mutate(ba_sum = (a_1*ba_a_avg + b_1) + (a_2*ba_a_avg + b_2)) %>%
-    select(-c("id", "time")) %>%
+    dplyr::select(-c("id", "time")) %>%
     pairs(col = plotlevel, pch = plotlevel)
   
 }

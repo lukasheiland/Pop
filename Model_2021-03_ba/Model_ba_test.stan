@@ -277,8 +277,8 @@ functions {
     array[N_fix] vector[N_spec] fix = {J_1, A_1, B_1, BA_1,
                                        eps_ba, rep_vector(i, N_spec), // int i gets cast to real
                                        //
-                                       sum_ko_1_b, sum_ko_1_c_a, sum_ko_1_c_b, sum_ko_1_c_j, sum_ko_1_g/i, sum_ko_1_h, sum_ko_1_l, sum_ko_1_r, sum_ko_1_s,
-                                       sum_ko_2_b, sum_ko_2_c_a, sum_ko_2_c_b, sum_ko_2_c_j, sum_ko_2_g/i, sum_ko_2_h, sum_ko_2_l, sum_ko_2_r, sum_ko_2_s,
+                                       sum_ko_1_b/i, sum_ko_1_c_a/i, sum_ko_1_c_b/i, sum_ko_1_c_j/i, sum_ko_1_g/i, sum_ko_1_h/i, sum_ko_1_l/i, sum_ko_1_r/i, sum_ko_1_s/i,
+                                       sum_ko_2_b/i, sum_ko_2_c_a/i, sum_ko_2_c_b/i, sum_ko_2_c_j/i, sum_ko_2_g/i, sum_ko_2_h/i, sum_ko_2_l/i, sum_ko_2_r/i, sum_ko_2_s/i,
                                        //
                                        sum_ko_1_prop_b/fixiter_min, sum_ko_1_prop_c_a/fixiter_min, sum_ko_1_prop_c_b/fixiter_min, sum_ko_1_prop_c_j/fixiter_min, sum_ko_1_prop_g/fixiter_min, sum_ko_1_prop_h/fixiter_min, sum_ko_1_prop_l/fixiter_min, sum_ko_1_prop_r/fixiter_min, sum_ko_1_prop_s/fixiter_min,
                                        sum_ko_2_prop_b/fixiter_min, sum_ko_2_prop_c_a/fixiter_min, sum_ko_2_prop_c_b/fixiter_min, sum_ko_2_prop_c_j/fixiter_min, sum_ko_2_prop_g/fixiter_min, sum_ko_2_prop_h/fixiter_min, sum_ko_2_prop_l/fixiter_min, sum_ko_2_prop_r/fixiter_min, sum_ko_2_prop_s/fixiter_min};
@@ -1018,7 +1018,7 @@ generated quantities {
 
         //// Counterfactual fix point iteration ---------------------------
         
-        vector[N_species] ko_s_1 = [0, exp(s_log[2])]';
+        vector[N_species] ko_s_2 = [exp(s_log[1]), 0]';
         vector[N_pops] state_fix = append_row(append_row(J_fix[loc],  A_fix[loc]),  B_fix[loc]);
         
 		// Fix_ko_b[loc]
@@ -1027,7 +1027,7 @@ generated quantities {
 		// Fix_ko_k[loc]
 		// Fix_ko_l[loc]
 		// Fix_ko_r[loc]
-		Fix_ko_s[loc] = iterateFix(exp(state_init_log[loc]), exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), ko_s_1, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+		Fix_ko_s[loc] = iterateFix(exp(state_init_log[loc]), exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), ko_s_2, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
 		ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
       
       }
