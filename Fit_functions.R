@@ -319,12 +319,16 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit
   fit_transition <- model_transitions$sample(data = d,
                                              output_dir = fitpath,
                                              # iter_warmup = iter_warmup, iter_sampling = iter_sampling,
+                                             adapt_delta = 0.9, ## difficult geometry with sigma
                                              chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
   
-  
+  ggsave(paste0(fitpath, "/Pairs_transitions_", which, ".png"),
+         bayesplot::mcmc_pairs(fit_transition$draws(variables = c("rate_log"))), # "rate_global", "rate_contrast", "sigma_raw"
+         device = "png", width = 12, height = 12)
+
   # bayesplot::mcmc_trace(fit_transition$draws())
-  # bayesplot::mcmc_pairs(fit_transition$draws())
   # bayesplot::mcmc_areas(fit_transition$draws(variables = c("rate_log")), area_method = "scaled height")
+  
   
   message("Summary of the the fit for parameter ", which, ":")
   print(fit_transition$summary())

@@ -807,10 +807,10 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     mutate(gq = factor(gq, levels = allstatevars))
   
   plot_all <- ggplot(T_all, aes(x = tax, y = value, col = tax, fill = tax)) +
-    geom_violin(trim = T, col = "black") +
+    geom_violin(trim = T, col = "black", scale = "width") +
     facet_wrap(~ gq, labeller = labeller(gq = c(ba_init = "Initial state",
                                                 ba_fix = "Equilibrium state",
-                                                ba_fix_ko_s = "Equilibrium state without s"))) +
+                                                ba_fix_ko_s = "Equilibrium state without s-effect on other"))) +
     ggtitle("BA") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
@@ -823,7 +823,7 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     theme(panel.grid.minor = element_blank())## !!! remove the minor gridlines
   
   # plot_diff <- ggplot(T_when, aes(x = when, y = diff_ba)) +
-  #   geom_violin(trim = FALSE, col = "black") +
+  #   geom_violin(trim = FALSE, col = "black", scale = "width") +
   #   ggtitle("log_BA_Fagus - log_BA_other at equilibirum and at initial time") +
   #   scale_color_manual(values = color) +
   #   themefun()
