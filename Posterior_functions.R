@@ -715,12 +715,19 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     mutate(major_fix = as.logical(major_fix), major_init = as.logical(major_init))
 
   plot_major <- ggplot(T_major, aes(x = major_fix, y = ba_fix, col = tax, fill = tax)) +
-    geom_violin(trim = T, col = "black") +
-    scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
+    geom_violin(trim = T, col = "black", scale = "width") +
+    
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(axis.title.x = element_blank()) +
+    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+    
     ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
     scale_color_manual(values = color) +
-    scale_fill_manual(values = color) +
-    themefun()
+    scale_fill_manual(values = color)
     # geom_jitter(position = position_jitter(0.2))
   
   
@@ -739,19 +746,23 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 3, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_median_draw,]) +
     # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 2, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_p90_draw,]) +
     
-    scale_y_continuous(trans = "pseudo_log", n.breaks = 10) +
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(axis.title.x = element_blank()) +
+    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+    
     facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
                                                     ba_fix = "Equilibrium state"))) +
     
     labs(y = "basal area [m^2 ha^-1]") +
     
     scale_color_manual(values = color) +
-    scale_fill_manual(values = color) +
+    scale_fill_manual(values = color)
     
-    themefun() +
-    theme(axis.title.x = element_blank())
 
-  
   Scatter <- States %>%
     filter(var %in% whenvar) %>% # filter(States, str_starts(var, "ba")) %>%
     filter(!is.na(value)) %>%
@@ -759,18 +770,37 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     mutate(when = factor(when, levels = whenvar)) %>%
     dplyr::select(tax, loc, value, when, draw) %>%
     pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
+    
+    ## For adding density colours to points
+    # group_by(when) %>%
+    # mutate(denscol = densCols(x = log10(ba_other), y = log10(ba_Fagus),
+    #                          nbin = 4000, colramp = colorRampPalette(c("#DEDEDE", "black"))))
   
   plot_scatter <- ggplot(Scatter, aes(x = ba_other, y = ba_Fagus)) +
-    geom_point(size = 0.1, alpha = 0.1) +
-    # geom_smooth(method='lm', formula = ba_Fagus ~ ba_other) +
     
+    geom_hex(bins = 100) +
+    scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
+    
+    ## For adding density colours directly to points, with col = denscol
+    # geom_point(size = 0.1) + ## alpha = 0.1
+    # scale_color_identity() +
+    ## Other density viz:
+    # geom_density_2d() + ## contour
+    # geom_smooth(method='lm', formula = ba_Fagus ~ ba_other) +
     facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
                                                     ba_fix = "Equilibrium state"))) +
     labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
-    scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
-    scale_x_continuous(trans = "pseudo_log", n.breaks = 8) +
-    themefun()
-  
+    
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+    theme(legend.position = c(0.1, 0.65), legend.background = element_rect(fill = "transparent"))
+    
   
   T_all <- filter(States, var %in% allstatevars) %>%
     rename(gq = var) %>%
@@ -778,14 +808,19 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
   
   plot_all <- ggplot(T_all, aes(x = tax, y = value, col = tax, fill = tax)) +
     geom_violin(trim = T, col = "black") +
-    scale_y_continuous(trans = "pseudo_log", n.breaks = 10) +
     facet_wrap(~ gq, labeller = labeller(gq = c(ba_init = "Initial state",
                                                 ba_fix = "Equilibrium state",
                                                 ba_fix_ko_s = "Equilibrium state without s"))) +
     ggtitle("BA") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
-    themefun()
+    
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(panel.grid.minor = element_blank())## !!! remove the minor gridlines
   
   # plot_diff <- ggplot(T_when, aes(x = when, y = diff_ba)) +
   #   geom_violin(trim = FALSE, col = "black") +
@@ -804,6 +839,7 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
   
   return(plots)
 }
+
 
 ## plotScatter --------------------------------
 # States <- tar_read("States_test")
@@ -830,12 +866,17 @@ plotScatter <- function(States, path, basename, color = c("#208E50", "#FFC800"),
     facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
                                                     ba_fix = "Equilibrium state"))) +
     labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
-    scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
-    scale_x_continuous(trans = "pseudo_log", n.breaks = 8) +
-    themefun()
+    
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(panel.grid.minor = element_blank())## !!! remove the minor gridlines
   
-  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", width = 11, height = 5),
-         plots, names(plots))
+  ggsave(paste0(path, "/", basename, "_", "states_scatter", ".pdf"), plot_scatter, device = "pdf", width = 8, height = 7)
   
   return(plots)
 }
@@ -899,10 +940,10 @@ plotConditional <- function(cmdstanfit, parname, path,
   names_order <- names(d) %>% sort()
   d <- d[names_order]
   
-  if (parname %in% c("L_loc")) {
-    ## just a smaller subset for random effects
-    d <- lapply(d, function(x) x[20:40,])
-  }
+  # if ("L_loc" %in% parname) {
+  #   ## just a smaller subset for random effects
+  #   d <- lapply(d, function(x) x[20:40,])
+  # }
   
   ## Marginal plots
   d_1 <- lapply(d, function(i) i[1]) %>% as_draws_array()
@@ -945,9 +986,9 @@ plotConditional <- function(cmdstanfit, parname, path,
     themefun() +
     theme(panel.spacing = unit(0.1, "lines"))
 
-  ggsave(paste0(path, "/", basename, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 25, width = 22)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 25, width = 22)
   
-  return(c(plots_parameters_conditional, pairs = pairsplot))
+  return(c(plots_parameters_conditional, 'pairs' = pairsplot))
 }
 
 
@@ -988,6 +1029,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
            parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
            kotax = fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus sylvatica" = "1", "other" = "2"),
            tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus sylvatica" = "1", "other" = "2"), # the last number in the string
+           inter = kotax != tax,
            stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
@@ -1013,13 +1055,16 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     { if (!plotprop) geom_text(aes(y = stagepos, x = max(hh) - 200, label = stage), size = 10, col = "#222222") } +
     { if (plotprop) geom_text(aes(y = stagepos, x = min(l), label = stage), size = 10, col = "#222222") } +
     
-    facet_wrap(~kotax,
-               labeller = labeller(kotax = function(kotax) paste(kotax, "demographic rates"))) +
+    facet_wrap(~inter, # ~kotax
+               labeller = labeller(kotax = function(kotax) paste(kotax, "demographic rates"),
+                                   inter = function(inter) if_else(inter == 'TRUE', "Inter", "Intra"))) +
     scale_color_manual(values = color) +
     themefun() +
     theme(axis.title.x = element_blank()) +
 
-    { if (!plotprop) scale_x_continuous(trans = "pseudo_log", n.breaks = 15) } + ## https://win-vector.com/2012/03/01/modeling-trick-the-signed-pseudo-logarithm/
+    { if (!plotprop) scale_x_continuous(trans = ggallin::pseudolog10_trans, breaks = c(-10^(1:3), 10^(1:3))) } + # breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10) , labels = scales::trans_format("log10", scales::math_format(10^.x))
+    { if (!plotprop) annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) } +
+    { if (!plotprop) theme(panel.grid.minor = element_blank()) } + ## !!! remove the minor gridlines
     
     { if (plotprop) labs(x = "Average yearly increment in proportion to the total basal area increment [ ]", y = "Parameter", title = "Yearly propotional contributions to the basal") } +
     { if (!plotprop) labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions to the basal area") }
