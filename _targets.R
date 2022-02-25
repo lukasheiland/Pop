@@ -34,7 +34,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
-             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist", "GGally", "scales",
+             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -99,7 +99,7 @@ targets_paths <- list(
   
   ## Directories
   tar_target(dir_fit, file.path("Fits.nosync/")),
-  tar_target(dir_publish, file.path("Publish/")),
+  tar_target(dir_publish, file.path("Publish.nosync/")),
   
   ## Data files
   tar_target(file_DE_big,
@@ -249,7 +249,7 @@ targets_wrangling <- list(
                  predictSurfaces(fits_s),
                  iteration = "list"),
       tar_target(surfaceplots_s,
-                 plotSurfaces(surfaces_s, path = dir_publish),
+                 plotSurfaces(surfaces_s, themefun = themefunction, path = dir_publish),
                  iteration = "list")
     ),
     
@@ -297,9 +297,9 @@ targets_wrangling <- list(
     ## Publishing
     tar_target(Summary_taxa,
                summarizeTaxa(Data_big, Data_seedlings, Stages_select, Seedlings_s, tablepath = dir_publish)),
-    tar_target(Map_select,
-               mapClusters(Stages_select, path = dir_publish),
-               packages = c("eurostat", "elevatr", "rayshader"))
+    tar_target(map_select,
+               mapClusters(Stages_select, path = dir_publish, themefun = themefunction),
+               packages = c("tidyverse", "sf", "raster", "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist"))
     
   )
 )
