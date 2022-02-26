@@ -792,9 +792,9 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
-    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
                   labels = scales::trans_format("log10", scales::math_format(10^.x))) +
-    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
                   labels = scales::trans_format("log10", scales::math_format(10^.x))) +
     annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
@@ -1027,9 +1027,9 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
   I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
     mutate(p = parameter,
            parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
-           kotax = fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus sylvatica" = "1", "other" = "2"),
-           tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus sylvatica" = "1", "other" = "2"), # the last number in the string
-           inter = kotax != tax,
+           kotax = fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2"),
+           tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2"), # the last number in the string
+           indirect = kotax != tax,
            stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
@@ -1052,14 +1052,14 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     geom_vline(xintercept = if (plotprop) 1 else 0, linetype = 3, size = 0.6, col = "#222222") +
     geom_hline(yintercept = c(4.5, 6.5), linetype = 1, size = 0.5, col = "#222222") +
     
-    { if (!plotprop) geom_text(aes(y = stagepos, x = max(hh) - 200, label = stage), size = 10, col = "#222222") } +
+    { if (!plotprop) geom_text(aes(y = stagepos, x = max(hh) * 0.6, label = stage), size = 10, col = "#222222") } +
     { if (plotprop) geom_text(aes(y = stagepos, x = min(l), label = stage), size = 10, col = "#222222") } +
     
-    facet_wrap(~inter, # ~kotax
+    facet_wrap(~indirect, # ~kotax
                labeller = labeller(kotax = function(kotax) paste(kotax, "demographic rates"),
-                                   inter = function(inter) if_else(inter == 'TRUE', "Inter", "Intra"))) +
-    scale_color_manual(values = color) +
+                                   indirect = function(indirect) if_else(indirect == 'TRUE', "indirect", "direct"))) +
     themefun() +
+    scale_color_manual(values = color) +
     theme(axis.title.x = element_blank()) +
 
     { if (!plotprop) scale_x_continuous(trans = ggallin::pseudolog10_trans, breaks = c(-10^(1:3), 10^(1:3))) } + # breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10) , labels = scales::trans_format("log10", scales::math_format(10^.x))
@@ -1091,7 +1091,10 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
     # mutate(time_shifted = time - time_fix, time_log = log(time)) %>% ## shifts the time, so that trajectories are aligned by fixpoint
     mutate(grp = interaction(loc, tax, draw), tax = as.factor(tax)) %>%
     ungroup() %>%
-    mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "other" = "2"))
+    mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "other" = "2")) %>%
+    
+    ## Cut stage B above a certain value for pretty facet ylims
+    filter(!(stage == "B" & abundance > 400))
   
   aes_lines <- aes(x = time, y = abundance, group = grp, col = tax)
   
@@ -1102,7 +1105,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
                                              A = "A (count [ha^-1])",
                                              B = "B (basal area [m^2 ha^-1])"))) +
     coord_trans(y = "sqrt", x = "sqrt") + # coord_trans(y = "log2", x = "log2") + # 
-    scale_x_continuous(breaks = scales::pretty_breaks(n = 12)) +
+    scale_x_continuous(breaks = scales::pretty_breaks(n = 6)) +
     scale_y_continuous(breaks = scales::pretty_breaks(n = 12)) +
     # scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
     scale_color_manual(values = color) +
