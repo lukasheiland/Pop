@@ -1029,13 +1029,19 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
            parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
            kotax = fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2"),
            tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2"), # the last number in the string
-           indirect = kotax != tax,
+           reciprocal = kotax != tax,
            stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.integer(as.character(fct_recode(stage, "1" = "J", "5" = "A", "7" = "B")))) %>%
     mutate(parameter = ordered(parameter, parorder)) %>%
     mutate(parameter = fct_reorder(parameter, as.numeric(stage))) %>%
+    
+    ## Letter Positions
+    group_by(reciprocal) %>%
+    mutate(xletterpos_h = max(hh) * 0.85,
+           xletterpos_l = min(ll) * 0.85) %>%
+    
     arrange(stage, parameter)
 
   # plot_contributions <- bayesplot::mcmc_areas_ridges(M)
@@ -1052,19 +1058,21 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     geom_vline(xintercept = if (plotprop) 1 else 0, linetype = 3, size = 0.6, col = "#222222") +
     geom_hline(yintercept = c(4.5, 6.5), linetype = 1, size = 0.5, col = "#222222") +
     
-    { if (!plotprop) geom_text(aes(y = stagepos, x = max(hh) * 0.6, label = stage), size = 10, col = "#222222") } +
-    { if (plotprop) geom_text(aes(y = stagepos, x = min(l), label = stage), size = 10, col = "#222222") } +
+    { if (!plotprop) geom_text(aes(y = stagepos, x = xletterpos_h, label = stage), size = 10, col = "#222222") } +
+    { if (plotprop) geom_text(aes(y = stagepos, x = xletterpos_l, label = stage), size = 10, col = "#222222") } +
     
-    facet_wrap(~indirect, # ~kotax
+    facet_wrap(~reciprocal, # ~kotax
+               scales = "free",
                labeller = labeller(kotax = function(kotax) paste(kotax, "demographic rates"),
-                                   indirect = function(indirect) if_else(indirect == 'TRUE', "indirect", "direct"))) +
+                                   reciprocal = function(reciprocal) if_else(reciprocal == 'TRUE', "reciprocal", "intraspecific"))) +
     themefun() +
     scale_color_manual(values = color) +
     theme(axis.title.x = element_blank()) +
 
-    { if (!plotprop) scale_x_continuous(trans = ggallin::pseudolog10_trans, breaks = c(-10^(1:3), 10^(1:3))) } + # breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10) , labels = scales::trans_format("log10", scales::math_format(10^.x))
-    { if (!plotprop) annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) } +
-    { if (!plotprop) theme(panel.grid.minor = element_blank()) } + ## !!! remove the minor gridlines
+    ## Only for log-scale
+    # { if (!plotprop) scale_x_continuous(trans = ggallin::pseudolog10_trans, breaks = c(-10^(1:3), 10^(1:3))) } + # breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10) , labels = scales::trans_format("log10", scales::math_format(10^.x))
+    # { if (!plotprop) annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) } +
+    # { if (!plotprop) theme(panel.grid.minor = element_blank()) } + ## !!! remove the minor gridlines
     
     { if (plotprop) labs(x = "Average yearly increment in proportion to the total basal area increment [ ]", y = "Parameter", title = "Yearly propotional contributions to the basal") } +
     { if (!plotprop) labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions to the basal area") }
