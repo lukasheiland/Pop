@@ -38,7 +38,7 @@ tar_make_future(c("summary_test",
 
 
 # Inspect pipeline ----------------------------------------------------------------
-network <- tar_visnetwork(targets_only = T, exclude = contains(c("dir_", "file_", "threshold_", "taxon_", "predictor_", "pars_", "exclude", "parname", "simnames", "basename")))
+network <- tar_visnetwork(targets_only = T, exclude = contains(c("dir_", "threshold_", "taxon_", "predictor_", "pars_", "exclude", "parname", "simnames", "basename")))
 network %>%
   visHierarchicalLayout(direction = "LR", levelSeparation = 100, nodeSpacing = 120, edgeMinimization = T, blockShifting = T, parentCentralization = T)
 

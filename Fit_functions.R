@@ -37,12 +37,12 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   Stages_transitions %<>%
     ungroup() %>%
     dplyr::select("plotid", "tax", "obsid",
-                  "timediff_plot",
+                  # "timediff_plot", "count_A_sum_before", "count_J_sum_before",
+                  # "h_plot", "g_plot"
                   "count_A2B_plot", "count_J2A_plot", ## [1/ha]
                   "count_A2B_plot_obs", "count_J2A_plot_obs", ## true observed ...
                   "area_A2B", "area_J2A", ## on this area
-                  "count_A_sum_before", "count_J_integr_plot", "count_J_sum_before", "count_A_integr_plot",
-                  "h_plot", "g_plot") %>%
+                  "count_J_integr_plot", "count_A_integr_plot") %>%
     
     group_by(plotid, obsid, tax) %>%
     slice(1)
