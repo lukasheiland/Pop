@@ -30,11 +30,11 @@ source("Theme/Theme.R")
 ### Options
 options(tidyverse.quiet = TRUE)
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
-             "lubridate", "DescTools", # "zoo",
-             "sf", "raster", "rasterVis", ## for correct loading of environmental data
+             "lubridate", "DescTools",
+             "sf", "raster", "rasterVis",
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
-             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales",
+             "cowplot", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales",
              "future.apply")
 tar_option_set(packages = package)
 
