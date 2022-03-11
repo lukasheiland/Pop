@@ -241,9 +241,9 @@ targets_wrangling <- list(
       tar_target(Stages_s,
                  predictS(fits_s, Stages_env),
                  iteration = "list"),
-      
-      tar_target(file_Stages_s, if (!! onserver) "Data/Stages_s.rds" else saveStages_s(Stages_s), format = "file"),
-      tar_target(Data_Stages_s, readRDS(file_Stages_s)),
+        ## Former workaround for Linux installlations, where the geo libraries did not work. Assumes upload of "Data/Stages_s.rds"
+        # tar_target(file_Stages_s, if (!! onserver) "Data/Stages_s.rds" else saveStages_s(Stages_s), format = "file"),
+        # tar_target(Data_Stages_s, readRDS(file_Stages_s)), ## this would be loaded in downstream targets instead of Stages_s
       
       tar_target(surfaces_s,
                  predictSurfaces(fits_s),
@@ -272,21 +272,22 @@ targets_wrangling <- list(
                  iteration = "list"),
       tar_target(Seedlings_s,
                  predictS(fits_Seedlings_s, Seedlings)),
-      
-      tar_target(file_Seedlings_s,  if(!! onserver) "Data/Seedlings_s.rds" else saveSeedlings_s(Seedlings_s), format = "file"),
-      tar_target(Data_Seedlings_s, readRDS(file_Seedlings_s)),
+        ## Former workaround for Linux installlations, where the geo libraries did not work. Assumes upload of "Data/Stages_s.rds"
+        # tar_target(file_Seedlings_s,  if(!! onserver) "Data/Seedlings_s.rds" else saveSeedlings_s(Seedlings_s), format = "file"),
+        # tar_target(Data_Seedlings_s, readRDS(file_Seedlings_s)),
       
       tar_target(fits_Seedlings,
-                 fitSeedlings(Data_Seedlings_s, fitpath = dir_fit),
+                 fitSeedlings(Seedlings_s, fitpath = dir_fit), # Workaround: "Data_Seedlings_s" instead of "Seedlings_s"
                  iteration = "list")
     ),
     
     
     tar_target(Stages_select,
-               selectClusters(Data_Stages_s, predictor_select, selectpred = F)), # Data_Stages_s, After smooth, so that smooth can be informed by all plots.
+               selectClusters(Stages_s, predictor_select, selectpred = F)), # Subsetting after smooth, so that smooth can be informed by all plots.
+        ## Workaround for machines where geo libraries do not work: target "Data_Stages_s" instead of "Stages_s"
     
     tar_target(Stages_select_pred,
-               selectClusters(Data_Stages_s, predictor_select, selectpred = T)), ## Selection based on whether environmental variables are there
+               selectClusters(Stages_s, predictor_select, selectpred = T)), # Selection based on whether environmental variables are present
     
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .

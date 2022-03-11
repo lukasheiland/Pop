@@ -1,17 +1,19 @@
 # Library -----------------------------------------------------------------
 library(targets)
-source("_targets.R")
-sapply(package, require, character.only = TRUE) ## package is a vector of all packages required in targets
 library(visNetwork)
 library(future)
 library(future.callr)
 
-# Orientation -----------------------------------------------------------------
-onserver <- Sys.info()["sysname"] != "Darwin"
+# Sourcing ----------------------------------------------------
+source("_targets.R")
+sapply(package, require, character.only = TRUE) ## package is a vector of all packages required in targets
 
-# Pre-targets sourcing ----------------------------------------------------
+## This is, how the system is determined in _targets.R
+# onserver <- Sys.info()["sysname"] != "Darwin"
+
 ## assumed to have run and produced output files:
-# source("Inventory.nosync/Main.R")
+# source("Inventory.nosync/Main.R", chdir = T)
+
 
 # Make targets pipeline -----------------------------------------------------------------
 # tar_glimpse()
@@ -19,12 +21,14 @@ onserver <- Sys.info()["sysname"] != "Darwin"
 # M$name
 # tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
 
-tar_make_future(c("data_stan_priors_offset", "file_Stages_s"),
-                workers = if(onserver) 12 else 3, reporter = "timestamp")
+## Wrangling pipeline
+tar_make_future(c("data_stan_priors_offset"), workers = if(onserver) 12 else 3, reporter = "timestamp")
 
-tar_make(c("fit_test", "summary_test")) ## parallelized internally
+## Fitting, parallelized internally
+tar_make(c("fit_test", "summary_test"))
+
+## Posterior
 # tar_make(c("Trajectories")) ## parallelized internally
-
 tar_make_future(c("summary_test",
                   "residuals_test",
                   "plots_test",
