@@ -29,12 +29,12 @@ source("Theme/Theme.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
-package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", # "multidplyr" ## extended tidyverse
-             "lubridate", "DescTools",
-             "sf", "raster", "rasterVis",
+package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", "knitr", # "multidplyr" ## extended tidyverse
+             "lubridate", "DescTools", # "zoo",
+             "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "mgcv", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
-             "cowplot", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales",
+             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -122,10 +122,19 @@ targets_paths <- list(
              format = "file"),
   tar_target(file_SK_fullgrid,
              "Inventory.nosync/SK NIML/Data/SK_NIML_complete_fullgrid.rds",
-             format = "file")
+             format = "file"),
   # tar_target(file_Taxa,
   #            'Inventory.nosync/Taxa/Taxa.csv',
   #            format = "file")
+  
+  ## References
+  # dput(.packages()) ## does not work directly because of incomplete metadata in some
+  tar_target(bibliography,
+             knitr::write_bib(c("scales", "ggspatial", "DHARMa",
+                                "tidybayes", "bayesplot", "posterior", "brms", "rstan", "cmdstanr", 
+                                "MASS", "mgcv", "nlme", "rasterVis", "lattice", "raster", "sp", 
+                                "sf", "DescTools", "lubridate", "stringr", "tibble", "vctrs"), file.path(dir_publish, "Packages.bib"))
+             )
   
 )
 
