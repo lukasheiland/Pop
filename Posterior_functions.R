@@ -8,7 +8,7 @@
 ## generate — generate quantities from the posterior.
 ## test — statistical tests on the posteriors.
 ## plot - plots. Side effect: file. Returns a plot object or a list of plot objects.
-
+## animate - animates a plot object. Side effect: file. Returns a gganimate object
 
 
 # ————————————————————————————————————————————————————————————————————————————————— #
@@ -1117,12 +1117,29 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
     scale_y_continuous(breaks = scales::pretty_breaks(n = 12)) +
     # scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
     scale_color_manual(values = color) +
+    xlab("time (years)") +
     themefun()
   
   if(is.null(basename)) basename <- "Model"
   ggsave(paste0(path, "/", basename, "_trajectories", ".png"), plot, device = "png", height = 5.2, width = 12)
   
   return(plot)
+}
+
+## animateTrajectories --------------------------------
+# plot_trajectories <- tar_read("plot_trajectories_avg_test")
+# path  <- tar_read("dir_publish")
+animateTrajectories <- function(plot_trajectories, path, basename) {
+  
+  animation <- plot_trajectories +
+    # geom_point(size = 0.01) + ## draws points at the lineends
+    transition_reveal(time, range = c(0, 3000))
+  
+  if(is.null(basename)) basename <- "Model"
+  gganimate::animate(animation, duration = 8, fps = 15, width = 1100, height = 500, renderer = ffmpeg_renderer(format = "mp4"))
+  anim_save(paste0(path, "/", basename, "_trajectories_animation", ".mp4"))
+  
+  return(animation)
 }
 
 
