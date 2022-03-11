@@ -1132,7 +1132,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
 animateTrajectories <- function(plot_trajectories, path, basename) {
   
   animation <- plot_trajectories +
-    # geom_point(size = 0.01) + ## draws points at the lineends
+    geom_point(size = 0.01) + ## draws points at the lineends
     transition_reveal(time, range = c(0, 3000))
   
   if(is.null(basename)) basename <- "Model"
