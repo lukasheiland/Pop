@@ -885,7 +885,14 @@ summarizeTaxa <- function(Data_big, Data_seedlings, Stages_select, Seedlings_s, 
               frac_ba_ha_avg = mean(frac_ba_ha_plot, na.rm = T),
               ba_ha_total_avg = first(ba_ha_total_avg)) %>%
     filter(ba_ha_avg != 0) %>%
-    arrange(desc(frac_ba_ha_avg))
+    
+    ## tidy up for publishing
+    arrange(desc(frac_ba_ha_avg)) %>%
+    dplyr::select(-ba_ha_total_avg) %>%
+    mutate(ba_ha_avg = round(ba_ha_avg, digits = 3)) %>%
+    mutate(frac_ba_ha_avg = scales::percent(frac_ba_ha_avg, accuracy = 0.001)) %>%
+    # mutate(across(2:3, ~ round(.x, digits = 2))) %>%
+    setNames(c("Taxon", "Mean basal area m^2 ha^-1", "Mean percentage of the total basal area"))
   
   Summary_SK <- Data_seedlings %>%
     filter(sizeclass == "big") %>%
@@ -908,12 +915,70 @@ summarizeTaxa <- function(Data_big, Data_seedlings, Stages_select, Seedlings_s, 
               frac_ba_ha_avg = mean(frac_ba_ha_plot, na.rm = T),
               ba_ha_total_avg = first(ba_ha_total_avg)) %>%
     filter(ba_ha_avg != 0) %>%
-    arrange(desc(frac_ba_ha_avg))
+    
+    ## tidy up for publishing
+    arrange(desc(frac_ba_ha_avg)) %>%
+    dplyr::select(-ba_ha_total_avg) %>%
+    mutate(ba_ha_avg = round(ba_ha_avg, digits = 3)) %>%
+    mutate(frac_ba_ha_avg = scales::percent(frac_ba_ha_avg, accuracy = 0.001)) %>%
+    # mutate(across(2:3, ~ round(.x, digits = 2))) %>%
+    setNames(c("Taxon", "Mean basal area m^2 ha^-1", "Mean percentage of the total basal area"))
   
   write.csv(Summary_DE, file.path(tablepath, "Taxa_freq_DE.csv"))
   write.csv(Summary_SK, file.path(tablepath, "Taxa_freq_SK.csv"))
   
   return(list(DE = Summary_DE, SK = Summary_SK))
+}
+
+
+## summarizeNFIs --------------------------------
+# Stages_select  <- tar_read("Stages_select")
+# Seedlings_s <- tar_read("Seedlings_s")
+# Data_big <- tar_read("Data_big")
+# Data_seedlings <- tar_read("Data_seedlings")
+
+
+summarizeNFIs <- function(Data_big, Data_seedlings, Stages_select, Seedlings_s, tablepath) {
+  
+  DE_before <- Data_big
+  SK_before <- Data_seedlings
+  DE <- Stages_select
+  SK <- Seedlings_s
+  
+  n_surveys_DE <- n_distinct(DE$obsid)
+  n_surveys_SK <- n_distinct(SK$year)
+  
+  # 
+  # char_years_DE <- str_extract_all(unique(DE$obsid), "[0-9]{4}") %>% unlist() %>%
+  char_years_DE <- DE_before$time %>% year() %>% table() %>% names() %>%
+    paste(collapse = ".")
+  
+  char_years_SK <- str_extract_all(unique(SK$year), "[0-9]{4}") %>%
+    unlist() %>%
+    paste(collapse = ".")
+  
+  n_plots_before_DE <- n_distinct(DE_before$plotid)
+  n_plots_before_SK <- n_distinct(SK_before$plotid)
+  n_plots_DE <- n_distinct(DE$plotid)
+  n_plots_SK <- n_distinct(SK$plotid)
+  
+  n_clusters_before_DE <- n_distinct(str_extract(DE_before$plotid, "(?<=_)([0-9]*?)(?=\\.)"))
+  n_clusters_before_SK <- "."
+  n_clusters_DE <- DE$clusterid %>% n_distinct()
+  n_clusters_SK <- "."
+  
+  cas <- function(...) { c(sapply(list(...), as.character)) }
+  
+  column_title <- c("No. of surveys", "... years", "No. of plots", "... after selection", "No. of clusters", "... after selection")
+  column_DE <- cas(n_surveys_DE, char_years_DE, n_plots_before_DE, n_plots_DE, n_clusters_before_DE, n_clusters_DE)
+  column_SK <- cas(n_surveys_SK, char_years_SK, n_plots_before_SK, n_plots_SK, n_clusters_before_SK, n_clusters_SK)
+  
+  Table <- data.frame("." = column_title, "German.NFI" = column_DE, "Slovakian.NFI" = column_SK)
+  print(Table)
+  
+  write.csv(Table, file.path(tablepath, "Summary_NFIs.csv"))
+
+  return(Table)
 }
 
 
