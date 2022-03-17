@@ -65,7 +65,7 @@ targets_settings <- list(
   tar_target(taxon_select, c("Fagus.sylvatica")),
   
   ## Regeneration classes to include
-  ## here we select all 20cm height <= trees < 7mm dbh: regglass_select <- c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)
+  ## here we select all 20cm height <= trees < 7cm dbh: regglass_select <- c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)
   ## These are all size classes that are consistent across the three surveys.
   tar_target(regclass_select, c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)), ## [mm]
   
@@ -87,7 +87,7 @@ targets_settings <- list(
              )
           ),
   
-  tar_target(twocolors, c("#208E50", "#FFC800")),
+  tar_target(twocolors, c("#187873", "#FFC800")), ## Other greens include: Spanish Green '#208E50', Feldgrau '#3A7867'
   tar_target(themefunction, theme_fagus)
   
 )

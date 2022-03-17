@@ -252,7 +252,7 @@ fitModel|function|968f5182f090c8f3||||||||||||||
 targets_posterior|object|ad4fb7ff09a73dbb||||||||||||||
 saveStages_s|function|5fb7919e8bd60e0f||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
-summarizeNFIs|function|380479520baaf034||||||||||||||
+summarizeNFIs|function|c53d94858a18a003||||||||||||||
 formatPriors|function|59337df89dbc4811||||||||||||||
 targets_settings|object|efba4595f82fbea7||||||||||||||
 wrangleSeedlings|function|d0b21d7b934c215b||||||||||||||
@@ -271,16 +271,16 @@ formatStates|function|298fe2c78a42062f||||||||||||||
 summarizeFreqConverged|function|787c796cb9a50343||||||||||||||
 plotSurfaces|function|f4687cd7182f6c59||||||||||||||
 mapClusters|function|32bab7e13f6e693c||||||||||||||
-Summary_NFIs|stem|886204962736b6c6|6d4bfcb0db0b4056|0a7d87b546a5df07|-384350677||t19065.8849650909s|a4a39f08f0842972|274|rds|vector|||27.969|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
+Summary_NFIs|stem|bf4767defc58bdf7|6d4bfcb0db0b4056|586374e8031fec20|-384350677||t19065.9017133557s|7c08b6911a348b50|283|rds|vector|||52.621|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 formatStanData|function|04fca560475f4885
 prepareSmallData|function|f090fae6e919e399
-targets_paths|object|5f788e961623dabc
+targets_paths|object|a06bdaf37bc349b1
 joinStages|function|7397d1cb556dd863
 theme_fagus|function|32f50a117793eef2
 generateTrajectories|function|e9534ff36e308d4a
 constructConstantGrid|function|33d54800694377c7
-targets_parname|object|7bf545e41fbbce55
-targets_fits|object|c79a20b01639d493
+targets_parname|object|efa9d30f46e7d7ed
+targets_fits|object|17ff35dfd3006313
 wrangleSeedlings_s|function|debfad99e56a4210
 formatLoc|function|d23ab0d660ebec1c
 fitS|function|1ba350bc7b2f92dd
@@ -291,7 +291,7 @@ predictSurfaces|function|3eb087f154760704
 animateTrajectories|function|d00a33fe3d556c25
 getBaseName|function|bc0f3afd657645b4
 joinEnv|function|2488b8203673870c
-targets_wrangling|object|89fc6045d7fd9a89
+targets_wrangling|object|714230516ae96428
 testSensitivity|function|caf845ea982e5d9c
 plotSensitivity|function|f9d72a6289ca1187
 summarizeTaxa|function|4084445dc21ed410
@@ -309,12 +309,12 @@ package|object|0eed626dc75fece9
 fitTransition|function|f904b8dfa93c9b77
 prepareBigData|function|c326577a0d554a48
 fitModel|function|968f5182f090c8f3
-targets_posterior|object|ad4fb7ff09a73dbb
+targets_posterior|object|b8832c71f7a2f4b9
 saveStages_s|function|5fb7919e8bd60e0f
 extractDraws|function|3dff977b003c47b4
 summarizeNFIs|function|c53d94858a18a003
 formatPriors|function|59337df89dbc4811
-targets_settings|object|efba4595f82fbea7
+targets_settings|object|689ddeabcb9a68a6
 wrangleSeedlings|function|d0b21d7b934c215b
 generateResiduals|function|ee65238c9cfa3743
 cleanEnv|function|06a0767a0f88a954
@@ -331,3 +331,6 @@ formatStates|function|298fe2c78a42062f
 summarizeFreqConverged|function|787c796cb9a50343
 plotSurfaces|function|f4687cd7182f6c59
 mapClusters|function|32bab7e13f6e693c
+themefunction|stem|71e66378d732bc67|add93fc0c5380017|a46fc67528f5eeb3|736163043||t19068.8411013786s|1d3248e1735e2915|450|rds|vector|||17.046|Paket showtext wurde unter R Version 4.1.2 erstellt|
+twocolors|stem|6d31d1f2a431fa92|2217689ced3bd72f|a3dad144c40657ed|-1662788884||t19068.8411015039s|425d385953b3c542|67|rds|vector|||0.001||
+file_model_test|stem|fd9e298d34cf8724|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t19048.650137364s|5372cc7854d69977|51584|file|vector|||0.001||
