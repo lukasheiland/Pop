@@ -232,7 +232,7 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
       y = as.integer(S$count_obs_small),
       
       ## In the hurdle model, the fake offset area_0 will only get used as a factor level for determining the prob of getting a zero. 
-      offset = S$offset_small,
+      offset_data = S$offset_small,
       # offset_scaled = c(scale(S$offset_small)),
       rep_offset = as.integer(as.factor(S$offset_small)),
       N_offset = n_distinct(S$offset_small),

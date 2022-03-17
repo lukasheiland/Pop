@@ -260,7 +260,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     L_smooth = exp(L_smooth_log),
     
     y = as.integer(S$y),
-    offset = S$offset,
+    offset_data = S$offset,
     # a2b = S_a2b$a2b,
     
     ## Settings corner

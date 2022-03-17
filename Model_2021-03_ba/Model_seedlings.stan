@@ -6,7 +6,7 @@ data {
   
   int<lower=1> N_offset;
   array[N] int<lower=1> rep_offset;
-  vector[N] offset;
+  vector[N] offset_data;
   
   vector[N] ba;
   vector<lower=0>[N] l_smooth;
@@ -35,7 +35,7 @@ transformed parameters {
 
   // vector<lower=0>[N] y_hat_ha = exp(l_log) * l_smooth + exp(r_log) * ba;
   vector<lower=0>[N] y_hat_ha = exp(k_log) + exp(r_log) * ba;
-  vector<lower=0>[N] y_hat =  y_hat_ha .* offset;
+  vector<lower=0>[N] y_hat =  y_hat_ha .* offset_data;
   
   real m_logit_scaled = m_logit * 1e-4; // account for the fact, that y_hat is on the hectare scale, so that there are huge numbers. 1e-4 converts to the m^2 scale
   

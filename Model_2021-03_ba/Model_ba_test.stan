@@ -5,7 +5,7 @@ functions {
                   vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
                   vector ba_a_avg, real ba_a_upper,
                   int N_spec, int N_pops,
-                  int[] i_j, int[] i_a, int[] i_b) {
+                  array[] int i_j, array[] int i_a, array[] int i_b) {
     
     // State matrix with [species, times]. Times columns is sensible in order to have col-major access in matrices and for to_vector() later on
     matrix[N_pops, time_max] State;
@@ -65,14 +65,14 @@ functions {
   //// ODE integration and data assignment to one long vector is wrapped into a function here because
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
-  vector unpack(vector[] state_init_log, int[] time_max, int[] times,
+  vector unpack(array[] vector state_init_log, array[] int time_max, array[] int times,
                 // vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector l_log, vector r_log, vector s_log,
-                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector[] L_loc, vector r_log, vector s_log,
-                // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_log, vector h_log, vector[] L_loc, matrix R_log, matrix S_log,
+                vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, array[] vector L_loc, vector r_log, vector s_log,
+                // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_log, vector h_log, array[] vector L_loc, matrix R_log, matrix S_log,
                 vector ba_a_avg, real ba_a_upper,
-                int[] n_obs, int[] n_yhat,
+                array[] int n_obs, array[] int n_yhat,
                 int N_species, int N_pops, int L_yhat, int N_locs,
-                int[] i_j, int[] i_a, int[] i_b) {
+                array[] int i_j, array[] int i_a, array[] int i_b) {
 
     int pos_times = 1; // segmenting times[L_y]
     int pos_yhat = 1;
@@ -113,10 +113,10 @@ functions {
   //// Difference equations simulated up to the fix point given a maximum tolerance over all states.
   // Expects a state vector[N_pops]
   // returns a state vector of the form [J1, J2, A1, A2, B1, B2, BA1, BA2, eps_BA1, eps_BA2, iterations]
-  vector[] iterateFix(vector state_0,
+  array[] vector iterateFix(vector state_0,
                       vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
                       vector ba_a_avg, real ba_a_upper,
-                      int N_spec, int[] i_j, int[] i_a, int[] i_b,
+                      int N_spec, array[] int i_j, array[] int i_a, array[] int i_b,
                       real tolerance_fix, int fixiter_max, int fixiter_min, int N_fix) {
                        
         
@@ -289,7 +289,7 @@ functions {
   
   
   //// Transforms the vertex form into normal polynomial.
-  vector[] transformToNormal(vector[] V) {
+  array[] vector transformToNormal(array[] vector V) {
     
     // P is an: array[2] vector[N_beta], where array[1] is the mu, array[2] sigma;
     array[2] vector[5] P = V;
@@ -314,7 +314,7 @@ functions {
   
     
 //// Transforms polynomial form into vertex form
-//  vector[] transformToVertex(matrix P) {
+//  array[] vector transformToVertex(matrix P) {
 //    
 //    // P is a matrix[N_beta, N_species]
 //    array[2] vector[5] V;
@@ -422,8 +422,8 @@ data {
 
 
   //// n - number of levels within locs for more ragged models
-  int<lower=0> n_obs[N_locs]; // n solution times within locs
-  int<lower=0> n_yhat[N_locs]; // number of pops*obs within loc
+  array[N_locs] int<lower=0> n_obs; // n solution times within locs
+  array[N_locs] int<lower=0> n_yhat; // number of pops*obs within loc
 
   //// i — indices of stages
   array[N_species] int<lower=1> i_j; // e.g. 1:4
@@ -431,9 +431,9 @@ data {
   array[N_species] int<lower=1> i_b;
 
   //// rep - repeat indices within groups for broadcasting to the subsequent hierarchical levels
-  int<lower=1> rep_yhat2y[L_y]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
-  int<lower=1> rep_obsmethodTax2y[L_y]; // factor (1, 2, 3), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
-  int<lower=1> rep_protocol2y[L_y]; // factor (1:5)
+  array[L_y] int<lower=1> rep_yhat2y; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  array[L_y] int<lower=1> rep_obsmethodTax2y; // factor (1, 2, 3), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  array[L_y] int<lower=1> rep_protocol2y; // factor (1:5)
 
   // int<lower=1> rep_locs2plots[L_plots]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
   // int<lower=1> rep_yhat2a2b[L_a2b];
@@ -442,14 +442,14 @@ data {
 
 
   //// actual data
-  int time_max[N_locs];
-  int times[L_times]; // locations/observations
+  array[N_locs] int time_max;
+  array[L_times] int times; // locations/observations
   // vector<lower=1>[L_a2b] timediff;
   
   matrix[N_locs, N_beta] X; // design matrix
   array[N_locs] vector[N_species] L_smooth_log;
   
-  vector<lower=0>[L_y] offset;
+  vector<lower=0>[L_y] offset_data;
   
   //// The response.
   array[L_y] int y;
@@ -558,7 +558,7 @@ parameters {
   //// Errors
   vector<lower=0>[N_obsmethodTax] phi_obs_inv_sqrt; // error in neg_binomial per tax and stage
   
-    // vector<lower=0>[N_protocol] zeta; // zero-offset parameter
+    // vector<lower=0>[N_protocol] zeta; // zero-offset_data parameter
 	// real<lower=0> kappa_inv; // error in beta for h_log
     // vector<lower=0>[3] alpha_obs_inv; // observation error in gamma
     // vector<lower=0>[2] sigma_obs; // observation error
@@ -617,10 +617,10 @@ transformed parameters {
   
   //  vector[L_y] zeta_rep = zeta[rep_protocol2y];
   //  for(j in 1:L_y) {
-  //  	if (offset[j] == 0) {
+  //  	if (offset_data[j] == 0) {
   //  		offset_zeta[j] = zeta_rep[j];
   //  	} else {
-  //  		offset_zeta[j] = offset[j];
+  //  		offset_zeta[j] = offset_data[j];
   //  	}
   //  }
   
@@ -635,7 +635,7 @@ transformed parameters {
                                 i_j, i_a, i_b);
                                 
   vector[L_y] y_hat_rep = y_hat[rep_yhat2y];
-  vector[L_y] y_hat_rep_offset = y_hat_rep .* offset; // offset_zeta
+  vector[L_y] y_hat_rep_offset = y_hat_rep .* offset_data; // offset_zeta
   vector[L_y] phi_obs_rep = phi_obs[rep_obsmethodTax2y];
   // vector[L_y] theta_obs_rep = theta_obs[rep_obsmethodTax2y];
   
@@ -813,10 +813,10 @@ generated quantities {
 //  //  vector<lower=0>[L_y] zeta_prior_rep = zeta_prior[rep_protocol2y];
 //  
 //  //  for(j in 1:L_y) {
-//  //  	if (offset[j] == 0) {
+//  //  	if (offset_data[j] == 0) {
 //  //  		offset_zeta_prior[j] = zeta_prior_rep[j];
 //  //  	} else {
-//  //  		offset_zeta_prior[j] = offset[j];
+//  //  		offset_zeta_prior[j] = offset_data[j];
 //  //  	}
 //  //  }
 // 
@@ -828,7 +828,7 @@ generated quantities {
 //                       i_j, i_a, i_b);
 // 
 //  y_hat_prior_rep = y_hat_prior[rep_yhat2y];
-//  y_hat_prior_rep_offset = y_hat_prior_rep .* offset; // offset_zeta_prior
+//  y_hat_prior_rep_offset = y_hat_prior_rep .* offset_data; // offset_zeta_prior
 //
 //
 //  y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsmethodTax2y]); // , [0, 0, 0]', L_y
