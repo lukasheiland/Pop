@@ -484,7 +484,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotStanfit <- function(stanfit, exclude, path, basename,
-                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                        color = c("deepskyblue", "orangered"), themefun = theme_fagus) {
   
   usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
   
@@ -523,7 +523,7 @@ plotStanfit <- function(stanfit, exclude, path, basename,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotParameters <- function(stanfit, parname, exclude, path, basename,
-                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                        color = c("deepskyblue", "orangered"), themefun = theme_fagus) {
   
   extendedcolor <- c(color, "#555555") # add a third neutral colour for inspecific priors
   priorlinecolor <- c("#000000", "#000000")
@@ -706,7 +706,7 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 # basename  <- tar_read("basename_fit_test")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path, basename, color = c("deepskyblue", "orangered"), themefun = theme_fagus) {
   
   States <- States[!is.na(States$value),]
   
@@ -847,7 +847,7 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
 # basename  <- tar_read("basename_fit_test")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotScatter <- function(States, path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotScatter <- function(States, path, basename, color = c("deepskyblue", "orangered"), themefun = theme_fagus) {
   
   whenvar <- c("ba_init", "ba_fix")
   
@@ -890,7 +890,7 @@ plotScatter <- function(States, path, basename, color = c("#208E50", "#FFC800"),
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotConditional <- function(cmdstanfit, parname, path,
-                            color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                            color = c("deepskyblue", "orangered"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -1000,7 +1000,7 @@ plotConditional <- function(cmdstanfit, parname, path,
 # themefun  <- tar_read("themefunction")
 
 plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
-                              color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                              color = c("deepskyblue", "orangered"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -1089,7 +1089,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
-                             color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                             color = c("deepskyblue", "orangered"), themefun = theme_fagus) {
   
   Trajectories %<>%
     group_by(loc, tax, stage, draw) %>%
