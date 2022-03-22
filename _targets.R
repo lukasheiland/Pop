@@ -87,7 +87,7 @@ targets_settings <- list(
              )
           ),
   
-  tar_target(twocolors, c("#136E69", "#FFC800")), ## Other greens include: Spanish Green '#208E50', Feldgrau '#3A7867'
+  tar_target(twocolors, c("#119973", "#FFCC11")), ## Other greens include: Spanish Green '#208E50', Feldgrau '#3A7867' # Jade: #0FA564 # See green: #0E8C55
   tar_target(themefunction, theme_fagus)
   
 )
