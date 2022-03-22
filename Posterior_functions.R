@@ -63,8 +63,8 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
   
   Draws <- cmdstanfit_$draws(variables = name, format = "draws_matrix")
   n_draws <- if (locmeans) 1 else nrow(Draws)
-  n_i <- cmdstanfit_$metadata()$stan_variable_sizes[[name]][2]
-  if(is.na(n_i)) n_i <- 1
+  n_i <- cmdstanfit_$metadata()$stan_variable_dims[[name]][2] ## get the length of the second dimension of the data structure called by 'name'
+  if(is.na(n_i)) n_i <- 1 ## case: has only one dimension
   
   ## rep party
   loc <- rep(rep(1:n_locs, n_i), each = n_draws)
