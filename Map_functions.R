@@ -79,6 +79,7 @@ mapClusters <- function(Stages_select, color = NULL, themefun, path = dir_publis
   # raster::plotRGB(B, r = 1, g = 2, b = 3, scale = 1.0)
   
   C <- st_coordinates(Clusters) %>% as.data.frame()
+  
   map <- ggplot() +  ## annotations need aes, does not actually do anything
     ## Base raster layer
     # coord_sf(crs = 3034) + ## implicitly added through geom_sf
@@ -90,7 +91,7 @@ mapClusters <- function(Stages_select, color = NULL, themefun, path = dir_publis
     # theme(legend.position = c(0.1, 0.8)) +
     
     ## Points
-    geom_sf(data = Clusters, col = "white", fill = "black", pch = 21, size = 1.3) +
+    geom_sf(data = Clusters, col = "black", fill = "white", pch = 21, size = 1.4, stroke = 1.25) +
     
     annotation_scale(width_hint = 0.3,
                      style = "bar",
