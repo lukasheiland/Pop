@@ -152,7 +152,6 @@ plot_contributions_test|stem|cc32cb781ee33e94|e57fb8716a71f5fc|42f314d49e51c846|
 plot_contributions_prop_test|stem|cae2782e1f74a57b|8611bcfd7eca16cb|b16f1e5b1355c7c9|-51119106||t19032.7625942688s|3a16a435afe526b4|394961541|rds|vector|||229.211||
 >>>>>>> Stashed changes||||||||||||||||
 surfaces_s|stem|44afddf6c61f613a|9c323e9d6cce4fa7|8fd98bc087c07d0f|1427561905||t19034.6042394779s|c6f17744f37a2c00|6959134|rds|list|||1681.04|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-map_select|stem|1fddb8ed32143e5f|405ae3dfeac53ce5|d4d33b1643ab73f0|-1891313386||t19034.7166951943s|5833a6bac469d5e1|1246032955|rds|vector|||587.13|Removed 6558387 rows containing nonfinite values stat_spatial_rgb.|
 surfaceplots_s|stem|e9ab51b0e524823c|2f87aae1048479c8|b064678a05185bd4|-872562535||t19034.7761716782s|44ac345e9a5da9d1|16048939|rds|list|||14.05|True north is not meaningful without coord_sf|
 offsetname|stem|48f302dbae5bf703|016d9946cc457d6c|f2d0562274fe86e6|1802663475||t19042.5416075337s|00c37fc0166b3b11|58|rds|vector|||17.627|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 Data_geo|stem|1e11998b9af424de|a5740b3bcb5e0ba0|855c9f9a61208aa8|-1122140380||t19042.5416595823s|e60015ce142a6e82|1266824|rds|vector|||17.728|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
@@ -212,6 +211,7 @@ themefunction|stem|71e66378d732bc67|add93fc0c5380017|a46fc67528f5eeb3|736163043|
 twocolors|stem|6d31d1f2a431fa92|2217689ced3bd72f|a3dad144c40657ed|-1662788884||t19068.8411015039s|425d385953b3c542|67|rds|vector|||0.001||
 file_model_test|stem|d11dcb53ffa30590|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t19068.8783526206s|8ef4d4fe6b302157|51786|file|vector|||10.461|Paket showtext wurde unter R Version 4.1.2 erstellt|
 model_test|stem|4ebd4913711052a2|a3aa00c06cce5e55|a1e36a649fd42608|-1162399619||t19068.8795077023s|a42d8f79aba68ae9|21241|rds|vector|||71.374||
+fits_Seedlings|stem|226210a75ad39e05|2a54497f589de23a|7ec6b870c39b29cc|809945682||t19068.8865102408s|7d5d4396b70936f4|6914987|rds|list|||333.738|Paket showtext wurde unter R Version 4.1.2 erstellt|
 formatStanData|function|24deafbbf75b9a99||||||||||||||
 prepareSmallData|function|f090fae6e919e399||||||||||||||
 targets_paths|object|a06bdaf37bc349b1||||||||||||||
@@ -222,7 +222,7 @@ constructConstantGrid|function|33d54800694377c7||||||||||||||
 targets_parname|object|efa9d30f46e7d7ed||||||||||||||
 targets_fits|object|17ff35dfd3006313||||||||||||||
 wrangleSeedlings_s|function|debfad99e56a4210||||||||||||||
-formatLoc|function|d23ab0d660ebec1c||||||||||||||
+formatLoc|function|a0757c0c1a519caf||||||||||||||
 fitS|function|1ba350bc7b2f92dd||||||||||||||
 plotPredictions|function|a40df41fcc2f1bf9||||||||||||||
 countTransitions|function|658905ce538460fd||||||||||||||
@@ -254,7 +254,7 @@ saveStages_s|function|5fb7919e8bd60e0f||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 summarizeNFIs|function|c53d94858a18a003||||||||||||||
 formatPriors|function|59337df89dbc4811||||||||||||||
-targets_settings|object|689ddeabcb9a68a6||||||||||||||
+targets_settings|object|307bb88fab79f1ae||||||||||||||
 wrangleSeedlings|function|d0b21d7b934c215b||||||||||||||
 generateResiduals|function|ee65238c9cfa3743||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
@@ -265,10 +265,10 @@ plotStates|function|1f21d6821c960ca3||||||||||||||
 plotParameters|function|ca82ecda72fdce7e||||||||||||||
 plotTrajectories|function|68ab7d6aa7f96d4a||||||||||||||
 plotStanfit|function|221c8cec49124abb||||||||||||||
-plotConditional|function|09fa172523a60e52||||||||||||||
+plotConditional|function|d8c3d265c701717a||||||||||||||
 theme_empty|function|0d32fa2ccfba5c62||||||||||||||
-formatStates|function|298fe2c78a42062f||||||||||||||
-summarizeFreqConverged|function|787c796cb9a50343||||||||||||||
+formatStates|function|7d49d159cb0f280b||||||||||||||
+summarizeFreqConverged|function|6857a565ee885a3e||||||||||||||
 plotSurfaces|function|f4687cd7182f6c59||||||||||||||
-mapClusters|function|32bab7e13f6e693c||||||||||||||
-fits_Seedlings|stem|226210a75ad39e05|2a54497f589de23a|7ec6b870c39b29cc|809945682||t19068.8865102408s|7d5d4396b70936f4|6914987|rds|list|||333.738|Paket showtext wurde unter R Version 4.1.2 erstellt|
+mapClusters|function|8d31c6cee8f87b66||||||||||||||
+map_select|stem|7c98ed311ffe58a9|405ae3dfeac53ce5|f634efc4a51aeb0f|-1891313386||t19074.9490624121s|e0b02cdb5c575a2c|1074832893|rds|vector|||514.35|Removed 5526506 rows containing nonfinite values stat_spatial_rgb.|
