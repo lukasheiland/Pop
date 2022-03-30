@@ -780,6 +780,10 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     
     geom_hex(bins = 100) +
     scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
+    geom_abline(slope = 1, intercept = 0, linetype = 3) +
+    # annotate(geom = 'text',  label = 'f(x) = x',
+    #          x = diff(range(Scatter$ba_other)) * 0.001 + min(Scatter$ba_other), y = diff(range(Scatter$ba_Fagus)) * 0.001 + min(Scatter$ba_Fagus),
+    #          size = 4, angle = 45) +
     
     ## For adding density colours directly to points, with col = denscol
     # geom_point(size = 0.1) + ## alpha = 0.1
