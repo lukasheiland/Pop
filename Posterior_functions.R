@@ -129,7 +129,12 @@ formatStates <- function(cmdstanfit, data_stan_priors) {
   return(States)
 }
 
-
+## formatNumber --------------------------------
+# x <- 34364343.24324
+# signif.digits <- 4
+formatNumber <- function(x, signif.digits = 4) {
+  formatC(signif(x, digits = signif.digits), digits = signif.digits,format="fg", flag="#")
+}
 
 # ————————————————————————————————————————————————————————————————————————————————— #
 # Summarize posterior         -----------------------------------------------------
@@ -137,17 +142,38 @@ formatStates <- function(cmdstanfit, data_stan_priors) {
 
 ## summarizeFit --------------------------------
 # cmdstanfit <- tar_read("fit_test")
+# publishpar <- tar_read(parname_plotorder)
+# exclude <- tar_read(exclude)
 # path <- tar_read("dir_publish")
-summarizeFit <- function(cmdstanfit, exclude = NULL, path) {
+summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
   allpar <- cmdstanfit$metadata()$stan_variables
   includepar <- setdiff(allpar, exclude)
-  summary <- cmdstanfit$summary(includepar)
+  publishpar_prior <- c(publishpar, paste0(publishpar, "_prior"))
   
+  summary <- cmdstanfit$summary(includepar)
   write.csv(summary, paste0(path, "/", basename_cmdstanfit, "_summary.csv"))
   
+  summary_publish <- cmdstanfit$summary(publishpar_prior) %>%
+    mutate(p = if_else(str_detect(variable, "_prior"), "prior", "posterior")) %>%
+    mutate(tax = if_else(str_detect(variable, "[2]"), "other", "Fagus")) %>%
+    mutate(var = str_extract(variable, ".*_log")) %>%
+    mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
+    dplyr::select(var, p, tax, value) %>%
+    pivot_wider(values_from = "value", names_from = c("p", "tax"), id_cols = "var")
+  
+  write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
+  
+  ## Number of years until equilibrium
+  Iter <- cmdstanfit$draws("iterations_fix") %>%
+    as_draws_matrix()
+  Iter <- data.frame(min = min(Iter), median = median(Iter), max = max(Iter))
+  write.csv(Iter, paste0(path, "/", basename_cmdstanfit, "_summary_nyears.csv"))
+  
+  
+  ## Console output
   head(summary, 20) %>%
     as.data.frame() %>%
     print()
@@ -162,6 +188,27 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, path) {
   }
   
   return(summary)
+}
+
+
+## summarizeStates --------------------------------
+# States <- tar_read("States_test")
+# data_stan <- tar_read("data_stan")
+# path <- tar_read("dir_publish")
+summarizeStates <- function(States, data_stan, path) {
+  
+  S <- States %>%
+    mutate(value = if_else(tax == 'other' & (var %in% c("major_init", "major_fix")), 1 - value, value)) %>%
+    group_by(var, tax) %>%
+    summarize(mean = mean(value, na.rm = T), sd = sd(value, na.rm = T)) %>%
+    mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
+    pivot_wider(names_from = "tax", id_cols = "var") %>%
+    bind_rows(c(var = "ba_a_avg", setNames(formatNumber(data_stan$ba_a_avg), c("Fagus", "other"))))
+  
+  write.csv(S, paste0(path, "/", basename_cmdstanfit, "_summary_states.csv"))
+  print(S)
+    
+  return(S)
 }
 
 

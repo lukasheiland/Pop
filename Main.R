@@ -31,6 +31,7 @@ tar_make(c("fit_test", "summary_test"))
 ## Posterior
 # tar_make(c("Trajectories")) ## parallelized internally
 tar_make_future(c("summary_test",
+                  "summary_states_test",
                   "residuals_test",
                   "plots_test",
                   "plots_parameters_test",
