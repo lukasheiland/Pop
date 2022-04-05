@@ -248,13 +248,12 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
     attr(fit_Seedlings, "data") <- data_seedlings
     attr(fit_Seedlings, "taxon") <- tax
     
-    var <- c("r_log", "k_log", "theta_logit", "m_logit", "phi") # "l_log"
+    var <- c("r_log", "k_log", "theta_logit", "m_logit", "phi")
     
     ggsave(file.path(fitpath, paste0("Pairs_Seedlings_", tax, ".png")),
            mcmc_pairs(fit_Seedlings$draws(variables = setdiff(var, "phi"))))
     
     s <- fit_Seedlings$summary(variables = var)
-
     write.csv(s, file.path(fitpath, paste0("Summary_Seedlings_", tax, ".csv")))
 
     message("Summary of the the fit for ", tax, ":")
