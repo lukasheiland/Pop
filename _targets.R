@@ -32,7 +32,7 @@ options(tidyverse.quiet = TRUE)
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", "knitr", # "multidplyr" ## extended tidyverse
              "lubridate", "DescTools", # "zoo",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
-             "mgcv", "MASS",
+             "mgcv", "itsadug", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
              "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate",
              "future.apply")
@@ -243,7 +243,7 @@ targets_wrangling <- list(
                  pattern = map(taxon_s),
                  iteration = "list"),
       tar_target(fits_s,
-                 fitS(BA_s),
+                 fitS(BA_s, path = dir_publish),
                  pattern = map(BA_s),
                  iteration = "list"),
       ## fits_s each have an attribute "taxon"
