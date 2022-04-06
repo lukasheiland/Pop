@@ -432,7 +432,6 @@ saveStages_s <- function(Stages_s) {
   path <- "Data/Stages_s.rds"
   if(!dir.exists("Data")) dir.create("Data")
   saveRDS(Stages_s, file = path)
-  
   return(path)
 }
 
