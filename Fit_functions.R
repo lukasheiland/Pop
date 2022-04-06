@@ -102,8 +102,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     
     mutate(t1 = t, t_min = min(t)) %>%
     mutate(t = round((t - t_min)/timestep) + t_min) %>%
-    mutate(res_t = (t - t_min)*timestep + t_min - t1)
-  
+    mutate(res_t = (t - t_min)*timestep + t_min - t1) %>%
+    arrange(loc, time, pop, stage, tax, plot) ## safety first
   
   ## Format: [L_y] — locations/obs/pops(/stage/species)/plots
   ## for fitting just use stages J, A, B
@@ -291,6 +291,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   if (!all(data$n_obs * data$N_pops == data$n_yhat)) message("Unexpected lengths of y_hat per locations. Assuming completion of all possible taxa/stages within plot/times went wrong.")
   
   attr(data, "Long") <- S
+  attr(data, "Long_BA") <- Stages
   
   return(data)
 }
@@ -389,7 +390,9 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   
   data_stan_priors <- c(data_stan, priors)
   data_stan_priors <- utils::modifyList(data_stan_priors, weakpriors)
+  
   attr(data_stan_priors, "Long") <- attr(data_stan, "Long")
+  attr(data_stan_priors, "Long_BA") <- attr(data_stan, "Long_BA")
   
   return(data_stan_priors)
 }
