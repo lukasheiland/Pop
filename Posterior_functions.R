@@ -102,22 +102,22 @@ formatStates <- function(cmdstanfit, data_stan_priors) {
   States$value[States$value == 0 & States$var %in% statename] <- NA # not ba_fix_ko_s
   
   Quantiles <- filter(States, var == "ba_init") %>%
-   group_by(draw, tax) %>%
-   mutate(avg_ba_init = mean(value, na.rm = T),
-          median_ba_init = quantile(value, prob = 0.5, type = 1, na.rm = T),
-          p10_ba_init = quantile(value, prob = 0.1, type = 1, na.rm = T),
-          p90_ba_init = quantile(value, prob = 0.9, type = 1, na.rm = T)) %>%
-   summarize(loc_median_draw = first(loc[value == median_ba_init]), ## just in case that there might be more than 1, which is currently not the case
-             loc_p10_draw = first(loc[value == p10_ba_init]),
-             loc_p90_draw = first(loc[value == p90_ba_init])
-             ) %>%
+    group_by(draw, tax) %>%
+    mutate(avg_ba_init = mean(value, na.rm = T),
+           median_ba_init = quantile(value, prob = 0.5, type = 1, na.rm = T),
+           p10_ba_init = quantile(value, prob = 0.1, type = 1, na.rm = T),
+           p90_ba_init = quantile(value, prob = 0.9, type = 1, na.rm = T)) %>%
+    summarize(loc_median_draw = first(loc[value == median_ba_init]), ## just in case that there might be more than 1, which is currently not the case
+              loc_p10_draw = first(loc[value == p10_ba_init]),
+              loc_p90_draw = first(loc[value == p90_ba_init])
+    ) %>%
     ## get the loc that is most frequently the median for both taxa
     group_by(tax) %>%
     mutate(loc_median = first(sort(table(loc_median_draw), decreasing = T)),
            loc_p10 = first(sort(table(loc_p10_draw), decreasing = T)),
            loc_p90 = first(sort(table(loc_p90_draw), decreasing = T)))
   
-
+  
   # implement if used: match by draw and tax
   States %<>%
     left_join(Quantiles, by = c("draw", "tax")) %>%
@@ -223,7 +223,6 @@ summarizeStates <- function(States, data_stan, path) {
   return(S)
 }
 
-
 ## summarizeFreqConverged --------------------------------
 # cmdstanfit <- tar_read("fit_test")
 # data_stan_priors <- tar_read("data_stan_priors")
@@ -287,7 +286,7 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 # data_stan_priors <- tar_read("data_stan_priors")
 # locparname <- tar_read("parname_loc")
 
-generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = c("state_init_log", "L_loc"),
+generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = c("state_init", "L_loc"),
                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1,
                                  average = c("none", "locsperdraws_all", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
   
@@ -398,9 +397,9 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   ## Distinction between when to average for local variables
   if (match.arg(average) %in% c("none", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
     
-    draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
+    draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init", "L_loc")
       as_draws_rvars()
-    draws_loc$state_init <- exp(draws_loc$state_init_log)
+    # draws_loc$state_init <- exp(draws_loc$state_init_log)
     n_locs <- data_stan_priors$N_locs
     
   }
@@ -418,11 +417,11 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   }
   
   ## Generate quantiles in any case!
-  draws_loc_q <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
+  draws_loc_q <- subset_draws(Draws, variable = locparname) %>% # c("state_init", "L_loc")
     posterior::as_draws()
   
   Quantiles_init <- draws_loc_q %>%
-    tidybayes::gather_draws(state_init_log[loc,pop]) %>%
+    tidybayes::gather_draws(state_init[loc,pop]) %>%
     group_by(pop, .draw, .iteration, .chain) %>%
     summarize(pop = first(pop),
               p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
@@ -441,7 +440,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     ## Here 3 quantiles will be dealt with, as if they were locs
     
     L_loc_q <- draws_loc_q %>%
-      tidybayes::gather_draws(L_loc[loc,tax]) %>% # state_init_log[loc,pop]
+      tidybayes::gather_draws(L_loc[loc,tax]) %>% # state_init[loc,pop]
       group_by(tax, .draw, .iteration, .chain) %>%
       summarize(p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
                 median = quantile(.value, prob = 0.5, type = 1, na.rm = T),
@@ -454,7 +453,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     state_init_q <- Quantiles_init %>%
       pivot_longer(any_of(c("p10", "median", "p90")), names_to = "quantile", values_to = "state_init") %>%
       mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
-      mutate(state_init = exp(state_init)) %>% ## !!!
+      # mutate(state_init = exp(state_init_log)) %>% ## !!!
       pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "pop"), values_from = "state_init", names_glue = "state_init[{loc},{pop}]") %>% 
       as_draws_rvars()
 
@@ -966,6 +965,10 @@ plotConditional <- function(cmdstanfit, parname, path,
     subset_draws(draw = which(isconverged)) %>%
     rowMeans()
   
+  if(all(freq_major == 1) | all(freq_major == 0)) {
+    warning("Either one species has the majority in all draws in all clusters. Thus, resampling is not possible")
+    return(NULL)
+  }
   
   ## Compare random effects
   ## also: K_loc_log_raw * sigma_k_loc
@@ -1039,18 +1042,17 @@ plotConditional <- function(cmdstanfit, parname, path,
   }
   
   pairsplot <- ggpairs(D,
-                       mapping = aes(col = major, fill = major),
-                       columns = match(paste0(rep(parname, each = 2), c("_Fagus", "_other")), colnames(D)),
+                       mapping = aes(col = major, fill = major, alpha = 0.1),
+                       columns = 3:length(D),
                        diag = list(continuous = plotDensity),
-                       upper = list(continuous = wrap("cor", size = 3.3)),
-                       lower = list(continuous = wrap("points", alpha = 0.1, size = 0.6))
+                       upper = list(continuous = wrap("cor", size = 2))
                        ) +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
     themefun() +
     theme(panel.spacing = unit(0.1, "lines"))
 
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 26, width = 26)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 25, width = 22)
   
   return(c(plots_parameters_conditional, 'pairs' = pairsplot))
 }

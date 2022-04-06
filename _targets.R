@@ -144,7 +144,7 @@ targets_paths <- list(
 targets_parname <- list(
   
   tar_target(pars_exclude,
-             c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
+             c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
   tar_target(helpers_exclude,
              c("Fix", "Fix_ko_s",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
@@ -176,7 +176,7 @@ targets_parname <- list(
   tar_target(parname_plotorder,
              c(l = "l_log", r = "r_log", c_j = "c_j_log", s = "s_log", g = "g_log", c_a = "c_a_log", h = "h_log", b = "b_log", c_b = "c_b_log" )),
   tar_target(parname_loc,
-             c("state_init_log", "L_loc")),
+             c("state_init", "L_loc")),
   tar_target(parname_sim,
              setdiff(parname, c("phi_obs", "sigma_k_loc")))
 )
