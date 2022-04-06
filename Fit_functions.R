@@ -85,12 +85,15 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
       stage == "BA" ~ as.double(ba_ha)
     )) %>%
     
-    ## Different levels of observation error were assumed per species and for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
-    mutate(obsmethod = fct_recode(stage, "j" = "J", "a" = "A", "ba" = "B", "ba" = "BA")) %>%
-    mutate(obsmethodTax = interaction(substr(tax, 1, 1), obsmethod)) %>% 
-    
     ## pop is just an id for the initial states vector
     mutate(pop = interaction(tax, stage)) %>%
+    
+    ## Different levels of observation error were assumed ...
+    ## - per species and for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
+    mutate(obsmethod = fct_recode(stage, "j" = "J", "a" = "A", "ba" = "B", "ba" = "BA")) %>%
+    mutate(obsmethodTax = interaction(substr(tax, 1, 1), obsmethod)) %>% 
+    ## - per species and per survey
+    mutate(obsidPop = interaction(obsid, pop)) %>%
     
     arrange(loc, time, pop, stage, tax, plot) %>%
     
@@ -203,7 +206,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   #### Prepare priors
   Prior_state_init_log <- filter(S, isy0) %>%
     filter(stage %in% c("J", "A", "B")) %>%
-    group_by(pop, loc) %>% ## for global: group_by(pop, loc) %>%
+    group_by(pop, loc) %>%
     summarize(sd = sd(log(y_prior)), y_prior = log(mean(y_prior, na.rm = T))) %>% ## log(mean) is imperfect and introduces a small bias, median won't work because of the many zeroes
     ungroup() %>%
     dplyr::mutate(y_prior = na_if(y_prior, -Inf)) %>%
@@ -216,6 +219,66 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     arrange(loc) %>%
     dplyr::select(-loc) %>%
     as.matrix()
+  
+  Phi_empirical <- S %>%
+    filter(stage %in% c("J", "A", "B")) %>%
+    group_by(obsidPop) %>%
+    summarize(var = var(y_prior, na.rm = T), mean = mean(y_prior, na.rm = T), phi = mean^2/(var - mean)) %>%
+    mutate(sigma = signif(1/sqrt(phi), digits = 2)) %>%
+    arrange(obsidPop)
+  
+  message("Empirical estimates of phi per species, stage and survey:")
+  print(Phi_empirical)
+  
+  #### Prepare priors
+  # Prior_state_init_gamma <- filter(S, isy0) %>%
+  #   filter(stage %in% c("J", "A", "B")) %>%
+  #   group_by(pop, loc) %>%
+  #   summarize(var = var(y_prior, na.rm = T), y_prior = mean(y_prior, na.rm = T)) %>%
+  #   mutate(y_prior = if_else(y_prior == 0, as.numeric(NA), y_prior)) %>%
+  #   mutate(var = if_else(var == 0, as.numeric(NA), y_prior)) %>%
+  #   group_by(pop) %>%
+  #   dplyr::mutate(y_prior_min = min(y_prior, na.rm = T)) %>% ## Find minimum but 0.
+  #   dplyr::mutate(var_mean = mean(var, na.rm = T)) %>%
+  #   dplyr::mutate(mean = dplyr::coalesce(y_prior, y_prior_min)) %>%
+  #   dplyr::mutate(var = dplyr::coalesce(var, var_mean)) %>%
+  #   dplyr::mutate(alpha = mean/(mean * var),
+  #                 alpha_wider = mean/(mean * var * 1.5),
+  #                 beta = alpha/mean,
+  #                 beta_wider = alpha_wider/mean) %>%
+  #   ungroup()
+  
+  # Prior_state_init_gamma_alpha <- Prior_state_init_gamma %>%
+  #   dplyr::select(loc, pop, alpha) %>%
+  #   pivot_wider(names_from = pop, values_from = alpha) %>%
+  #   arrange(loc) %>%
+  #   dplyr::select(-loc) %>%
+  #   as.matrix()
+  # 
+  # Prior_state_init_gamma_mean <- Prior_state_init_gamma %>%
+  #   dplyr::select(loc, pop, mean) %>%
+  #   pivot_wider(names_from = pop, values_from = mean) %>%
+  #   arrange(loc) %>%
+  #   dplyr::select(-loc) %>%
+  #   as.matrix()
+  # 
+  # Init <- filter(S, isy0) %>%
+  #   filter(stage %in% c("J", "A", "B")) %>%
+  #   group_by(pop) %>%
+  #   summarize(var = var(y_prior, na.rm = T),
+  #             mean = mean(y_prior, na.rm = T),
+  #             alpha = mean/(mean * var),
+  #             alpha_wider = mean/(mean * var * 1.5), # * 0.0001 would make the curve hump shaped
+  #             beta = alpha/mean,
+  #             beta_wider = alpha_wider/mean)
+  
+  upper_init <- filter(S, isy0) %>%
+    filter(stage %in% c("J", "A", "B")) %>%
+    group_by(pop) %>%
+    summarize(upper = max(y_prior, na.rm = T * 1.5)) %>%
+    pull(upper)
+  
+  # curve(dgamma(x, Init$alpha_wider[6], Init$beta_wider[6]), 0, 100)
 
   
   #### The stan-formatted list
@@ -233,6 +296,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     N_beta = ncol(X),
     N_obsmethod = length(unique(S$obsmethod)),
     N_obsmethodTax = length(unique(S$obsmethodTax)),
+    N_obsidPop = length(unique(S$obsidPop)),
     N_protocol = length(unique(S$methodid)), ## different sampling area levels
     
     n_obs = S_locs$n_obs,
@@ -244,12 +308,15 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     
     rep_yhat2y = vrep(1:L_yhat, S_yhat$n_plots), ## repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
     rep_obsmethod2y = as.integer(S$obsmethod),
-    rep_obsmethodTax2y = as.integer(S$obsmethodTax), ## see: # attr(data_stan_priors, "Long")$obsmethodTax %>% levels()
+    rep_obsmethodTax2y = as.integer(S$obsmethodTax), ## for level order check: # attr(data_stan_priors, "Long")$obsmethodTax %>% levels()
+    rep_obsidPop2y = as.integer(S$obsidPop), ## attr(data_stan, "Long")$obsidPop %>% levels()
     rep_protocol2y = as.integer(S$methodid),
     # rep_yhat2a2b = S_a2b$rep_yhat2a2b,
     # rep_species2a2b = S_a2b$rep_species2a2b,
     rep_pops2init =  as.integer(S_init$pop),
     rep_pops2y =  as.integer(S$pop),
+    
+    sigma_obsidPop = Phi_empirical$sigma,
     
     time_max = S_locs$time_max,
     times = S_times$t,
@@ -270,10 +337,17 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     timestep = timestep,
     parfactor = parfactor,
     generateposteriorq = 0,
+    upper_init = upper_init,
     
     
     #### priors
-    Prior_state_init_log = Prior_state_init_log,
+    # Prior_state_init_log = Prior_state_init_log,
+    # Prior_state_init = Prior_state_init,
+    
+    # alpha_init = Init$alpha,
+    # beta_init = Init$beta,
+    # Prior_state_init_alpha = Prior_state_init_gamma_alpha,
+    # Prior_state_init_beta = Prior_state_init_gamma_beta,
     
     ## the transitions.
     L_g = nrow(G),
@@ -291,6 +365,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   if (!all(data$n_obs * data$N_pops == data$n_yhat)) message("Unexpected lengths of y_hat per locations. Assuming completion of all possible taxa/stages within plot/times went wrong.")
   
   attr(data, "Long") <- S
+  attr(data, "Phi_empirical") <- Phi_empirical
   
   return(data)
 }

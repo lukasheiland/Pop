@@ -87,34 +87,37 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 # data_stan_priors <- tar_read("data_stan_priors")
 formatStates <- function(cmdstanfit, data_stan_priors) {
   
-  statename <- c("major_init", "major_fix", "ba_init", "ba_fix", "ba_fix_ko_s")
+  majorname <- c("major_init", "major_fix")
+  statename <- c("ba_init", "ba_fix", "ba_fix_ko_s",
+                 "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix")
+  varname <- c(majorname, statename)
   
-  States <- lapply(statename, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
+  States <- lapply(varname, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
   States <- lapply(States, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, {i <- 2})) else S )
   States %<>%
     bind_rows() %>%
     mutate(tax = factor(c("Fagus", "other")[i]))
   
-  States$value[States$value == 9 & States$var %in% c("major_init", "major_fix")] <- NA
-  States$value[States$value == 0 & States$var %in% c("ba_init", "ba_fix")] <- NA # not ba_fix_ko_s
+  States$value[States$value == 9 & States$var %in% majorname] <- NA
+  States$value[States$value == 0 & States$var %in% statename] <- NA # not ba_fix_ko_s
   
   Quantiles <- filter(States, var == "ba_init") %>%
-   group_by(draw, tax) %>%
-   mutate(avg_ba_init = mean(value, na.rm = T),
-          median_ba_init = quantile(value, prob = 0.5, type = 1, na.rm = T),
-          p10_ba_init = quantile(value, prob = 0.1, type = 1, na.rm = T),
-          p90_ba_init = quantile(value, prob = 0.9, type = 1, na.rm = T)) %>%
-   summarize(loc_median_draw = first(loc[value == median_ba_init]), ## just in case that there might be more than 1, which is currently not the case
-             loc_p10_draw = first(loc[value == p10_ba_init]),
-             loc_p90_draw = first(loc[value == p90_ba_init])
-             ) %>%
+    group_by(draw, tax) %>%
+    mutate(avg_ba_init = mean(value, na.rm = T),
+           median_ba_init = quantile(value, prob = 0.5, type = 1, na.rm = T),
+           p10_ba_init = quantile(value, prob = 0.1, type = 1, na.rm = T),
+           p90_ba_init = quantile(value, prob = 0.9, type = 1, na.rm = T)) %>%
+    summarize(loc_median_draw = first(loc[value == median_ba_init]), ## just in case that there might be more than 1, which is currently not the case
+              loc_p10_draw = first(loc[value == p10_ba_init]),
+              loc_p90_draw = first(loc[value == p90_ba_init])
+    ) %>%
     ## get the loc that is most frequently the median for both taxa
     group_by(tax) %>%
     mutate(loc_median = first(sort(table(loc_median_draw), decreasing = T)),
            loc_p10 = first(sort(table(loc_p10_draw), decreasing = T)),
            loc_p90 = first(sort(table(loc_p90_draw), decreasing = T)))
   
-
+  
   # implement if used: match by draw and tax
   States %<>%
     left_join(Quantiles, by = c("draw", "tax")) %>%
@@ -129,7 +132,12 @@ formatStates <- function(cmdstanfit, data_stan_priors) {
   return(States)
 }
 
-
+## formatNumber --------------------------------
+# x <- 34364343.24324
+# signif.digits <- 4
+formatNumber <- function(x, signif.digits = 4) {
+  formatC(signif(x, digits = signif.digits), digits = signif.digits,format="fg", flag="#")
+}
 
 # ————————————————————————————————————————————————————————————————————————————————— #
 # Summarize posterior         -----------------------------------------------------
@@ -137,17 +145,38 @@ formatStates <- function(cmdstanfit, data_stan_priors) {
 
 ## summarizeFit --------------------------------
 # cmdstanfit <- tar_read("fit_test")
+# publishpar <- tar_read(parname_plotorder)
+# exclude <- tar_read(exclude)
 # path <- tar_read("dir_publish")
-summarizeFit <- function(cmdstanfit, exclude = NULL, path) {
+summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
   allpar <- cmdstanfit$metadata()$stan_variables
   includepar <- setdiff(allpar, exclude)
-  summary <- cmdstanfit$summary(includepar)
+  publishpar_prior <- c(publishpar, paste0(publishpar, "_prior"), "phi_obs")
   
+  summary <- cmdstanfit$summary(includepar)
   write.csv(summary, paste0(path, "/", basename_cmdstanfit, "_summary.csv"))
   
+  summary_publish <- cmdstanfit$summary(publishpar_prior) %>%
+    mutate(p = if_else(str_detect(variable, "_prior"), "prior", "posterior")) %>%
+    mutate(tax = if_else(str_detect(variable, "[2]"), "other", "Fagus")) %>%
+    mutate(var = str_extract(variable, ".*_log")) %>%
+    mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
+    dplyr::select(var, p, tax, value) %>%
+    pivot_wider(values_from = "value", names_from = c("p", "tax"), id_cols = "var")
+  
+  write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
+  
+  ## Number of years until equilibrium
+  Iter <- cmdstanfit$draws("iterations_fix") %>%
+    as_draws_matrix()
+  Iter <- data.frame(min = min(Iter), median = median(Iter), max = max(Iter))
+  write.csv(Iter, paste0(path, "/", basename_cmdstanfit, "_summary_nyears.csv"))
+  
+  
+  ## Console output
   head(summary, 20) %>%
     as.data.frame() %>%
     print()
@@ -164,6 +193,35 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, path) {
   return(summary)
 }
 
+
+## summarizeStates --------------------------------
+# States <- tar_read("States_test")
+# data_stan <- tar_read("data_stan")
+# path <- tar_read("dir_publish")
+summarizeStates <- function(States, data_stan, path) {
+  
+  D <- attr(data_stan, "Long_BA") %>%
+    group_by(stage, tax) %>%
+    summarize(mean = mean(y_prior, na.rm = T), sd = sd(y_prior, na.rm = T)) %>% ## y is count_ha for J and A, ba_ha for B and BA
+    mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
+    pivot_wider(names_from = "tax", id_cols = "stage") %>%
+    mutate(stage = paste0(stage, "_data_init")) %>%
+    dplyr::select(var = stage, Fagus = Fagus.sylvatica, other)
+  
+  S <- States %>%
+    mutate(value = if_else(tax == 'other' & (var %in% c("major_init", "major_fix")), 1 - value, value)) %>%
+    group_by(var, tax) %>%
+    summarize(mean = mean(value, na.rm = T), sd = sd(value, na.rm = T)) %>%
+    mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
+    pivot_wider(names_from = "tax", id_cols = "var") %>%
+    bind_rows(D) %>%
+    bind_rows(c(var = "ba_a_avg", setNames(formatNumber(data_stan$ba_a_avg), c("Fagus", "other"))))
+  
+  write.csv(S, paste0(path, "/", basename_cmdstanfit, "_summary_states.csv"))
+  print(S)
+  
+  return(S)
+}
 
 ## summarizeFreqConverged --------------------------------
 # cmdstanfit <- tar_read("fit_test")
@@ -228,7 +286,7 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
 # data_stan_priors <- tar_read("data_stan_priors")
 # locparname <- tar_read("parname_loc")
 
-generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = c("state_init_log", "L_loc"),
+generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = c("state_init", "L_loc"),
                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1,
                                  average = c("none", "locsperdraws_all", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
   
@@ -339,9 +397,9 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   ## Distinction between when to average for local variables
   if (match.arg(average) %in% c("none", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
     
-    draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
+    draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init", "L_loc")
       as_draws_rvars()
-    draws_loc$state_init <- exp(draws_loc$state_init_log)
+    # draws_loc$state_init <- exp(draws_loc$state_init_log)
     n_locs <- data_stan_priors$N_locs
     
   }
@@ -359,11 +417,11 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   }
   
   ## Generate quantiles in any case!
-  draws_loc_q <- subset_draws(Draws, variable = locparname) %>% # c("state_init_log", "L_loc")
+  draws_loc_q <- subset_draws(Draws, variable = locparname) %>% # c("state_init", "L_loc")
     posterior::as_draws()
   
   Quantiles_init <- draws_loc_q %>%
-    tidybayes::gather_draws(state_init_log[loc,pop]) %>%
+    tidybayes::gather_draws(state_init[loc,pop]) %>%
     group_by(pop, .draw, .iteration, .chain) %>%
     summarize(pop = first(pop),
               p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
@@ -382,7 +440,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     ## Here 3 quantiles will be dealt with, as if they were locs
     
     L_loc_q <- draws_loc_q %>%
-      tidybayes::gather_draws(L_loc[loc,tax]) %>% # state_init_log[loc,pop]
+      tidybayes::gather_draws(L_loc[loc,tax]) %>% # state_init[loc,pop]
       group_by(tax, .draw, .iteration, .chain) %>%
       summarize(p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
                 median = quantile(.value, prob = 0.5, type = 1, na.rm = T),
@@ -395,7 +453,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     state_init_q <- Quantiles_init %>%
       pivot_longer(any_of(c("p10", "median", "p90")), names_to = "quantile", values_to = "state_init") %>%
       mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
-      mutate(state_init = exp(state_init)) %>% ## !!!
+      # mutate(state_init = exp(state_init_log)) %>% ## !!!
       pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "pop"), values_from = "state_init", names_glue = "state_init[{loc},{pop}]") %>% 
       as_draws_rvars()
 
@@ -907,6 +965,10 @@ plotConditional <- function(cmdstanfit, parname, path,
     subset_draws(draw = which(isconverged)) %>%
     rowMeans()
   
+  if(all(freq_major == 1) | all(freq_major == 0)) {
+    warning("Either one species has the majority in all draws in all clusters. Thus, resampling is not possible")
+    return(NULL)
+  }
   
   ## Compare random effects
   ## also: K_loc_log_raw * sigma_k_loc
