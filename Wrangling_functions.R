@@ -295,10 +295,12 @@ joinStages <- function(B, J,
 # BA_s <- tar_read("BA_s")
 # BA_s <- tar_read("seedlings_s")
 # BA <- BA_s[[1]]
-fitS <- function(BA) {
+# path  <- tar_read("dir_publish")
+fitS <- function(BA, path) {
   
   BA_coordinates <- cbind(BA, st_coordinates(BA))
-  attr(BA_coordinates, "taxon") <- attr(BA, "taxon") ## cbind drops attr somehow
+  tax <- attr(BA, "taxon")
+  attr(BA_coordinates, "taxon") <- tax ## cbind drops attr somehow
   
   ## Get measures for
   # box <- st_bbox(BA) %>%
@@ -325,7 +327,11 @@ fitS <- function(BA) {
   ### mgcv
   fit <- gam(ba_ha ~ s(Y, X, bs = "sos", k = 600), family = nb, data = BA_coordinates) ## The first argument is taken to be latitude (in degrees) and the second longitude (in degrees).
   
-  attr(fit, "taxon") <- attr(BA, "taxon")
+  s <- summary(fit)
+  textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for the background basal area ...", label = paste0("tab:gam_", tax))
+  cat(textext, file = file.path(path, paste0(tax, "_summary_gam.tex")), fill = T)
+  
+  attr(fit, "taxon") <- tax
 
   return(fit)
 }
