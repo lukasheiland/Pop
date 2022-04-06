@@ -198,10 +198,7 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
 # States <- tar_read("States_test")
 # data_stan <- tar_read("data_stan")
 # path <- tar_read("dir_publish")
-summarizeStates <- function(States, data_stan,
-                            statename = c("J_fix", "A_fix", "B_fix", "ba_fix", "ba_fix_ko_s", "major_fix",
-                                          "J_init", "A_init", "B_init", "ba_init", "major_init"),
-                            path) {
+summarizeStates <- function(States, data_stan, path) {
   
   D <- attr(data_stan, "Long_BA") %>%
     group_by(stage, tax) %>%
@@ -212,7 +209,7 @@ summarizeStates <- function(States, data_stan,
     dplyr::select(var = stage, Fagus = Fagus.sylvatica, other)
   
   S <- States %>%
-    mutate(value = if_else(tax == 'other' & (var %in% statename), 1 - value, value)) %>%
+    mutate(value = if_else(tax == 'other' & (var %in% c("major_init", "major_fix")), 1 - value, value)) %>%
     group_by(var, tax) %>%
     summarize(mean = mean(value, na.rm = T), sd = sd(value, na.rm = T)) %>%
     mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
@@ -222,7 +219,7 @@ summarizeStates <- function(States, data_stan,
   
   write.csv(S, paste0(path, "/", basename_cmdstanfit, "_summary_states.csv"))
   print(S)
-    
+  
   return(S)
 }
 

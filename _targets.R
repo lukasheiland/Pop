@@ -394,10 +394,7 @@ targets_posterior <- list(
              summarizeFit(cmdstanfit = fit_test, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc),
                           publishpar = parname_plotorder, path = dir_publish)),
   tar_target(summary_states_test,
-             summarizeStates(States = States_test, data_stan = data_stan,
-                             statename = c("J_fix", "A_fix", "B_fix", "ba_fix", "ba_fix_ko_s", "major_fix",
-                                           "J_init", "A_init", "B_init", "ba_init", "major_init"),
-                             path = dir_publish)),
+             summarizeStates(States = States_test, data_stan = data_stan, path = dir_publish)),
   tar_target(Freq_converged_test,
              summarizeFreqConverged(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
   
