@@ -105,8 +105,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     
     mutate(t1 = t, t_min = min(t)) %>%
     mutate(t = round((t - t_min)/timestep) + t_min) %>%
-    mutate(res_t = (t - t_min)*timestep + t_min - t1)
-  
+    mutate(res_t = (t - t_min)*timestep + t_min - t1) %>%
+    arrange(loc, time, pop, stage, tax, plot) ## safety first
   
   ## Format: [L_y] — locations/obs/pops(/stage/species)/plots
   ## for fitting just use stages J, A, B
@@ -365,8 +365,9 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   if (!all(data$n_obs * data$N_pops == data$n_yhat)) message("Unexpected lengths of y_hat per locations. Assuming completion of all possible taxa/stages within plot/times went wrong.")
   
   attr(data, "Long") <- S
+  attr(data, "Long_BA") <- Stages
   attr(data, "Phi_empirical") <- Phi_empirical
-  
+
   return(data)
 }
 
@@ -396,7 +397,7 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit
                                              # iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                                              adapt_delta = 0.9, ## difficult geometry with sigma
                                              chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
-  
+
   ggsave(paste0(fitpath, "/Pairs_transitions_", which, ".png"),
          bayesplot::mcmc_pairs(fit_transition$draws(variables = c("rate_log"))), # "rate_global", "rate_contrast", "sigma_raw"
          device = "png", width = 12, height = 12)
@@ -404,9 +405,10 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit
   # bayesplot::mcmc_trace(fit_transition$draws())
   # bayesplot::mcmc_areas(fit_transition$draws(variables = c("rate_log")), area_method = "scaled height")
   
-  
+  s <- fit_transition$summary(variables = "rate_log")
+  write.csv(s, file.path(fitpath, paste0("summary_tansitions_", which, ".csv")))  
   message("Summary of the the fit for parameter ", which, ":")
-  print(fit_transition$summary())
+  print(s)
   
   return(fit_transition)
 }
@@ -463,7 +465,9 @@ formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, wi
   
   data_stan_priors <- c(data_stan, priors)
   data_stan_priors <- utils::modifyList(data_stan_priors, weakpriors)
+  
   attr(data_stan_priors, "Long") <- attr(data_stan, "Long")
+  attr(data_stan_priors, "Long_BA") <- attr(data_stan, "Long_BA")
   
   return(data_stan_priors)
 }

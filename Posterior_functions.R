@@ -223,6 +223,7 @@ summarizeStates <- function(States, data_stan, path) {
   return(S)
 }
 
+
 ## summarizeFreqConverged --------------------------------
 # cmdstanfit <- tar_read("fit_test")
 # data_stan_priors <- tar_read("data_stan_priors")
@@ -1042,17 +1043,18 @@ plotConditional <- function(cmdstanfit, parname, path,
   }
   
   pairsplot <- ggpairs(D,
-                       mapping = aes(col = major, fill = major, alpha = 0.1),
-                       columns = 3:length(D),
+                       mapping = aes(col = major, fill = major),
+                       columns = match(paste0(rep(parname, each = 2), c("_Fagus", "_other")), colnames(D)),
                        diag = list(continuous = plotDensity),
-                       upper = list(continuous = wrap("cor", size = 2))
+                       upper = list(continuous = wrap("cor", size = 3.3)),
+                       lower = list(continuous = wrap("points", alpha = 0.1, size = 0.6))
                        ) +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
     themefun() +
     theme(panel.spacing = unit(0.1, "lines"))
 
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 25, width = 22)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 26, width = 26)
   
   return(c(plots_parameters_conditional, 'pairs' = pairsplot))
 }
