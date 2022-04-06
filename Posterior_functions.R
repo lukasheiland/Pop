@@ -87,16 +87,19 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 # data_stan_priors <- tar_read("data_stan_priors")
 formatStates <- function(cmdstanfit, data_stan_priors) {
   
-  statename <- c("major_init", "major_fix", "ba_init", "ba_fix", "ba_fix_ko_s")
+  majorname <- c("major_init", "major_fix")
+  statename <- c("ba_init", "ba_fix", "ba_fix_ko_s",
+                 "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix")
+  varname <- c(majorname, statename)
   
-  States <- lapply(statename, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
+  States <- lapply(varname, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
   States <- lapply(States, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, {i <- 2})) else S )
   States %<>%
     bind_rows() %>%
     mutate(tax = factor(c("Fagus", "other")[i]))
   
-  States$value[States$value == 9 & States$var %in% c("major_init", "major_fix")] <- NA
-  States$value[States$value == 0 & States$var %in% c("ba_init", "ba_fix")] <- NA # not ba_fix_ko_s
+  States$value[States$value == 9 & States$var %in% majorname] <- NA
+  States$value[States$value == 0 & States$var %in% statename] <- NA # not ba_fix_ko_s
   
   Quantiles <- filter(States, var == "ba_init") %>%
    group_by(draw, tax) %>%
@@ -195,14 +198,26 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
 # States <- tar_read("States_test")
 # data_stan <- tar_read("data_stan")
 # path <- tar_read("dir_publish")
-summarizeStates <- function(States, data_stan, path) {
+summarizeStates <- function(States, data_stan,
+                            statename = c("J_fix", "A_fix", "B_fix", "ba_fix", "ba_fix_ko_s", "major_fix",
+                                          "J_init", "A_init", "B_init", "ba_init", "major_init"),
+                            path) {
+  
+  D <- attr(data_stan, "Long_BA") %>%
+    group_by(stage, tax) %>%
+    summarize(mean = mean(y_prior, na.rm = T), sd = sd(y_prior, na.rm = T)) %>% ## y is count_ha for J and A, ba_ha for B and BA
+    mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
+    pivot_wider(names_from = "tax", id_cols = "stage") %>%
+    mutate(stage = paste0(stage, "_data_init")) %>%
+    dplyr::select(var = stage, Fagus = Fagus.sylvatica, other)
   
   S <- States %>%
-    mutate(value = if_else(tax == 'other' & (var %in% c("major_init", "major_fix")), 1 - value, value)) %>%
+    mutate(value = if_else(tax == 'other' & (var %in% statename), 1 - value, value)) %>%
     group_by(var, tax) %>%
     summarize(mean = mean(value, na.rm = T), sd = sd(value, na.rm = T)) %>%
     mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
     pivot_wider(names_from = "tax", id_cols = "var") %>%
+    bind_rows(D) %>%
     bind_rows(c(var = "ba_a_avg", setNames(formatNumber(data_stan$ba_a_avg), c("Fagus", "other"))))
   
   write.csv(S, paste0(path, "/", basename_cmdstanfit, "_summary_states.csv"))
