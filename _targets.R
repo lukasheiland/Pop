@@ -270,7 +270,7 @@ targets_wrangling <- list(
                  wrangleSeedlings_s(Data_seedlings_fullgrid, taxon_select = taxon_select, threshold_dbh = threshold_dbh),
                  iteration = "list"),
       tar_target(fits_Seedlings_s, ## fits_s each have an attribute "taxon"
-                 fitS(seedlings_fullgrid),
+                 fitS(seedlings_fullgrid, path = NULL), ##! setting path to NULL prevents overwriting of the summary of the gam
                  pattern = map(seedlings_fullgrid),
                  iteration = "list"),
       tar_target(surfaces_Seedlings_s,
