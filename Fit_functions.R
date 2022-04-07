@@ -379,7 +379,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
 # data_stan  <- tar_read("data_stan")
 # which  <- "g"
 # model_transitions  <- tar_read("model_transitions")
-# dir_fit <- tar_read("dir_fit")
+# fitpath <- tar_read("dir_fit")
 fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit) { # priors!
   
   isg <- (which == "g")
