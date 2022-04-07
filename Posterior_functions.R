@@ -154,7 +154,7 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   
   allpar <- cmdstanfit$metadata()$stan_variables
   includepar <- setdiff(allpar, exclude)
-  publishpar_prior <- c(publishpar, paste0(publishpar, "_prior"), "phi_obs")
+  publishpar_prior <- c(publishpar, paste0(publishpar, "_prior"))
   
   summary <- cmdstanfit$summary(includepar)
   write.csv(summary, paste0(path, "/", basename_cmdstanfit, "_summary.csv"))
