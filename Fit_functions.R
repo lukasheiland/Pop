@@ -222,10 +222,12 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   
   Phi_empirical <- S %>%
     filter(stage %in% c("J", "A", "B")) %>%
-    group_by(obsidPop) %>%
+    group_by(pop) %>% # group_by(obsidPop) %>%
     summarize(var = var(y_prior, na.rm = T), mean = mean(y_prior, na.rm = T), phi = mean^2/(var - mean)) %>%
-    mutate(sigma = signif(1/sqrt(phi), digits = 2)) %>%
-    arrange(obsidPop)
+    mutate(phi_inv = 1/phi) %>%
+    mutate(phi_inv_sqrt = 1/sqrt(phi)) %>%
+    mutate(sigma_phi = signif(phi_inv * 1.2, digits = 2)) %>%
+    arrange(pop) # arrange(obsidPop)
   
   message("Empirical estimates of phi per species, stage and survey:")
   print(Phi_empirical)
@@ -296,7 +298,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     N_beta = ncol(X),
     N_obsmethod = length(unique(S$obsmethod)),
     N_obsmethodTax = length(unique(S$obsmethodTax)),
-    N_obsidPop = length(unique(S$obsidPop)),
+    # N_obsidPop = length(unique(S$obsidPop)),
     N_protocol = length(unique(S$methodid)), ## different sampling area levels
     
     n_obs = S_locs$n_obs,
@@ -308,15 +310,16 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     
     rep_yhat2y = vrep(1:L_yhat, S_yhat$n_plots), ## repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
     rep_obsmethod2y = as.integer(S$obsmethod),
-    rep_obsmethodTax2y = as.integer(S$obsmethodTax), ## for level order check: # attr(data_stan_priors, "Long")$obsmethodTax %>% levels()
-    rep_obsidPop2y = as.integer(S$obsidPop), ## attr(data_stan, "Long")$obsidPop %>% levels()
     rep_protocol2y = as.integer(S$methodid),
+    # rep_obsidPop2y = as.integer(S$obsidPop), ## attr(data_stan, "Long")$obsidPop %>% levels()
     # rep_yhat2a2b = S_a2b$rep_yhat2a2b,
     # rep_species2a2b = S_a2b$rep_species2a2b,
+    # rep_obsmethodTax2y = as.integer(S$obsmethodTax), ## for level order check: # attr(data_stan_priors, "Long")$obsmethodTax %>% levels()
+    rep_pops2y =  as.integer(S$pop), # all(as.integer(S$obsmethodTax) == as.integer(S$pop))
     rep_pops2init =  as.integer(S_init$pop),
-    rep_pops2y =  as.integer(S$pop),
     
-    sigma_obsidPop = Phi_empirical$sigma,
+    
+    sigma_phi = Phi_empirical$sigma_phi,
     
     time_max = S_locs$time_max,
     times = S_times$t,

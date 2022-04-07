@@ -29,17 +29,20 @@ tar_make_future(c("data_stan_priors_offset"), workers = if(onserver) 12 else 3, 
 tar_make(c("fit_test", "summary_test"))
 
 ## Posterior
-# tar_make(c("Trajectories")) ## parallelized internally
+### High priority targets
 tar_make_future(c("summary_test",
                   "summary_states_test",
                   "residuals_test",
-                  "plots_test",
+                  "plot_contributions_test",
+                  "plots_states_test"),
+                workers = if(onserver) 8 else 3, reporter = "timestamp")
+
+### Medium priority targets
+tar_make_future(c("plots_test",
                   "plots_parameters_test",
                   "plots_conditional_test",
-                  "plot_contributions_test",
-                  "plots_states_test",
                   "plot_trajectories_avg_test"),
-                workers = if(onserver) 12 else 3, reporter = "timestamp")
+                workers = if(onserver) 6 else 3, reporter = "timestamp")
 
 
 # Inspect pipeline ----------------------------------------------------------------
