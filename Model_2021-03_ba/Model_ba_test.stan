@@ -790,7 +790,7 @@ generated quantities {
   // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_vector(prior_r_log[1], N_species), rep_vector(prior_r_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_vector(prior_s_log[1], N_species), rep_vector(prior_s_log[2], N_species)));
   
-  array[N_pops] real<lower=0> phi_obs_prior = inv(normal_rng(rep_vector(0.0, N_pops), sigma_phi)); //! generation of distribution probably wrong (not consistent with density transformations)???
+  array[N_pops] real<lower=0> phi_obs_prior = inv(sqrt(square(normal_rng(rep_vector(0.0, N_pops), sigma_phi)))); //! generation of distribution probably wrong (not consistent with density transformations)???
     // array[N_pops] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_vector(0.0, N_pops), sigma_phi)); //! generation of distribution probably wrong (not consistent with density transformations)???
   
   //// Random intercept version for input k
