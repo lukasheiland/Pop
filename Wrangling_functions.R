@@ -296,7 +296,7 @@ joinStages <- function(B, J,
 # BA_s <- tar_read("seedlings_s")
 # BA <- BA_s[[1]]
 # path  <- tar_read("dir_publish")
-fitS <- function(BA, path) {
+fitS <- function(BA, path = NULL) {
   
   BA_coordinates <- cbind(BA, st_coordinates(BA))
   tax <- attr(BA, "taxon")
@@ -327,9 +327,11 @@ fitS <- function(BA, path) {
   ### mgcv
   fit <- gam(ba_ha ~ s(Y, X, bs = "sos", k = 600), family = nb, data = BA_coordinates) ## The first argument is taken to be latitude (in degrees) and the second longitude (in degrees).
   
-  s <- summary(fit)
-  textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for the background basal area ...", label = paste0("tab:gam_", tax))
-  cat(textext, file = file.path(path, paste0(tax, "_summary_gam.tex")), fill = T)
+  if(!is.null(path)) {
+    s <- summary(fit)
+    textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for the background basal area ...", label = paste0("tab:gam_", tax))
+    cat(textext, file = file.path(path, paste0(tax, "_summary_gam.tex")), fill = T) %>% invisible()
+  }
   
   attr(fit, "taxon") <- tax
 
