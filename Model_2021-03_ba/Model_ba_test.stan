@@ -417,7 +417,6 @@ data {
   int<lower=0> N_species; // overall number of unique species across plot and locations (not nested!)
   int<lower=0> N_pops; // (species*stages) within loc; this is the length of initial values!
   int<lower=0> N_beta;
-  int<lower=0> N_obsidPop;
   int<lower=0> N_protocol;
 
 
@@ -432,7 +431,7 @@ data {
 
   //// rep - repeat indices within groups for broadcasting to the subsequent hierarchical levels
   array[L_y] int<lower=1> rep_yhat2y; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
-  array[L_y] int<lower=1> rep_obsidPop2y; // factor (1, 2, 3), repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  array[L_y] int<lower=1> rep_pops2y; // factor (1:6)
   array[L_y] int<lower=1> rep_protocol2y; // factor (1:5)
 
   // int<lower=1> rep_locs2plots[L_plots]; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
@@ -441,7 +440,7 @@ data {
   // int<lower=1> rep_pops2init[L_init];
   
   //// sigma for regularizing phi
-  vector<lower=0>[N_obsidPop] sigma_obsidPop;
+  vector<lower=0>[N_pops] sigma_phi;
   
   //// actual data
   array[N_locs] int time_max;
@@ -565,7 +564,8 @@ parameters {
   
   
   //// Errors
-  vector<lower=0>[N_obsidPop] phi_obs_inv_sqrt; // error in neg_binomial per tax and stage
+  vector<lower=0>[N_pops] phi_obs_inv; // error in neg_binomial per tax and stage
+  // vector<lower=0>[N_pops] phi_obs_inv_sqrt; // error in neg_binomial per tax and stage
   
     // vector<lower=0>[N_protocol] zeta; // zero-offset_data parameter
 	// real<lower=0> kappa_inv; // error in beta for h_log
@@ -606,7 +606,8 @@ transformed parameters {
   // matrix[N_locs, N_species] R_log = X * Beta_r;
   // matrix[N_locs, N_species] S_log = X * Beta_s;
 
-  vector<lower=0>[N_obsidPop] phi_obs = inv_square(phi_obs_inv_sqrt); // inv_square == square_inv
+  vector<lower=0>[N_pops] phi_obs = inv(phi_obs_inv); // inv_square == square_inv
+  // vector<lower=0>[N_pops] phi_obs = inv_square(phi_obs_inv_sqrt); // inv_square == square_inv
     // vector<lower=0>[3] alpha_obs = inv(alpha_obs_inv);
   
   
@@ -651,8 +652,8 @@ transformed parameters {
                                 
   vector[L_y] y_hat_rep = y_hat[rep_yhat2y];
   vector[L_y] y_hat_rep_offset = y_hat_rep .* offset_data; // offset_zeta
-  vector[L_y] phi_obs_rep = phi_obs[rep_obsidPop2y];
-  // vector[L_y] theta_obs_rep = theta_obs[rep_obsidPop2y];
+  vector[L_y] phi_obs_rep = phi_obs[rep_pops2y];
+  // vector[L_y] theta_obs_rep = theta_obs[rep_pops2y];
   
 }
 
@@ -665,7 +666,7 @@ model {
   
   //// Hyperpriors
 
-  phi_obs_inv_sqrt ~ normal(rep_vector(0.0, N_obsidPop), sigma_obsidPop);
+  phi_obs_inv ~ normal(rep_vector(0.0, N_pops), sigma_phi);
   	// On prior choice for the overdispersion in negative binomial 2: https://github.com/stan-dev/stan/wiki/Prior-Choice-Recommendations#story-when-the-generic-prior-fails-the-case-of-the-negative-binomial
   
   // Random intercepts for input k
@@ -718,17 +719,17 @@ model {
   //———————————————————————————————————————————————————————————————————//    
 
   // a2b ~ poisson(y_hat[rep_yhat2a2b] .* exp(h_log)[rep_species2a2b] .* timediff);
-  // y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_obsidPop2y]);
+  // y ~ neg_binomial_2(y_hat[rep_yhat2y], phi_obs[rep_pops2y]);
   
   y ~ neg_binomial_2(y_hat_rep_offset, phi_obs_rep);
 
   
-  // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_obsidPop2y], theta_obs, L_y);
+  // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_pops2y], theta_obs, L_y);
   
   //  for(l in 1:L_y) {
   //	
   //	y[l] ~ neg_binomial_0(y_hat_rep[l], phi_obs_rep[l], theta_obs_rep[l]);
-  //    // y[l] ~ neg_binomial_0(y_hat[rep_yhat2y][l], phi_obs[rep_obsidPop2y][l], theta_obs[rep_obsidPop2y][l]);
+  //    // y[l] ~ neg_binomial_0(y_hat[rep_yhat2y][l], phi_obs[rep_pops2y][l], theta_obs[rep_pops2y][l]);
   //  }  
 
 }
@@ -789,7 +790,8 @@ generated quantities {
   // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_vector(prior_r_log[1], N_species), rep_vector(prior_r_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_vector(prior_s_log[1], N_species), rep_vector(prior_s_log[2], N_species)));
   
-  array[N_obsidPop] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_vector(0.0, N_obsidPop), sigma_obsidPop));
+  array[N_pops] real<lower=0> phi_obs_prior = inv(normal_rng(rep_vector(0.0, N_pops), sigma_phi)); //! generation of distribution probably wrong (not consistent with density transformations)???
+    // array[N_pops] real<lower=0> phi_obs_prior = inv_square(normal_rng(rep_vector(0.0, N_pops), sigma_phi)); //! generation of distribution probably wrong (not consistent with density transformations)???
   
   //// Random intercept version for input k
   // array[N_locs, N_species] real K_loc_log_raw_prior;
@@ -841,7 +843,7 @@ generated quantities {
 //  y_hat_prior_rep_offset = y_hat_prior_rep .* offset_data; // offset_zeta_prior
 //
 //
-//  y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_obsidPop2y]);
+//  y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_pops2y]);
   
   
   //—————————————————————————————————————————————————————————————————————————//
@@ -1068,7 +1070,7 @@ generated quantities {
     // 
     // // joint prior specification, sum of all logpriors
     // log_prior = log_prior +
-    // 		  normal_lpdf(phi_obs_inv_sqrt | rep_vector(0.0, N_obsidPop), sigma_obsidPop) +
+    // 		  normal_lpdf(phi_obs_inv | rep_vector(0.0, N_pops), sigma_phi) +
 	//   		  //// Random intecept K version version
 	//            // normal_lpdf(sigma_k_loc | 0, 1) +		  
 	//   		  // normal_lpdf(to_vector(K_loc_log_raw) | 0, 1) +
