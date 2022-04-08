@@ -226,7 +226,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     summarize(var = var(y_prior, na.rm = T), mean = mean(y_prior, na.rm = T), phi = mean^2/(var - mean)) %>%
     mutate(phi_inv = 1/phi) %>%
     mutate(phi_inv_sqrt = 1/sqrt(phi)) %>%
-    mutate(sigma_phi = signif(phi_inv * 1.2, digits = 2)) %>%
+    mutate(sigma_phi = signif(phi_inv * 0.8, digits = 2)) %>%
     arrange(pop) # arrange(obsidPop)
   
   message("Empirical estimates of phi per species, stage and survey:")
