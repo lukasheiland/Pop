@@ -34,12 +34,12 @@ tar_make_future(c("summary_test",
                   "summary_states_test",
                   "residuals_test",
                   "plot_contributions_test",
+                  "plots_parameters_test",
                   "plots_states_test"),
                 workers = if(onserver) 8 else 3, reporter = "timestamp")
 
 ### Medium priority targets
 tar_make_future(c("plots_test",
-                  "plots_parameters_test",
                   "plots_conditional_test",
                   "plot_trajectories_avg_test"),
                 workers = if(onserver) 6 else 3, reporter = "timestamp")
