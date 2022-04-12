@@ -199,7 +199,7 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
 # States <- tar_read("States_test")
 # data_stan <- tar_read("data_stan")
 # path <- tar_read("dir_publish")
-summarizeStates <- function(States, data_stan, path) {
+summarizeStates <- function(States, data_stan, basename, path) {
   
   D <- attr(data_stan, "Long_BA") %>%
     group_by(stage, tax) %>%
@@ -218,7 +218,7 @@ summarizeStates <- function(States, data_stan, path) {
     bind_rows(D) %>%
     bind_rows(c(var = "ba_a_avg", setNames(formatNumber(data_stan$ba_a_avg), c("Fagus", "other"))))
   
-  write.csv(S, paste0(path, "/", basename_cmdstanfit, "_summary_states.csv"))
+  write.csv(S, paste0(path, "/", basename, "_summary_states.csv"))
   print(S)
   
   return(S)
