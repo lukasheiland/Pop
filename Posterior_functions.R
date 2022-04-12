@@ -261,7 +261,6 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
   Sim[is.na(Sim)] <- 0
   y <- data_stan_priors$y
   y_hat <- cmdstanfit$draws(variables = "y_hat_rep_offset", format = "draws_matrix") %>% apply(2, median, na.rm = T)
-  y_hat[is.na(y_hat)] <- 0
   
   Longdata <- attr(data_stan_priors, "Long")
   grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
@@ -699,7 +698,7 @@ plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = 
         as_draws_rvars() # ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
       
     } else {
-      Sim <- draws$y_hat_rep
+      Sim <- draws$y_hat_rep_offset
       
       ## Fix <- 
       
