@@ -199,7 +199,7 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
 # States <- tar_read("States_test")
 # data_stan <- tar_read("data_stan")
 # path <- tar_read("dir_publish")
-summarizeStates <- function(States, data_stan, basename, path) {
+summarizeStates <- function(States, data_stan, path) {
   
   D <- attr(data_stan, "Long_BA") %>%
     group_by(stage, tax) %>%
@@ -218,7 +218,7 @@ summarizeStates <- function(States, data_stan, basename, path) {
     bind_rows(D) %>%
     bind_rows(c(var = "ba_a_avg", setNames(formatNumber(data_stan$ba_a_avg), c("Fagus", "other"))))
   
-  write.csv(S, paste0(path, "/", basename, "_summary_states.csv"))
+  write.csv(S, paste0(path, "/", basename_cmdstanfit, "_summary_states.csv"))
   print(S)
   
   return(S)
@@ -260,7 +260,7 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
   Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
   Sim[is.na(Sim)] <- 0
   y <- data_stan_priors$y
-  y_hat <- cmdstanfit$draws(variables = "y_hat_rep", format = "draws_matrix") %>% apply(2, median, na.rm = T)
+  y_hat <- cmdstanfit$draws(variables = "y_hat_rep_offset", format = "draws_matrix") %>% apply(2, median, na.rm = T)
   y_hat[is.na(y_hat)] <- 0
   
   Longdata <- attr(data_stan_priors, "Long")
