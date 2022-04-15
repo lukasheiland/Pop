@@ -47,6 +47,353 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
   G <- Stages_transitions %>%
     # filter(!is.na(g_plot))
     filter(!is.na(count_J2A_plot_obs) & isTRUE(count_J_integr_plot > 0)) ## also drops NAs
+  
+  H <- Stages_transitions %>%
+    # filter(!is.na(h_plot))
+    filter(!is.na(count_A2B_plot_obs) & isTRUE(count_A_integr_plot > 0)) ## also drops NAs
+  
+  Stages %<>%
+    
+    ## Join Stages_transitions
+    # bind_cols(Stages_transitions[match(interaction(.$plotid, .$tax), Stages_transitions$joinid), ]) %>%
+    
+    ## Sum up by cluster
+    group_by(clusterid, obsid, stage, tax) %>%
+    summarize(time = first(time),
+              n_plots = n_distinct(plotid),
+              across(c(count_obs, count_ha, count_ha_r,
+                       ba_obs, ba_ha, ba_ha_r,
+                       offset, offset_avg, offset_q1, offset_q3),
+                       function(x) sum(x, na.rm = T))
+              ) %>%
+    ungroup() %>%
+    
+    ## Synonyms for consistency with model lingo
+    mutate(loc = as.integer(as.factor(clusterid))) %>%
+    
+    ## factor ordering!!!
+    mutate(stage = factor(stage, levels = c("J", "A", "B", "BA")),
+           tax = factor(tax, levels = levels(taxon_s))) %>%
+    
+    ## Stages are measured in different terms: ba or count
+    mutate(y = case_when(
+      stage == "J" ~ count_obs, # count_ha_r,
+      stage == "A" ~ count_obs, # count_ha_r,
+      stage == "B" ~ count_obs, # ba_ha_r
+      stage == "BA" ~ as.double(ba_ha_r)
+    )) %>%
+    
+    mutate(y_prior = case_when(
+      stage == "J" ~ count_ha, # count_ha_r,
+      stage == "A" ~ count_ha, # count_ha_r,
+      stage == "B" ~ as.double(ba_ha), # ba_ha_r
+      stage == "BA" ~ as.double(ba_ha)
+    )) %>%
+    
+    ## pop is just an id for the initial states vector
+    mutate(pop = interaction(tax, stage)) %>%
+    
+    ## Different levels of observation error were assumed ...
+    ## - per species and for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
+    mutate(obsmethod = fct_recode(stage, "j" = "J", "a" = "A", "ba" = "B", "ba" = "BA")) %>%
+    mutate(obsmethodTax = interaction(substr(tax, 1, 1), obsmethod)) %>% 
+    ## - per species and per survey
+    mutate(obsidPop = interaction(obsid, pop)) %>%
+    
+    arrange(loc, time, pop, stage, tax) %>%
+    
+    ## scale times within group to start with 1
+    group_by(loc) %>%
+    mutate(t = as.integer(lubridate::year(time))) %>%
+    mutate(t = t - min(t) + 1) %>%
+    mutate(isy0 = (t == 1)) %>%
+    
+    mutate(t1 = t, t_min = min(t)) %>%
+    mutate(t = round((t - t_min)/timestep) + t_min) %>%
+    mutate(res_t = (t - t_min)*timestep + t_min - t1) %>%
+    
+    mutate(t_which = match(t, sort(unique(t)))) %>%
+    
+    arrange(loc, time, pop, stage, tax) ## safety first
+  
+  ## Format: [L_y] — locations/obs/pops(/stage/species)
+  ## This is the same as Stages, but without BA. Only stages J, A, B for fitting
+  S <- Stages %>% 
+    st_drop_geometry() %>%
+    filter(stage %in% c("J", "A", "B")) %>%
+    mutate_at(c("stage", "pop"), droplevels) %>%
+    arrange(loc, time, pop, stage, tax) ## safety first
+  
+  
+  ## Format: [L_init] — locations/pops
+  S_init <- filter(S, isy0) %>%
+    dplyr::select(-isy0) %>%
+    group_by(loc, pop, stage, tax)
+  
+  
+  ## Format: [L_times] — locations/resurveys
+  S_times <- S %>%
+    group_by(loc, obsid) %>% # first, group by obsid to extract one time per obsid within loc (in case there are multiple days somehow, which is not the case atm!)
+    summarize(t = first(t), t1 = first(t1), res_t = first(res_t)) %>%
+    group_by(loc) %>%
+    mutate(t = unique(t), .groups = "drop") ## This way its certain, that there is one time per obsid
+  
+  if (timestep != 1) {
+    Timetable <- table(S_times$res_t)
+    message("Table of residual times in years throug timestep reduction: ")
+    write.csv("Publish/Residual_times.csv")
+    print(Timetable)
+  }
+  
+  ## Format: [N_locs] — locations
+  S_locs <- S %>%
+    group_by(loc) %>%
+    ## assumes completion within locations!
+    summarize(time_max = max(t),
+              timespan = diff(range(t)) + 1,
+              n_tax = n_distinct(tax),
+              n_pops = n_distinct(pop),
+              n_obs = n_distinct(t),
+              n_yhat = n_distinct(interaction(pop, t)),
+              alt_loc_s = first(alt_loc_s),
+              phCaCl_esdacc_s = first(phCaCl_esdacc_s),
+              waterLevel_loc_s = first(waterLevel_loc_s),
+              clusterid = first(clusterid),
+              .groups = "drop")
+  
+  
+  ## Format: [L_init] — locations/pops
+  # S_a2b <- S %>%
+  #   # st_drop_geometry() %>%
+  #   ## !!! sic! Use A for matching in S_yhat later.
+  #   filter(stage == "A") %>% 
+  #   
+  #   ## !!! sic! Assign to preceding state for matching in S_yhat later.
+  #   mutate(a2b = case_when(obsid == "DE_BWI_1987" ~ count_A2B_2002_plot,
+  #                          obsid == "DE_BWI_2002" ~ count_A2B_2012_plot)) %>%
+  #   mutate(timediff = case_when(obsid == "DE_BWI_1987" ~ timediff_2002,
+  #                               obsid == "DE_BWI_2002" ~ timediff_2012)) %>%
+  #   drop_na(a2b, timediff) %>%
+  #   arrange(loc, time, pop, stage, tax, plot) %>% ## safety first
+  #   mutate(rep_yhat2a2b = match(interaction(loc, time, pop), with(S_yhat, interaction(loc, time, pop))),
+  #          rep_species2a2b = as.integer(factor(tax)))
+  
+  
+  #### Prepare design matrix
+  Env <- S_locs[c("phCaCl_esdacc_s", "waterLevel_loc_s")]
+  if (anyNA(Env)) {
+    X <- matrix(0, nrow = nrow(Env), ncol = ncol(Env))
+    message("With Env having NAs, an empty design matrix was produced.")
+  } else {
+    polyformula <- as.formula(paste("~", paste("poly(", colnames(as.data.frame(Env)), ", 2)", collapse = "+")))
+    X <- model.matrix(polyformula, data = as.data.frame(Env))
+  }
+  
+  
+  #### Prepare ldd smooth. Predicted with log-link 
+  L_smooth_log <- S %>%
+    group_by(loc) %>%
+    summarize_at(paste("s", taxon_s, sep = "_"), first) %>%
+    tibble::column_to_rownames(var = "loc") %>%
+    as.matrix()
+  
+  #### Some data for multiple reuse in the list
+  N_species <-  length(unique(S$tax))
+
+  Phi_empirical <- S %>%
+    filter(stage %in% c("J", "A", "B")) %>%
+    group_by(pop) %>% #* group_by(obsidPop) %>%
+    summarize(var = var(y_prior, na.rm = T), mean = mean(y_prior, na.rm = T), phi = mean^2/(var - mean)) %>%
+    mutate(phi_inv = 1/phi) %>%
+    mutate(phi_inv_sqrt = 1/sqrt(phi)) %>%
+    mutate(sigma_phi = signif(phi_inv_sqrt, digits = 1) * 0.1) %>%
+    arrange(pop) #* arrange(obsidPop)
+  
+  message("Empirical estimates of phi per species and stage:")
+  print(Phi_empirical)
+  
+  upper_init <- S %>%
+    filter(stage %in% c("J", "A", "B")) %>%
+    group_by(pop) %>%
+    summarize(upper = max(y_prior, na.rm = T) * 1.5) %>%
+    pull(upper, name = pop)
+  
+  ## State debugging
+  # State_1 <- filter(S, isy0) %>%
+  #   filter(stage %in% c("J", "A", "B")) %>%
+  #   group_by(pop, loc) %>%
+  #   summarize(s = mean(y_prior, na.rm = T)) %>%
+  #   ungroup() %>%
+  #   pivot_wider(names_from = pop, values_from = s) %>%
+  #   arrange(loc) %>%
+  #   tibble::column_to_rownames(var = "loc") %>%
+  #   add(1e-12)
+  # 
+  # State_2 <- filter(S, t_which == 2) %>%
+  #   filter(stage %in% c("J", "A", "B")) %>%
+  #   group_by(pop, loc) %>%
+  #   summarize(s = mean(y_prior, na.rm = T)) %>%
+  #   ungroup() %>%
+  #   pivot_wider(names_from = pop, values_from = s) %>%
+  #   arrange(loc) %>%
+  #   tibble::column_to_rownames(var = "loc") %>%
+  #   add(1e-12)
+  # 
+  # State_3 <- filter(S, t_which == 3) %>%
+  #   filter(stage %in% c("J", "A", "B")) %>%
+  #   group_by(pop, loc) %>%
+  #   summarize(s = mean(y_prior, na.rm = T)) %>%
+  #   ungroup() %>%
+  #   pivot_wider(names_from = pop, values_from = s) %>%
+  #   bind_rows(data.frame(loc = setdiff(as.integer(rownames(State_1)), .$loc),
+  #                        Fagus.sylvatica.J = 0, other.J = 0, Fagus.sylvatica.A = 0, other.A = 0, Fagus.sylvatica.B = 0, other.B = 0)) %>%
+  #   arrange(loc) %>%
+  #   tibble::column_to_rownames(var = "loc") %>%
+  #   add(1e-12)
+  
+  #### The stan-formatted list
+  data <- list(
+    
+    L_times = nrow(S_times),
+    L_init = nrow(S_init),
+    L_y = nrow(S),
+    # L_a2b = nrow(S_a2b),
+    
+    N_locs = nrow(S_locs),
+    N_species = N_species,
+    N_pops = length(unique(S$pop)),
+    N_beta = ncol(X),
+    N_obsmethod = length(unique(S$obsmethod)),
+    N_obsmethodTax = length(unique(S$obsmethodTax)),
+    N_obsidPop = length(unique(S$obsidPop)),
+    N_protocol = length(unique(S$methodid)), ## different sampling area levels
+    
+    n_obs = S_locs$n_obs,
+    n_yhat = S_locs$n_yhat,
+    
+    i_j = 1:N_species,
+    i_a = (1:N_species) + N_species,
+    i_b = (1:N_species) + 2*N_species,
+    
+    rep_obsmethod2y = as.integer(S$obsmethod),
+    rep_protocol2y = as.integer(S$methodid),
+    rep_obsidPop2y = as.integer(S$obsidPop), ## S$obsidPop %>% levels()
+    rep_pops2y =  as.integer(S$pop), # all(as.integer(S$obsmethodTax) == as.integer(S$pop))
+    rep_pops2init =  as.integer(S_init$pop), ## S_init$pop %>% levels()
+    ## unused reps
+    # rep_yhat2a2b = S_a2b$rep_yhat2a2b,
+    # rep_species2a2b = S_a2b$rep_species2a2b,
+    # rep_obsmethodTax2y = as.integer(S$obsmethodTax), ## for level order check: # attr(data_stan_priors, "Long")$obsmethodTax %>% levels()
+    
+    sigma_phi = Phi_empirical$sigma_phi,
+    
+    time_max = S_locs$time_max,
+    times = S_times$t,
+    # timediff = S_a2b$timediff,
+    
+    X = X,
+    L_smooth_log = L_smooth_log, ## array[N_locs] vector<lower=0>[N_species] L_smooth_log;
+    L_smooth = exp(L_smooth_log),
+    
+    y = as.integer(S$y),
+    offset_data = S$offset,
+    # a2b = S_a2b$a2b,
+    
+    ## Settings corner
+    tolerance_fix = 0.001,
+    ba_a_upper = ba_a_upper,
+    ba_a_avg = ba_a_avg,
+    generateposteriorq = 0,
+    upper_init = upper_init,
+    
+    ##$ Altering the timestep
+    # timestep = timestep,
+    # parfactor = parfactor,
+    
+    
+    #### priors
+    # Prior_state_init_log = Prior_state_init_log,
+    # Prior_state_init = Prior_state_init,
+    
+    # alpha_init = Init$alpha,
+    # beta_init = Init$beta,
+    # Prior_state_init_alpha = Prior_state_init_gamma_alpha,
+    # Prior_state_init_beta = Prior_state_init_gamma_beta,
+    
+    ## State debugging
+    # state_init = State_1,
+    # state_2 = State_2,
+    # state_3 = State_3,
+    
+    ## the transitions.
+    L_g = nrow(G),
+    L_h = nrow(H),
+    y_j2a = G$count_J2A_plot_obs, # integer
+    y_a2b = H$count_A2B_plot_obs, # integer
+    area_log_j2a = log(G$area_J2A),
+    area_log_a2b = log(H$area_A2B),
+    y_j = G$count_J_integr_plot, # [1/ha]
+    y_a = H$count_A_integr_plot, # # [1/ha]
+    species_g = as.integer(factor(G$tax, levels = levels(taxon_s))),
+    species_h = as.integer(factor(H$tax, levels = levels(taxon_s)))
+  )
+  
+  if (!all(data$n_obs * data$N_pops == data$n_yhat)) message("Unexpected lengths of y_hat per locations. Assuming completion of all possible taxa/stages within plot/times went wrong.")
+  
+  attr(data, "Long") <- S
+  attr(data, "Long_BA") <- Stages
+  attr(data, "Phi_empirical") <- Phi_empirical
+  
+  return(data)
+}
+
+
+## formatStanData_nested --------------------------------
+## This is for oreparing the data for Model_ba_test_nested, a model version where plots are nested within locs.
+# Stages  <- tar_read("Stages_scaled")
+# Stages_transitions  <- tar_read("Stages_transitions")
+# taxon_s  <- tar_read("taxon_s")
+# threshold_dbh <- tar_read("threshold_dbh")
+# timestep <- 1
+
+formatStanData_nested <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, timestep = 1) {
+  
+  ## Prepare ba_a_upper, the upper basal area of any one tree in A.
+  radius_a_upper <- threshold_dbh/2
+  ba_a_upper <-  pi * radius_a_upper^2 * 1e-6
+  
+  #### Prepare ba_a_avg
+  ## vector[N_species] for ba_a_avg
+  ## For multiplication with count A, ba_a_avg is the average basal area of an individual tree in class A and has unit $\mathit{areaunit} \cdot 1^-1$, so that A * ba_a_avg has unit $\mathit{areaunit} \cdot ha^-1$.
+  ba_a_avg <- Stages %>%
+    filter(stage == "A") %>%
+    group_by(tax) %>%
+    summarize(ba_a_avg = mean(ba_obs/count_obs, na.rm = T)) %>% ## [(ba/ha)/(1/ha) == ba/ha * ha == ba/1]
+    pull(ba_a_avg, name = tax)
+  
+  
+  #### Prepare special long data set structures with different amounts of long casting along different ids
+  ## The most comprehensive data set is L_y with grouping locations/resurveys/pops/plots.
+  ## NOTE THAT plots HAS TO BE THE LAST GROUP IN SORTING
+  ## Everything is subset from the master subsets with these groupings (*_reobs, *_y0) and thus consistently sorted.
+  ## Factor "pops" is structured stages/species.
+  
+  Stages_transitions %<>%
+    ungroup() %>%
+    dplyr::select("plotid", "tax", "obsid",
+                  # "timediff_plot", "count_A_sum_before", "count_J_sum_before",
+                  # "h_plot", "g_plot"
+                  "count_A2B_plot", "count_J2A_plot", ## [1/ha]
+                  "count_A2B_plot_obs", "count_J2A_plot_obs", ## true observed ...
+                  "area_A2B", "area_J2A", ## on this area
+                  "count_J_integr_plot", "count_A_integr_plot") %>%
+    
+    group_by(plotid, obsid, tax) %>%
+    slice(1)
+  
+  G <- Stages_transitions %>%
+    # filter(!is.na(g_plot))
+    filter(!is.na(count_J2A_plot_obs) & isTRUE(count_J_integr_plot > 0)) ## also drops NAs
 
   H <- Stages_transitions %>%
     # filter(!is.na(h_plot))
