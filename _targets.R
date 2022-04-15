@@ -148,12 +148,12 @@ targets_parname <- list(
   tar_target(helpers_exclude,
              c("Fix", "Fix_ko_s",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
-               "phi_obs_rep", "phi_obs_rep_prior",
+               "phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "avg_state_init", "avg_L_loc",
                "fixiter_max", "fixiter_min", "eps_ba_fix",
-               "log_prior", "log_lik", "lp__", "state_init_log_raw")),
+               "log_prior", "log_lik", "lp__", "state_init_log_raw", "state_2", "state_2_raw", "state_3", "state_3_raw")),
   tar_target(rep_exclude,
-             c("phi_obs_rep", "phi_obs_rep_prior",
+             c("phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "y_hat_rep", "y_hat_prior_rep", "y_hat_rep_offset", "y_hat_prior_rep_offset")),
   tar_target(simnames_prior,
              c("y_hat_prior", "y_hat_prior_rep", "y_hat_prior_rep_offset", "y_prior_sim")),
@@ -171,14 +171,14 @@ targets_parname <- list(
   tar_target(exclude,
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
   tar_target(parname,
-             c("phi_obs", # "sigma_k_loc", # "k_log",
+             c("phi_obs", # "sigma_k_loc", # "k_log", # "theta", 
                "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
   tar_target(parname_plotorder,
              c(l = "l_log", r = "r_log", c_j = "c_j_log", s = "s_log", g = "g_log", c_a = "c_a_log", h = "h_log", b = "b_log", c_b = "c_b_log" )),
   tar_target(parname_loc,
              c("state_init", "L_loc")),
   tar_target(parname_sim,
-             setdiff(parname, c("phi_obs", "sigma_k_loc")))
+             setdiff(parname, c("theta", "phi_obs", "sigma_k_loc")))
 )
 
 
@@ -321,7 +321,7 @@ targets_wrangling <- list(
 ## Fitting pipeline ------------------------------------------------------
 targets_fits <- list(
   tar_target(data_stan,
-             formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh, timestep = 1, parfactor = 1)),
+             formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh)),
   
   tar_target(file_model_transitions,
              "Model_2021-03_ba/Model_transitions.stan",
@@ -361,9 +361,9 @@ targets_fits <- list(
   
   ## Prior predictive tests that rely on currently out-commented generated quantities
   # tar_target(priorsim_test,
-  #            drawTest(model = model_test, data_stan = data_stan_priors, method = "sim", initfunc = 0.1, gpq = FALSE, fitpath = dir_fit)),
+  #            drawTest(model = model_test, data_stan = data_stan_priors_offset, method = "sim", initfunc = 0.1, gpq = FALSE, fitpath = dir_fit)),
   # tar_target(plots_predictions_priorsim_test,
-  #            plotPredictions(cmdstanfit = priorsim_test, data_stan_priors, check = "prior")),
+  #            plotPredictions(cmdstanfit = priorsim_test, data_stan_priors_offset, check = "prior")),
 
   tar_target(fit_test_sansgq,
              fitModel(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.05, gpq = FALSE,
@@ -432,7 +432,7 @@ targets_posterior <- list(
   # tar_target(plots_predictions_prior_test,
   #            plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
   tar_target(plots_predictions_posterior_test,
-             plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "posterior", path = dir_publish)),
+             plotPredictions(cmdstanfit = fit_test, data_stan_priors_offset, check = "posterior", path = dir_publish)),
   tar_target(plots_conditional_test,
              plotConditional(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plot_contributions_test,

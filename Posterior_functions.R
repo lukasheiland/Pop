@@ -250,7 +250,6 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
 
 ## generateResiduals --------------------------------
 # cmdstanfit  <- tar_read("fit_test")
-# cmdstanfit  <- tar_read("fit")
 # data_stan_priors  <- tar_read("data_stan_priors")
 # path  <- tar_read("dir_fit")
 generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
@@ -264,6 +263,7 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
   
   Longdata <- attr(data_stan_priors, "Long")
   grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
+  offset <- data_stan_priors$offset_data
   
   residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = y_hat, integerResponse = T)
 
@@ -277,7 +277,55 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
   plot(residuals, form = grp, quantreg = T, smoothScatter = F)
   dev.off()
   
+  # png(paste0(path, "/", basename_cmdstanfit, "_", "DHARMa_offset", ".png"), width = 2200, height = 800)
+  # plot(residuals, form = offset, quantreg = T, smoothScatter = F)
+  # dev.off()
+  
   return(residuals)
+}
+
+
+## generatePredictiveChecks --------------------------------
+# cmdstanfit  <- tar_read("fit_test")
+# data_stan_priors_offset  <- tar_read("data_stan_priors_offset")
+generatePredictiveChecks <- function(cmdstanfit, data_stan_priors_offset, path) {
+  
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  
+  Draws <- cmdstanfit$draws(variables = c("y_sim", "y_hat_rep", "y_hat_rep_offset")) %>%
+    as_draws_rvars()
+  
+  d <- data_stan_priors_offset
+  L <- attr(data_stan_priors_offset, "Long") %>%
+    bind_cols(y_sim = E(Draws$y_sim),
+              y_hat_rep = E(Draws$y_hat_rep),
+              y_hat_rep_offset = E(Draws$y_hat_rep_offset)
+              )
+  
+  # grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
+  
+  ## Fine 
+  # plot(y_sim ~ y_hat_rep_offset, data = L)
+  #   ## -> simulation works
+  # plot(y_hat_rep_offset ~ I(y_hat_rep * offset), data = L)
+  #   ## -> offset works
+  # plot(sqrt(L$y_hat_prior), sqrt(d$y_hat_prior[d$rep_yhat2y]))
+  # plot(sqrt(y_hat_rep) ~ sqrt(y_hat_prior), data = L) ## the former is the extracted from the model, the latter is the correct data
+  #   ## -> rep_yhat2y is correct, all indexing is correct
+  # plot(sqrt(y_sim) ~ sqrt(y_hat_prior * offset), data = L)
+  # plot(sqrt(y_hat_prior_rep) ~ sqrt(y_hat_prior * offset), data = L)
+  #   ## -> the model works fine
+  
+  ## But the averaging is problematic. This should be exactly the same.
+  # plot(log1p(y_sim) ~ log1p(y), data = L)
+  # plot(log1p(y_hat_rep_offset) ~ log1p(y), data = L)
+    
+  # lattice::xyplot(log1p(y_sim) ~ log1p(y_hat_prior) | t_which, data = L)
+  # lattice::xyplot(log1p(y_hat_rep) ~ log1p(y_prior) | pop + t_which, data = L)
+  
+  # plot(y_hat_rep_offset ~ y_hat_rep, data = L)
+  
+  return(L)
 }
 
 
@@ -705,7 +753,7 @@ plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = 
     }
   }
 
-  densplots <- list("predictions" = bayesplot::ppc_dens_overlay_grouped(log(data), log(Sim), group = grp))
+  densplots <- list("predictions" = bayesplot::ppc_dens_overlay_grouped(log1p(data), log1p(Sim), group = grp))
   
   if (match.arg(check) == "posterior") {
 
