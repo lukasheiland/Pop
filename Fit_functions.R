@@ -61,6 +61,9 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     group_by(clusterid, obsid, stage, tax) %>%
     summarize(time = first(time),
               n_plots = n_distinct(plotid),
+              
+              across(paste("s", taxon_s, sep = "_"), first),
+              
               across(c(count_obs, count_ha, count_ha_r,
                        ba_obs, ba_ha, ba_ha_r,
                        offset, offset_avg, offset_q1, offset_q3),
