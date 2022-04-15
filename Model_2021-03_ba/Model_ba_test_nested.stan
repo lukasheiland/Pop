@@ -83,12 +83,12 @@ functions {
                 // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_log, vector h_log, array[] vector L_loc, matrix R_log, matrix S_log,
                 vector ba_a_avg, real ba_a_upper,
                 array[] int n_obs, array[] int n_yhat,
-                int N_species, int N_pops, int L_y, int N_locs,
+                int N_species, int N_pops, int L_yhat, int N_locs,
                 array[] int i_j, array[] int i_a, array[] int i_b) {
 
     int pos_times = 1; // segmenting times[L_y]
     int pos_yhat = 1;
-    vector[L_y] y_hat;
+    vector[L_yhat] y_hat;
 
     for (loc in 1:N_locs) {
       int n_o = n_obs[loc];
@@ -108,7 +108,7 @@ functions {
                                  i_j, i_a, i_b);
       
   
-      // Flattening the matrix into a vector for the location and append it to y_hat local vector yhat[m], and then into function-global vector y_hat[L_y].
+      // Flattening the matrix into a vector for the location and append it to y_hat local vector yhat[m], and then into function-global vector y_hat[L_yhat].
       // to_vector converts matrix to a column vector in column-major order.
       y_hat[pos_yhat:(pos_yhat - 1 + n_y)] =
                        to_vector(States[ , segment(times, pos_times, n_o)]); // only select columns with times in the data
@@ -120,7 +120,34 @@ functions {
 
   return y_hat; // Structure: locations/observations/pops(==stages/species)
   }
-    
+  
+  
+  ////# Unpack the NULL model for state debugging
+  // vector unpack_null(array[] vector state_init, array[] vector state_2, array[] vector state_3, array[] int time_max, array[] int times,
+  //               // vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector l_log, vector r_log, vector s_log,
+  //               vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, array[] vector L_loc, vector r_log, vector s_log,
+  //               // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_log, vector h_log, array[] vector L_loc, matrix R_log, matrix S_log,
+  //               vector ba_a_avg, real ba_a_upper,
+  //               array[] int n_obs, array[] int n_yhat,
+  //               int N_species, int N_pops, int L_yhat, int N_locs,
+  //               array[] int i_j, array[] int i_a, array[] int i_b) {
+  // 
+  //   int pos_yhat = 1;
+  //   vector[L_yhat] y_hat;
+  // 
+  //   for (loc in 1:N_locs) {
+  //     int n_y = n_yhat[loc];
+  //     
+  //     matrix[N_pops, 3] States = simulate_null(state_init[loc], state_2[loc], state_3[loc], N_pops);
+  //     
+  //     y_hat[pos_yhat:(pos_yhat - 1 + n_y)] = to_vector(States[, 1:n_obs[loc]]);
+  //     
+  //     pos_yhat = pos_yhat + n_y;
+  //   }
+  // 
+  // return y_hat;
+  // }
+  
   
   //// Difference equations simulated up to the fix point given a maximum tolerance over all states.
   // Expects a state vector[N_pops]
@@ -450,7 +477,8 @@ data {
   
   //// N — number of observations/groups; L - lengths of ragged vectors
   int<lower=0> L_times; // locations/obsid
-  int<lower=0> L_y; // locations/resurveys/pops/locs
+  int<lower=0> L_yhat; // locations/surveys/pops
+  int<lower=0> L_y; // locations/resurveys/pops/plots
   // int<lower=0> L_plots; // locations/plots
   // int<lower=0> L_init;
   // int<lower=0> L_a2b; // locations/obsid-1/n_species
@@ -473,7 +501,7 @@ data {
   array[N_species] int<lower=1> i_b;
 
   //// rep - repeat indices within groups for broadcasting to the subsequent hierarchical levels
-  //+ array[L_y] int<lower=1> rep_yhat2y; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
+  array[L_y] int<lower=1> rep_yhat2y; // repeat predictions on level "locations/resurveys/pops" n_plots times to "locations/pops/resurveys/plots"
   array[L_y] int<lower=1> rep_pops2y; // factor (1:6)
   //: array[L_y] int<lower=1> rep_obsidPop2y; // factor (1:6)
   // array[L_y] int<lower=1> rep_protocol2y; // factor (1:5)
@@ -717,16 +745,17 @@ transformed parameters {
   //  }
   
   
-  vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times, //* unpack(state_init_log, time_max, times,
+  vector<lower=0>[L_yhat] y_hat = unpack(state_init, time_max, times, //* unpack(state_init_log, time_max, times, ////# vector<lower=0>[L_yhat] y_hat = unpack_null(state_init, state_2, state_3, time_max, times, 
                                 // b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, l_log, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 // b_log, c_a_log, c_b_log, C_j_log, G_log, h_log, L_loc, R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat, // varying numbers per loc
-                                N_species, N_pops, L_y, N_locs, // fixed numbers
+                                N_species, N_pops, L_yhat, N_locs, // fixed numbers
                                 i_j, i_a, i_b);
                                 
-  vector[L_y] y_hat_offset = y_hat .* offset_data; // offset_zeta
+  vector[L_y] y_hat_rep = y_hat[rep_yhat2y];
+  vector[L_y] y_hat_rep_offset = y_hat_rep .* offset_data; // offset_zeta
   
   vector[L_y] phi_obs_rep = phi_obs[rep_pops2y];
   //: vector[L_y] phi_obs_rep = phi_obs[rep_obsidPop2y];
@@ -802,16 +831,16 @@ model {
 
   // a2b ~ poisson(y_hat[rep_yhat2a2b] .* exp(h_log)[rep_species2a2b] .* timediff);
   
-  y ~ neg_binomial_2(y_hat_offset, phi_obs_rep);
-  // y ~ poisson(y_hat_offset);
+  y ~ neg_binomial_2(y_hat_rep_offset, phi_obs_rep);
+  // y ~ poisson(y_hat_rep_offset);
 
   
   // y ~ gamma_0(y_hat[rep_yhat2y], alpha_obs[rep_pops2y], theta, L_y);
   
   // for(l in 1:L_y) {
   //   //..
-  //   y[l] ~ neg_binomial_0(y_hat_offset[l], phi_obs_rep[l], theta_rep[l]);
-  //   //& y[l] ~ poisson_0(y_hat_offset[l], theta_rep[l]);
+  //   y[l] ~ neg_binomial_0(y_hat_rep_offset[l], phi_obs_rep[l], theta_rep[l]);
+  //   //& y[l] ~ poisson_0(y_hat_rep_offset[l], theta_rep[l]);
   // }
 }
 
@@ -826,10 +855,10 @@ generated quantities {
   
   //// y_hat_rep generated in transformed parameters
   
-  y_sim = neg_binomial_2_rng(y_hat_offset, phi_obs_rep);
+  y_sim = neg_binomial_2_rng(y_hat_rep_offset, phi_obs_rep);
   //.. y_sim = neg_binomial_0_rng(y_hat_rep, phi_obs_rep, theta_rep, L_y);
-  //& y_sim = poisson_0_rng(y_hat_offset, theta_rep, L_y);
-  // y_sim = poisson_rng(y_hat_offset);
+  //& y_sim = poisson_0_rng(y_hat_rep_offset, theta_rep, L_y);
+  // y_sim = poisson_rng(y_hat_rep_offset);
 
 
   //—————————————————————————————————————————————————————————————————————//
@@ -901,7 +930,8 @@ generated quantities {
   
   
 //  //// Prior simulation
-//  vector<lower=0>[L_y] y_hat_prior;
+//  vector<lower=0>[L_yhat] y_hat_prior;
+//  vector<lower=0>[L_y] y_hat_prior_rep;
 //  vector<lower=0>[L_y] y_hat_prior_rep_offset;
 //  // vector<lower=0>[L_y] offset_zeta_prior;
 //  array[L_y] real<lower=0> y_prior_sim;
@@ -920,13 +950,14 @@ generated quantities {
 //                       vector_b_log_prior, vector_c_a_log_prior, vector_c_b_log_prior, vector_c_j_log_prior, g_log_prior, h_log_prior, L_loc_prior, r_log_prior, vector_s_log_prior, // rates matrix[N_locs, N_species]; will have to be transformed
 //                       ba_a_avg, ba_a_upper,
 //                       n_obs, n_yhat, // varying numbers per loc
-//                       N_species, N_pops, L_y, N_locs, // fixed numbers
+//                       N_species, N_pops, L_yhat, N_locs, // fixed numbers
 //                       i_j, i_a, i_b);
 // 
-//  y_hat_prior_offset = y_hat_prior .* offset_data; // offset_zeta_prior
+//  y_hat_prior_rep = y_hat_prior[rep_yhat2y];
+//  y_hat_prior_rep_offset = y_hat_prior_rep .* offset_data; // offset_zeta_prior
 //
 //
-//  y_prior_sim = neg_binomial_2_rng(y_hat_prior_offset, phi_obs_prior[rep_pops2y]);
+//  y_prior_sim = neg_binomial_2_rng(y_hat_prior_rep_offset, phi_obs_prior[rep_pops2y]);
   
   
   //—————————————————————————————————————————————————————————————————————————//
@@ -1170,11 +1201,11 @@ generated quantities {
 	//   		  normal_lpdf(s_log | prior_s_log[1], prior_s_log[2]); // student_t_lpdf(s_log | nu_student, prior_s_log[1], prior_s_log[2]);
 	//       			  
     // // for(l in 1:L_y) {
-    // //   log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_offset[l], phi_obs_rep[l], theta_rep[l]);
+    // //   log_lik[l] = neg_binomial_0_lpmf(y[l] | y_hat_rep[l], phi_obs_rep[l], theta_rep[l]);
     // // }
     // 
     // for(i in 1:L_y) {
-    //   log_lik[i] = neg_binomial_2_lpmf(y[i] | y_hat_offset[i], phi_obs_rep[i]); // offset_zeta
+    //   log_lik[i] = neg_binomial_2_lpmf(y[i] | y_hat_rep_offset[i], phi_obs_rep[i]); // offset_zeta
     // }
   
   } // END: if(generateposteriorq)

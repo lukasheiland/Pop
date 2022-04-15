@@ -252,14 +252,14 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
 # cmdstanfit  <- tar_read("fit_test")
 # data_stan_priors  <- tar_read("data_stan_priors")
 # path  <- tar_read("dir_fit")
-generateResiduals <- function(cmdstanfit, data_stan_priors, path) {
+generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = "y_hat_offset", path) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
 
   Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
   Sim[is.na(Sim)] <- 0
   y <- data_stan_priors$y
-  y_hat <- cmdstanfit$draws(variables = "y_hat_rep_offset", format = "draws_matrix") %>% apply(2, median, na.rm = T)
+  y_hat <- cmdstanfit$draws(variables = yhatvar, format = "draws_matrix") %>% apply(2, median, na.rm = T)
   
   Longdata <- attr(data_stan_priors, "Long")
   grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
@@ -292,14 +292,14 @@ generatePredictiveChecks <- function(cmdstanfit, data_stan_priors_offset, path) 
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
-  Draws <- cmdstanfit$draws(variables = c("y_sim", "y_hat_rep", "y_hat_rep_offset")) %>%
+  Draws <- cmdstanfit$draws(variables = c("y_sim", "y_hat", "y_hat_offset")) %>%
     as_draws_rvars()
   
   d <- data_stan_priors_offset
   L <- attr(data_stan_priors_offset, "Long") %>%
     bind_cols(y_sim = E(Draws$y_sim),
-              y_hat_rep = E(Draws$y_hat_rep),
-              y_hat_rep_offset = E(Draws$y_hat_rep_offset)
+              y_hat = E(Draws$y_hat),
+              y_hat_offset = E(Draws$y_hat_offset)
               )
   
   # grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
@@ -746,7 +746,7 @@ plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = 
         as_draws_rvars() # ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
       
     } else {
-      Sim <- draws$y_hat_rep_offset
+      Sim <- draws$y_hat_offset
       
       ## Fix <- 
       
