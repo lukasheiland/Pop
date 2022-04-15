@@ -33,8 +33,9 @@ tar_make(c("fit_test", "summary_test"))
 tar_make_future(c("summary_test",
                   "summary_states_test",
                   "residuals_test",
+                  "plots_predictions_posterior_test",
                   "plot_contributions_test",
-                  "plots_parameters_test",
+                  # "plots_parameters_test",
                   "plots_states_test"),
                 workers = if(onserver) 8 else 3, reporter = "timestamp")
 

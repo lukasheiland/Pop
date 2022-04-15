@@ -264,7 +264,7 @@ joinStages <- function(B, J,
                      count_ha = sum(count_ha, na.rm = T),
                      count_obs = sum(count_obs, na.rm = T),
                      ba_ha = sum(ba_ha, na.rm = T),
-                     ba_obs = sum(ba_ha, na.rm = T)
+                     ba_obs = sum(ba_obs, na.rm = T)
                      ) %>%
     mutate(stage = "BA")
     ## recovery check
