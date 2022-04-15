@@ -170,12 +170,8 @@ Data_seedlings|stem|7507e5e6db32d6c6|81db27c755665335|77c4026916e7e3a6|-39657151
 Seedlings|stem|7f165e6f6e2e4e25|e366b261bd7792c2|b5280d6f55de9ba5|-185150805||t19042.5440364732s|e7f920a68f5d34f3|84977|rds|vector|||16.474|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 taxon_s|stem|33ea506f75238cc9|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t19042.5441957781s|e3871644244b3637|115|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|11.783|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 Env_cluster|stem|e9b4523543016b55|d9de533c708aefa0|04617d440238533a|-1840226744||t19042.5444131468s|9b01f5e608a77422|1022676|rds|vector|||12.869|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-fits_Seedlings_s_fed6aa5a|branch|874848c9d72701db|f4cb976eb12ca454|c62cb6789d9b7f17|820652953||t19042.5445697315s|6e03bd47952a192b|27364711|rds|list|fits_Seedlings_s||136.675|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 weakpriors|stem|591d7934aae4e881|ac5025df4f62555b|9ee3ac5a8444da29|-1879221107||t19042.5447368754s|a02a8e2007330cdf|142|rds|vector|||12.271|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-fits_Seedlings_s_3d11a1d4|branch|1693dceb42962916|f4cb976eb12ca454|fb975ed488904c00|-828097626||t19042.5450030349s|ca1d3938ad7cc389|27443061|rds|list|fits_Seedlings_s||178.922|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-fits_Seedlings_s|pattern|21e28a2a62eeba4d|f4cb976eb12ca454||-297493343||||54807772|rds|list||fits_Seedlings_s_3d11a1d4*fits_Seedlings_s_fed6aa5a|315.597||
 Data_big_status|stem|ae0f974436e6977a|eff25cb053505d95|69a84043a87fa2b3|813772221||t19042.5453808096s|c78be29eeba71bae|16437186|rds|vector|||18.774|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
-Seedlings_s|stem|99ac0e6e2e8cbf58|46a9595e49329d8a|b0c0854cb3c104e5|-142007958||t19042.5457958094s|d4b818a5c4b96cab|108462|rds|vector|||18.902|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 file_Seedlings_s|stem|99ac0e6e2e8cbf58|75dfe1ce02358392|f73dfd3ab08fbdda|1895998084|Data/Seedlings_s.rds|t19042.5460012448s|d4b818a5c4b96cab|108462|file|vector|||15.337|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 Data_Seedlings_s|stem|99ac0e6e2e8cbf58|852468eeb9c067aa|f70dcc699deebc78|-1136862534||t19042.546183554s|d4b818a5c4b96cab|108462|rds|vector|||13.08|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 dir_fit|stem|482da82f9e3e25d5|6edb4c0accf3f5e3|f47bb13d95a320a1|-1519351870||t19042.5463656929s|93a4d4dc4116d568|64|rds|vector|||13.561|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
@@ -206,22 +202,26 @@ summarizeNFI|function|380479520baaf034||||||||||||||
 Summary_NFIs|stem|bf4767defc58bdf7|6d4bfcb0db0b4056|586374e8031fec20|-384350677||t19065.9017133557s|7c08b6911a348b50|283|rds|vector|||52.621|Paket Rcpp wurde unter R Version 4.1.2 erstellt|
 themefunction|stem|71e66378d732bc67|add93fc0c5380017|a46fc67528f5eeb3|736163043||t19068.8411013786s|1d3248e1735e2915|450|rds|vector|||17.046|Paket showtext wurde unter R Version 4.1.2 erstellt|
 twocolors|stem|6d31d1f2a431fa92|2217689ced3bd72f|a3dad144c40657ed|-1662788884||t19068.8411015039s|425d385953b3c542|67|rds|vector|||0.001||
-fits_Seedlings|stem|226210a75ad39e05|2a54497f589de23a|7ec6b870c39b29cc|809945682||t19068.8865102408s|7d5d4396b70936f4|6914987|rds|list|||333.738|Paket showtext wurde unter R Version 4.1.2 erstellt|
 map_select|stem|7c98ed311ffe58a9|405ae3dfeac53ce5|f634efc4a51aeb0f|-1891313386||t19074.9490624121s|e0b02cdb5c575a2c|1074832893|rds|vector|||514.35|Removed 5526506 rows containing nonfinite values stat_spatial_rgb.|
 data_stan|stem|833081e3f59e64e7|0dfd980f22e35cc7|ce4748764b2c0e85|1263995833||t19087.5553909615s|c86b43e44c5cdad1|1286381|rds|vector|||23.21|Paket showtext wurde unter R Version 4.1.2 erstellt|
 fit_g|stem|e2c15180f8ea2195|07b78dae8d3964ca|4273d22f788894c8|128175024||t19087.5554964406s|efd982b4ca5cca41|93650|rds|vector|||9.049||
 fit_h|stem|0386c22032fc40e0|ffa7bcb3ba3f6a1c|4273d22f788894c8|468382782||t19087.5555809756s|64381284892f02d0|93094|rds|vector|||7.227||
+fits_Seedlings_s_3d11a1d4|branch|5b074d7c6f30418f|26a5c41c440dda06|21c92e731be9acf1|-828097626||t19095.397394957s|16ae9db5782d5cf2|27442255|rds|list|fits_Seedlings_s||154.525|Paket showtext wurde unter R Version 4.1.2 erstellt|
+fits_Seedlings_s_fed6aa5a|branch|ea65c189d6d414e6|26a5c41c440dda06|0377e0e6da1c3130|820652953||t19095.3986492399s|fd5ccd74b8252a94|27364709|rds|list|fits_Seedlings_s||106.522||
+fits_Seedlings_s|pattern|83b7772d7786346b|26a5c41c440dda06||-297493343||||54806964|rds|list||fits_Seedlings_s_3d11a1d4*fits_Seedlings_s_fed6aa5a|261.047||
+Seedlings_s|stem|02aaa8fcf3b20a86|46a9595e49329d8a|ba7411ba6faeedfa|-142007958||t19095.3987138362s|e1486b44c3c277bd|108458|rds|vector|||5.49||
+fits_Seedlings|stem|226210a75ad39e05|2a54497f589de23a|da0276e75a1a9925|809945682||t19068.8865102408s||6914987|rds|list|||7.676|CmdStans precompiled header PCH files may need to be rebuilt.If your model failed to compile please run rebuild_cmdstan.If the issue persists please open a bug report.|An error occured during compilation See the message above for more information.
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 theme_fagus|function|32f50a117793eef2||||||||||||||
-generateResiduals|function|ee65238c9cfa3743||||||||||||||
+generateResiduals|function|87ac429e1e704c70||||||||||||||
 wrangleSeedlings|function|d0b21d7b934c215b||||||||||||||
 summarizeNFIs|function|c53d94858a18a003||||||||||||||
 formatLoc|function|35334b8eccf715bb||||||||||||||
 saveSeedlings_s|function|59d33f1cf2682535||||||||||||||
 fitSeedlings|function|cfbf644d2910f3af||||||||||||||
 countTransitions|function|658905ce538460fd||||||||||||||
-plotPredictions|function|a40df41fcc2f1bf9||||||||||||||
+plotPredictions|function|b9ca6102554fedc1||||||||||||||
 wrangleSeedlings_s|function|debfad99e56a4210||||||||||||||
 generateTrajectories|function|e87a7f104a068517||||||||||||||
 targets_paths|object|8212a4e81d5321bb||||||||||||||
@@ -243,7 +243,7 @@ targets_wrangling|object|d97ddf30bb36837f||||||||||||||
 fitTransition|function|bb257a46eefdef87||||||||||||||
 prepareBigData|function|c326577a0d554a48||||||||||||||
 prepareSmallData|function|f090fae6e919e399||||||||||||||
-formatStanData|function|57e01e10bd6e5688||||||||||||||
+formatStanData|function|25cefdbd30fc70f3||||||||||||||
 targets_posterior|object|cde1b7581c574502||||||||||||||
 onserver|object|1c6ff5e61609eb8e||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
@@ -272,5 +272,5 @@ summarizeFit|function|596f287c483b0cf4||||||||||||||
 summarizeStates|function|0048531b54238cd9||||||||||||||
 mapClusters|function|8d31c6cee8f87b66||||||||||||||
 plotSurfaces|function|f4687cd7182f6c59||||||||||||||
-file_model_test|stem|a81d5c3ef53b3eb4|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t19089.7825042089s|7ffbfefd8f7448e0|53661|file|vector|||14.18|Paket showtext wurde unter R Version 4.1.2 erstellt|
-model_test|stem|26e47dbd5ba368cc|a3aa00c06cce5e55|961e0c4996d4af42|-1162399619||t19089.7837946271s|f7e00c735b4b2679|21485|rds|vector|||71.793||
+file_model_test|stem|a81d5c3ef53b3eb4|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t19089.784314842s|7ffbfefd8f7448e0|53661|file|vector|||14.18|Paket showtext wurde unter R Version 4.1.2 erstellt|
+model_test|stem||a3aa00c06cce5e55|961e0c4996d4af42|-1162399619||t19095.4957478336s||0|rds|vector|||16.377|CmdStans precompiled header PCH files may need to be rebuilt.If your model failed to compile please run rebuild_cmdstan.If the issue persists please open a bug report.|An error occured during compilation See the message above for more information.
