@@ -77,10 +77,7 @@ fits_Seedlings_s_1fd6f041|branch|0077b9afe9dc5dc8|a9746bd949c31e92|95c02b0164064
 sensitivity_test|stem|e2ee732097c4d963|0d38d214cf374056|b3f4b4818286151f|-16223955||t19006.5288696364s|8f19145563e08cbb|781|rds|vector|||661.899|Some Pareto k diagnostic values are too high. See helpparetokdiagnostic for details.|
 plot_powerscale_test|stem|2031b839e3725f79|b1b925041b7edb00|0399a7bf2c74adba|461645073||t19006.5291111205s|d3123a63bd92d462|62529283|rds|vector|||658.53|Computation failed in stat_densityweights must all be finite|
 parname_sim|stem|bad1609cad28eb39|e5a26df5069250c5|c1199e0677413c87|924448756||t19013.8847361338s|3e4acf685da8f273|84|rds|vector|||6.242||
-fits_Seedlings_s_5a6bb230|branch|0077b9afe9dc5dc8|f4cb976eb12ca454|f4fb026522a023e7|-686661265||t19017.6153053112s|a4ed1d7e2f5abf14|27348697|rds|list|fits_Seedlings_s||59.024||
-fits_Seedlings_s_3597c43f|branch|b09674ff6deda8c1|f4cb976eb12ca454|5790f23388221d12|-908828042||t19017.6153217003s|fec207b92648f3bd|27419493|rds|list|fits_Seedlings_s||52.699||
 plots_contributions_test|stem|1c8f743b1bb492c7|5c1d4beff9e048c5|75e1003cd9b15e23|-785793567||t19017.7237639365s|0f9b18355e9d902e|31559892|rds|vector|||104.101||
-plots_predictions_posterior_test|stem|025e559286687f95|0d0dce247df7e7f1|0fad34f9cb73f669|1289869218||t19017.7292451997s|6fcfac04fab159b3|95342339|rds|vector|||478.424|Removed 12785 rows containing nonfinite values stat_density.|
 Twostates_test|stem|ba05f16cfe0b4eed|05366304baf9b807|7cd81004b9d4394b|1850607635||t19018.471680767s|35f1337aec2a0549|15540985|rds|vector|||94.591||
 plots_twostates_test|stem|75b63f82198357bb|a2feabf2f185ffab|c4cb394d13d1faa1|2129742285||t19018.4731786074s|32b76e5493c2b8ca|301728357|rds|vector|||42.154||
 plotTwoStates|function|12ad5b72b6423c7b||||||||||||||
@@ -92,136 +89,136 @@ themefun|function|296fedc83627cb90||||||||||||||
 Trajectories_avg_L_test|stem|7180bead0ba56e34|1b90c4a128ab9253|51b16daac35e8fcc|36404172||t19024.8739912465s|3a7d542059a99270|179500942|rds|vector|||930.744||
 plot_trajectories_quantiles_test|stem|f7cafc3fba16a0dd|39aa77b592c841f0|ccd721bc6ef8dfe2|862697406||t19025.8925101867s|cc0bed7353e52387|131865068|rds|vector|||44.458||
 Trajectories_quantiles_test|stem|b09159055db2eab0|5ccaaa83e947d97f|58b644eb679fcf83|-494082948||t19025.9576538978s|55cbe595dc4c691a|80728255|rds|vector|||144.956||
-taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t19042.5417824074s|425d385953b3c542|67|rds|vector|||0.001||
-file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18937.6577314815s|e684589703d38eb9|5533814|file|vector|||1.968||
-file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18860.9370833333s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
-Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t19042.5434953704s|02e584d87ae1e0d3|23277361|rds|vector|||12.618||
-Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t19042.5424537037s|e684589703d38eb9|5533814|rds|vector|||4.625||
-predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927||t19042.5426273148s|0e696b453c03de61|85|rds|vector|||1.703||
-Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t19042.5428587963s|102883cb8e914333|1060126|rds|vector|||0.013||
-file_DE_small|stem|2307d704c5a9a9b5|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18860.9348958333s|2895e6fb9317973a|15170066|file|vector|||2.772||
-Data_small|stem|2307d704c5a9a9b5|7ad74de1b1caac4c|db3a691ca8ffa423|-1821452620||t19042.5502662037s|2895e6fb9317973a|15170066|rds|vector|||38.821||
-file_DE_big_status|stem|ae0f974436e6977a|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18937.6580555556s|c78be29eeba71bae|16437186|file|vector|||6.001||
-dir_publish|stem|0df06d35522c14c1|74847f6473686a7d|f47bb13d95a320a1|1910222810||t19052.9715676162s|d586f792a395948c|68|rds|vector|||5.966||
-radius_max|stem|c46e3c35ca179837|e9dfe26516914502|ef46db3751d8e999|-1596622531||t19052.9715676625s|c9aaea90a821e608|53|rds|vector|||0.001||
-threshold_dbh|stem|8d9fc41a1bd26882|9196226201acf742|ef46db3751d8e999|1977269053||t19052.9715677551s|b6d2e014b07bc296|51|rds|vector|||0.001||
-regclass_select|stem|4f99d0dba4f62537|54c72c068a27683f|a3dad144c40657ed|-201776155||t19052.9715678014s|2caa9f84a7ad3d6c|138|rds|vector|||0.001||
-taxon_s|stem|7d9ec325d02471ed|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t19052.9715679403s|758d7d51407f572d|117|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|0.001||
-Data_big_status|stem|468cc542519ede06|eff25cb053505d95|69a84043a87fa2b3|813772221||t19052.9716563663s|95ceefa66999ef97|16437188|rds|vector|||3.214||
-Data_small_area|stem|d778fb09592822f2|a8bac5d0e8d100ab|d3a445d72a90df53|1655197218||t19052.9725569686s|3ff0509f161cdf38|2993071|rds|vector|||44.146||
-Data_big_area|stem|29f7d42314e5981d|3f85c4389924c6e4|edfbfeac5364eb56|1906756081||t19052.9730729874s|ff2bab37e91ae490|17975434|rds|vector|||35.633|all weights equal to zero|
-Env_cluster|stem|b2c4ed441e24d7b0|d9de533c708aefa0|04617d440238533a|-1840226744||t19052.9730889596s|8c69027ecd2c8fc1|1022677|rds|vector|||0.952||
-Stages|stem|d7fcedb2154f724f|8ffac6f908a3e1b2|8ce0e4718749afd3|-2131128411||t19052.9733109042s|f5148194e8ec92b0|27344621|rds|vector|||14.406||
-Stages_env|stem|c544db431a6088af|f77ba367cf3d8588|d6c712195211d1a6|818674129||t19052.973565858s|51a26271fcfb62e9|40620235|rds|vector|||12.921||
-file_SK_fullgrid|stem|809fa13ec9ce7b0e|f79cf039c1c21b65|ef46db3751d8e999|-1632469839|Inventory.nosync/SK NIML/Data/SK_NIML_complete_fullgrid.rds|t18992.6515972222s|fc28703884ef9afb|940983|file|vector|||6.18||
-offsetname|stem|f2c7049b6f9c82b5|016d9946cc457d6c|f2d0562274fe86e6|1802663475||t19052.9773546094s|cc81a7537cb02258|59|rds|vector|||6.363||
-file_SK|stem|7507e5e6db32d6c6|813dfca83fca4164|ef46db3751d8e999|236759130|Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds|t18992.6515856481s|c4f0230669bdeffd|929450|file|vector|||6.206||
-dir_fit|stem|10163f008672508d|6edb4c0accf3f5e3|f47bb13d95a320a1|-1519351870||t19052.9774379428s|1d635f53cb385f1d|65|rds|vector|||6.374||
-Data_seedlings_fullgrid|stem|d21fc94bf96a3cdb|494b544145cc3638|8e583401a66bffe4|-2043843808||t19052.9774808131s|6f4a034ac841c2c5|940986|rds|vector|||7.132||
-Data_seedlings|stem|72e0305cdc4a9f0b|81db27c755665335|77c4026916e7e3a6|-396571518||t19052.9775123409s|c4f0230669bdeffd|929450|rds|vector|||7.237||
-rep_exclude|stem|10733b5b657a9c10|ed1c86075f17d5ac|a3dad144c40657ed|1847664984||t19052.9776591002s|6750e7a20a1b121a|109|rds|vector|||5.526||
-helpers_exclude|stem|6281f07252fa7d38|3020757f9fedbc90|a3dad144c40657ed|1133870334||t19052.9776594706s|3a40abf18adc8861|196|rds|vector|||0||
-simnames_prior|stem|3a0fba674362ca10|dc925e066ee03273|a3dad144c40657ed|-1993142823||t19052.9776595632s|e961a0bcff3caad6|91|rds|vector|||0||
-seedlings_fullgrid|stem|2d790ca7dc02f788|a0f0214426cbce9e|ae81b03cc5912ff0|-244538027||t19052.9782589615s|4d494e8414ee5d64|102919|rds|list||seedlings_fullgrid_e3ff7129*seedlings_fullgrid_96857844|21.918||
-Seedlings|stem|f58dc985e280eae4|e366b261bd7792c2|93703a90dcd9f7c1|-185150805||t19052.9782931745s|e7f920a68f5d34f3|84977|rds|vector|||2.551||
 fits_Seedlings_s_3996df3c|branch|f49380cb122e9596|f4cb976eb12ca454|b59ca2e465be0a33|-163415829||t19052.979392434s|ec176b93f6f87235|27443275|rds|list|fits_Seedlings_s||93.856||
 fits_Seedlings_s_564de7a1|branch|282427c77016bc8c|f4cb976eb12ca454|bd5099ebf7739691|-1246925773||t19052.9802226657s|3935448fa680f776|27365463|rds|list|fits_Seedlings_s||70.594||
-fits_Seedlings_s|pattern|e081de66d0ca9d3c|f4cb976eb12ca454||-297493343||||54808738|rds|list||fits_Seedlings_s_3996df3c*fits_Seedlings_s_564de7a1|164.45||
-Seedlings_s|stem|d71f73ebb13345e7|46a9595e49329d8a|e020fabb41d74473|-142007958||t19052.9802519713s|d45528eb1842c15a|108449|rds|vector|||2.492||
 file_Seedlings_s|stem|99ac0e6e2e8cbf58|dc230a980ca3a26a|3357d819e8415563|1895998084|Data/Seedlings_s.rds|t19042.5459953704s|d4b818a5c4b96cab|108462|file|vector|||0||
-parname|stem|0d9b674eff9549eb|2785d62b1e1ee7d8|a3dad144c40657ed|-1053533873||t19052.9806627584s|dfd0d40dc0c5171b|95|rds|vector|||6.605||
-simnames_posterior|stem|2156d7c919b2dbe7|20c532c088c7a729|a3dad144c40657ed|618692093||t19052.9806628973s|2da402a946d20212|354|rds|vector|||6.521||
-themefunction|stem|3b57410add2c2d11|add93fc0c5380017|a46fc67528f5eeb3|736163043||t19052.9806641936s|1c0ad539cb0fc235|451|rds|vector|||6.491||
-parname_plotorder|stem|bdc93b9d7eb8903b|1eea9bc7afc80905|a3dad144c40657ed|701125707||t19052.9806642399s|7dead8e41ac4f62d|130|rds|vector|||6.18||
 Data_Seedlings_s|stem|f0cc9f380f4552e0|852468eeb9c067aa|f70dcc699deebc78|-1136862534||t19052.9806648418s|d727aa0555c8bdec|108461|rds|vector|||6.402||
-file_DE_geo|stem|8c4850209e6f9d26|60bce8164256a1d6|ef46db3751d8e999|-1810833906|Inventory.nosync/DE BWI/Data/DE_BWI_geo.rds|t19061.9515871704s|0e64d80332102d2f|1267224|file|vector|||6.362||
-Data_geo|stem|8c4850209e6f9d26|a5740b3bcb5e0ba0|2959049fc0f3ea1a|-1122140380||t19061.9546308611s|0e64d80332102d2f|1267224|rds|vector|||5.87||
 Data_Stages_s|stem|9cc6d83db54c9a48|62bcc9c51377714f|cf16399cbd44606d|964763136||t19061.9639319028s|4f2a5b0d40aa8c61|45899365|rds|vector|||11.941||
-file_model_transitions|stem|3161effb1b30fa35|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t19048.6501273148s|2f9d4df253affa62|891|file|vector|||6.009||
-model_transitions|stem|8835509051bb21ed|6f5288cead19f3b4|2b177636d1365898|-1275860683||t19061.9735456734s|f81a1044d6e887f8|7496|rds|vector|||20.862||
-BA_s_0f9992e0|branch|1ff8b3900fb8c16e|24e1b38fab4a0ba5|1d675971be022c96|-855161044||t19061.9848600346s|f23a8b1d3d894d4c|559216|rds|list|BA_s||187.524|st_centroid assumes attributes are constant over geometries of x|
-BA_s_1a16fe79|branch|40854ba6dc8cbeaa|24e1b38fab4a0ba5|9af8289a2bf8c5ed|767687437||t19061.9869605412s|482c448fd8be66e0|590437|rds|list|BA_s||181.394|st_centroid assumes attributes are constant over geometries of x|
-BA_s|pattern|03294ab6de4c48f5|24e1b38fab4a0ba5||-1199808003||||1149653|rds|list||BA_s_0f9992e0*BA_s_1a16fe79|368.918||
-fits_s_bcc40201|branch|ed642a05e5b0de92|badd00396212d798|8ddeebc1ed46ab22|-430164398||t19061.9926385837s|f6f8937ce673ea5c|28701779|rds|list|fits_s||461.228||
-fits_s_fa4d3b1b|branch|9d3954d6736c5972|badd00396212d798|64dbbe7938746f1c|-1643923995||t19061.9935102479s|a8df58c73d5263f5|28665882|rds|list|fits_s||537.498||
-fits_s|pattern|198f5a0161d0360e|badd00396212d798||-1896541871||||57367661|rds|list||fits_s_fa4d3b1b*fits_s_bcc40201|998.726||
-Stages_s|stem|dd10c58d658ecce9|4551afc129106b1b|97d562417e74f216|152872581||t19061.9950309841s|3e3130fb9ca26362|45900229|rds|list|||53.649||
 file_Stages_s|stem|ad8845544933afd3|31ea7c465a5bd532|a34a6bc590654fd2|-1399817009|Data/Stages_s.rds|t19042.5735300926s|0ee84941e935abce|45899353|file|vector|||6.979||
-Stages_select|stem|b7a265a5f329c055|85bbba690b341a1b|a0c34898659cf3fe|-1427272822||t19062.4285945135s|94a4644b03ff0c08|1252818|rds|vector|||38.57|selectClusters There were 1 clusters with missing variable time. These clusters have been dropped.|
-Stages_scaled|stem|d263549b9fdb430e|4084417319dea073|21e9dcb4a168960b|1092130661||t19062.4290219656s|2ce0f11bd143c37f|1320654|rds|vector|||6.59||
-Stages_transitions|stem|83e76be536a440aa|a5e48a6eb89db6d3|ec3e514da2108231|-173363864||t19062.4297466852s|a6e98bb452b01b7b|611791|rds|vector|||31.44||
 animation_trajectories_avg_test|stem|4874f229b144192a|4352c1f5d8a65595|ff01f188b636f8e6|237709979||t19062.8353217976s|3e060dac034fa5bf|70885391|rds|vector|||1382.846||
-fits_Seedlings|stem|4d12a0be457ea312|2a54497f589de23a|65b5278e6a17a210|809945682||t19068.9035797668s|1dd658fc3826b1dd|6881943|rds|list|||273.182||
-twocolors|stem|7aecfad8d5f114ef|7440ecd70d986d45|a3dad144c40657ed|-1662788884||t19073.7315739579s|d586f792a395948c|68|rds|vector|||6.84||
-weakpriors|stem|8f605b0e43da25be|ac5025df4f62555b|9ee3ac5a8444da29|-1879221107||t19074.387902241s|4b9eeb7e647347d1|144|rds|vector|||7.323||
 plot_contributions_prop_test|stem|b92e07b68fd35f4b|8611bcfd7eca16cb|d5b715751955d2a0|-51119106||t19076.1109628766s|c44486a8d0074388|519041291|rds|vector|||281.099||
-plot_contributions_test|stem|2c6fb6f335bc5e47|e57fb8716a71f5fc|2db262f83807197a|827695774||t19076.1115281528s|6f2c1a7fcd781d55|760760388|rds|vector|||314.4||
-pars_exclude|stem|33fb688d1996a75b|844be4da167f4c55|a3dad144c40657ed|-2058683567||t19087.4213502944s|2247cb837b5b96db|124|rds|vector|||7.141||
-parname_loc|stem|2b73284067239b4b|2d0adfc68244a545|a3dad144c40657ed|-1407642067||t19087.4213530259s|79365c26e374407f|71|rds|vector|||7.522||
-exclude|stem|e0a64a23d9f41c8b|4ddb5e59ad101527|bbed889316dc4acf|405431231||t19087.4214435349s|43a03eeeb494aa07|515|rds|vector|||6.896||
-Trajectories_avg_test|stem|a140b9e18b85155b|aef80e18975e4d29|7cbaf00a9139aca4|1055102647||t19087.4457341494s|fdffd3031e3fe915|16796380|rds|vector|||160.853|gather_ was deprecated in tidyr 1.2.0.Please use gather instead.This warning is displayed once every 8 hours.Call lifecyclelast_lifecycle_warnings to see where this warning was generated.|
-plot_trajectories_avg_test|stem|26d04fcb7a7a364d|e8bc2b8ba88903bb|c360f7f32e97f4bd|-900454890||t19087.4465412303s|27b0f4b48c64eb16|50269559|rds|vector|||35.349||
-plots_test|stem|34930e7be0cf325c|a790a39e2ba82679|1ff38ddff6d85bd6|1637481436||t19076.1868932128s||3137875633|rds|vector|||486.127||figure margins too large
-plots_conditional_test|stem|4ac1eb883db90b0f|4c1f621bb9f89de9|6635f4c332236d92|404920842||t19087.628259085s|a1c456b03adbfbf8|44|rds|vector|||81.431|Either one species has the majority in all draws in all clusters. Thus, resampling is not possible|
-data_stan|stem|73ab30ea259f59df|0dfd980f22e35cc7|3d7483b615cce997|1263995833||t19087.759732117s|93cec2f5ff1d70b2|1280730|rds|vector|||14.725||
-fit_g|stem|02fbd1c958d15ae7|07b78dae8d3964ca|5f5b6447fb6590ed|128175024||t19087.7599754035s|32f6a0a7e796b344|25036239|rds|vector|||19.311||
-fit_h|stem|1cf341c99459e96b|ffa7bcb3ba3f6a1c|5f5b6447fb6590ed|468382782||t19087.7601656345s|9d66e833fc662e2f|24473757|rds|vector|||14.884||
-data_stan_priors|stem|1776bc8cd02b2909|34e604c8f56e6443|b8143bb3c0445974|1623270232||t19087.7601734123s|36ad66202d60eb92|1279752|rds|vector|||0.078||
-data_stan_priors_offset|stem|9c9a8e405b9bb34b|93304eaf3cc05984|fe2db539c64755c1|-44048254||t19087.7601769308s|156ec3ffdc0e99b0|1333045|rds|vector|||0.048||
-fit_test|stem|e807a4bc06615969|8bad72df403dcfef|4e11c00a33eda6f9|-1560265059||t19088.4833836955s|233047938a7d9eeb|593864|rds|vector|||62484.958||
-basename_fit_test|stem|99cd8b521a9d6db6|5aea74d8a0b30f75|6b535bc754da0c0c|-779128580||t19088.5014765639s|bb4e721372eac6a0|88|rds|vector|||7.411||
-stanfit_test|stem|13855859060b23f3|34001f1c4f114152|37bb3db900ad2c9f|-1726047245||t19088.5770168841s|c3e94b89636abc17|1360278727|rds|vector|||6221.009||
-summary_test|stem|f5f68c08dd33ca08|dd2385e4e6db2d9a|30858dd403df37e0|-908423816||t19088.604983761s|29fb10a5c8cad326|3014287|rds|vector|||2415.037|coercing argument of type double to logical|
-plots_states_test|stem|105228e506dce4dc|06d3dc58022b90cf|75eecf939590448c|-742723935||t19088.60732357s|d75122c5f075fa3a|357637977|rds|vector|||122.258||
-plots_parameters_test|stem|b87555e1fc1e3d71|241378ec299ca191|ef4ca2d86833c14f|40921397||t19088.6133252682s|4f9130f3134f102e|2762235753|rds|vector|||210.69||
-States_test|stem|4e99a19af5bf391a|3c19f98154b7f45b|a91328eb35d3e9a7|-1514010152||t19088.5036676701s||21999186|rds|vector|||267.707||Cant find the following variables in the output J_init
-residuals_test|stem|20fe1c758c25db85|ae72abdb8acf3ca2|ce208a52a2f64b15|-1334224030||t19088.8744425014s|81104e553ece43c8|33624438|rds|vector|||945.425||
+file_model_transitions|stem|3161effb1b30fa35|d9ac6c72e357e73b|ef46db3751d8e999|638853414|Model_2021-03_ba/Model_transitions.stan|t19048.7419513443s|2f9d4df253affa62|891|file|vector|||6.009||
+taxon_select|stem|f6c5515f40369c94|5e44e6ff3af0fcc9|a3dad144c40657ed|1818729773||t18871.4549705497s|425d385953b3c542|67|rds|vector|||0.001||
+file_DE_env|stem|1babea9b0b4296aa|b7bc26c43d6d69bf|ef46db3751d8e999|1502459524|Inventory.nosync/DE BWI/Data/DE_BWI_Env_sf.rds|t18990.7878665748s|e684589703d38eb9|5533814|file|vector|||1.968||
+file_DE_big|stem|dad0c659a504d9af|ee696b1eec078184|ef46db3751d8e999|172941029|Inventory.nosync/DE BWI/Data/DE_BWI_big_abund.rds|t18990.7871896694s|02e584d87ae1e0d3|23277361|file|vector|||2.52||
+Data_big|stem|dad0c659a504d9af|56bebf0f0eab6c1e|239450801ae6c913|1222093926||t18871.445383698s|02e584d87ae1e0d3|23277361|rds|vector|||12.618||
+Data_env|stem|1babea9b0b4296aa|9b5a1393dd591e71|e4d7e5dff8d06cfa|-1730749387||t18871.4578818459s|e684589703d38eb9|5533814|rds|vector|||4.625||
+predictor_select|stem|d0e3c6407cfabefd|7a4adab905687258|a3dad144c40657ed|940927||t18871.4624494384s|0e696b453c03de61|85|rds|vector|||1.703||
+Env_clean|stem|70e27cd1ced3719d|808ced5ac0946aac|031b757f20f9ad48|1193260055||t18871.462437494s|102883cb8e914333|1060126|rds|vector|||0.013||
+regclass_select|stem|97af7bda51379109|54c72c068a27683f|a3dad144c40657ed|-201776155||t19088.8974696579s|70a0bb6673f8b3be|137|rds|vector|||7.735||
+file_DE_small|stem|2307d704c5a9a9b5|30555254c6b01a9c|ef46db3751d8e999|1200583123|Inventory.nosync/DE BWI/Data/DE_BWI_small_abund.rds|t18990.7874737002s|2895e6fb9317973a|15170066|file|vector|||2.772||
+Data_small|stem|2307d704c5a9a9b5|7ad74de1b1caac4c|db3a691ca8ffa423|-1821452620||t18871.4469706887s|2895e6fb9317973a|15170066|rds|vector|||38.821||
+taxon_s|stem|84ed734a80032fe3|2fee2bcef7b9856d|5afb7e996ebc4fe7|1655201476||t19088.897469982s|758d7d51407f572d|117|rds|vector||taxon_s_e9371f43*taxon_s_e6a5848c|7.346||
+Env_cluster|stem|92fc7364fa2a8c6e|d9de533c708aefa0|04617d440238533a|-1840226744||t19088.8983352694s|63473c199f594128|1022675|rds|vector|||8.536||
+file_DE_big_status|stem|ae0f974436e6977a|4afe50c6c7015484|ef46db3751d8e999|742209205|Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds|t18990.7822837833s|c78be29eeba71bae|16437186|file|vector|||6.001||
+file_SK_fullgrid|stem|5a605f9f6257a70a|f79cf039c1c21b65|ef46db3751d8e999|-1632469839|Inventory.nosync/SK NIML/Data/SK_NIML_complete_fullgrid.rds|t18990.7906249841s|436e7fecd6e2c44e|1099148|file|vector|||8.587||
+offsetname|stem|0a1e9b3c2692134d|016d9946cc457d6c|f2d0562274fe86e6|1802663475||t19088.8983477695s|00c37fc0166b3b11|58|rds|vector|||8.476||
+file_DE_geo|stem|fc11702de5751e68|60bce8164256a1d6|ef46db3751d8e999|-1810833906|Inventory.nosync/DE BWI/Data/DE_BWI_geo.rds|t18990.7877573144s|5f8cd763e5ac0a66|1266826|file|vector|||8.249||
+dir_publish|stem|b01d8001055c42ba|74847f6473686a7d|f47bb13d95a320a1|1910222810||t19088.8983517511s|425d385953b3c542|67|rds|vector|||8.094||
+threshold_dbh|stem|73e646c3e2ac7510|9196226201acf742|ef46db3751d8e999|1977269053||t19088.8983517974s|b6d2e014b07bc296|51|rds|vector|||8.254||
+radius_max|stem|3eab9baa50389ce5|e9dfe26516914502|ef46db3751d8e999|-1596622531||t19088.8983518899s|c9aaea90a821e608|53|rds|vector|||7.817||
+file_SK|stem|790a6a2f20ad2d78|813dfca83fca4164|ef46db3751d8e999|236759130|Inventory.nosync/SK NIML/Data/SK_NIML_complete.rds|t18990.7906449843s|5d487912783266b3|1089468|file|vector|||7.723||
+dir_fit|stem|fbcb1cc6a393a2d5|6edb4c0accf3f5e3|f47bb13d95a320a1|-1519351870||t19088.8984396687s|93a4d4dc4116d568|64|rds|vector|||7.216||
+Data_geo|stem|e25d0e00dbb59587|a5740b3bcb5e0ba0|855c9f9a61208aa8|-1122140380||t19088.8984672153s|05e69a742091fb7a|1266821|rds|vector|||7.045||
+Data_seedlings_fullgrid|stem|33b7f863a9eebef2|494b544145cc3638|9fc6a65f41770aba|-2043843808||t19088.8985067528s|436e7fecd6e2c44e|1099148|rds|vector|||8.514||
+Data_seedlings|stem|a088d501257a58f1|81db27c755665335|a08cb66b3561cfea|-396571518||t19088.8985459199s|ee67599b926cd5a9|1089470|rds|vector|||8.039||
+Data_big_status|stem|01333fa65543c82c|eff25cb053505d95|69a84043a87fa2b3|813772221||t19088.898682264s|c78be29eeba71bae|16437186|rds|vector|||10.788||
+Seedlings|stem|407dffacd0cf1588|e366b261bd7792c2|04729687ab3a069e|-185150805||t19088.8989644893s|3b80546b8e87f299|86675|rds|vector|||10.484||
+seedlings_fullgrid|stem|1aeba4cc9750114e|a0f0214426cbce9e|57f177121353e43b|-244538027||t19088.8989718968s|d4b10917704a4ab1|103800|rds|list||seedlings_fullgrid_19a0c353*seedlings_fullgrid_b09062e1|35.255||
+parname_loc|stem|e0dcd2d26da7263a|2d0adfc68244a545|a3dad144c40657ed|-1407642067||t19089.3782650376s|21c64f85d8c4a821|70|rds|vector|||0||
+parname_plotorder|stem|6e361f9bba8817f3|1eea9bc7afc80905|a3dad144c40657ed|701125707||t19089.3782653617s|f02b269bc80ae470|129|rds|vector|||0||
+simnames_prior|stem|0d396063810f95cf|dc925e066ee03273|a3dad144c40657ed|-1993142823||t19089.378265408s|e961a0bcff3caad6|91|rds|vector|||0||
+Data_small_area|stem|1284d6e389282f0e|a8bac5d0e8d100ab|dba1b1585e7af3e7|1655197218||t19089.379555564s|1c57c2aca20a4f30|2993066|rds|vector|||43.056||
+Data_big_area|stem|c2cfac3c6d739a9a|3f85c4389924c6e4|16d187772b592e45|1906756081||t19089.3800714041s|f5bf28c5dcf25c7b|17975431|rds|vector|||33.934|all weights equal to zero|
+simnames_posterior|stem|aaf61f0bc6078e6a|93e08c58bcdfc39a|a3dad144c40657ed|618692093||t19089.3804865485s|4b961c631a2d04c8|360|rds|vector|||6.407||
+twocolors|stem|e26b840f29b8171b|7440ecd70d986d45|a3dad144c40657ed|-1662788884||t19089.3804877985s|425d385953b3c542|67|rds|vector|||6.657||
+parname|stem|17a64f055fde7a4c|2785d62b1e1ee7d8|a3dad144c40657ed|-1053533873||t19089.3804917337s|9903306e1685fb67|94|rds|vector|||7.157||
+themefunction|stem|d00eb093392f3a89|add93fc0c5380017|a46fc67528f5eeb3|736163043||t19089.3805004375s|1d3248e1735e2915|450|rds|vector|||7.187||
+fits_Seedlings_s_5a6bb230|branch|1f3c10cf42f7317e|26a5c41c440dda06|642b7c19fc6b8fd6|-686661265||t19089.3901302379s|3629f1940da25d61|27347435|rds|list|fits_Seedlings_s||163.256||
+fits_Seedlings_s_3597c43f|branch|4458c77a585a351b|26a5c41c440dda06|098012c2c2986310|-908828042||t19089.3902371837s|67dda4f4310d7182|27420306|rds|list|fits_Seedlings_s||176.014||
+fits_Seedlings_s|pattern|4af573d7c4e445e5|26a5c41c440dda06||-297493343||||54767741|rds|list||fits_Seedlings_s_3597c43f*fits_Seedlings_s_5a6bb230|339.27||
+Seedlings_s|stem|39185f264b96b2e1|46a9595e49329d8a|de0a81560406f1f8|-142007958||t19089.3904566772s|d24cb8af04dc4469|110661|rds|vector|||8.45||
+BA_s|pattern|c2c76526947dce12|24e1b38fab4a0ba5||-1199808003||||1149648|rds|list||BA_s_0f9992e0*BA_s_1a16fe79|526.006||
+fits_Seedlings|stem|29a8d3fe596fefd7|2a54497f589de23a|17e2b39a490f0f63|809945682||t19089.39535933s|66cc506c547fb52d|7170607|rds|list|||414.931||
+fits_s_fa4d3b1b|branch|0e961c3660f14be9|3654d1700e8dd0b8|668226eb6560bd4d|-1643923995||t19089.3999221634s|97b032f75a72e122|28537527|rds|list|fits_s||441.006||
+fits_s_bcc40201|branch|b8e1c9590174267c|3654d1700e8dd0b8|3524cff477faf5da|-430164398||t19089.4012320867s|611636358db1fb93|28572962|rds|list|fits_s||544.638||
+fits_s|pattern|b19c8a6089c1bb34|3654d1700e8dd0b8||-1896541871||||57110489|rds|list||fits_s_fa4d3b1b*fits_s_bcc40201|985.644||
+pars_exclude|stem|db639afb40961673|abbd239c32260f3c|a3dad144c40657ed|-2058683567||t19089.5500618711s|82334e57b39f02e1|127|rds|vector|||7.497||
+model_transitions|stem|5862428f3ac477b5|6f5288cead19f3b4|2b177636d1365898|-1275860683||t19089.7138568405s|04e1de2506185310|9347|rds|vector|||7.02||
+weakpriors|stem|09c53a3ba81676a8|73ffffa004f2ffe3|9ee3ac5a8444da29|-1879221107||t19090.777775556s|f3963c450082b208|143|rds|vector|||6.469||
+plots_parameters_test|stem|5e116dd2e3d5df8b|241378ec299ca191|b260e8f71a37b7ba|40921397||t19091.4218296233s|1b1fb9a7fb753c3b|2907405724|rds|vector|||320.04||
+Trajectories_avg_test|stem|4fa25f86d67977b8|aef80e18975e4d29|2b7c6374c07c5535|1055102647||t19091.4237617738s|106fcca85666eca6|18387509|rds|vector|||138.581|gather_ was deprecated in tidyr 1.2.0.Please use gather instead.This warning is displayed once every 8 hours.Call lifecyclelast_lifecycle_warnings to see where this warning was generated.|
+plots_conditional_test|stem|5fc9e64bc8a1c6fe|4c1f621bb9f89de9|bdd13b749b2453d4|404920842||t19091.4246749318s|2465d55d3ec7edb4|398733835|rds|vector|||156.376|gather_ was deprecated in tidyr 1.2.0.Please use gather instead.This warning is displayed once every 8 hours.Call lifecyclelast_lifecycle_warnings to see where this warning was generated.|
+plot_trajectories_avg_test|stem|a6bfd4f0719c2dcf|e8bc2b8ba88903bb|e052b515b0eab892|-900454890||t19091.4248251649s|01eb71d33f7b8dbc|53494214|rds|vector|||32.676||
+plots_test|stem|c3fc57d8e91a5cf7|a790a39e2ba82679|9880133468740914|1637481436||t19091.4308548598s|1eda9e04f9849780|2867181877|rds|vector|||43.915||
+exclude|stem|c7413afa8f55a76c|4ddb5e59ad101527|9c79ddc1ba960031|405431231||t19094.4732351254s|e31411335ec9539f|533|rds|vector|||6.916||
+stanfit_test|stem|e04e2953a67cdf35|34001f1c4f114152|c1012577a4d2e08d|-1726047245||t19094.5575695594s|6dc1730feeb30ab6|1292869612|rds|vector|||739.39||
+Stages|stem|70de5337c52c15cd|8ffac6f908a3e1b2|3cadff8001f49b0b|-2131128411||t19094.6778124436s|5ea2c12c8126073b|27487786|rds|vector|||23.55||
+Stages_env|stem|203bfdc89f80b4cb|f77ba367cf3d8588|ee2d27718912e904|818674129||t19094.6786039337s|3939078d6826dd9f|40767142|rds|vector|||19.041||
+BA_s_0f9992e0|branch|bfbcbaac06073b0e|24e1b38fab4a0ba5|dd64e2cedc3790cd|-855161044||t19094.6809356257s|1cce17e911bf8e35|559213|rds|list|BA_s||172.578|st_centroid assumes attributes are constant over geometries of x|
+BA_s_1a16fe79|branch|d7b4df91c021c530|24e1b38fab4a0ba5|1c55505189c5f1cc|767687437||t19094.6810061358s|9433fe62e12a8c72|590435|rds|list|BA_s||168.692|st_centroid assumes attributes are constant over geometries of x|
+Stages_s|stem|e3235124d23f3149|4551afc129106b1b|50b44014de1ad781|152872581||t19094.6822002228s|81f3b137e508470c|46046825|rds|list|||30.249||
+Stages_select|stem|67b6ffbe9089b212|85bbba690b341a1b|9adcb0c176790cc6|-1427272822||t19094.6829832869s|0b9f1ef41361d80b|1256039|rds|vector|||38.077|selectClusters There were 1 clusters with missing variable time. These clusters have been dropped.|
+Stages_scaled|stem|69138165df7e0311|4084417319dea073|92fb2d91bb325781|1092130661||t19094.6833097719s|8a09497c71c61810|1740797|rds|vector|||6.878||
+Stages_transitions|stem|d8cf0334ab63bc00|a5e48a6eb89db6d3|2e98d0c760c49208|-173363864||t19094.684086123s|a6e98bb452b01b7b|611791|rds|vector|||28.178||
+rep_exclude|stem|bba090f707e4322a|0d078af8916b50c1|a3dad144c40657ed|1847664984||t19096.6333916234s|c1aa9ca10fc19154|116|rds|vector|||6.037||
+helpers_exclude|stem|d699c5aac3742033|872d7a0ed49e2125|a3dad144c40657ed|1133870334||t19096.6333919937s|28f9d9a9ef15cef2|216|rds|vector|||0.001||
+file_model_test|stem|e3cd22b648fd754c|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t19097.4023249096s|0144a5176f32e124|58575|file|vector|||6.44||
+model_test|stem|e00b38d43d969c33|a3aa00c06cce5e55|7e27bd99c93ea8ee|-1162399619||t19097.4079540476s|d3dc9f169f3c4f3e|22383|rds|vector|||38.156||
+data_stan|stem|58eaa1dd85e99900|d18a2fb7bd18372c|d0ea36f23c530387|1263995833||t19097.408478035s|f34f3a17a25b6e6b|3157625|rds|vector|||18.569||
+fit_g|stem|f672ca1b4f9a2623|07b78dae8d3964ca|3bc920c2a9c23d94|128175024||t19097.4086622964s|ea5044639e5282a5|128301|rds|vector|||11.991||
+fit_h|stem|7770a2bff1eb2dce|ffa7bcb3ba3f6a1c|3bc920c2a9c23d94|468382782||t19097.4086717872s|5d8769ceb7d5e0be|127602|rds|vector|||11.94||
+data_stan_priors|stem|b3fe6883bb532a27|34e604c8f56e6443|3e8fae8dc2c8664a|1623270232||t19097.408873271s|c5a565a0654798cc|3157669|rds|vector|||6.053||
+data_stan_priors_offset|stem|a14599723952c08c|93304eaf3cc05984|f61a0c0c9c21388f|-44048254||t19097.4090190597s|486c341a80437326|3157685|rds|vector|||6.954||
+fit_test|stem|7381483cdb9aa5a9|8bad72df403dcfef|c244018a2bacfa41|-1560265059||t19097.5060793238s|008f01d57d838c4a|1127197|rds|vector|||8380.334||
+summary_test|stem|286da1e22fd473fe|263c5d150004ce94|ac4a50bd5a707ffd|-908423816||t19097.5152760474s|57310ba58ad73296|2933046|rds|vector|||794.373|coercing argument of type double to logical|
 scaleData|function|0d0c01b1b3160a22||||||||||||||
 summarizeEnvByCluster|function|5fcaa758babda781||||||||||||||
 theme_fagus|function|32f50a117793eef2||||||||||||||
-generateResiduals|function|ee65238c9cfa3743||||||||||||||
+generateResiduals|function|b8b4b95ee72681e2||||||||||||||
 wrangleSeedlings|function|d0b21d7b934c215b||||||||||||||
 summarizeNFIs|function|c53d94858a18a003||||||||||||||
-formatLoc|function|a0757c0c1a519caf||||||||||||||
+formatLoc|function|35334b8eccf715bb||||||||||||||
 saveSeedlings_s|function|59d33f1cf2682535||||||||||||||
 fitSeedlings|function|cfbf644d2910f3af||||||||||||||
 countTransitions|function|658905ce538460fd||||||||||||||
-plotPredictions|function|a40df41fcc2f1bf9||||||||||||||
+plotPredictions|function|59a374a178f6c7ce||||||||||||||
 wrangleSeedlings_s|function|debfad99e56a4210||||||||||||||
 generateTrajectories|function|e87a7f104a068517||||||||||||||
-targets_paths|object|a06bdaf37bc349b1||||||||||||||
-selectOffset|function|2bf99066384e8020||||||||||||||
+targets_paths|object|b4457ff123666c7d||||||||||||||
+selectOffset|function|81a9d5801127773d||||||||||||||
 getBaseName|function|bc0f3afd657645b4||||||||||||||
 fitModel|function|968f5182f090c8f3||||||||||||||
 summarizeTaxa|function|4084445dc21ed410||||||||||||||
-formatPriors|function|59337df89dbc4811||||||||||||||
-targets_settings|object|307bb88fab79f1ae||||||||||||||
+formatPriors|function|89b16123881f4ca9||||||||||||||
+targets_settings|object|3baf13c5d4535111||||||||||||||
 predictSeedlingsSurfaces|function|44c809b12bbdfe6d||||||||||||||
 animateTrajectories|function|d00a33fe3d556c25||||||||||||||
 predictSurfaces|function|3eb087f154760704||||||||||||||
-fitS|function|1ba350bc7b2f92dd||||||||||||||
-joinStages|function|7397d1cb556dd863||||||||||||||
+fitS|function|5a8578f9aa8e00f5||||||||||||||
+joinStages|function|5e30a7c84ea58f93||||||||||||||
 extractStanfit|function|4b30186cd18f28f8||||||||||||||
 formatNumber|function|e0adb6a8da2ca31c||||||||||||||
 cleanEnv|function|06a0767a0f88a954||||||||||||||
-targets_wrangling|object|714230516ae96428||||||||||||||
-fitTransition|function|f904b8dfa93c9b77||||||||||||||
+targets_wrangling|object|325a609983f238d5||||||||||||||
+fitTransition|function|bb257a46eefdef87||||||||||||||
 prepareBigData|function|c326577a0d554a48||||||||||||||
 prepareSmallData|function|f090fae6e919e399||||||||||||||
-formatStanData|function|1d7d588f86985207||||||||||||||
-targets_posterior|object|b8832c71f7a2f4b9||||||||||||||
+formatStanData|function|1d11089bc7fb54cb||||||||||||||
+targets_posterior|object|be844f1a88f6920c||||||||||||||
 onserver|object|9e40f752d98efc7d||||||||||||||
 extractDraws|function|3dff977b003c47b4||||||||||||||
 saveStages_s|function|fa4458d1e4dd1149||||||||||||||
+generatePredictiveChecks|function|bd34c95a657ba404||||||||||||||
 predictS|function|77bcabfef1d8569c||||||||||||||
 selectClusters|function|b982a7b80b2aecea||||||||||||||
-targets_fits|object|17ff35dfd3006313||||||||||||||
+targets_fits|object|e8a5e4df957d217a||||||||||||||
 constructConstantGrid|function|33d54800694377c7||||||||||||||
-package|object|0eed626dc75fece9||||||||||||||
-targets_parname|object|7eef42384ca1635e||||||||||||||
+package|object|af49bbcac5caea47||||||||||||||
+targets_parname|object|dfc34e7a31d6b147||||||||||||||
 joinEnv|function|2488b8203673870c||||||||||||||
-plotSensitivity|function|f9d72a6289ca1187||||||||||||||
 testSensitivity|function|caf845ea982e5d9c||||||||||||||
+plotSensitivity|function|f9d72a6289ca1187||||||||||||||
 plotScatter|function|43d33d82de6c8111||||||||||||||
 theme_map|function|310f080e2e71693a||||||||||||||
 plotTrajectories|function|68ab7d6aa7f96d4a||||||||||||||
@@ -230,12 +227,17 @@ plotStates|function|311ecbd23a7981b7||||||||||||||
 plotContributions|function|04c7766f0320e449||||||||||||||
 plotStanfit|function|221c8cec49124abb||||||||||||||
 theme_empty|function|0d32fa2ccfba5c62||||||||||||||
-plotConditional|function|d439251b4baad51c||||||||||||||
-formatStates|function|d12ee02d58c2b9c8||||||||||||||
-summarizeFreqConverged|function|6857a565ee885a3e||||||||||||||
-summarizeFit|function|697de4ae484fa2ad||||||||||||||
-summarizeStates|function|baf8be7b5fb42616||||||||||||||
+plotConditional|function|f6b6f1a7d75e8eb8||||||||||||||
+formatStates|function|5055ffa6104d3ff6||||||||||||||
+summarizeFreqConverged|function|4236319076bfcb0e||||||||||||||
+summarizeFit|function|596f287c483b0cf4||||||||||||||
+summarizeStates|function|0048531b54238cd9||||||||||||||
 mapClusters|function|8d31c6cee8f87b66||||||||||||||
 plotSurfaces|function|f4687cd7182f6c59||||||||||||||
-file_model_test|stem|edd2d991f88bfa47|e344941b51aafe21|ef46db3751d8e999|-1074015631|Model_2021-03_ba/Model_ba_test.stan|t19088.8720267662s|9ebb482fb25a4ceb|53410|file|vector|||9.345||
-model_test|stem|2a7c4fa5c18d0267|a3aa00c06cce5e55|e2a0a0767c4ba6f9|-1162399619||t19088.8768566626s|a00d98f8f91cf9a7|7498|rds|vector|||76.254||
+basename_fit_test|stem|6f6031036cb2840a|5aea74d8a0b30f75|281c9eaa860663cb|-779128580||t19097.5154349844s|e7d9c43b1c994be3|87|rds|vector|||7.466||
+plot_contributions_test|stem|c3bc9fde13a83e60|e57fb8716a71f5fc|997bf02153e3da31|827695774||t19097.5193199354s|ea4e5ab825d34537|755851743|rds|vector|||258.322||
+residuals_test|stem|b8b7f0c84c7ad631|ae72abdb8acf3ca2|7fcfaeac06c99153|-1334224030||t19097.5205444399s|f656db5a2aff6730|35598327|rds|vector|||392.981||
+States_test|stem|ac55720aec92788b|3c19f98154b7f45b|5209fc02c315b1c7|-1514010152||t19097.5210396307s|c6a1efb8dee5e3bc|61592236|rds|vector|||418.151||
+summary_states_test|stem|34fea4a70b952a1e|3b9c36148681844e|24878559cf8ddbd4|-769290491||t19097.5220803368s|434ff217989cffd0|686|rds|vector|||20.694||
+plots_predictions_posterior_test|stem|da91c12ca8603115|1a84ce9afb01c919|df079acba15445fc|1289869218||t19097.523698318s|0caef1d3c10fb1c9|130459357|rds|vector|||610.649||
+plots_states_test|stem|147707831ebf401d|06d3dc58022b90cf|dc000617a58254b4|-742723935||t19097.5248943962s|4ca012832bb0a843|551733160|rds|vector|||58.717||
