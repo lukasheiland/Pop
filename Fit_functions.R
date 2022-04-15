@@ -58,7 +58,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
     # bind_cols(Stages_transitions[match(interaction(.$plotid, .$tax), Stages_transitions$joinid), ]) %>%
     
     ## Sum up by cluster
-    group_by(clusterid, obsid, stage, tax) %>%
+    group_by(clusterid, obsid, methodid, stage, tax) %>%
     summarize(time = first(time),
               n_plots = n_distinct(plotid),
               
