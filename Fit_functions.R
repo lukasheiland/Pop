@@ -64,8 +64,12 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, t
               across(c(count_obs, count_ha, count_ha_r,
                        ba_obs, ba_ha, ba_ha_r,
                        offset, offset_avg, offset_q1, offset_q3),
-                       function(x) sum(x, na.rm = T))
-              ) %>%
+                       function(x) sum(x, na.rm = T)),
+              alt_loc_s = first(alt_loc_s),
+              phCaCl_esdacc_s = first(phCaCl_esdacc_s),
+              waterLevel_loc_s = first(waterLevel_loc_s),
+              clusterid = first(clusterid),
+              .groups = "drop") %>%
     ungroup() %>%
     
     ## Synonyms for consistency with model lingo
