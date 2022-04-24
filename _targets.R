@@ -50,6 +50,12 @@ onserver <- Sys.info()["sysname"] != "Darwin"
 ## Settings pipeline ------------------------------------------------------
 targets_settings <- list(
   
+  ## Whether to fit the model with a population ("loc", i.e. location) structure ...
+  ##  "plot" — where the populations correspond to a plot in the data (n_locs == n_plots)
+  ##  "nested" — where the populations correspond to a cluster, but get fitted to data on the plot level (n_locs == n_clusters)
+  ##  "cluster" — where the populations correspond to a cluste and get fitted to the sum within a cluster (n_locs == n_clusters)
+  tar_target(loc, c("plot", "nested", "cluster")[1]),
+  
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 200mm > B
@@ -59,7 +65,7 @@ targets_settings <- list(
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
   ##    - dbh_threshold = radius_threshold/c with c == 25
   ##    - Alternatives: 99% radius == 1571 cm, 95% radius == 1188,  96% radius == 1242, 97% 1310.91
-  tar_target(radius_max, 14000), ## [mm]
+  tar_target(radius_max, 15000), ## [mm]
   
   ## Vector of taxa to select. All others will be lumped into "other".
   tar_target(taxon_select, c("Fagus.sylvatica")),
@@ -233,7 +239,7 @@ targets_wrangling <- list(
     tar_target(Stages,
                joinStages(Data_big_area, Data_small_area, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
     tar_target(Stages_env,
-               joinEnv(Stages, Env_cluster)),
+               joinEnv(Stages, Env_clean)), # Env_cluster ## always joins by plotid, even if Env is aggregated by cluster
     
     list(
       tar_target(taxon_s,
@@ -292,17 +298,23 @@ targets_wrangling <- list(
     
     
     tar_target(Stages_select,
-               selectClusters(Stages_s, predictor_select, selectpred = F)), # Subsetting after smooth, so that smooth can be informed by all plots.
+               selectLocs(Stages_s, predictor_select, selectpred = F, loc = c("plot", "nested", "cluster"))), # Subsetting after smooth, so that smooth can be informed by all plots.
         ## Workaround for machines where geo libraries do not work: target "Data_Stages_s" instead of "Stages_s"
     
     tar_target(Stages_select_pred,
-               selectClusters(Stages_s, predictor_select, selectpred = T)), # Selection based on whether environmental variables are present
+               selectLocs(Stages_s, predictor_select, selectpred = T, loc = c("plot", "nested", "cluster"))), # Selection based on whether environmental variables are present
     
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
     
     tar_target(Stages_scaled_pred,
                scaleData(Stages_select_pred, predictor_select)), # After selection, so that scaling includes selected plots 
+    
+    tar_target(Stages_loc,
+               setLocLevel(Stages_scaled, Env_cluster, loc = c("plot", "nested", "cluster"))),
+    
+    tar_target(Stages_loc_pred,
+               setLocLevel(Stages_scaled_pred, Env_cluster, loc = c("plot", "nested", "cluster"))),
     
     ## Publishing
     tar_target(Summary_taxa,
@@ -321,7 +333,10 @@ targets_wrangling <- list(
 ## Fitting pipeline ------------------------------------------------------
 targets_fits <- list(
   tar_target(data_stan,
-             formatStanData(Stages_scaled, Stages_transitions, taxon_s, threshold_dbh)),
+             formatStanData(Stages_loc, Stages_transitions, taxon_s, threshold_dbh, loc = c("plot", "nested", "cluster"))),
+  
+  tar_target(data_stan_transitions,
+             formatStanData(Stages_loc, Stages_transitions, taxon_s, threshold_dbh, loc = "plot")),
   
   tar_target(file_model_transitions,
              "Model_2021-03_ba/Model_transitions.stan",
@@ -331,10 +346,10 @@ targets_fits <- list(
              cmdstan_model(file_model_transitions)),
   
   tar_target(fit_g,
-             fitTransition(data_stan, which = "g", model_transitions, fitpath = dir_fit)),
+             fitTransition(data_stan_transitions, which = "g", model_transitions, fitpath = dir_fit)),
   
   tar_target(fit_h,
-             fitTransition(data_stan, which = "h", model_transitions, fitpath = dir_fit)),
+             fitTransition(data_stan_transitions, which = "h", model_transitions, fitpath = dir_fit)),
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
