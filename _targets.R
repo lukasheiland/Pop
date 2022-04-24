@@ -80,16 +80,16 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 2),
-               prior_c_a_log = c(-5, 3),
-               prior_c_b_log = c(-5, 3),
-               prior_c_j_log = c(-10, 3),
-               # prior_g_log = cbind(Fagus = c(-1, 2), others = c(0, 2)),
-               # prior_h_log = cbind(Fagus = c(-2, 3), others = c(-2, 3)),
+               prior_b_log = c(-4, 4),
+               prior_c_a_log = c(-6, 5),
+               prior_c_b_log = c(-6, 5),
+               prior_c_j_log = c(-12, 6),
+               prior_g_log = cbind(Fagus = c(-5, 4), others = c(-5, 4)),
+               prior_h_log = cbind(Fagus = c(-3, 4), others = c(-3, 4)),
                # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_l_log = c(8, 1),
+               prior_l_log = c(6, 3),
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_s_log = c(-3, 2)
+               prior_s_log = c(-2, 3)
              )
   ),
   
@@ -353,7 +353,7 @@ targets_fits <- list(
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
-                          widthfactor_trans = 1, widthfactor_reg = 1)),
+                          widthfactor_trans = 3, widthfactor_reg = 1)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
