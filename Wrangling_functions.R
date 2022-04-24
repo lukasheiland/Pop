@@ -8,7 +8,7 @@
 # taxon_select <- tar_read("taxon_select")
 # threshold_dbh <- tar_read("threshold_dbh")
 # radius_max <- tar_read("radius_max")
-# dir_publish  <- tar_read("dir_publish")
+# tablepath  <- tar_read("dir_publish")
 prepareBigData <- function(B, B_status,
                            taxon_select,
                            threshold_dbh, radius_max,
@@ -19,7 +19,7 @@ prepareBigData <- function(B, B_status,
   ## Areas and radii
   radius_max_B_cm <- radius_max/10 ## conversion from mm to cm
   radius_max_A_cm <- 25 * threshold_dbh/10 # [cm]
-  dbh_max_B <- radius_max_B_cm/25 * 10
+  dbh_max_B <- (radius_max_B_cm/25) * 10
   
   area_max_B <- pi * radius_max_B_cm^2 * 1e-8 # [ha]
   area_max_A <- pi * radius_max_A_cm^2 * 1e-8 # [ha]
@@ -155,14 +155,22 @@ prepareBigData <- function(B, B_status,
                   area_0_q3 = DescTools::Quantile(area_obs, weights = count_ha, probs = 0.75, na.rm = T, names = F)) %>%
     ungroup() %>%
     
+    ## Distribute the 0-areas
+    ##    1. Take the mean areas from the respective other species on the plot (for two species this will just be the first not NA)
+    ##    2. When neither species is present, take the integral
     mutate(iszero = count_ha == 0) %>%
-    mutate(area_0 = case_when(iszero & stage == "A" ~ area_0_A,
-                              iszero & stage == "B" ~ area_0_B)) %>%
+    group_by(plotobsid, stage) %>%
+    mutate(n_area = n_distinct(area_obs, na.rm = T), area_obs_avg_plot = mean(area_obs, na.rm = T)) %>% # for two species this will just be first(area_obs[!is.na(area_obs)])
+    ungroup() %>%
+    mutate(area_0 = case_when(iszero & stage == "A" & n_area > 0 ~ area_obs_avg_plot,
+                              iszero & stage == "B" & n_area > 0 ~ area_obs_avg_plot,
+                              iszero & stage == "A" & n_area == 0 ~ area_0_A,
+                              iszero & stage == "B" & n_area == 0 ~ area_0_B)) %>%
     
     mutate(offset = case_when(iszero & stage == "A" ~ area_0,
-                            iszero & stage == "B" ~ area_0 * count_ba_survey,
-                            !iszero & (stage == "A") ~ area_obs,
-                            !iszero & (stage == "B") ~ offset_ba_ha)) %>%
+                              iszero & stage == "B" ~ area_0 * count_ba_survey,
+                              !iszero & (stage == "A") ~ area_obs,
+                              !iszero & (stage == "B") ~ offset_ba_ha)) %>%
     
     mutate(offset_avg = case_when(!iszero ~ offset,
                                   iszero & stage == "A" ~ area_0_avg,
@@ -216,20 +224,27 @@ prepareSmallData <- function(J,
     ## these classes are all present in all three obsids, but consider different amounts of plots: # %>% dplyr::group_by(regclass, obsid) %>% dplyr::summarize(count_ha = sum(count/countarea))
 
     dplyr::group_by(methodid) %>%
-    dplyr::mutate(area_0 = mean(unique(countarea)), na.rm = T) %>%
+    dplyr::mutate(area_0_methodid = mean(unique(countarea)), na.rm = T) %>%
     dplyr::ungroup() %>%
     
     ## drop size classes and summarize counts
-    dplyr::group_by_at(c(id_select_S, "area_0")) %>%
+    dplyr::group_by_at(c(id_select_S, "area_0_methodid")) %>%
     dplyr::summarize(count_ha = sum(count/countarea, na.rm = TRUE),
                      area_obs = weighted.mean(countarea, count/countarea, na.rm = TRUE), ## this produces NaNs when count is 0
                      count_obs = sum(count, na.rm = TRUE), ## The average weighted by the count of trees within this size class.
                      ) %>% 
     dplyr::ungroup() %>%
     
+    ## Distribute the 0-areas
+    ##    1. Take the mean areas from the respective other species on the plot
+    ##    2. When neither species is present, take the integral
     mutate(iszero = count_ha == 0) %>%
-    mutate(offset = case_when(iszero ~ area_0,
-                              !iszero ~ area_obs)) %>%
+    group_by(plotobsid) %>%
+    mutate(n_area = n_distinct(area_obs, na.rm = T), area_0_plot = mean(area_obs, na.rm = T)) %>% # for two species this will just be first(area_obs[!is.na(area_obs)])
+    ungroup() %>%
+    mutate(area_0 = case_when(iszero & n_area > 0 ~ area_0_plot,
+                              iszero & n_area == 0 ~ area_0_methodid)) %>% ## !any(J$n_area == 2 & J$count_ha == 0)
+    mutate(offset = if_else(iszero, area_0, area_obs)) %>%
     mutate(offset_avg = offset, offset_q1 = offset, offset_q3 = offset) %>% ## for compatibility with different offsets in big trees
 
     dplyr::mutate(stage = factor("J")) %>%
@@ -439,34 +454,39 @@ saveStages_s <- function(Stages_s) {
 
 
 
-## selectClusters --------------------------------
-# Stages <- tar_read("Stages_s")
+## selectLocs --------------------------------
+# Stages_s <- tar_read("Stages_s")
 # predictor_select <- tar_read("predictor_select")
-selectClusters <- function(Stages, predictor_select, selectpred = F,
-                           id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
+# loclevel <- tar_read("loc")
+selectLocs <- function(Stages_s, predictor_select, selectpred = F,
+                           id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
+                           loc = c("plot", "nested", "cluster")
                            ) {
 
-  message(paste(Stages %>% pull(clusterid) %>% unique() %>% length(), "clusters before selectClusters()."))
+  loclevel <- match.arg(loc)
   
+  message(paste(Stages_s %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
+                Stages_s %>% pull(plotid) %>% unique() %>% length(), "plots before selectLocs()."))
+
   ## for reference
   disturbance_select = c("standage_DE_BWI_1",
                          "allNatRegen_DE_BWI_2", "allNatRegen_DE_BWI_3", "anyUnnatRegen_DE_BWI_3", "anyUnnatRegen_DE_BWI_2",
                          "anyHarvested_DE_BWI_2", "anyHarvested_DE_BWI_3",
                          "anyForestryDamage_DE_BWI_2", "anyForestryDamage_DE_BWI_3")
   
-  # Stages[predictor_select] %>% is.na() %>% colSums()
+  # Stages_s[predictor_select] %>% is.na() %>% colSums()
+  ## NOTE: waterLevel_loc, phCaCl_esdacc are data on the plot level
   
-  ## Filter based environment
+  ## Filter based on environment
   if (selectpred) {
-    Stages  %<>% 
-      filter(!is.na(waterLevel_loc)) %>%
-      filter(!is.na(alt_loc)) %>%
-      filter(!is.na(phCaCl_esdacc))
+    Stages_s  %<>%
+      filter_at(predictor_select, function(x) !is.na(x))
   }
   
   ## Filter based on management etc.
-  Stages_select <- Stages %>%
+  Stages_select <- Stages_s %>%
     
+    ## The any variables have been assembled per plotid!
     ## Plots were excluded that had any record of unnatural regeneration in DE_BWI_2 or 3
     mutate(anyUnnatRegen_DE_BWI_2 = tidyr::replace_na(anyUnnatRegen_DE_BWI_2, FALSE),
            anyUnnatRegen_DE_BWI_3 = tidyr::replace_na(anyUnnatRegen_DE_BWI_3, FALSE)) %>%
@@ -481,7 +501,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     # unique(Stages_select$clusterid) %>% length() ## 5236
     
   
-  ## Filter clusters based on tree observations
+  ## Filter plots based on tree observations
   Stages_select %<>%
     
     group_by(plotid, obsid) %>%
@@ -493,31 +513,64 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     mutate(isclearcut_2002 = any( (!isclear[obsid == "DE_BWI_1987"]) & isclear[obsid == "DE_BWI_2002"]),
            isclearcut_2012 = any( (!isclear[obsid == "DE_BWI_2002"]) & isclear[obsid == "DE_BWI_2012"]),
            isclearcut = isclearcut_2002 | isclearcut_2012) %>%
-    filter(!isclearcut) %>%
+    filter(!isclearcut)
       ## dropping 37 plots; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
     
-    group_by(clusterid) %>%
-    
-    ## subset to clusters with at least three surveys
-    mutate(n_surveys = n_distinct(obsid)) %>%
-    filter(n_surveys >= 3) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
-    dplyr::select(-n_surveys) %>%
-    
-    ## subset to clusters with at least two plots
-    mutate(n_plots = n_distinct(plotid)) %>%
-    filter(n_plots > 2) %>%
-    dplyr::select(-n_plots) %>%
-    
-    ## get clusters with at least some of both in small trees
-    mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica")) %>%
-    mutate(anyOther = any(count_ha > 0 & tax == "other")) %>%
-    mutate(anySmallFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage == "J")) %>%
-    mutate(anySmallOther = any(count_ha > 0 & tax == "other" & stage == "J")) %>%
-    mutate(anyBigFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage %in% c("A", "B"))) %>%
-    mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
-    ungroup()
   
-
+  if (loclevel %in% c("nested", "cluster")) {
+    
+    ## Filter clusters based on arbitrary thresholds that ensure sufficient samples
+    Stages_select %<>% 
+      group_by(clusterid) %>%
+      
+      ## subset to clusters with at least three surveys
+      mutate(n_surveys = n_distinct(obsid)) %>%
+      filter(n_surveys >= 3) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
+      dplyr::select(-n_surveys) %>%
+      
+      ## subset to clusters with at least two plots
+      mutate(n_plots = n_distinct(plotid)) %>%
+      filter(n_plots > 2) %>%
+      dplyr::select(-n_plots) %>%
+      
+      ## get clusters with at least some of both in small trees
+      mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica")) %>%
+      mutate(anyOther = any(count_ha > 0 & tax == "other")) %>%
+      mutate(anySmallFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage == "J")) %>%
+      mutate(anySmallOther = any(count_ha > 0 & tax == "other" & stage == "J")) %>%
+      mutate(anyBigFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage %in% c("A", "B"))) %>%
+      mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
+      ungroup()
+    
+    ## Confined to clusters with any observation of the taxa in defined sizeclasses
+    Stages_select %<>%
+      filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
+  
+  } else { ## case loclevel == "plot"
+    
+    Stages_select %<>% 
+      group_by(plotid) %>%
+      
+      ## subset to clusters with at least three surveys
+      mutate(n_surveys = n_distinct(obsid)) %>%
+      filter(n_surveys >= 3) %>% # table(Stages_select$n_surveys) ## 2: 53626, 3: 119998
+      dplyr::select(-n_surveys) %>%
+      
+      ## get plots with at least some of both in small trees
+      mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica")) %>%
+      mutate(anyOther = any(count_ha > 0 & tax == "other")) %>%
+      mutate(anySmallFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage == "J")) %>%
+      mutate(anySmallOther = any(count_ha > 0 & tax == "other" & stage == "J")) %>%
+      mutate(anyBigFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage %in% c("A", "B"))) %>%
+      mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
+      ungroup()
+    
+    ## Confined to plots with any observation of the taxa in defined sizeclasses
+    Stages_select %<>%
+      filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 3468
+  }
+  
+  
   # ## Selecting an equal no. of plots with and without Fagus
   # Stages_Fagus <- Stages_select %>%
   #   filter(anyFagus)
@@ -531,14 +584,13 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
   # Stages_select <- bind_rows(Stages_other, Stages_Fagus)
   # # unique(Stages_select$clusterid) %>% length() ## 190
   
-  ## Confined to clusters with any observation of the taxa in defined sizeclasses
-  Stages_select %<>%
-    filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
   
   Stages_select %<>%
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
   
-  message(paste(Stages_select %>% pull(clusterid) %>% unique() %>% length(), "clusters after selectClusters()."))
+  message(paste(Stages_select %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
+                Stages_select %>% pull(plotid) %>% unique() %>% length(), "plots after selectLocs()."))
+  
   if(anyNA(Stages_select$time)) {
     
     n_na <- Stages_select %>%
@@ -549,7 +601,7 @@ selectClusters <- function(Stages, predictor_select, selectpred = F,
     Stages_select %<>%
       filter(!is.na(time))
 
-    warning("selectClusters(): There were ", n_na, " clusters with missing variable `time`. These clusters have been dropped.")
+    warning("selectLocs(): There were ", n_na, " clusters with missing variable `time`. These clusters have been dropped.")
   }
   
   ## Filter clusters based on succession
@@ -951,7 +1003,7 @@ summarizeNFIs <- function(Data_big, Data_seedlings, Stages_select, Seedlings_s, 
   SK <- Seedlings_s
   
   n_surveys_DE <- n_distinct(DE$obsid)
-  n_surveys_SK <- n_distinct(SK$year)
+  n_surveys_SK <- 1
   
   # 
   # char_years_DE <- str_extract_all(unique(DE$obsid), "[0-9]{4}") %>% unlist() %>%
@@ -960,7 +1012,9 @@ summarizeNFIs <- function(Data_big, Data_seedlings, Stages_select, Seedlings_s, 
   
   char_years_SK <- str_extract_all(unique(SK$year), "[0-9]{4}") %>%
     unlist() %>%
-    paste(collapse = ".")
+    setdiff("2017") %>% ## 2017 is only in there because there was a resurvey of the relevé
+    sort() %>%
+    paste(collapse = "—")
   
   n_plots_before_DE <- n_distinct(DE_before$plotid)
   n_plots_before_SK <- n_distinct(SK_before$plotid)
@@ -1088,7 +1142,9 @@ cleanEnv <- function(E, predictor_select,
   
   
   E %<>%
-    dplyr::select(any_of(c(id_select, predictor_select, disturbance_select)))
+    dplyr::select(any_of(c(id_select, predictor_select, disturbance_select))) %>%
+    dplyr::mutate_at(predictor_select, function(x) replace(x, is.nan(x), NA)) ## na_if doesn't work with NaNs
+  
   
   if("aspect_loc" %in% predictor_select) {
     
@@ -1152,7 +1208,7 @@ joinEnv <- function(Stages, E) {
 
 
 ## scale Predictors in Stages data --------------------------------
-# Stages <- tar_read("Stages_select")
+# Stages_select <- tar_read("Stages_select")
 # predictor_select <- tar_read("predictor_select")
 
 scaleData <- function(Stages,
@@ -1175,4 +1231,65 @@ scaleData <- function(Stages,
   attr(Stages, "scaled:scale") <- attr(M_stages, "scaled:scale")
   
   return(Stages)
+}
+
+## setLocLevel --------------------------------
+# Stages_scaled <- tar_read("Stages_scaled")
+# Env_cluster <- tar_read("Env_cluster")
+# loclevel <- tar_read("loc")
+setLocLevel <- function(Stages_scaled, Env_cluster, loc = c("plot", "nested", "cluster"),
+                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
+                        ) {
+  
+  loclevel <- match.arg(loc)
+  # locid <- if(loclevel == "plot") "plotid" else if(loclevel %in% c("cluster", "nested")) "clusterid"
+  
+  if(loclevel %in% c("cluster", "nested")) {
+    
+    Stages_loc <- st_drop_geometry(Stages_scaled)
+    
+    dropcols <- setdiff(intersect(names(Stages_loc), names(Env_cluster)), "clusterid") ## drop all common cols but clusterid
+    E <- dplyr::select(Env_cluster, -all_of(dropcols))
+    
+    if(loclevel == "cluster") {
+      
+      id_select_cluster <- setdiff(id_select, c("plotid", "plotobsid"))
+                                   
+      Stages_loc %<>%
+        mutate(clusterobsid = interaction(clusterid, obsid)) %>% ## In case it is dropped somewhere before
+        group_by_at(id_select_cluster) %>%
+        
+        ### Summary per cluster. Env gets dropped here, will be joined again by plotid
+        summarize(n_plots = n_distinct(plotid),
+                  
+                  ## Splines by first
+                  across(paste("s", taxon_s, sep = "_"), first),
+                  
+                  ## Abundances and areas are summed up
+                  across(c(count_obs, count_ha, count_ha_r,
+                           ba_obs, ba_ha, ba_ha_r,
+                           offset, offset_avg, offset_q1, offset_q3),
+                         function(x) sum(x, na.rm = T)),
+                  
+                  .groups = "drop") %>%
+        ungroup()
+
+    }
+    
+    Stages_loc %<>%
+      left_join(E, by = "clusterid") %>% # geometries are joined here, but crs is dropped
+      st_sf(crs = st_crs(E)) %>%
+      mutate(loc = clusterid)
+  
+  } else { # loclevel == "plot"
+    
+    Stages_loc <- Stages_scaled %>%
+      mutate(loc = plotid)
+  
+  }
+  
+  attr(Stages_loc, "scaled:center") <- attr(Stages_scaled, "scaled:center")
+  attr(Stages_loc, "scaled:scale") <- attr(Stages_scaled, "scaled:scale")
+  
+  return(Stages_loc)
 }
