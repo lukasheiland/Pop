@@ -155,6 +155,7 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   
   allpar <- cmdstanfit$metadata()$stan_variables
   includepar <- setdiff(allpar, exclude)
+  phipar <- includepar[str_starts(includepar, "phi")]
   publishpar_prior <- c(publishpar, paste0(publishpar, "_prior"))
   
   summary <- cmdstanfit$summary(includepar)
@@ -169,6 +170,9 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
     pivot_wider(values_from = "value", names_from = c("p", "tax"), id_cols = "var")
   
   write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
+  
+  summary_phipar <- cmdstanfit$summary(phipar)
+  write.csv(summary_phipar, paste0(path, "/", basename_cmdstanfit, "_summary_phi.csv"))
   
   ## Number of years until equilibrium
   Iter <- cmdstanfit$draws("iterations_fix") %>%
