@@ -564,10 +564,18 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
       mutate(anyBigFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage %in% c("A", "B"))) %>%
       mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
       ungroup()
+      
     
     ## Confined to plots with any observation of the taxa in defined sizeclasses
     Stages_select %<>%
       filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 3468
+    
+    ## Select only one random plot per cluster
+    Stages_select %<>%
+      group_by(clusterid) %>%
+      mutate(plotid_select = sample(unique(plotid), 1, replace = F)) %>%
+      filter(plotid == plotid_select)
+      
   }
   
   
