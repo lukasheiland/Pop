@@ -204,7 +204,7 @@ summarizeStates <- function(States, data_stan, basename, path) {
   D <- attr(data_stan, "Long_BA") %>%
     group_by(stage, tax) %>%
     summarize(mean = mean(y_prior, na.rm = T), sd = sd(y_prior, na.rm = T)) %>% ## y is count_ha for J and A, ba_ha for B and BA
-    mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
+    mutate(value = paste0(formatNumber(mean, signif.digits = 5), " ± ", formatNumber(sd, signif.digits = 5))) %>%
     pivot_wider(names_from = "tax", id_cols = "stage") %>%
     mutate(stage = paste0(stage, "_data_init")) %>%
     dplyr::select(var = stage, Fagus = Fagus.sylvatica, other)
@@ -213,10 +213,10 @@ summarizeStates <- function(States, data_stan, basename, path) {
     mutate(value = if_else(tax == 'other' & (var %in% c("major_init", "major_fix")), 1 - value, value)) %>%
     group_by(var, tax) %>%
     summarize(mean = mean(value, na.rm = T), sd = sd(value, na.rm = T)) %>%
-    mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
+    mutate(value = paste0(formatNumber(mean, signif.digits = 5), " ± ", formatNumber(sd, signif.digits = 5))) %>%
     pivot_wider(names_from = "tax", id_cols = "var") %>%
     bind_rows(D) %>%
-    bind_rows(c(var = "ba_a_avg", setNames(formatNumber(data_stan$ba_a_avg), c("Fagus", "other"))))
+    bind_rows(c(var = "ba_a_avg", setNames(formatNumber(data_stan$ba_a_avg, signif.digits = 5), c("Fagus", "other"))))
   
   write.csv(S, paste0(path, "/", basename, "_summary_states.csv"))
   print(S)
@@ -252,8 +252,9 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
 # cmdstanfit  <- tar_read("fit_test")
 # data_stan_priors  <- tar_read("data_stan_priors")
 # path  <- tar_read("dir_fit")
-generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = "y_hat_offset", path) {
+generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = c("y_hat_offset", "y_hat_rep_offset"), path) {
   
+  yhatvar <- match.arg(yhatvar)
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
 
   Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
@@ -286,6 +287,7 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = "y_hat_off
 
 
 ## generatePredictiveChecks --------------------------------
+## This is more of an opportunity for interactive checks
 # cmdstanfit  <- tar_read("fit_test")
 # data_stan_priors_offset  <- tar_read("data_stan_priors_offset")
 generatePredictiveChecks <- function(cmdstanfit, data_stan_priors_offset, path) {
@@ -297,28 +299,34 @@ generatePredictiveChecks <- function(cmdstanfit, data_stan_priors_offset, path) 
   
   d <- data_stan_priors_offset
   L <- attr(data_stan_priors_offset, "Long") %>%
+
     bind_cols(y_sim = E(Draws$y_sim),
               y_hat = E(Draws$y_hat),
-              y_hat_offset = E(Draws$y_hat_offset)
-              )
+              y_hat_offset = E(Draws$y_hat_offset)) # %>%
+
+  #   ## depending on what was generated in the model
+  #   mutate(y_hat_rep_offset = y_hat_offset,
+  #          y_hat_rep = y_hat)
   
   # grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
   
-  ## Fine 
   # plot(y_sim ~ y_hat_rep_offset, data = L)
-  #   ## -> simulation works
+  #   ## -> does simulation work?
+  
   # plot(y_hat_rep_offset ~ I(y_hat_rep * offset), data = L)
-  #   ## -> offset works
+  #   ## -> does offset work?
+  
   # plot(sqrt(L$y_hat_prior), sqrt(d$y_hat_prior[d$rep_yhat2y]))
   # plot(sqrt(y_hat_rep) ~ sqrt(y_hat_prior), data = L) ## the former is the extracted from the model, the latter is the correct data
-  #   ## -> rep_yhat2y is correct, all indexing is correct
+  #   ## -> does rep_yhat2y and indexing work?
+  
   # plot(sqrt(y_sim) ~ sqrt(y_hat_prior * offset), data = L)
   # plot(sqrt(y_hat_prior_rep) ~ sqrt(y_hat_prior * offset), data = L)
   #   ## -> the model works fine
   
-  ## But the averaging is problematic. This should be exactly the same.
-  # plot(log1p(y_sim) ~ log1p(y), data = L)
+  # plot(sqrt(y_sim) ~ sqrt(y), data = L)
   # plot(log1p(y_hat_rep_offset) ~ log1p(y), data = L)
+  #   ## -> Averaging could be problematic. These should be exactly the same.
     
   # lattice::xyplot(log1p(y_sim) ~ log1p(y_hat_prior) | t_which, data = L)
   # lattice::xyplot(log1p(y_hat_rep) ~ log1p(y_prior) | pop + t_which, data = L)
