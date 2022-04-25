@@ -166,13 +166,16 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
     mutate(tax = if_else(str_detect(variable, "[2]"), "other", "Fagus")) %>%
     mutate(var = str_extract(variable, ".*_log")) %>%
     mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
-    dplyr::select(var, p, tax, value) %>%
-    pivot_wider(values_from = "value", names_from = c("p", "tax"), id_cols = "var")
+    dplyr::select(var, p, tax, value, ess_bulk) %>%
+    pivot_wider(values_from = c("value", "ess_bulk"), names_from = c("p", "tax"), id_cols = "var")
   
+  summary_phipar <- cmdstanfit$summary(phipar) %>%
+    mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
+    dplyr::select(var = variable, value, ess_bulk)
+  
+  summary_publish %<>% bind_rows(summary_phipar)
   write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
   
-  summary_phipar <- cmdstanfit$summary(phipar)
-  write.csv(summary_phipar, paste0(path, "/", basename_cmdstanfit, "_summary_phi.csv"))
   
   ## Number of years until equilibrium
   Iter <- cmdstanfit$draws("iterations_fix") %>%
