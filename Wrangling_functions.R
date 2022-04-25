@@ -575,6 +575,12 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
       group_by(clusterid) %>%
       mutate(plotid_select = sample(unique(plotid), 1, replace = F)) %>%
       filter(plotid == plotid_select)
+    
+    ## Subset n_plots
+    n_plots <- 600 ## From 2726 plots
+    plotid_subset <- Stages_select$plotid %>% unique() %>% sample(n_plots, replace = FALSE)
+    Stages_select %<>%
+      filter(plotid %in% plotid_subset)
       
   }
   
