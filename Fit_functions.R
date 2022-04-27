@@ -424,7 +424,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
 
 ## fitTransition --------------------------------
 # data_stan  <- tar_read("data_stan")
-# which  <- "g"
+# which  <- "h" # "g"
 # model_transitions  <- tar_read("model_transitions")
 # fitpath <- tar_read("dir_fit")
 fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit) { # priors!
@@ -444,21 +444,34 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit
   n_chains <- 4
   fit_transition <- model_transitions$sample(data = d,
                                              output_dir = fitpath,
+                                             init = 0.5,
                                              # iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                                              adapt_delta = 0.9, ## difficult geometry with sigma
                                              chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
   
+  #### Pairs
   ggsave(paste0(fitpath, "/Pairs_transitions_", which, ".png"),
-         bayesplot::mcmc_pairs(fit_transition$draws(variables = c("rate_log"))), # "rate_global", "rate_contrast", "sigma_raw"
+         bayesplot::mcmc_pairs(fit_transition$draws(variables = c("rate_log", "phi"))), # "rate_global", "rate_contrast", "sigma_raw"
          device = "png", width = 12, height = 12)
   
   # bayesplot::mcmc_trace(fit_transition$draws())
   # bayesplot::mcmc_areas(fit_transition$draws(variables = c("rate_log")), area_method = "scaled height")
   
-  s <- fit_transition$summary(variables = "rate_log")
+  #### Summary
+  s <- fit_transition$summary(variables = c("rate_log", "phi")) # "theta"
   write.csv(s, file.path(fitpath, paste0("summary_tansitions_", which, ".csv")))  
   message("Summary of the the fit for parameter ", which, ":")
   print(s)
+  
+  #### Residuals
+  ## these do not include zero inflation
+  y_sim <- fit_transition$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
+  residuals <- DHARMa::createDHARMa(simulatedResponse = y_sim, observedResponse = d$y_trans, integerResponse = T) # fittedPredictedResponse = y_hat
+  # testZeroInflation(residuals)
+  # testDispersion(residuals)
+  png(paste0(fitpath, "/Transitions_DHARMa_", which, ".png"), width = 1600, height = 1000)
+  plot(residuals, quantreg = T, smoothScatter = F)
+  dev.off()
   
   return(fit_transition)
 }
