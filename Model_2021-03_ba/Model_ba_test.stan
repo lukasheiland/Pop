@@ -521,9 +521,9 @@ data {
   
   vector<lower=0>[N_pops] upper_init;
   
-  ///% Gamma version
-  //% array[N_locs] vector[N_pops] Prior_state_init_alpha;
-  //% array[N_locs] vector[N_pops] Prior_state_init_mean;
+  /// Gamma version
+  array[N_locs] vector<lower=0>[N_pops] alpha_init;
+  array[N_locs] vector<lower=0>[N_pops] beta_init;
   
   ///* Lognormal version
   //* array[N_locs] vector[N_pops] Prior_state_init_log;
@@ -560,11 +560,10 @@ data {
   // real nu_student;
   
   ////# Data for state debugging
-  // array[N_locs] vector<lower=0>[N_pops] state_init;
+  //@ array[N_locs] vector<lower=0>[N_pops] state_init_data;
   // array[N_locs] vector<lower=0>[N_pops] state_2;
   // array[N_locs] vector<lower=0>[N_pops] state_3;
   
-  //@ array[N_locs] vector<lower=0>[N_pops] state_init_data;
 
 }
 
@@ -634,7 +633,6 @@ parameters {
   // matrix[N_pops, timespan_max] u[N_locs];
   
   array[N_locs] vector<lower=0, upper=1>[N_pops] state_init_raw; //@ 
-  //% array[N_locs] vector[N_pops] state_init_log; // Gamma version
   //* array[N_locs] vector[N_pops] state_init_log_raw; // version with non-central
   // vector<lower=0>[N_pops] sigma_state_init;
   
@@ -666,7 +664,6 @@ transformed parameters {
   
   //@ array[N_locs] vector<lower=0>[N_pops] state_init = state_init_data;
   array[N_locs] vector<lower=0>[N_pops] state_init;
-  //% array[N_locs] vector<lower=0>[N_pops] state_init = exp(state_init_log);
   //* array[N_locs] vector[N_pops] state_init_log;
   // vector[L_y] offset_zeta;
   
@@ -764,7 +761,12 @@ model {
   // sigma_obs ~ normal(0, [0.5, 0.1]); // for observations from predictions
   // alpha_obs_inv ~ normal(0, 0.1); // Observation error for gamma
   // zeta ~ normal(0, 1);
+  
 
+  //// Prior for initial state
+  for(l in 1:N_locs) { 
+    state_init[l] ~ gamma(alpha_init[l], beta_init[l]); // state_init is just a linear transform. -> No Jacobian correction necessary.
+  }
   
   
   //// Priors for Parameters
@@ -1151,7 +1153,7 @@ generated quantities {
     //—————————————————————————————————————————————————————————————————//
   
     // for(loc in 1:N_locs) {
-    //   log_prior += gamma_lpdf(alpha_init, beta_init); //* log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [2, 2, 2, 2, 1, 1]);
+    //   log_prior += gamma_lpdf(alpha_init[loc], beta_init[loc]); //* log_prior += normal_lpdf(state_init_log[loc,] | Prior_state_init_log[loc,], [2, 2, 2, 2, 1, 1]);
     // }
     // 
     // // joint prior specification, sum of all logpriors
