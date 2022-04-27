@@ -13,7 +13,7 @@
 formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, loc = c("plot", "nested", "cluster"), timestep = 1) {
   
   loclevel <- match.arg(loc)
-
+  
   ## Prepare ba_a_upper, the upper basal area of any one tree in A.
   radius_a_upper <- threshold_dbh/2
   ba_a_upper <-  pi * radius_a_upper^2 * 1e-6
@@ -123,21 +123,21 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
     ungroup() %>%
     
     mutate(yhat2y = interaction(loc, t_which, pop, drop = T))
-    
+  
   if (loclevel == "nested") {
     ## Generate variables for "nested" structure, e.g. yhat2y matching
     Stages %<>% 
-        group_by(yhat2y) %>%
-        mutate(y_hat_prior = mean(y_prior, na.rm = T)) %>% ## For state debugging, per ha
-        ungroup() %>%
-        arrange(loc, time, pop, stage, tax, plot)
+      group_by(yhat2y) %>%
+      mutate(y_hat_prior = mean(y_prior, na.rm = T)) %>% ## For state debugging, per ha
+      ungroup() %>%
+      arrange(loc, time, pop, stage, tax, plot)
     
-    } else {
-      
-      Stages %<>% 
-        mutate(y_hat_prior = y_prior) %>%
-        arrange(loc, time, pop, stage, tax)
-    }
+  } else {
+    
+    Stages %<>% 
+      mutate(y_hat_prior = y_prior) %>%
+      arrange(loc, time, pop, stage, tax)
+  }
   
   
   #### Here: different subsets of the data in "Stages", with different formats to be used at different points in the model
@@ -253,18 +253,48 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   print(Phi_empirical)
   
   upper_init <- S %>%
-    filter(stage %in% c("J", "A", "B")) %>%
     group_by(pop) %>%
     summarize(upper = max(y_prior, na.rm = T) * 1.5) %>%
     pull(upper, name = pop)
   
-  State_init <- filter(S, isy0) %>%
-    { if (loclevel == "nested") group_by(., pop, loc) %>% summarize(y_prior = first(y_hat_prior), .groups = "drop") else . } %>%
+  Y_init <-  filter(S, isy0) %>%
+    group_by(pop) %>%
+    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.2) %>%
+    
+    group_by(loc, pop) %>%
+    ## The summaries here are only effectual for loclevel == "nested", because otherwise the grouping group_by(loc, pop) is identical to the original id structure 
+    summarize(lower = min(y_prior, na.rm = T) * 0.7,
+              y_prior = if (loclevel == "nested") first(y_hat_prior) else y_prior,
+              min_pop = first(min_pop),
+              
+              y_prior_0 = if_else(y_prior == 0, min_pop, y_prior),
+              alpha = if_else(y_prior == 0, 1, 300),
+              alphaByE = alpha/y_prior_0,
+              .groups = "drop")
+  
+  Lower_init <- Y_init %>%
+    dplyr::select(pop, loc, lower) %>%
+    pivot_wider(names_from = pop, values_from = lower, id_cols = c("loc")) %>%
+    arrange(loc) %>%
+    tibble::column_to_rownames(var = "loc")
+  
+  State_init <- Y_init %>%
     dplyr::select(pop, loc, y_prior) %>%
     pivot_wider(names_from = pop, values_from = y_prior, id_cols = c("loc")) %>%
     arrange(loc) %>%
-    tibble::column_to_rownames(var = "loc") %>%
-    add(1e-12)
+    tibble::column_to_rownames(var = "loc")
+  
+  Alpha_init <- Y_init %>%
+    dplyr::select(pop, loc, alpha) %>%
+    pivot_wider(names_from = pop, values_from = alpha, id_cols = c("loc")) %>%
+    arrange(loc) %>%
+    tibble::column_to_rownames(var = "loc")
+  
+  AlphaByE_init <- Y_init %>%
+    dplyr::select(pop, loc, alphaByE) %>%
+    pivot_wider(names_from = pop, values_from = alphaByE, id_cols = c("loc")) %>%
+    arrange(loc) %>%
+    tibble::column_to_rownames(var = "loc")
   
   ## State debugging
   # State_1 <- filter(S, isy0) %>%
@@ -374,7 +404,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
     ba_a_upper = ba_a_upper,
     ba_a_avg = ba_a_avg,
     generateposteriorq = 0,
-    upper_init = upper_init,
+    
     
     ##$ Altering the timestep
     # timestep = timestep,
@@ -385,12 +415,11 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
     # Prior_state_init_log = Prior_state_init_log,
     # Prior_state_init = Prior_state_init,
     
-    # alpha_init = Init$alpha,
-    # beta_init = Init$beta,
-    # Prior_state_init_alpha = Prior_state_init_gamma_alpha,
-    # Prior_state_init_beta = Prior_state_init_gamma_beta,
-    
-    state_init_data = State_init,
+    state_init_data = State_init + 1e-12,
+    upper_init = upper_init,
+    lower_init = Lower_init,
+    alpha_init = Alpha_init,
+    beta_init = AlphaByE_init,
     
     ## State debugging
     # state_init = State_1,
@@ -666,8 +695,7 @@ selectOffset <- function(offsetname, data_stan_priors) {
 ## fitModel --------------------------------
 # tar_make("data_stan")
 # data_stan <- tar_read("data_stan")
-# tar_make("testmodel")
-# model <- testmodel <- tar_read("testmodel")
+# model <- testmodel <- tar_read("model_test")
 # dir_fit  <- tar_read("dir_fit")
 fitModel <- function(model, data_stan, initfunc = 0.1, gpq = FALSE,
                      method = c("mcmc", "variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
