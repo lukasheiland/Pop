@@ -1,4 +1,5 @@
 # Directories
+_targets.nosync
 _targets/objects/*
 Data/*
 Publish/*
