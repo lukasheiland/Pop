@@ -299,9 +299,9 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
     plotResiduals(residuals, form = data_seedlings$ba, quantreg = T, smoothScatter = F)
     dev.off()
     
-    png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa_offset", ".png"), width = 1600, height = 1000)
-    plotResiduals(residuals, form = data_seedlings$offset, quantreg = T, smoothScatter = F)
-    dev.off()
+    # png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa_offset", ".png"), width = 1600, height = 1000)
+    # plotResiduals(residuals, form = data_seedlings$offset, quantreg = T, smoothScatter = F)
+    # dev.off()
     
     return(NULL)
   }

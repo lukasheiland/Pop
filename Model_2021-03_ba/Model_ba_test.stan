@@ -377,8 +377,6 @@ functions {
 real neg_binomial_0_lpmf(int y, real y_hat, real phi_obs, real theta) {
 
  real t; // target
- // From a process point of view this is just a negbinom model, with some values multiplied by zero.
- // rbinom(100, 1, prob = 0.2) * rnbinom(100, size = 1100, mu = 10)
 
  if (y == 0) {
    // Joint Likelihood of 0 coming from probability theta or negbinonial
@@ -395,13 +393,8 @@ real neg_binomial_0_lpmf(int y, real y_hat, real phi_obs, real theta) {
  
 // Implementation of zi negbinomial random number generator
 array[] real neg_binomial_0_rng(vector y_hat_rep, vector phi_obs_rep, vector theta_rep, int L_y) {
-
-  array[L_y] real n_io;
-  array[L_y] real io = bernoulli_rng(theta_rep); // variable assignment operator to force array real instead of int
-  array[L_y] real n = neg_binomial_2_rng(y_hat_rep, phi_obs_rep);
-  n_io = to_array_1d(to_vector(n) .* to_vector(io));
-
-  return n_io;
+  
+  //
 }
 
 
@@ -409,8 +402,6 @@ array[] real neg_binomial_0_rng(vector y_hat_rep, vector phi_obs_rep, vector the
 real poisson_0_lpmf(int y, real y_hat, real theta) {
    
   real t; // target
-  // From a process point of view this is just a poisson model, with some values multiplied by zero.
-  // rbinom(100, 1, prob = 0.2) * rpois(100, lambda = 10)
   
   if (y == 0) {
     // Joint Likelihood of 0 coming from probability theta or poisson
@@ -428,12 +419,8 @@ real poisson_0_lpmf(int y, real y_hat, real theta) {
 // Implementation of zi negbinomial random number generator
 array[] real poisson_0_rng(vector y_hat_rep, vector theta_rep, int L_y) {
    
-   array[L_y] real n_io;
-   array[L_y] real io = bernoulli_rng(theta_rep); // variable assignment operator to force array real instead of int
-   array[L_y] real n = poisson_rng(y_hat_rep);
-   n_io = to_array_1d(to_vector(n) .* to_vector(io));
+	//
 
-   return n_io;
  }
 
 
