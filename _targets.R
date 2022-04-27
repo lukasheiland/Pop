@@ -40,7 +40,7 @@ tar_option_set(packages = package)
 
 ### Operation system
 onserver <- Sys.info()["sysname"] != "Darwin"
-if (!onserver) tar_option_set(store = "_targets.nosync")
+if (!onserver) tar_config_set(store = "_targets.nosync")
 
 
 # ————————————————————————————————————————————————————————————————————————————————— #
