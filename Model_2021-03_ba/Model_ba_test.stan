@@ -564,7 +564,7 @@ data {
   // array[N_locs] vector<lower=0>[N_pops] state_2;
   // array[N_locs] vector<lower=0>[N_pops] state_3;
   
-  array[N_locs] vector<lower=0>[N_pops] state_init_data;
+  //@ array[N_locs] vector<lower=0>[N_pops] state_init_data;
 
 }
 
@@ -633,7 +633,7 @@ parameters {
   
   // matrix[N_pops, timespan_max] u[N_locs];
   
-  //@ array[N_locs] vector<lower=0, upper=1>[N_pops] state_init_raw;
+  array[N_locs] vector<lower=0, upper=1>[N_pops] state_init_raw; //@ 
   //% array[N_locs] vector[N_pops] state_init_log; // Gamma version
   //* array[N_locs] vector[N_pops] state_init_log_raw; // version with non-central
   // vector<lower=0>[N_pops] sigma_state_init;
@@ -664,8 +664,8 @@ transformed parameters {
   //// L version: Local input
   array[N_locs] vector<lower=0>[N_species] L_loc;
   
-  array[N_locs] vector<lower=0>[N_pops] state_init = state_init_data;
-  //@ array[N_locs] vector<lower=0>[N_pops] state_init;
+  //@ array[N_locs] vector<lower=0>[N_pops] state_init = state_init_data;
+  array[N_locs] vector<lower=0>[N_pops] state_init;
   //% array[N_locs] vector<lower=0>[N_pops] state_init = exp(state_init_log);
   //* array[N_locs] vector[N_pops] state_init_log;
   // vector[L_y] offset_zeta;
@@ -701,7 +701,7 @@ transformed parameters {
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
     
     
-    //@ state_init[loc] = state_init_raw[loc] .* upper_init;
+    state_init[loc] = state_init_raw[loc] .* upper_init; //@
     ///* Lognormal version, with ~ exp(Normal()) 
     //* state_init_log[loc] = Prior_state_init_log[loc] + state_init_log_raw[loc] .* [3, 3, 3, 3, 3, 3]'; //* [2, 2, 2, 2, 1, 1]';
     
