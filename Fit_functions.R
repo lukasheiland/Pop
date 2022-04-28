@@ -751,10 +751,17 @@ fitModel <- function(model, data_stan, initfunc = 0.1, gpq = FALSE,
     tools::file_path_sans_ext() %>%
     str_replace("-[1-9]-", "-x-")
   
+  ### Write out fit data
   ## Write an empty file to indicate the used offset
   if ( !is.null(attr(data_stan, "offsetname")) ) {
     file.create(file.path(fitpath, paste0(basename, "_", attr(data_stan, "offsetname"), ".txt")), showWarnings = TRUE)
-  } 
+  }
+  
+  ## Write code
+  model$code() %>% writeLines(file(file.path(fitpath, paste0(basename, "_code", ".stan"))))
+  
+  ## Write data
+  saveRDS(data_stan, file.path(fitpath, paste0(basename, "_data", ".rds")))
   
   attr(fit, "basename") <- basename
   
