@@ -78,6 +78,8 @@ model {
   // theta ~ beta(1, 20);
   // phi_inv_sqrt ~ normal(0, 1);
   
+  rate_log ~ normal(0, 10);
+  
   //// Hierarchical version
   /// Hyperpriors
   // sigma_raw ~ normal(0, 0.1);
