@@ -259,16 +259,16 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
-    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.2) %>%
+    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.00001) %>%
     
     group_by(loc, pop) %>%
     ## The summaries here are only effectual for loclevel == "nested", because otherwise the grouping group_by(loc, pop) is identical to the original id structure 
-    summarize(lower = min(y_prior, na.rm = T) * 0.7,
+    summarize(lower = min(y_prior, na.rm = T) * 0.5,
               y_prior = if (loclevel == "nested") first(y_hat_prior) else y_prior,
               min_pop = first(min_pop),
               
               y_prior_0 = if_else(y_prior == 0, min_pop, y_prior),
-              alpha = if_else(y_prior == 0, 1, 300),
+              alpha = if_else(y_prior == 0, 1, 500),
               alphaByE = alpha/y_prior_0,
               .groups = "drop")
   

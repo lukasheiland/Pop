@@ -391,11 +391,11 @@ real neg_binomial_0_lpmf(int y, real y_hat, real phi_obs, real theta) {
 }
  
  
-// Implementation of zi negbinomial random number generator
-array[] real neg_binomial_0_rng(vector y_hat_rep, vector phi_obs_rep, vector theta_rep, int L_y) {
-  
-  //
-}
+//// Implementation of zi negbinomial random number generator
+//array[] real neg_binomial_0_rng(vector y_hat_rep, vector phi_obs_rep, vector theta_rep, int L_y) {
+//  
+//  //
+//}
 
 
 //// Implementation of poisson probability density with zero inflation
@@ -416,12 +416,10 @@ real poisson_0_lpmf(int y, real y_hat, real theta) {
  }
 
 
-// Implementation of zi negbinomial random number generator
-array[] real poisson_0_rng(vector y_hat_rep, vector theta_rep, int L_y) {
-   
-	//
-
- }
+//// Implementation of zi negbinomial random number generator
+//  array[] real poisson_0_rng(vector y_hat_rep, vector theta_rep, int L_y) {
+//	//
+//  }
 
 
 }
