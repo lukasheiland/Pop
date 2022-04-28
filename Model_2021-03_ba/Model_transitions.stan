@@ -49,8 +49,8 @@ parameters {
   
   vector[N_species] rate_log;
   
-  vector<lower=0>[N_species] phi;
-  // vector<lower=0>[N_species] phi_inv_sqrt;
+  // vector<lower=0>[N_species] phi;
+  vector<lower=0>[N_species] phi_inv;
   
 }
 
@@ -63,7 +63,7 @@ transformed parameters {
   //// ZI-version
   // vector[L] theta_rep = rep_vector(theta, L);
   
-  // vector<lower=0>[N_species] phi = inv_square(phi);
+  vector<lower=0>[N_species] phi = inv(phi_inv);
   
   vector<lower=0>[L] y_hat = exp(y_base_log + rate_log[rep_species] + area_log);
   vector<lower=0>[L] phi_rep = phi[rep_species];
@@ -76,9 +76,9 @@ model {
 
   //// Priors
   // theta ~ beta(1, 20);
-  // phi_inv_sqrt ~ normal(0, 1);
   
-  rate_log ~ normal(0, 10);
+  phi_inv ~ normal(0, 5);
+  rate_log ~ normal(0, 5);
   
   //// Hierarchical version
   /// Hyperpriors
