@@ -259,7 +259,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
-    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.00001) %>%
+    ## Together with the offset, the mminimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
+    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.05) %>%
     
     group_by(loc, pop) %>%
     ## The summaries here are only effectual for loclevel == "nested", because otherwise the grouping group_by(loc, pop) is identical to the original id structure 
@@ -295,6 +296,11 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
     pivot_wider(names_from = pop, values_from = alphaByE, id_cols = c("loc")) %>%
     arrange(loc) %>%
     tibble::column_to_rownames(var = "loc")
+  
+  ## Zero
+  # curve(dgamma(x, Alpha_init[1,1], AlphaByE_init[1,1]), 0, 10)
+  ## High J observation
+  # curve(dgamma(x, Alpha_init[10,1], AlphaByE_init[10,1]), 0, 8000)
   
   ## State debugging
   # State_1 <- filter(S, isy0) %>%
