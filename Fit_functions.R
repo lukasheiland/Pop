@@ -479,8 +479,9 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit
   n_chains <- 4
   fit_transition <- model_transitions$sample(data = d,
                                              output_dir = fitpath,
+                                             init = lapply(1:n_chains, function(x) list(phi_inv = c(1, 1), rate_loc = c(-1, -1))),
                                              # iter_warmup = iter_warmup, iter_sampling = iter_sampling,
-                                             # adapt_delta = 0.9, ## difficult geometry with sigma
+                                             adapt_delta = 0.95, ## difficult geometry
                                              chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
   
   #### Pairs
