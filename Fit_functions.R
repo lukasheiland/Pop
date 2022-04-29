@@ -101,9 +101,11 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
     mutate(pop = interaction(tax, stage)) %>%
     
     ## Different levels of observation error were assumed ...
-    ## - per species and for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
-    mutate(obsmethod = fct_recode(stage, "j" = "J", "a" = "A", "ba" = "B", "ba" = "BA")) %>%
-    mutate(obsmethodTax = interaction(substr(tax, 1, 1), obsmethod)) %>% 
+    ## - different obsmethod for J (area count sampling), the stage A (counts from fixed angle sampling), and stage B (basal area from fixed angle sampling).
+    mutate(obsmethod = fct_recode(stage, "j" = "J", "a" = "A", "ba" = "B", "ba" = "BA")) %>% # obsmethodTax == pop
+    ## - different methods for A, and B in 1987 vs. 2002/2012 and different in J over all iterations (different areas)
+    mutate(protocol = methodid) %>%
+    mutate(protocolTax = interaction(substr(tax, 1, 1), methodid)) %>%
     ## - per species and per survey
     # mutate(obsidPop = interaction(obsid, pop)) %>%
     ## - per species and per method (BWI1 vs. BWI2/3)
@@ -238,19 +240,19 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   L_yhat <- nrow(S_yhat)
   
   #### Prepare some summary statistics that inform priors
-  Phi_empirical <- S %>%
-    filter(stage %in% c("J", "A", "B")) %>%
-    # group_by(pop) %>%
-    group_by(obsidPop) %>%
-    summarize(var = var(y_prior, na.rm = T), mean = mean(y_prior, na.rm = T), phi = mean^2/(var - mean)) %>%
-    mutate(phi_inv = 1/phi) %>%
-    mutate(phi_inv_sqrt = 1/sqrt(phi)) %>%
-    mutate(sigma_phi = signif(phi_inv_sqrt, digits = 1)) %>%
-    # arrange(pop)
-    arrange(obsidPop)
-  
-  message("Empirical estimates of phi per species and stage:")
-  print(Phi_empirical)
+  # Phi_empirical <- S %>%
+  #   filter(stage %in% c("J", "A", "B")) %>%
+  #   # group_by(pop) %>%
+  #   group_by(protocolTax) %>%
+  #   summarize(var = var(y_prior, na.rm = T), mean = mean(y_prior, na.rm = T), phi = mean^2/(var - mean)) %>%
+  #   mutate(phi_inv = 1/phi) %>%
+  #   mutate(phi_inv_sqrt = 1/sqrt(phi)) %>%
+  #   mutate(sigma_phi = signif(phi_inv_sqrt, digits = 1)) %>%
+  #   # arrange(pop)
+  #   arrange(protocolTax)
+  # 
+  # message("Empirical estimates of phi per species and protocol:")
+  # print(Phi_empirical)
   
   upper_init <- S %>%
     group_by(pop) %>%
@@ -260,7 +262,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
     ## Together with the offset, the mminimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
-    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.05) %>%
+    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.1) %>%
     
     group_by(loc, pop) %>%
     ## The summaries here are only effectual for loclevel == "nested", because otherwise the grouping group_by(loc, pop) is identical to the original id structure 
@@ -269,7 +271,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
               min_pop = first(min_pop),
               
               y_prior_0 = if_else(y_prior == 0, min_pop, y_prior),
-              alpha = if_else(y_prior == 0, 1, 500),
+              alpha = if_else(y_prior == 0, 1, 100),
               alphaByE = alpha/y_prior_0,
               .groups = "drop")
   
@@ -368,9 +370,10 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
     N_pops = length(unique(S$pop)),
     N_beta = ncol(X),
     N_obsmethod = length(unique(S$obsmethod)),
-    N_obsmethodTax = length(unique(S$obsmethodTax)),
+    N_protocol = length(unique(S$protocol)), ## different sampling area levels for J even in 2002 and 2012
+    N_protocolTax = length(unique(S$protocolTax)), ## different sampling area levels for J even in 2002 and 2012
     N_obsidPop = length(unique(S$obsidPop)),
-    N_protocol = length(unique(S$methodid)), ## different sampling area levels
+    N_protocolPop = length(unique(S$methodid)), ## different sampling area levels for J even in 2002 and 2012
     
     n_obs = S_locs$n_obs,
     n_yhat = S_locs$n_yhat,
@@ -381,17 +384,17 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
     
     rep_yhat2y = match(S$yhat2y, S_yhat$yhat2y),
     rep_obsmethod2y = as.integer(S$obsmethod),
-    rep_protocol2y = as.integer(S$methodid),
+    rep_protocol2y = as.integer(S$protocol),
+    rep_protocolTax2y = as.integer(S$protocolTax),
     rep_obsidPop2y = as.integer(S$obsidPop), ## S$obsidPop %>% levels()
-    rep_pops2y =  as.integer(S$pop), # all(as.integer(S$obsmethodTax) == as.integer(S$pop))
+    rep_pops2y =  as.integer(S$pop),
     rep_pops2init =  as.integer(S_init$pop), ## S_init$pop %>% levels()
     ## unused reps
     # rep_noninit2y = S_noninit$yhat2y,
     # rep_yhat2a2b = S_a2b$rep_yhat2a2b,
     # rep_species2a2b = S_a2b$rep_species2a2b,
-    # rep_obsmethodTax2y = as.integer(S$obsmethodTax), ## for level order check: # attr(data_stan_priors, "Long")$obsmethodTax %>% levels()
-    
-    sigma_phi = Phi_empirical$sigma_phi,
+
+    # sigma_phi = Phi_empirical$sigma_phi,
     
     time_max = S_locs$time_max,
     times = S_times$t,
@@ -450,7 +453,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   
   attr(data, "Long") <- S
   attr(data, "Long_BA") <- Stages
-  attr(data, "Phi_empirical") <- Phi_empirical
+  # attr(data, "Phi_empirical") <- Phi_empirical
   
   return(data)
 }
@@ -595,115 +598,13 @@ selectOffset <- function(offsetname, data_stan_priors) {
 }
 
 
-#### Returns viable start values ---------------------------
-# getInits <- function() {
-#   
-#   responsescaleerror <- 0.1
-#   data <- tar_read(data_stan) ## This is fine in this case, as getInits is only called inside targets that would be invalidated after change of data_stan
-#   n_species <- data$N_species
-#   n_beta <- data$N_beta
-#   n_locs <- data$N_locs
-#   
-#   state_init <- matrix(rlnorm(data$L_yhat, log(0.01), 0.01), nrow = n_locs, ncol = data$N_pops) # array[N_locs] vector<lower=0>[N_pops] state_init;
-#   
-#   b_log <- rnorm(n_species, -1, 0.01)
-#   c_a_log <- rnorm(n_species, -3.3, 0.2)
-#   c_b_log <- rnorm(n_species, -3, 0.1)
-#   c_j_log <- rnorm(n_species, -5, 0.5)
-#   g_log <- rnorm(n_species, -1, 0.2)
-#   h_log <- rnorm(n_species, -0.5, 0.3)
-#   m_a_log <- rnorm(n_species, -1.5, 0.5)
-#   m_j_log <- rnorm(n_species, -1.2, 0.1)
-#   r_log <- rnorm(n_species, 1.5, 0.2)
-#   l_log <- rnorm(n_species, -1, 0.2)
-#   s_log <- rnorm(n_species, -2.9, 0.1)
-#   
-#   beta_null <- function() { matrix(c(-1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.001) }
-#   
-#   
-#   inits <- list(
-#     
-#     # b_log = b_log,
-#     # c_a_log = c_a_log,
-#     # c_b_log = c_b_log,
-#     # c_j_log = c_j_log,
-#     # 
-#     # g_log = g_log,
-#     # h_log = h_log,
-#     # 
-#     # l_log = l_log,
-#     # m_a_log = m_a_log,
-#     # m_j_log = m_j_log,
-#     # r_log = r_log,
-#     # s_log = s_log,
-#     
-#     ## from global environment
-#     Beta_b = matrix(c(1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species),
-#     Beta_c_a = beta_null(),
-#     Beta_c_b = beta_null(),
-#     Beta_c_j = beta_null(),
-#     Beta_g = matrix(c(1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
-#     Beta_h = matrix(c(1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
-#     Beta_l = matrix(c(1, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
-#     Beta_m_a = matrix(c(-4, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
-#     Beta_m_j = matrix(c(-2, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
-#     Beta_r = matrix(c(3, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
-#     Beta_s = matrix(c(-3, rep(0, n_beta-1)), ncol = n_species, nrow = n_beta) + rnorm(n_beta*n_species, 0, 0.3),
-#     
-#     b = exp(b_log),
-#     c_a = exp(c_a_log),
-#     c_b = exp(c_b_log),
-#     c_j = exp(c_j_log),
-#     
-#     g = exp(g_log),
-#     h = exp(h_log),
-#     
-#     l = exp(l_log),
-#     m_a = exp(m_a_log),
-#     m_j = exp(m_j_log),
-#     r = exp(r_log),
-#     s = exp(s_log),
-#     
-#     # b_loc = matrix(rep(exp(b_log), n_locs), nrow = n_locs, byrow = T),
-#     # c_a_loc =  matrix(rep(exp(c_a_log),n_locs), nrow = n_locs, byrow = T),
-#     # c_b_loc =  matrix(rep(exp(c_b_log),n_locs), nrow = n_locs, byrow = T),
-#     # c_j_loc =  matrix(rep(exp(c_j_log),n_locs), nrow = n_locs, byrow = T),
-#     # g_loc =  matrix(rep(exp(g_log),n_locs), nrow = n_locs, byrow = T),
-#     # h_loc =  matrix(rep(exp(h_log),n_locs), nrow = n_locs, byrow = T),
-#     # l_loc =  matrix(rep(exp(l_log),n_locs), nrow = n_locs, byrow = T),
-#     # m_a_loc =  matrix(rep(exp(m_a_log),n_locs), nrow = n_locs, byrow = T),
-#     # m_j_loc =  matrix(rep(exp(m_j_log),n_locs), nrow = n_locs, byrow = T),
-#     # r_loc =  matrix(rep(exp(r_log),n_locs), nrow = n_locs, byrow = T),
-#     # s_loc =  matrix(rep(exp(s_log),n_locs), nrow = n_locs, byrow = T),
-#     
-#     shape_par      = c(10, 10, 10),
-#     sigma_process  = c(0.01),
-#     
-#     sigma_obs      = c(1.1, 1.1, 1.1),
-#     alpha_obs      = c(1, 1, 1),
-#     alpha_obs_inv   = c(1, 1, 1),
-#     phi_obs      = c(10, 20, 20),
-#     
-#     theta = 0.5
-#     
-#     # state_init = state_init,
-#     # state_init_log = log(state_init)
-#     
-#     # u = replicate(n_locs, matrix(rnorm(n_species*3, 0, 0.001), nrow = pars$n_species*3, ncol = data$timespan_max))
-#   )
-#   
-#   return(inits)
-# }
-
-
-
 
 ## fitModel --------------------------------
 # tar_make("data_stan")
 # data_stan <- tar_read("data_stan")
 # model <- testmodel <- tar_read("model_test")
 # dir_fit  <- tar_read("dir_fit")
-fitModel <- function(model, data_stan, initfunc = 0.1, gpq = FALSE,
+fitModel <- function(model, data_stan, gpq = FALSE,
                      method = c("mcmc", "variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = dir_fit) {
   
@@ -711,15 +612,24 @@ fitModel <- function(model, data_stan, initfunc = 0.1, gpq = FALSE,
   
   data_stan$generateposteriorq <- as.integer(gpq)
   
+  inits <- 0.01
+  # inits <- list(state_init_raw = apply(data_stan$state_init_data, 2, function(x) scales::rescale(x, to = c(1e-12, 0.7))),
+  #               b_log = data_stan$prior_b_log[1], c_a_log = data_stan$prior_c_a_log[1], c_b_log = data_stan$prior_c_b_log[1], c_j_log = data_stan$prior_c_j_log[1],
+  #               g_log = unlist(data_stan$prior_g_log[1,], use.names = F), h_log = unlist(data_stan$prior_h_log[1,], use.names = F), l_log = data_stan$prior_l_log[1], r_log = unlist(data_stan$prior_r_log[1,], use.names = F), s_log = data_stan$prior_s_log[1], 
+  #               phi_obs_inv_sqrt = 10
+  #               )
+  
   if (!dir.exists(fitpath)) {
     dir.create(fitpath)
   }
   
   if(match.arg(method) == "variational") {
     
+    # inits <- replicate(1, inits, simplify = F)
+    
     fit <- model$variational(data = data_stan,
                              output_dir = fitpath,
-                             init = initfunc,
+                             init = inits,
                              eta = 0.001,
                              iter = 20**4)
     
@@ -728,10 +638,12 @@ fitModel <- function(model, data_stan, initfunc = 0.1, gpq = FALSE,
     ## https://mc-stan.org/cmdstanr/articles/opencl.html
     ## system("clinfo -l")
     
+    # inits <- replicate(n_chains, inits, simplify = F)
+    
     fit <- model$sample(data = data_stan,
                         output_dir = fitpath,
                         # output_basename = ,
-                        init = initfunc,
+                        init = inits,
                         iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                         # opencl_ids = openclid,
                         # adapt_delta = 0.99,
@@ -739,11 +651,14 @@ fitModel <- function(model, data_stan, initfunc = 0.1, gpq = FALSE,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
     
   } else if (match.arg(method) == "sim") {
+    
+    # inits <- replicate(1, inits, simplify = F)
+    
     fit <- model$sample(data = data_stan,
                         fixed_param = TRUE,
                         output_dir = fitpath,
                         # output_basename = ,
-                        init = initfunc, iter_sampling = iter_sampling)
+                        init = inits, iter_sampling = iter_sampling)
   }
   
   basename <- fit$output_files()[1] %>%
