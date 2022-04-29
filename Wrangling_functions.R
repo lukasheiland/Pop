@@ -459,9 +459,10 @@ saveStages_s <- function(Stages_s) {
 # predictor_select <- tar_read("predictor_select")
 # loclevel <- tar_read("loc")
 selectLocs <- function(Stages_s, predictor_select, selectpred = F,
-                           id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
-                           loc = c("plot", "nested", "cluster")
-                           ) {
+                       id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
+                       loc = c("plot", "nested", "cluster"),
+                       n_locations = 1000
+                       ) {
 
   loclevel <- match.arg(loc)
   
@@ -577,8 +578,7 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
       filter(plotid == plotid_select)
     
     ## Subset n_plots
-    n_plots <- 600 ## From 2726 plots
-    plotid_subset <- Stages_select$plotid %>% unique() %>% sample(n_plots, replace = FALSE)
+    plotid_subset <- Stages_select$plotid %>% unique() %>% sample(n_locations, replace = FALSE)
     Stages_select %<>%
       filter(plotid %in% plotid_subset)
       

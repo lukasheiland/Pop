@@ -56,6 +56,9 @@ targets_settings <- list(
   ##  "cluster" — where the populations correspond to a cluste and get fitted to the sum within a cluster (n_locs == n_clusters)
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
+  ## No. of locations to subset (currently only for loc == "plot")
+  tar_target(n_locations, 1000),
+  
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 200mm > B
@@ -87,7 +90,7 @@ targets_settings <- list(
                # prior_g_log = cbind(Fagus = c(-5, 3), others = c(-5, 3)),
                # prior_h_log = cbind(Fagus = c(-3, 3), others = c(-3, 3)),
                # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_l_log = c(7, 2),
+               prior_l_log = c(9, 2),
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
                prior_s_log = c(-2, 2)
              )
@@ -298,7 +301,7 @@ targets_wrangling <- list(
     
     
     tar_target(Stages_select,
-               selectLocs(Stages_s, predictor_select, selectpred = F, loc = c("plot", "nested", "cluster"))), # Subsetting after smooth, so that smooth can be informed by all plots.
+               selectLocs(Stages_s, predictor_select, selectpred = F, loc = c("plot", "nested", "cluster"), n_locs = n_locations)), # Subsetting after smooth, so that smooth can be informed by all plots.
         ## Workaround for machines where geo libraries do not work: target "Data_Stages_s" instead of "Stages_s"
     
     tar_target(Stages_select_pred,
