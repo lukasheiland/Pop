@@ -301,7 +301,7 @@ targets_wrangling <- list(
     
     
     tar_target(Stages_select,
-               selectLocs(Stages_s, predictor_select, selectpred = F, loc = c("plot", "nested", "cluster"), n_locs = n_locations)), # Subsetting after smooth, so that smooth can be informed by all plots.
+               selectLocs(Stages_s, predictor_select, selectpred = F, loc = c("plot", "nested", "cluster"), n_locations = n_locations)), # Subsetting after smooth, so that smooth can be informed by all plots.
         ## Workaround for machines where geo libraries do not work: target "Data_Stages_s" instead of "Stages_s"
     
     tar_target(Stages_select_pred,
