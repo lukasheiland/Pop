@@ -80,16 +80,16 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-4, 4),
+               prior_b_log = c(-4, 3),
                prior_c_a_log = c(-6, 5),
                prior_c_b_log = c(-6, 5),
                prior_c_j_log = c(-12, 6),
                # prior_g_log = cbind(Fagus = c(-5, 3), others = c(-5, 3)),
                # prior_h_log = cbind(Fagus = c(-3, 3), others = c(-3, 3)),
                # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_l_log = c(7, 3),
+               prior_l_log = c(7, 2),
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_s_log = c(-2, 3)
+               prior_s_log = c(-2, 2)
              )
   ),
   
@@ -376,15 +376,15 @@ targets_fits <- list(
   
   ## Prior predictive tests that rely on currently out-commented generated quantities
   # tar_target(priorsim_test,
-  #            drawTest(model = model_test, data_stan = data_stan_priors_offset, method = "sim", initfunc = 0.1, gpq = FALSE, fitpath = dir_fit)),
+  #            drawTest(model = model_test, data_stan = data_stan_priors_offset, method = "sim", gpq = FALSE, fitpath = dir_fit)),
   # tar_target(plots_predictions_priorsim_test,
   #            plotPredictions(cmdstanfit = priorsim_test, data_stan_priors_offset, check = "prior")),
 
   tar_target(fit_test_sansgq,
-             fitModel(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.05, gpq = FALSE,
+             fitModel(model = model_test, data_stan = data_stan_priors_offset, gpq = FALSE,
                       method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit)),
   tar_target(fit_test,
-             fitModel(model = model_test, data_stan = data_stan_priors_offset, initfunc = 0.05, gpq = TRUE,
+             fitModel(model = model_test, data_stan = data_stan_priors_offset, gpq = TRUE,
                       method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit)),
   tar_target(basename_fit_test,
              getBaseName(fit_test))

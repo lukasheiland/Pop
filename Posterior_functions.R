@@ -259,11 +259,12 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
 # cmdstanfit  <- tar_read("fit_test")
 # data_stan_priors  <- tar_read("data_stan_priors")
 # path  <- tar_read("dir_fit")
+# yhatvar <- "y_hat_offset"
 generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = c("y_hat_offset", "y_hat_rep_offset"), path) {
   
   yhatvar <- match.arg(yhatvar)
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
-
+  
   Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
   Sim[is.na(Sim)] <- 0
   y <- data_stan_priors$y
@@ -274,12 +275,13 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = c("y_hat_o
   offset <- data_stan_priors$offset_data
   
   residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = y_hat, integerResponse = T)
-
+  
   png(paste0(path, "/", basename_cmdstanfit, "_", "DHARMa", ".png"), width = 1600, height = 1000)
   plot(residuals, quantreg = T, smoothScatter = F)
   dev.off()
   
-  # residuals_grouped <- recalculateResiduals(residuals, group = grp)
+  # residuals_recalc <- recalculateResiduals(residuals, group = grp)
+  # plot(residuals_recalc, quantreg = T, smoothScatter = F)
   
   png(paste0(path, "/", basename_cmdstanfit, "_", "DHARMa_grouped", ".png"), width = 2200, height = 800)
   plot(residuals, form = grp, quantreg = T, smoothScatter = F)
