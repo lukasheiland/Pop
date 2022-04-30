@@ -260,12 +260,13 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
 # data_stan_priors  <- tar_read("data_stan_priors")
 # path  <- tar_read("dir_fit")
 # yhatvar <- "y_hat_offset"
-generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = c("y_hat_offset", "y_hat_rep_offset"), path) {
+# includeinit <- FALSE
+generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = c("y_hat_offset", "y_hat_rep_offset"), includeinit = FALSE, path) {
   
   yhatvar <- match.arg(yhatvar)
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
-  Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
+  Sim <- cmdstanfit$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and column index for simulations
   Sim[is.na(Sim)] <- 0
   y <- data_stan_priors$y
   y_hat <- cmdstanfit$draws(variables = yhatvar, format = "draws_matrix") %>% apply(2, median, na.rm = T)
@@ -273,8 +274,14 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = c("y_hat_o
   Longdata <- attr(data_stan_priors, "Long")
   grp <- with(Longdata, interaction(as.integer(as.factor(obsid)), stage, substr(tax, 1, 1)))
   offset <- data_stan_priors$offset_data
+  isnotinit <- !Longdata$isy0
   
-  residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = y_hat, integerResponse = T)
+  if(includeinit) {
+    residuals <- DHARMa::createDHARMa(simulatedResponse = Sim, observedResponse = y, fittedPredictedResponse = y_hat, integerResponse = T)
+  } else {
+    residuals <- DHARMa::createDHARMa(simulatedResponse = Sim[isnotinit,], observedResponse = y[isnotinit], fittedPredictedResponse = y_hat[isnotinit], integerResponse = T)
+    grp <- droplevels(grp[isnotinit])
+  }
   
   png(paste0(path, "/", basename_cmdstanfit, "_", "DHARMa", ".png"), width = 1600, height = 1000)
   plot(residuals, quantreg = T, smoothScatter = F)
