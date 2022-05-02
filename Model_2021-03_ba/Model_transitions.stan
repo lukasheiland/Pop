@@ -98,6 +98,6 @@ model {
 generated quantities {
 
   //@ array[L] int y_sim = neg_binomial_2_rng(y_hat, phi_rep);
-  array[L] int y_sim = poisson(y_hat);
+  array[L] int y_sim = poisson_rng(y_hat);
 
 }
