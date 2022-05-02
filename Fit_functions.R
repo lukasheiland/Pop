@@ -262,7 +262,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
     ## Together with the offset, the mminimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
-    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.1) %>%
+    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.3) %>%
     
     group_by(loc, pop) %>%
     ## The summaries here are only effectual for loclevel == "nested", because otherwise the grouping group_by(loc, pop) is identical to the original id structure 
@@ -271,7 +271,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
               min_pop = first(min_pop),
               
               y_prior_0 = if_else(y_prior == 0, min_pop, y_prior),
-              alpha = if_else(y_prior == 0, 1, 100),
+              alpha = if_else(y_prior == 0, 1, 10),
               alphaByE = alpha/y_prior_0,
               .groups = "drop")
   
@@ -482,21 +482,21 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit
   n_chains <- 4
   fit_transition <- model_transitions$sample(data = d,
                                              output_dir = fitpath,
-                                             init = lapply(1:n_chains, function(x) list(phi_inv = c(1, 1), rate_loc = c(-1, -1))),
+                                             # init = lapply(1:n_chains, function(x) list(phi_inv = c(1, 1), rate_loc = c(-1, -1))),
                                              # iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                                              adapt_delta = 0.95, ## difficult geometry
                                              chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
   
   #### Pairs
   ggsave(paste0(fitpath, "/Pairs_transitions_", which, ".png"),
-         bayesplot::mcmc_pairs(fit_transition$draws(variables = c("rate_log", "phi"))), # "rate_global", "rate_contrast", "sigma_raw"
+         bayesplot::mcmc_pairs(fit_transition$draws(variables = c("rate_log"))), # "phi", "rate_global", "rate_contrast", "sigma_raw"
          device = "png", width = 12, height = 12)
   
   # bayesplot::mcmc_trace(fit_transition$draws())
   # bayesplot::mcmc_areas(fit_transition$draws(variables = c("rate_log")), area_method = "scaled height")
   
   #### Summary
-  s <- fit_transition$summary(variables = c("rate_log", "phi")) # "theta"
+  s <- fit_transition$summary(variables = c("rate_log")) # "theta", "phi"
   write.csv(s, file.path(fitpath, paste0("summary_tansitions_", which, ".csv")))  
   message("Summary of the the fit for parameter ", which, ":")
   print(s)

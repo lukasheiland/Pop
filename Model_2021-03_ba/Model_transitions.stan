@@ -50,7 +50,7 @@ parameters {
   vector[N_species] rate_log;
   
   // vector<lower=0>[N_species] phi;
-  vector<lower=0>[N_species] phi_inv;
+  //@ vector<lower=0>[N_species] phi_inv;
   
 }
 
@@ -63,10 +63,10 @@ transformed parameters {
   //// ZI-version
   // vector[L] theta_rep = rep_vector(theta, L);
   
-  vector<lower=0>[N_species] phi = inv(phi_inv);
+  //@ vector<lower=0>[N_species] phi = inv(phi_inv);
   
   vector<lower=0>[L] y_hat = exp(y_base_log + rate_log[rep_species] + area_log);
-  vector<lower=0>[L] phi_rep = phi[rep_species];
+  //@ vector<lower=0>[L] phi_rep = phi[rep_species];
 
 
 }
@@ -77,8 +77,8 @@ model {
   //// Priors
   // theta ~ beta(1, 20);
   
-  phi_inv ~ normal(0, 5);
-  rate_log ~ normal(0, 5);
+  //@ phi_inv ~ normal(0, 5);
+  rate_log ~ normal(0, 10);
   
   //// Hierarchical version
   /// Hyperpriors
@@ -90,12 +90,14 @@ model {
   //  y_trans[l] ~ neg_binomial_0(y_hat[l], phi_rep[l], theta);
   //}
   
-  y_trans ~ neg_binomial_2(y_hat, phi_rep);
+  //@ y_trans ~ neg_binomial_2(y_hat, phi_rep);
+  y_trans ~ poisson(y_hat);
   
 }
 
 generated quantities {
 
-  array[L] int y_sim = neg_binomial_2_rng(y_hat, phi_rep);
+  //@ array[L] int y_sim = neg_binomial_2_rng(y_hat, phi_rep);
+  array[L] int y_sim = poisson(y_hat);
 
 }
