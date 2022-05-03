@@ -83,16 +83,16 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-4, 2),
-               prior_c_a_log = c(-6, 3),
-               prior_c_b_log = c(-8, 3),
-               prior_c_j_log = c(-12, 3),
+               prior_b_log = c(-3, 1),
+               prior_c_a_log = c(-4, 2),
+               prior_c_b_log = c(-5, 2),
+               prior_c_j_log = c(-14, 3),
                # prior_g_log = cbind(Fagus = c(-5, 3), others = c(-5, 3)),
                # prior_h_log = cbind(Fagus = c(-3, 3), others = c(-3, 3)),
                # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
                prior_l_log = c(5, 2),
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_s_log = c(-4, 2)
+               prior_s_log = c(-3, 2)
              )
   ),
   
@@ -155,7 +155,7 @@ targets_parname <- list(
   tar_target(pars_exclude,
              c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_raw", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt")),
   tar_target(helpers_exclude,
-             c("Fix", "Fix_ko_s",
+             c("Fix", "Fix_ko_s", "Fix_switch_s",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "avg_state_init", "avg_L_loc",
@@ -175,7 +175,7 @@ targets_parname <- list(
                "sum_ko_2_b_fix", "sum_ko_2_c_a_fix", "sum_ko_2_c_b_fix", "sum_ko_2_c_j_fix", "sum_ko_2_g_fix", "sum_ko_2_h_fix", "sum_ko_2_l_fix", "sum_ko_2_r_fix", "sum_ko_2_s_fix",
                "sum_ko_1_prop_b_fix", "sum_ko_1_prop_c_a_fix", "sum_ko_1_prop_c_b_fix", "sum_ko_1_prop_c_j_fix", "sum_ko_1_prop_g_fix", "sum_ko_1_prop_h_fix", "sum_ko_1_prop_l_fix", "sum_ko_1_prop_r_fix", "sum_ko_1_prop_s_fix",
                "sum_ko_2_prop_b_fix", "sum_ko_2_prop_c_a_fix", "sum_ko_2_prop_c_b_fix", "sum_ko_2_prop_c_j_fix", "sum_ko_2_prop_g_fix", "sum_ko_2_prop_h_fix", "sum_ko_2_prop_l_fix", "sum_ko_2_prop_r_fix", "sum_ko_2_prop_s_fix",
-               "Fix_ko_s", "ba_fix_ko_s",
+               "Fix_ko_s", "ba_fix_ko_s", "Fix_switch_s", "ba_fix_switch_s",
                "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")),
   tar_target(exclude,
              c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
@@ -356,7 +356,7 @@ targets_fits <- list(
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
-                          widthfactor_trans = 1.5, widthfactor_reg = 1.5)),
+                          widthfactor_trans = 1, widthfactor_reg = 1)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
@@ -458,7 +458,7 @@ targets_posterior <- list(
   tar_target(plot_contributions_prop_test,
              plotContributions(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, plotprop = T, color = twocolors, themefun = themefunction)),
   tar_target(plots_states_test,
-             plotStates(States_test, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
+             plotStates(States_test, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s"), path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plot_trajectories_avg_test,
              plotTrajectories(Trajectories_avg_test, thicker = T, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(animation_trajectories_avg_test,
