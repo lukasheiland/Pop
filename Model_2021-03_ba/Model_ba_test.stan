@@ -1014,7 +1014,10 @@ generated quantities {
   //// Declarations of counterfactual posterior quantities
   array[N_locs, N_fix] vector[N_species] Fix_ko_s = Fix;
   array[N_locs] vector[N_species] ba_fix_ko_s = J_init;
-
+  
+  array[N_locs, N_fix] vector[N_species] Fix_switch_s = Fix;
+  array[N_locs] vector[N_species] ba_fix_switch_s = J_init;
+  
   
   //// Declarations of quantities for sensitivity checks (as global variables).
   // real log_prior = 0; // this is zero to prevent NaNs from being in the sum.
@@ -1116,10 +1119,9 @@ generated quantities {
         
 
         //// Counterfactual fix point iteration ---------------------------
-        
-        vector[N_species] ko_s_2 = [exp(s_log[1]), 0]';
         vector[N_pops] state_fix = append_row(append_row(J_fix[loc],  A_fix[loc]),  B_fix[loc]);
         
+        vector[N_species] ko_s_2 = [exp(s_log[1]), 0]';
 		// Fix_ko_b[loc]
 		// Fix_ko_c_a[loc]
 		// Fix_ko_c_j[loc]
@@ -1131,6 +1133,11 @@ generated quantities {
 		//* Fix_ko_s[loc] = iterateFix(exp(state_init_log[loc]), exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), ko_s_2, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
 		
 		ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
+		
+		
+		vector[N_species] switch_s = exp(s_log[2:1]);		
+		Fix_switch_s[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), switch_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);		
+		ba_fix_switch_s[loc] = Fix_switch_s[loc, 4];
       
       }
   

@@ -89,7 +89,7 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 formatStates <- function(cmdstanfit, data_stan_priors) {
   
   majorname <- c("major_init", "major_fix")
-  statename <- c("ba_init", "ba_fix", "ba_fix_ko_s",
+  statename <- c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s",
                  "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix")
   varname <- c(majorname, statename)
   
@@ -837,7 +837,7 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 # basename  <- tar_read("basename_fit_test")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s"), path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s"), path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   States <- States[!is.na(States$value),]
   
@@ -945,7 +945,8 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     geom_violin(trim = T, col = "black", scale = "width") +
     facet_wrap(~ gq, labeller = labeller(gq = c(ba_init = "Initial state",
                                                 ba_fix = "Equilibrium state",
-                                                ba_fix_ko_s = "Equilibrium state without s-effect on other"))) +
+                                                ba_fix_ko_s = "Equilibrium state without s-effect on other",
+                                                ba_fix_switch_s = "Equilibrium state with switched s"))) +
     ggtitle("BA") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
