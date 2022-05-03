@@ -271,7 +271,13 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
               min_pop = first(min_pop),
               
               y_prior_0 = if_else(y_prior == 0, min_pop, y_prior),
-              alpha = if_else(y_prior == 0, 1, 10),
+              
+              ## Setting alpha = 1 for 0, so that the most density is towards zero
+              # alpha = if_else(y_prior == 0, 1, 10),
+              alpha = case_when(stage == "J", 1 + 10 * count_obs, ## this will assign 1 to count_obs == 0
+                                stage == "A", 1 + 20 * count_obs,
+                                stage == "B", 1 + 1 * count_obs
+                                ),
               alphaByE = alpha/y_prior_0,
               .groups = "drop")
   
