@@ -33,7 +33,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "lubridate", "DescTools", # "zoo",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "mgcv", "itsadug", "MASS",
-             "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
+             "cmdstanr", "rstan", "chkptstanr", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
              "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate",
              "future.apply")
 tar_option_set(packages = package)
@@ -51,9 +51,9 @@ if (!onserver) tar_config_set(store = "_targets.nosync")
 targets_settings <- list(
   
   ## Whether to fit the model with a population ("loc", i.e. location) structure ...
-  ##  "plot" — where the populations correspond to a plot in the data (n_locs == n_plots)
-  ##  "nested" — where the populations correspond to a cluster, but get fitted to data on the plot level (n_locs == n_clusters)
-  ##  "cluster" — where the populations correspond to a cluste and get fitted to the sum within a cluster (n_locs == n_clusters)
+  ##  "plot" — where the populations correspond to a plot in the data (n_locs == n_plots); environment joined by plot; counts/offsets correspond to a plot
+  ##  "nested" — where the populations correspond to a cluster, but get fitted to data on the plot level (n_locs == n_clusters); environment joined by cluster; counts/offsets correspond to a plot
+  ##  "cluster" — where the populations correspond to a cluster and get fitted to the sum within a cluster (n_locs == n_clusters); environment joined by cluster; counts/offsets correspond to the sum of the plots within a cluster
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")

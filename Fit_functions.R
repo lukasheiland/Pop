@@ -607,11 +607,11 @@ selectOffset <- function(offsetname, data_stan_priors) {
 
 ## fitModel --------------------------------
 # tar_make("data_stan")
-# data_stan <- tar_read("data_stan")
+# data_stan <- tar_read("data_stan_priors_offset")
 # model <- testmodel <- tar_read("model_test")
-# dir_fit  <- tar_read("dir_fit")
+# fitpath  <- tar_read("dir_fit")
 fitModel <- function(model, data_stan, gpq = FALSE,
-                     method = c("mcmc", "variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
+                     method = c("mcmc", "chkptstanr","variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = dir_fit) {
   
   require(cmdstanr)
@@ -655,6 +655,21 @@ fitModel <- function(model, data_stan, gpq = FALSE,
                         # adapt_delta = 0.99,
                         # max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
+    
+  } else if (match.arg(method) == "chkptstanr") {
+    
+    # inits <- replicate(n_chains, inits, simplify = F)
+    message("chkptstanr returns a draws object.")
+    
+    chkptpath <- create_folder(paste0(Sys.Date(), "_checkpoints"), path = fitpath) ## creates nested directory structure
+    fit <- chkpt_stan(model_code = model$code(),
+                      data = data_stan,
+                      path = chkptpath,
+                      init = inits,
+                      iter_per_chkpt = 100, iter_typical = 200,
+                      iter_warmup = iter_warmup, iter_sampling = iter_sampling,
+                      chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
+    fit <- combine_chkpt_draws(object = fit)
     
   } else if (match.arg(method) == "sim") {
     
