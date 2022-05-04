@@ -87,11 +87,10 @@ targets_settings <- list(
                prior_c_a_log = c(-5, 2),
                prior_c_b_log = c(-6, 2),
                prior_c_j_log = c(-14, 3),
-               # prior_g_log = cbind(Fagus = c(-5, 3), others = c(-5, 3)),
-               # prior_h_log = cbind(Fagus = c(-3, 3), others = c(-3, 3)),
-               # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
+               # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
+               # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                prior_l_log = c(5, 1),
-               # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
+               # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
                prior_s_log = c(-2, 1)
              )
   ),
@@ -360,10 +359,13 @@ targets_fit_general <- list(
                           widthfactor_trans = 1, widthfactor_reg = 1)),
   
   tar_target(offsetname,
-             c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
-  
+             c("offset", "offset_avg", "offset_q1", "offset_q3")),
+  tar_target(offsetname_select,
+             offsetname[1]),
   tar_target(data_stan_priors_offset,
-             selectOffset(offsetname, data_stan_priors))
+             selectOffset(offsetname_select, data_stan_priors)),
+  tar_target(data_stan_priors_offsets,
+             selectOffset(offsetname, data_stan_priors), pattern = map(offsetname), iteration = "list")
 )
 
 #### fit_test ----------
@@ -393,17 +395,18 @@ targets_fit_test <- list(
 
 #### fit ----------
 targets_fit <- list(
-  
   tar_target(file_model,
              "Model_2021-03_ba/Model_ba.stan",
              format = "file"),
   tar_target(model,
              cmdstan_model(file_model)),
   tar_target(fit,
-             fitModel(model = model, data_stan = data_stan_priors_offset, gpq = TRUE,
-                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit)),
+             fitModel(model = model, data_stan = data_stan_priors_offsets, gpq = TRUE,
+                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit),
+             pattern = map(data_stan_priors_offsets), iteration = "list"),
   tar_target(basename_fit,
-             getBaseName(fit))
+             getBaseName(fit),
+             pattern = map(fit), iteration = "list")
 )
 
 #### fit_env ----------
