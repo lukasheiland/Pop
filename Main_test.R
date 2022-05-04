@@ -19,24 +19,31 @@ sapply(package, require, character.only = TRUE) ## package is a vector of all pa
 # Make targets pipeline -----------------------------------------------------------------
 # tar_glimpse()
 # M <- tar_manifest(fields = c("name", "command"))
+# M$name
+# tar_watch(seconds = 5, outdated = FALSE, targets_only = TRUE)
 
 ## Wrangling pipeline
 tar_make_future(c("data_stan_priors_offset"), workers = if(onserver) 12 else 3, reporter = "timestamp")
 
 ## Fitting, parallelized internally
-tar_make(c("fit", "summary"))
+tar_make(c("fit_test", "summary_test"))
 
 ## Posterior
-tar_make_future(c("summary",
-                  "summary_states",
-                  "residuals",
-                  "plot_contributions",
-                  "plots_parameters",
-                  "plots_states",
-                  "plot_trajectories_avg",
-                  "plots",
+### High priority targets
+tar_make_future(c("summary_test",
+                  "summary_states_test",
+                  "residuals_test",
+                  "plots_predictions_posterior_test",
+                  "plot_contributions_test",
+                  "plots_parameters_test",
+                  "plots_states_test",
+                  "plot_trajectories_avg_test"),
+                workers = if(onserver) 8 else 3, reporter = "timestamp")
+
+### Medium priority targets
+tar_make_future(c("plots_test",
                   "plots_conditional_test"),
-                workers = if(onserver) 12 else 3, reporter = "timestamp")
+                workers = if(onserver) 6 else 3, reporter = "timestamp")
 
 
 # Inspect pipeline ----------------------------------------------------------------
@@ -45,5 +52,13 @@ network %>%
   visHierarchicalLayout(direction = "LR", levelSeparation = 100, nodeSpacing = 120, edgeMinimization = T, blockShifting = T, parentCentralization = T)
 
 
+# Commit target meta to current branch ---------------------------------------------
+onbranch <- system("git branch --show-current", intern = T)
+oncorrectbranch <- xor(onserver & onbranch == "server",
+                     !onserver & onbranch != "server")
+if (oncorrectbranch) system("git commit -m 'targets meta' _targets/meta/meta") else message("Wrong branch for comitting meta!")
+
+
 # Load results ----------------------------------------------------------------
-tar_load(c("summary", "fit"))
+tar_load(c("summary_test", "fit_test"))
+
