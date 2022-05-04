@@ -33,7 +33,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "lubridate", "DescTools", # "zoo",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "mgcv", "itsadug", "MASS",
-             "cmdstanr", "rstan", "chkptstanr", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense",
+             "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
              "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate",
              "future.apply")
 tar_option_set(packages = package)
@@ -84,15 +84,15 @@ targets_settings <- list(
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
                prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-4, 2),
-               prior_c_b_log = c(-5, 2),
+               prior_c_a_log = c(-5, 2),
+               prior_c_b_log = c(-6, 2),
                prior_c_j_log = c(-14, 3),
                # prior_g_log = cbind(Fagus = c(-5, 3), others = c(-5, 3)),
                # prior_h_log = cbind(Fagus = c(-3, 3), others = c(-3, 3)),
                # prior_k_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_l_log = c(5, 2),
+               prior_l_log = c(5, 1),
                # prior_r_log = cbind(Fagus = c(4, 3), others = c(4, 3)),
-               prior_s_log = c(-3, 2)
+               prior_s_log = c(-2, 1)
              )
   ),
   
