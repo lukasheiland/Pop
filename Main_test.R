@@ -3,7 +3,7 @@ library(targets)
 library(visNetwork)
 library(future)
 library(future.callr)
-library(aria)
+
 
 # Sourcing ----------------------------------------------------
 source("_targets.R")
