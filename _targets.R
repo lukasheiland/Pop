@@ -62,7 +62,7 @@ targets_settings <- list(
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 200mm > B
-  tar_target(threshold_dbh, 200), ## [mm]
+  tar_target(threshold_dbh, 160), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
@@ -76,7 +76,7 @@ targets_settings <- list(
   ## Regeneration classes to include
   ## here we select all 20cm height <= trees < 7cm dbh: regglass_select <- c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)
   ## These are all size classes that are consistent across the three surveys.
-  tar_target(regclass_select, c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)), ## [mm]
+  tar_target(regclass_select, c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)[1:2]), ## [mm]
   
   ## Weakly informative priors.
   ## If provided, they are prioritzed over the fitted priors
@@ -91,7 +91,7 @@ targets_settings <- list(
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                prior_l_log = c(5, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-2, 1)
+               prior_s_log = c(-3, 2)
              )
   ),
   
