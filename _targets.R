@@ -333,8 +333,9 @@ targets_wrangling <- list(
 
 
 
-## Fitting pipeline ------------------------------------------------------
-targets_fits <- list(
+## Fitting pipelines ------------------------------------------------
+#### general ----------
+targets_fit_general <- list(
   tar_target(data_stan,
              formatStanData(Stages_loc, Stages_transitions, taxon_s, threshold_dbh, loc = c("plot", "nested", "cluster"))),
   
@@ -362,21 +363,18 @@ targets_fits <- list(
              c("offset", "offset_avg", "offset_q1", "offset_q3")[1]),
   
   tar_target(data_stan_priors_offset,
-             selectOffset(offsetname, data_stan_priors)),
-  
+             selectOffset(offsetname, data_stan_priors))
+)
+
+#### fit_test ----------
+targets_fit_test <- list(
+
   tar_target(file_model_test,
              "Model_2021-03_ba/Model_ba_test.stan",
              format = "file"),
-  tar_target(file_model,
-             "Model_2021-03_ba/Model_ba.stan",
-             format = "file"),
-  
   tar_target(model_test,
              cmdstan_model(file_model_test) #, cpp_options = list(stan_opencl = TRUE)
              ),
-  tar_target(model,
-             cmdstan_model(file_model)),
-  
   ## Prior predictive tests that rely on currently out-commented generated quantities
   # tar_target(priorsim_test,
   #            drawTest(model = model_test, data_stan = data_stan_priors_offset, method = "sim", gpq = FALSE, fitpath = dir_fit)),
@@ -393,10 +391,40 @@ targets_fits <- list(
              getBaseName(fit_test))
 )
 
+#### fit ----------
+targets_fit <- list(
+  
+  tar_target(file_model,
+             "Model_2021-03_ba/Model_ba.stan",
+             format = "file"),
+  tar_target(model,
+             cmdstan_model(file_model)),
+  tar_target(fit,
+             fitModel(model = model, data_stan = data_stan_priors_offset, gpq = TRUE,
+                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit)),
+  tar_target(basename_fit,
+             getBaseName(fit))
+)
+
+#### fit_env ----------
+targets_fit_env <- list(
+  tar_target(file_model_env,
+             "Model_2021-03_ba/Model_ba_env.stan",
+             format = "file"),
+  tar_target(model_env,
+             cmdstan_model(file_model_env)),
+  tar_target(fit_env,
+             fitModel(model = model_env, data_stan = data_stan_priors_offset, gpq = TRUE,
+                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit)),
+  tar_target(basename_fit_env,
+             getBaseName(fit_env))
+)
+
 
 
 ## Posterior pipeline ------------------------------------------------------
-targets_posterior <- list(
+#### posterior_test -----------
+targets_posterior_test <- list(
   
   ## Extract
   tar_target(stanfit_test,
@@ -472,6 +500,65 @@ targets_posterior <- list(
              testSensitivity(fit_test, include = parname, path = dir_publish))
 )
 
+#### posterior -----------
+targets_posterior <- list(
+  ## Extract
+  tar_target(stanfit,
+             extractStanfit(cmdstanfit = fit)),
+  tar_target(draws,
+             extractDraws(stanfit = stanfit, exclude = helpers_exclude)),
+  
+  ## Summarize
+  tar_target(summary,
+             summarizeFit(cmdstanfit = fit, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc),
+                          publishpar = parname_plotorder, path = dir_publish)),
+  tar_target(summary_states,
+             summarizeStates(States = States, data_stan = data_stan, basename = basename_fit, path = dir_publish)),
+  tar_target(Freq_converged,
+             summarizeFreqConverged(cmdstanfit = fit, data_stan_priors, path = dir_publish)),
+  
+  ## Generate
+  tar_target(residuals,
+             generateResiduals(cmdstanfit = fit, data_stan_priors, path = dir_publish)),
+  tar_target(Trajectories_avg,
+             generateTrajectories(cmdstanfit = fit, data_stan_priors, parname, locparname = parname_loc,
+                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all")),
+  
+  ## Formatted posterior data stuctures
+  tar_target(States,
+             formatStates(cmdstanfit = fit, data_stan_priors)),
+  
+  ## Plot
+  tar_target(plots,
+             plotStanfit(stanfit = stanfit, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
+  tar_target(plots_parameters,
+             plotParameters(stanfit = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
+  tar_target(plots_conditional,
+             plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plot_contributions,
+             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plots_states,
+             plotStates(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s"), path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
+  tar_target(plot_trajectories_avg,
+             plotTrajectories(Trajectories_avg, thicker = T, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
+  tar_target(animation_trajectories_avg,
+             animateTrajectories(plot_trajectories_avg, path = dir_publish, basename = basename_fit))
+)
+
+#### posterior_env -----------
+targets_posterior_env <- list(
+  ## Extract
+  tar_target(stanfit_env,
+             extractStanfit(cmdstanfit = fit_env)),
+  tar_target(draws_env,
+             extractDraws(stanfit = stanfit_env, exclude = helpers_exclude)),
+  
+  ## Summarize
+  tar_target(summary_env,
+             summarizeFit(cmdstanfit = fit_env, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc),
+                          publishpar = parname_plotorder, path = dir_publish))
+)
+
 
 
 ## Standalone generated quantities pipeline -----------------------------------
@@ -501,13 +588,15 @@ targets_posterior <- list(
 # ————————————————————————————————————————————————————————————————————————————————— #
 
 list(
-  
   targets_settings,
   targets_paths,
   targets_wrangling,
   targets_parname,
-  targets_fits,
-  targets_posterior
-  
-  )
+  targets_fit_test,
+  targets_fit,
+  targets_fit_env,
+  targets_posterior_test,
+  targets_posterior,
+  targets_posterior_env
+)
 
