@@ -595,6 +595,7 @@ list(
   targets_paths,
   targets_wrangling,
   targets_parname,
+  targets_fit_general,
   targets_fit_test,
   targets_fit,
   targets_fit_env,
