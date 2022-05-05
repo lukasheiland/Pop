@@ -315,11 +315,11 @@ generatePredictiveChecks <- function(cmdstanfit, data_stan_priors_offset, path) 
   
   d <- data_stan_priors_offset
   L <- attr(data_stan_priors_offset, "Long") %>%
-
+    
     bind_cols(y_sim = E(Draws$y_sim),
               y_hat = E(Draws$y_hat),
               y_hat_offset = E(Draws$y_hat_offset)) # %>%
-
+  
   #   ## depending on what was generated in the model
   #   mutate(y_hat_rep_offset = y_hat_offset,
   #          y_hat_rep = y_hat)
@@ -343,7 +343,7 @@ generatePredictiveChecks <- function(cmdstanfit, data_stan_priors_offset, path) 
   # plot(sqrt(y_sim) ~ sqrt(y), data = L)
   # plot(log1p(y_hat_rep_offset) ~ log1p(y), data = L)
   #   ## -> Averaging could be problematic. These should be exactly the same.
-    
+  
   # lattice::xyplot(log1p(y_sim) ~ log1p(y_hat_prior) | t_which, data = L)
   # lattice::xyplot(log1p(y_hat_rep) ~ log1p(y_prior) | pop + t_which, data = L)
   
@@ -463,7 +463,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     pars <- split(D, 1:nrow(D))
     pars <- lapply(pars, function(p) matrix(c(as.matrix(p)), byrow = F, nrow = data_stan_priors$N_species, dimnames = list(NULL, parname_sans_log)))
     pars <- lapply(pars, as.data.frame)
-  
+    
   }
   
   
@@ -476,7 +476,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     n_locs <- data_stan_priors$N_locs
     
   }
-
+  
   if (match.arg(average) %in% c("locsperdraws_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
     
     draws_loc_avg <- subset_draws(Draws, variable = locparname_avg) %>%
@@ -522,14 +522,14 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
       mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
       pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "tax"), values_from = "L_loc", names_glue = "L_loc[{loc},{tax}]") %>% 
       as_draws_rvars()
-      
+    
     state_init_q <- Quantiles_init %>%
       pivot_longer(any_of(c("p10", "median", "p90")), names_to = "quantile", values_to = "state_init") %>%
       mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
       # mutate(state_init = exp(state_init_log)) %>% ## !!!
       pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "pop"), values_from = "state_init", names_glue = "state_init[{loc},{pop}]") %>% 
       as_draws_rvars()
-
+    
     draws_loc_q <- list(state_init = state_init_q$state_init, L_loc = L_loc_q$L_loc)
     n_locs_q <- 3
   }
@@ -557,7 +557,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     } else {
       locpars <- lapply(locpars, as_draws_matrix)
     }
-
+    
     ## Assign local parameters to draws, adopt manually if necessary
     pars <- lapply(1:length(pars), function(i) within(pars[[i]], l <- c(locpars$L_loc[i,])))
     
@@ -569,7 +569,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     iterateModel_draws(locpars = lapply(lp, function(x) x[i,]), pars = p, time = t, averageperlocs = avgperlocs)
   }
   
-
+  
   averageperlocs <- match.arg(average) == "drawsperlocs_all"
   sims <- future_sapply(1:n_locs, iterateLocs,
                         lp = draws_loc, p = pars, t = time, avg = averageperlocs, simplify = F) # a nested list[locs, draws] of matrices[times]
@@ -654,13 +654,13 @@ plotStanfit <- function(stanfit, exclude, path, basename,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotParameters <- function(stanfit, parname, exclude, path, basename,
-                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                           color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   extendedcolor <- c(color, "#555555") # add a third neutral colour for inspecific priors
   priorlinecolor <- c("#000000", "#000000")
   prioralpha <- c(1, 0.3)
   
-
+  
   getRidgedata <- function(startswith, fit = stanfit) {
     R <- bayesplot::mcmc_areas_data(fit,
                                     pars = vars(starts_with(startswith, ignore.case = F)),
@@ -669,27 +669,27 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
     
     M <- bayesplot::mcmc_intervals_data(fit,
                                         pars = vars(starts_with(startswith, ignore.case = F)))
-
+    
     R %<>%
       mutate(tax = str_extract(parameter, '\\[[12]\\]$')) %>%
       mutate(par = str_extract(parameter, '([a-z_])*')) %>%
       mutate(prior = str_ends(parameter, 'prior(\\[[12]\\])*')) %>%
       mutate(group = case_when(tax == '[1]' & prior ~ 'Fagus prior',
-                                    tax == '[2]' & prior ~ 'other prior',
-                                    tax == '[1]' & !prior ~ 'Fagus',
-                                    tax == '[2]' & !prior ~ 'other',
-                                    is.na(tax) & prior ~ 'prior')) %>%
+                               tax == '[2]' & prior ~ 'other prior',
+                               tax == '[1]' & !prior ~ 'Fagus',
+                               tax == '[2]' & !prior ~ 'other',
+                               is.na(tax) & prior ~ 'prior')) %>%
       mutate(group = factor(group, levels = c('Fagus', 'other', 'Fagus prior', 'other prior', 'prior'), ordered = T)) %>%
       mutate(arrangement = sort(as.integer(group), decreasing = T)) %>%
       left_join(M[, c("parameter", "m")], by = "parameter")
     
-      # group_by(parameter, tax) %>%
-      # mutate(m_d = median(x, na.rm = T), max_d = max(scaled_density, na.rm = T)) %>%
-      # ungroup()
+    # group_by(parameter, tax) %>%
+    # mutate(m_d = median(x, na.rm = T), max_d = max(scaled_density, na.rm = T)) %>%
+    # ungroup()
     
     return(R)
   }
-
+  
   
   plotRidges <- function(Data, plotlegend = FALSE) {
     
@@ -704,14 +704,12 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
       
       ggtitle(paste("log", str_remove(first(Data$par), "_log"))) +
       scale_y_discrete(labels = function(parameter) Data$group[match(parameter, Data$parameter)], expand = expansion(mult = c(0.1, 1))) +
-
+      
       themefun() +
       theme(axis.title.x = element_blank()) +
       theme(axis.title.y = element_blank()) +
       { if(!plotlegend) theme(legend.position="none") }
-      
-      ## Add lines
-      ## Heights were scaled etc.
+    
   }
   
   # plotRidges <- function(startswith, fit = stanfit) {
@@ -722,7 +720,7 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   parname_sansprior <- parname # parname[!grepl("prior$", parname)]
   parnamestart <- na.omit(unique(str_extract(parname_sansprior, "^[a-z]_[ljab]"))) ## For later use in starts_with: Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
   parname <- c(parname, paste0(parname, "_prior"))
-
+  
   bayesplot::color_scheme_set("gray")
   areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
   
@@ -734,7 +732,7 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   plots <- list(ridgeplotgrid = ridgeplotgrid, areasplot = areasplot, ridge_legendplot = legendplot)
   
   mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", height = 10, width = 12), plots, names(plots))
-   
+  
   return(plots)
 }
 
@@ -776,26 +774,26 @@ plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = 
       
     }
   }
-
+  
   densplots <- list("predictions" = bayesplot::ppc_dens_overlay_grouped(log1p(data), log1p(Sim), group = grp))
   
   if (match.arg(check) == "posterior") {
-
+    
     n_species <- 2
     convertVectorToDrawsList <- function(x) {
       lapply(1:length(x), function(i) as_draws_rvars(x[i]) )
     }
     
     fix_draws <- lapply(Fix, function(Rvar) lapply(1:n_species,
-                                                  function(i) do.call(function(...) bind_draws(... , along = "draw"), convertVectorToDrawsList(Rvar[,i, drop = T]))
-                                                  )
-                       )
+                                                   function(i) do.call(function(...) bind_draws(... , along = "draw"), convertVectorToDrawsList(Rvar[,i, drop = T]))
+                                                   )
+                        )
     fix_draws <- as_draws(lapply(fix_draws, function(f) do.call(cbind, lapply(f, function(l) l$x))))
     fix_draws <- thin_draws(fix_draws, thin = 10)
     
     M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
     fixplot <- bayesplot::mcmc_areas_ridges(log(M))
-
+    
     densplots <- c(densplots, list("equilibria" = fixplot))
   }
   
@@ -803,7 +801,7 @@ plotPredictions <- function(cmdstanfit, data_stan_priors, draws = NULL, check = 
   
   mapply(function(p, n) ggsave(paste0(path, "/", basename_cmdstanfit, "_", n, ".png"), p, device = "png", width = 15, height = 10),
          densplots, plotname)
-         ## cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria"), ncol = 1) #  axis = "b", align = "h"
+  ## cowplot::plot_grid(densplot, fixdensplot, labels = c("States", "Equilibria"), ncol = 1) #  axis = "b", align = "h"
   
   return(densplots)
 }
@@ -844,7 +842,7 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
   T_major <- pivot_wider(States[1:6], names_from = "var", values_from = "value") %>%
     na.omit() %>% ## implicit NAs appear through completion by pivot_wider
     mutate(major_fix = as.logical(major_fix), major_init = as.logical(major_init))
-
+  
   plot_major <- ggplot(T_major, aes(x = major_fix, y = ba_fix, col = tax, fill = tax)) +
     geom_violin(trim = T, col = "black", scale = "width") +
     
@@ -892,8 +890,8 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     
     scale_color_manual(values = color) +
     scale_fill_manual(values = color)
-    
-
+  
+  
   Scatter_when <- States %>%
     filter(var %in% whenvar) %>% # filter(States, str_starts(var, "ba")) %>%
     filter(!is.na(value)) %>%
@@ -901,7 +899,7 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
     mutate(when = factor(when, levels = whenvar)) %>%
     dplyr::select(tax, loc, value, when, draw) %>%
     pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
-    
+  
     ## For adding density colours to points
     # group_by(when) %>%
     # mutate(denscol = densCols(x = log10(ba_other), y = log10(ba_Fagus),
@@ -1088,13 +1086,20 @@ plotScatter <- function(States, path, basename, color = c("#208E50", "#FFC800"),
 
 
 ## plotConditional_resampling --------------------------------
+## This resamples the posterior two times based on the frequencies of Fagus majority freq_major and 1-freq_major (referring to the frequencies of subpopulations).
+## - The resampling was done with replacement proportional to the frequency of predominance.
+## - both posteriors Fagus_major and others_major have the same number of samples, although the actual ratio might be different.
+## - The sum of the two sample sets is not equal to the posterior.
+##
+## LaTeX caption: \caption{Correlations of two separate posterior parameter distributions, conditioned on whether Fagus (green) or others (yellow) more frequently are the major population (in basal area) at the equilibrium state. To get the two conditional posteriors, all parameter combinations (MCMC draws) were resampled with replacement, proportional to the frequency of the subpopulations where either Fagus or others were in the majority. E.g., one MCMC draw that would result in 70\% of the subpopulations having Fagus in the majority at equilibrium, would have a resampling probability of 0.7 for the conditional posterior for Fagus and vice versa. Note that due to separate resampling with replacements, the two posteriors have an equal number of samples, although the actual ratio of \emph{Fagus'} to \emph{others'} predominance is \textbf{X} (Table \textbf{X}).}
+##
 # parname  <- tar_read("parname_plotorder")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotConditional_resampling <- function(cmdstanfit, parname, path,
-                            color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                                       color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -1181,7 +1186,7 @@ plotConditional_resampling <- function(cmdstanfit, parname, path,
     ggplot(data = data, mapping = mapping) +
       geom_density(..., color = "black") +
       scale_fill_manual(values = color)
-  }
+    }
   
   pairsplot <- ggpairs(D,
                        mapping = aes(col = major, fill = major),
@@ -1194,7 +1199,7 @@ plotConditional_resampling <- function(cmdstanfit, parname, path,
     scale_fill_manual(values = color) +
     themefun() +
     theme(panel.spacing = unit(0.1, "lines"))
-
+  
   ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 26, width = 26)
   
   return(c(plots_parameters_conditional, 'pairs' = pairsplot))
@@ -1202,6 +1207,9 @@ plotConditional_resampling <- function(cmdstanfit, parname, path,
 
 
 ## plotConditional --------------------------------
+## This plots a pairs correlation plot and does not resample as above,
+## but simply colors the posterior samples by freq_major.
+## - here, the posterior is the actual posterior.
 # parname  <- tar_read("parname_plotorder")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
@@ -1222,21 +1230,21 @@ plotConditional <- function(cmdstanfit, parname, path,
     rowMeans()
   
   ismajor <- freq_major > 0.5
-
+  
   d <- cmdstanfit$draws(variables = parname) %>%
     subset_draws(draw = which(isconverged)) %>%
     as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
-
+  
   
   ## Pairs plot
   D <- d %>%
-    gather_draws(`.*`[i], regex = T) %>%
+    gather_draws(`.*`[i], regex = T) %>% suppressWarnings() %>% ## package tidyr warns about using deprecated gather_()
     ungroup() %>%
-    mutate(major = if_else(str_ends(.variable, "_major"), "Fagus_major", "other_major")) %>%
     mutate(tax = fct_recode(as.character(i), "Fagus" = "1", "other" = "2")) %>%
     mutate(parameter = str_extract(.variable, "([a-z]|c_.+)_log")) %>%
     mutate(parameter = factor(parameter, levels = parname)) %>%
-    pivot_wider(id_cols = c(".draw", "major"), names_from = c("parameter", "tax"), values_from = ".value")
+    pivot_wider(id_cols = c(".draw"), names_from = c("parameter", "tax"), values_from = ".value") %>%
+    bind_cols(freq_major = freq_major, major = if_else(ismajor, "Fagus", "other"))
   
   ## Custom density for colorscale
   plotDensity <- function(data, mapping, ...) {
@@ -1245,21 +1253,28 @@ plotConditional <- function(cmdstanfit, parname, path,
       scale_fill_manual(values = color)
   }
   
+  plotPoints <- function(data, mapping, ...) {
+    ggplot(data = data, mapping = mapping) +
+      geom_point(mapping = aes(col = 1-freq_major), ..., alpha = 0.1, size = 0.6) + ## everything else but col gets inherited!
+      scale_color_gradient(low = color[1], high = color[2], guide = "colourbar", aesthetics = c("colour"))
+  }
+  
   pairsplot <- ggpairs(D,
-                       mapping = aes(col = major, fill = major),
+                       mapping = aes(fill = major), ## discrete mapping for densities
                        columns = match(paste0(rep(parname, each = 2), c("_Fagus", "_other")), colnames(D)),
                        diag = list(continuous = plotDensity),
                        upper = list(continuous = wrap("cor", size = 3.3)),
-                       lower = list(continuous = wrap("points", alpha = 0.1, size = 0.6))
-  ) +
-    scale_color_manual(values = color) +
+                       lower = list(continuous = plotPoints)) + ## wrap("points", alpha = 0.1, size = 0.6)
+
+    # scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
     themefun() +
     theme(panel.spacing = unit(0.1, "lines"))
   
+  
   ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 26, width = 26)
   
-  return(c(plots_parameters_conditional, 'pairs' = pairsplot))
+  return(list('pairs' = pairsplot))
 }
 
 
@@ -1314,7 +1329,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
            xletterpos_l = min(ll) * 0.85) %>%
     
     arrange(stage, parameter)
-
+  
   # plot_contributions <- bayesplot::mcmc_areas_ridges(M)
   
   pos <- position_nudge(y = (as.integer(I$tax) - 1.5) * 0.3)
@@ -1339,7 +1354,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     themefun() +
     scale_color_manual(values = color) +
     theme(axis.title.x = element_blank()) +
-
+    
     ## Only for log-scale
     # { if (!plotprop) scale_x_continuous(trans = ggallin::pseudolog10_trans, breaks = c(-10^(1:3), 10^(1:3))) } + # breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10) , labels = scales::trans_format("log10", scales::math_format(10^.x))
     # { if (!plotprop) annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) } +
@@ -1433,7 +1448,7 @@ testSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
                                         variables = include,
                                         log_prior_fn = extract_log_prior, # require(priorsense)
                                         div_measure = measure)
-
+  
   write.csv(sensitivity[[1]], paste0(path, "/", basename_cmdstanfit, "_sensitivity.csv"))
   
   return(sensitivity)
