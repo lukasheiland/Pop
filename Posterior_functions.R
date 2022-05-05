@@ -1087,13 +1087,13 @@ plotScatter <- function(States, path, basename, color = c("#208E50", "#FFC800"),
 
 
 
-## plotConditional --------------------------------
+## plotConditional_resampling --------------------------------
 # parname  <- tar_read("parname_plotorder")
 # cmdstanfit  <- tar_read("fit_test")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotConditional <- function(cmdstanfit, parname, path,
+plotConditional_resampling <- function(cmdstanfit, parname, path,
                             color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
@@ -1195,6 +1195,68 @@ plotConditional <- function(cmdstanfit, parname, path,
     themefun() +
     theme(panel.spacing = unit(0.1, "lines"))
 
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 26, width = 26)
+  
+  return(c(plots_parameters_conditional, 'pairs' = pairsplot))
+}
+
+
+## plotConditional --------------------------------
+# parname  <- tar_read("parname_plotorder")
+# cmdstanfit  <- tar_read("fit_test")
+# path  <- tar_read("dir_publish")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotConditional <- function(cmdstanfit, parname, path,
+                            color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  
+  isconverged <- cmdstanfit$draws(variables = "converged_fix", format = "draws_matrix") %>%
+    apply(1, all)
+  
+  message("Dropped ", sum(!isconverged), " draw(s), because the simulations have not converged to fixpoint.")
+  
+  freq_major <- cmdstanfit$draws(variables = "major_fix", format = "draws_matrix") %>%
+    subset_draws(draw = which(isconverged)) %>%
+    rowMeans()
+  
+  ismajor <- freq_major > 0.5
+
+  d <- cmdstanfit$draws(variables = parname) %>%
+    subset_draws(draw = which(isconverged)) %>%
+    as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
+
+  
+  ## Pairs plot
+  D <- d %>%
+    gather_draws(`.*`[i], regex = T) %>%
+    ungroup() %>%
+    mutate(major = if_else(str_ends(.variable, "_major"), "Fagus_major", "other_major")) %>%
+    mutate(tax = fct_recode(as.character(i), "Fagus" = "1", "other" = "2")) %>%
+    mutate(parameter = str_extract(.variable, "([a-z]|c_.+)_log")) %>%
+    mutate(parameter = factor(parameter, levels = parname)) %>%
+    pivot_wider(id_cols = c(".draw", "major"), names_from = c("parameter", "tax"), values_from = ".value")
+  
+  ## Custom density for colorscale
+  plotDensity <- function(data, mapping, ...) {
+    ggplot(data = data, mapping = mapping) +
+      geom_density(..., color = "black") +
+      scale_fill_manual(values = color)
+  }
+  
+  pairsplot <- ggpairs(D,
+                       mapping = aes(col = major, fill = major),
+                       columns = match(paste0(rep(parname, each = 2), c("_Fagus", "_other")), colnames(D)),
+                       diag = list(continuous = plotDensity),
+                       upper = list(continuous = wrap("cor", size = 3.3)),
+                       lower = list(continuous = wrap("points", alpha = 0.1, size = 0.6))
+  ) +
+    scale_color_manual(values = color) +
+    scale_fill_manual(values = color) +
+    themefun() +
+    theme(panel.spacing = unit(0.1, "lines"))
+  
   ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 26, width = 26)
   
   return(c(plots_parameters_conditional, 'pairs' = pairsplot))
