@@ -84,14 +84,14 @@ targets_settings <- list(
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
                prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-5, 2),
-               prior_c_b_log = c(-6, 2),
+               prior_c_a_log = c(-6, 2),
+               prior_c_b_log = c(-7, 1),
                prior_c_j_log = c(-14, 3),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               prior_l_log = c(5, 1),
+               prior_l_log = c(6, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-3, 2)
+               prior_s_log = c(-2.5, 2)
              )
   ),
   
@@ -595,7 +595,6 @@ list(
   targets_paths,
   targets_wrangling,
   targets_parname,
-  targets_fit_general,
   targets_fit_test,
   targets_fit,
   targets_fit_env,

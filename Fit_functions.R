@@ -276,7 +276,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
               # alpha = if_else(y_prior == 0, 1, 10),
               alpha = case_when(stage == "J" ~ 1 + 20 * count_obs, ## this will assign 1 to count_obs == 0
                                 stage == "A" ~ 1 + 20 * count_obs,
-                                stage == "B" ~ 1 + 1 * count_obs
+                                stage == "B" ~ 1 + 10 * count_obs
                                 ),
               alphaByE = alpha/y_prior_0,
               .groups = "drop")
