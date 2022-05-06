@@ -274,9 +274,9 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
               
               ## Setting alpha = 1 for 0, so that the most density is towards zero
               # alpha = if_else(y_prior == 0, 1, 10),
-              alpha = case_when(stage == "J" ~ 1 + 20 * count_obs, ## this will assign 1 to count_obs == 0
-                                stage == "A" ~ 1 + 20 * count_obs,
-                                stage == "B" ~ 1 + 10 * count_obs
+              alpha = case_when(stage == "J" ~ 1 + as.integer(count_obs > 0) * 10 + 5 * count_obs, ## this will assign 1 to count_obs == 0
+                                stage == "A" ~ 1 + as.integer(count_obs > 0) * 10 + 5 * count_obs,
+                                stage == "B" ~ 1 + as.integer(count_obs > 0) * 5 + 5 * count_obs
                                 ),
               alphaByE = alpha/y_prior_0,
               .groups = "drop")
@@ -592,7 +592,7 @@ selectOffset <- function(offsetname, data_stan_priors) {
     group_by(obsid, tax, stage) %>%
     summarize_at(c("offset", "offset_avg", "offset_q1", "offset_q3"), .funs = function(x) mean(x, na.rm = T))
   
-  write.csv(Offset_0, "Publish.nosync/Offset_0_averages.csv")
+  write.csv(Offset_0, paste0("Publish.nosync/", Sys.Date(), "_", offsetname, "_", "Offset_0_averages.csv"))
   
   data_stan_priors_offset <- data_stan_priors
   data_stan_priors_offset$offset_data <- L[,offsetname[1], drop = T]

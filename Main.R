@@ -36,11 +36,11 @@ tar_make_future(c("summary",
                   "plot_trajectories_avg",
                   "plots",
                   "plots_conditional_test"),
-                workers = if(onserver) 12 else 3, reporter = "timestamp")
+                workers = if(onserver) 24 else 3, reporter = "timestamp")
 
 
 # Inspect pipeline ----------------------------------------------------------------
-network <- tar_visnetwork(targets_only = T, exclude = contains(c("dir_", "threshold_", "taxon_", "predictor_", "pars_", "exclude", "parname", "simnames", "basename")))
+network <- tar_visnetwork(targets_only = T, exclude = contains(c("_test", "dir_", "threshold_", "taxon_", "predictor_", "pars_", "exclude", "parname", "simnames", "basename")))
 network %>%
   visHierarchicalLayout(direction = "LR", levelSeparation = 100, nodeSpacing = 120, edgeMinimization = T, blockShifting = T, parentCentralization = T)
 
