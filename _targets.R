@@ -83,8 +83,8 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-6, 2),
+               prior_b_log = c(-3, 2),
+               prior_c_a_log = c(-8, 2),
                prior_c_b_log = c(-7, 1),
                prior_c_j_log = c(-14, 3),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
@@ -365,7 +365,8 @@ targets_fit_general <- list(
   tar_target(data_stan_priors_offset,
              selectOffset(offsetname_select, data_stan_priors)),
   tar_target(data_stan_priors_offsets,
-             selectOffset(offsetname, data_stan_priors), pattern = map(offsetname), iteration = "list")
+             selectOffset(offsetname, data_stan_priors),
+             pattern = map(offsetname), iteration = "list")
 )
 
 #### fit_test ----------
@@ -507,45 +508,60 @@ targets_posterior_test <- list(
 targets_posterior <- list(
   ## Extract
   tar_target(stanfit,
-             extractStanfit(cmdstanfit = fit)),
+             extractStanfit(cmdstanfit = fit),
+             pattern = map(fit), iteration = "list"),
   tar_target(draws,
-             extractDraws(stanfit = stanfit, exclude = helpers_exclude)),
+             extractDraws(stanfit = stanfit, exclude = helpers_exclude),
+             pattern = map(stanfit), iteration = "list"),
   
   ## Summarize
   tar_target(summary,
              summarizeFit(cmdstanfit = fit, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc),
-                          publishpar = parname_plotorder, path = dir_publish)),
+                          publishpar = parname_plotorder, path = dir_publish),
+             pattern = map(fit), iteration = "list"),
   tar_target(summary_states,
-             summarizeStates(States = States, data_stan = data_stan, basename = basename_fit, path = dir_publish)),
+             summarizeStates(States = States, data_stan = data_stan, basename = basename_fit, path = dir_publish),
+             pattern = map(States), iteration = "list"),
   tar_target(Freq_converged,
-             summarizeFreqConverged(cmdstanfit = fit, data_stan_priors, path = dir_publish)),
+             summarizeFreqConverged(cmdstanfit = fit, data_stan_priors, path = dir_publish),
+             pattern = map(fit), iteration = "list"),
   
   ## Generate
   tar_target(residuals,
-             generateResiduals(cmdstanfit = fit, data_stan_priors, path = dir_publish)),
+             generateResiduals(cmdstanfit = fit, data_stan_priors, path = dir_publish),
+             pattern = map(fit), iteration = "list"),
   tar_target(Trajectories_avg,
              generateTrajectories(cmdstanfit = fit, data_stan_priors, parname, locparname = parname_loc,
-                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all")),
+                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all"),
+             pattern = map(fit), iteration = "list"),
   
   ## Formatted posterior data stuctures
   tar_target(States,
-             formatStates(cmdstanfit = fit, data_stan_priors)),
+             formatStates(cmdstanfit = fit, data_stan_priors),
+             pattern = map(fit), iteration = "list"),
   
   ## Plot
   tar_target(plots,
-             plotStanfit(stanfit = stanfit, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
+             plotStanfit(stanfit = stanfit, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             pattern = map(stanfit), iteration = "list"),
   tar_target(plots_parameters,
-             plotParameters(stanfit = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
+             plotParameters(stanfit = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             pattern = map(stanfit), iteration = "list"),
   tar_target(plots_conditional,
-             plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+             plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
+             pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions,
-             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
+             pattern = map(fit), iteration = "list"),
   tar_target(plots_states,
-             plotStates(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s"), path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
+             plotStates(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s"), path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             pattern = map(States), iteration = "list"),
   tar_target(plot_trajectories_avg,
-             plotTrajectories(Trajectories_avg, thicker = T, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
+             plotTrajectories(Trajectories_avg, thicker = T, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             pattern = map(Trajectories_avg), iteration = "list"),
   tar_target(animation_trajectories_avg,
-             animateTrajectories(plot_trajectories_avg, path = dir_publish, basename = basename_fit))
+             animateTrajectories(plot_trajectories_avg, path = dir_publish, basename = basename_fit),
+             pattern = slice(fit, index = 1), iteration = "list")
 )
 
 #### posterior_env -----------
