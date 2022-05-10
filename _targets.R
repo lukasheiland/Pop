@@ -368,7 +368,7 @@ targets_fit_general <- list(
              selectOffset(offsetname, data_stan_priors),
              pattern = map(offsetname), iteration = "list"),
   tar_target(data_stan_priors_offsets_1,
-             data_stan_priors_offset[1])
+             data_stan_priors_offsets[1], iteration = "list")
 )
 
 #### fit_test ----------
