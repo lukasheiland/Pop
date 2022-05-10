@@ -85,13 +85,13 @@ targets_settings <- list(
              list(
                prior_b_log = c(-3, 2),
                prior_c_a_log = c(-8, 2),
-               prior_c_b_log = c(-7, 1),
+               prior_c_b_log = c(-6, 1),
                prior_c_j_log = c(-14, 3),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                prior_l_log = c(6, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-2.5, 2)
+               prior_s_log = c(-3, 2)
              )
   ),
   
@@ -366,7 +366,9 @@ targets_fit_general <- list(
              selectOffset(offsetname_select, data_stan_priors)),
   tar_target(data_stan_priors_offsets,
              selectOffset(offsetname, data_stan_priors),
-             pattern = map(offsetname), iteration = "list")
+             pattern = map(offsetname), iteration = "list"),
+  tar_target(data_stan_priors_offsets_1,
+             data_stan_priors_offset[1])
 )
 
 #### fit_test ----------
@@ -402,9 +404,9 @@ targets_fit <- list(
   tar_target(model,
              cmdstan_model(file_model)),
   tar_target(fit,
-             fitModel(model = model, data_stan = data_stan_priors_offsets, gpq = TRUE,
+             fitModel(model = model, data_stan = data_stan_priors_offsets_1, gpq = TRUE, ## data_stan_priors_offsets ## for testing all offsets
                       method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit),
-             pattern = map(data_stan_priors_offsets), iteration = "list"),
+             pattern = map(data_stan_priors_offsets_1), iteration = "list"), ## data_stan_priors_offsets ## for testing all offsets
   tar_target(basename_fit,
              getBaseName(fit),
              pattern = map(fit), iteration = "list")
@@ -543,7 +545,7 @@ targets_posterior <- list(
   ## Plot
   tar_target(plots,
              plotStanfit(stanfit = stanfit, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
-             pattern = map(stanfit, , basename_fit), iteration = "list"),
+             pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_parameters,
              plotParameters(stanfit = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(stanfit, basename_fit), iteration = "list"),
