@@ -521,7 +521,7 @@ targets_posterior <- list(
              pattern = map(fit), iteration = "list"),
   tar_target(summary_states,
              summarizeStates(States = States, data_stan = data_stan, basename = basename_fit, path = dir_publish),
-             pattern = map(States), iteration = "list"),
+             pattern = map(States, basename_fit), iteration = "list"),
   tar_target(Freq_converged,
              summarizeFreqConverged(cmdstanfit = fit, data_stan_priors, path = dir_publish),
              pattern = map(fit), iteration = "list"),
@@ -543,10 +543,10 @@ targets_posterior <- list(
   ## Plot
   tar_target(plots,
              plotStanfit(stanfit = stanfit, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
-             pattern = map(stanfit), iteration = "list"),
+             pattern = map(stanfit, , basename_fit), iteration = "list"),
   tar_target(plots_parameters,
              plotParameters(stanfit = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
-             pattern = map(stanfit), iteration = "list"),
+             pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_conditional,
              plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
@@ -555,13 +555,13 @@ targets_posterior <- list(
              pattern = map(fit), iteration = "list"),
   tar_target(plots_states,
              plotStates(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s"), path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
-             pattern = map(States), iteration = "list"),
+             pattern = map(States, basename_fit), iteration = "list"),
   tar_target(plot_trajectories_avg,
              plotTrajectories(Trajectories_avg, thicker = T, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
-             pattern = map(Trajectories_avg), iteration = "list"),
+             pattern = map(Trajectories_avg, basename_fit), iteration = "list"),
   tar_target(animation_trajectories_avg,
              animateTrajectories(plot_trajectories_avg, path = dir_publish, basename = basename_fit),
-             pattern = slice(fit, index = 1), iteration = "list")
+             pattern = slice(map(fit, basename), index = 1), iteration = "list")
 )
 
 #### posterior_env -----------
