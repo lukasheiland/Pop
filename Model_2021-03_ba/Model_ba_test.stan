@@ -1010,6 +1010,9 @@ generated quantities {
   array[N_locs] int dominant_fix = converged_fix;
   array[N_locs] int major_init = converged_fix;
   array[N_locs] int major_fix = converged_fix;
+  array[N_locs] int major_fix_ko_s = converged_fix;
+  array[N_locs] int major_fix_switch_s = converged_fix;
+
   
   //// Declarations of counterfactual posterior quantities
   array[N_locs, N_fix] vector[N_species] Fix_ko_s = Fix;
@@ -1111,11 +1114,6 @@ generated quantities {
 		sum_ko_2_prop_l_fix[loc] = Fix[loc, 40];
 		sum_ko_2_prop_r_fix[loc] = Fix[loc, 41];
 		sum_ko_2_prop_s_fix[loc] = Fix[loc, 42];
-
-
-        /// Booleans at fixpoint
-        dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
-        major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
         
 
         //// Counterfactual fix point iteration ---------------------------
@@ -1138,6 +1136,13 @@ generated quantities {
 		vector[N_species] switch_s = exp(s_log[2:1]);		
 		Fix_switch_s[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), switch_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);		
 		ba_fix_switch_s[loc] = Fix_switch_s[loc, 4];
+		
+		
+		//// Booleans at fixpoint
+        dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
+        major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
+        major_fix_ko_s[loc] = ba_fix_ko_s[loc, 1] > ba_fix_ko_s[loc, 2]; // ba_1 > 50%
+        major_fix_switch_s[loc] = ba_fix_switch_s[loc, 1] > ba_fix_switch_s[loc, 2]; // ba_1 > 50%
       
       }
   
