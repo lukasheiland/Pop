@@ -88,7 +88,7 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 # data_stan_priors <- tar_read("data_stan_priors")
 formatStates <- function(cmdstanfit, data_stan_priors) {
   
-  majorname <- c("major_init", "major_fix")
+  majorname <- c("major_init", "major_fix", "major_fix_ko_s", "major_fix_switch_s")
   statename <- c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s",
                  "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix")
   varname <- c(majorname, statename)
@@ -217,7 +217,10 @@ summarizeStates <- function(States, data_stan, basename, path) {
     dplyr::select(var = stage, Fagus = Fagus.sylvatica, other)
   
   S <- States %>%
-    mutate(value = if_else(tax == 'other' & (var %in% c("major_init", "major_fix")), 1 - value, value)) %>%
+    mutate(value = if_else(tax == 'other' & (var %in% c("major_init", "major_fix", "major_fix_ko_s",  "major_fix_switch_s")),
+                           1 - value,
+                           value)
+           ) %>%
     group_by(var, tax) %>%
     summarize(mean = mean(value, na.rm = T), sd = sd(value, na.rm = T)) %>%
     mutate(value = paste0(formatNumber(mean, signif.digits = 5), " ± ", formatNumber(sd, signif.digits = 5))) %>%
@@ -1108,7 +1111,7 @@ plotConditional_resampling <- function(cmdstanfit, parname, path,
   
   message("Dropped ", sum(!isconverged), " draw(s), because the simulations have not converged to fixpoint.")
   
-  freq_major <- cmdstanfit$draws(variables = "major_fix", format = "draws_matrix") %>%
+  freq_major <- cmdstanfit$draws(variables = "major_fix_switch_s", format = "draws_matrix") %>%
     subset_draws(draw = which(isconverged)) %>%
     rowMeans()
   
@@ -1225,7 +1228,7 @@ plotConditional <- function(cmdstanfit, parname, path,
   
   message("Dropped ", sum(!isconverged), " draw(s), because the simulations have not converged to fixpoint.")
   
-  freq_major <- cmdstanfit$draws(variables = "major_fix", format = "draws_matrix") %>%
+  freq_major <- cmdstanfit$draws(variables = "major_fix_switch_s", format = "draws_matrix") %>%
     subset_draws(draw = which(isconverged)) %>%
     rowMeans()
   
