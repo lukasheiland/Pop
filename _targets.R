@@ -325,7 +325,7 @@ targets_wrangling <- list(
                summarizeNFIs(Data_big, Data_seedlings, Stages_select, Seedlings_s, tablepath = dir_publish)),
     tar_target(map_select,
                mapClusters(Stages_select, path = dir_publish, themefun = themefunction),
-               packages = c("tidyverse", "sf", "raster", "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist"))
+               packages = c("dplyr", "ggplot2", "magrittr", "sf", "raster", "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist"))
     
   )
 )

@@ -40,6 +40,12 @@ tar_make_future(c("summary",
                   "plots_conditional"),
                 workers = if(onserver) 24 else 3, reporter = "timestamp")
 
+## Publishing
+tar_make_future(c("Summary_taxa",
+                  "Summary_NFIs",
+                  "map_select"),
+                workers = if(onserver) 12 else 3, reporter = "timestamp")
+
 
 # Inspect pipeline ----------------------------------------------------------------
 network <- tar_visnetwork(targets_only = T, exclude = contains(c("_test", "dir_", "threshold_", "taxon_", "predictor_", "pars_", "exclude", "parname", "simnames", "basename")))
