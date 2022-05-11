@@ -1285,7 +1285,7 @@ plotConditional <- function(cmdstanfit, parname, path,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 
-plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
+plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, plotlog = FALSE,
                               color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
@@ -1356,14 +1356,15 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE,
     theme(axis.title.x = element_blank()) +
     
     ## Only for log-scale
-    # { if (!plotprop) scale_x_continuous(trans = ggallin::pseudolog10_trans, breaks = c(-10^(1:3), 10^(1:3))) } + # breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10) , labels = scales::trans_format("log10", scales::math_format(10^.x))
-    # { if (!plotprop) annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) } +
-    # { if (!plotprop) theme(panel.grid.minor = element_blank()) } + ## !!! remove the minor gridlines
+    { if (!plotprop & plotlog) scale_x_continuous(trans = ggallin::pseudolog10_trans, breaks = c(-10^(1:3), 10^(1:3))) } + # breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10) , labels = scales::trans_format("log10", scales::math_format(10^.x))
+    { if (!plotprop & plotlog) annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) } +
+    { if (!plotprop & plotlog) theme(panel.grid.minor = element_blank()) } + ## !!! remove the minor gridlines
     
     { if (plotprop) labs(x = "Average yearly increment in proportion to the total basal area increment [ ]", y = "Parameter", title = "Yearly propotional contributions to the basal") } +
     { if (!plotprop) labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions to the basal area") }
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", ".pdf"), plot_contributions, dev = "pdf", height = 8, width = 12)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", if(plotlog) "_log" else "", ".pdf"),
+         plot_contributions, dev = "pdf", height = 8, width = 12)
   
   return(plot_contributions)
 }
