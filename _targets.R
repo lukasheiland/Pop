@@ -562,8 +562,7 @@ targets_posterior <- list(
              plotTrajectories(Trajectories_avg, thicker = T, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(Trajectories_avg, basename_fit), iteration = "list"),
   tar_target(animation_trajectories_avg,
-             animateTrajectories(plot_trajectories_avg, path = dir_publish, basename = basename_fit),
-             pattern = slice(map(fit, basename_fit), index = 1), iteration = "list")
+             animateTrajectories(plot_trajectories_avg[[1]], path = dir_publish, basename = basename_fit[[1]]))
 )
 
 #### posterior_env -----------
