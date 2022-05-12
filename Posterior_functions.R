@@ -1034,12 +1034,12 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
          plots, names(plots))
   
   stateplotgrid <- cowplot::plot_grid(plot_when + theme(legend.position = "none"), plot_scatter_when, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.5, 1))
-  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".png"), stateplotgrid, device = "png", width = 8, height = 11)
-  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".pdf"), stateplotgrid, device = "pdf", width = 8, height = 11)
+  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".png"), stateplotgrid, device = "png", width = 8, height = 10)
+  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".pdf"), stateplotgrid, device = "pdf", width = 8, height = 10)
   
   stateplotgrid_3 <- cowplot::plot_grid(plot_3 + theme(legend.position = "none"), plot_scatter_3, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.5, 1))
-  ggsave(paste0(path, "/", basename, "_plot_states_3", ".png"), stateplotgrid_3, device = "png", width = 8, height = 11)
-  ggsave(paste0(path, "/", basename, "_plot_states_3", ".pdf"), stateplotgrid_3, device = "pdf", width = 8, height = 11)
+  ggsave(paste0(path, "/", basename, "_plot_states_3", ".png"), stateplotgrid_3, device = "png", width = 12, height = 10)
+  ggsave(paste0(path, "/", basename, "_plot_states_3", ".pdf"), stateplotgrid_3, device = "pdf", width = 12, height = 10)
   
   
   return(plots)
