@@ -105,7 +105,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
     mutate(obsmethod = fct_recode(stage, "j" = "J", "a" = "A", "ba" = "B", "ba" = "BA")) %>% # obsmethodTax == pop
     ## - different methods for A, and B in 1987 vs. 2002/2012 and different in J over all iterations (different areas)
     mutate(protocol = methodid) %>%
-    mutate(protocolTax = interaction(substr(tax, 1, 1), methodid)) %>%
+    mutate(protocolTax = interaction(substr(tax, 1, 1), stage, methodid)) %>% ##! stage has to be included here!
     ## - per species and per survey
     # mutate(obsidPop = interaction(obsid, pop)) %>%
     ## - per species and per method (BWI1 vs. BWI2/3)
@@ -149,7 +149,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   S <- Stages %>%
     st_drop_geometry %>%
     filter(stage %in% c("J", "A", "B")) %>%
-    mutate_at(c("stage", "pop", "obsidPop"), droplevels)
+    mutate_at(c("stage", "pop", "obsidPop", "protocolTax"), droplevels) ## !!!
   
   ## Format: [L_noninit] — locations/resurveys/pops
   # S_noninit <- bind_cols(S, yhat2y = 1:nrow(S)) %>%
@@ -460,6 +460,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   attr(data, "Long") <- S
   attr(data, "Long_BA") <- Stages
   # attr(data, "Phi_empirical") <- Phi_empirical
+  message("Phi levels are:", levels(S$protocolTax))
   
   return(data)
 }
