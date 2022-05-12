@@ -62,7 +62,7 @@ targets_settings <- list(
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 160mm > B
-  tar_target(threshold_dbh, 160), ## [mm]
+  tar_target(threshold_dbh, 200), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
@@ -562,7 +562,7 @@ targets_posterior <- list(
              plotStates(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s"), path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(States, basename_fit), iteration = "list"),
   tar_target(plot_trajectories_avg,
-             plotTrajectories(Trajectories_avg, thicker = T, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             plotTrajectories(Trajectories_avg, thicker = T, path = dir_publish, basename = basename_fit, plotpdf = TRUE, color = twocolors, themefun = themefunction),
              pattern = map(Trajectories_avg, basename_fit), iteration = "list"),
   tar_target(animation_trajectories_avg,
              animateTrajectories(plot_trajectories_avg[[1]], path = dir_publish, basename = basename_fit[[1]]))

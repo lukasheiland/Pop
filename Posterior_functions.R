@@ -1030,16 +1030,16 @@ plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_
                 plot_states_3 = plot_3, plot_states_scatter_3 = plot_scatter_3,
                 plot_states_all = plot_all) # plot_states_diff = plot_diff
   
-  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", width = 11, height = 8),
+  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", width = 10, height = 8),
          plots, names(plots))
   
-  stateplotgrid <- cowplot::plot_grid(plot_when + theme(legend.position = "none"), plot_scatter_when, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.5, 1))
+  stateplotgrid <- cowplot::plot_grid(plot_when + theme(legend.position = "none"), plot_scatter_when, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.4, 1))
   ggsave(paste0(path, "/", basename, "_plot_states_combined", ".png"), stateplotgrid, device = "png", width = 8, height = 10)
   ggsave(paste0(path, "/", basename, "_plot_states_combined", ".pdf"), stateplotgrid, device = "pdf", width = 8, height = 10)
   
-  stateplotgrid_3 <- cowplot::plot_grid(plot_3 + theme(legend.position = "none"), plot_scatter_3, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.5, 1))
-  ggsave(paste0(path, "/", basename, "_plot_states_3", ".png"), stateplotgrid_3, device = "png", width = 12, height = 10)
-  ggsave(paste0(path, "/", basename, "_plot_states_3", ".pdf"), stateplotgrid_3, device = "pdf", width = 12, height = 10)
+  stateplotgrid_3 <- cowplot::plot_grid(plot_3 + theme(legend.position = "none"), plot_scatter_3, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.3 ,1))
+  ggsave(paste0(path, "/", basename, "_plot_states_3", ".png"), stateplotgrid_3, device = "png", width = 11, height = 10)
+  ggsave(paste0(path, "/", basename, "_plot_states_3", ".pdf"), stateplotgrid_3, device = "pdf", width = 11, height = 10)
   
   
   return(plots)
@@ -1359,9 +1359,9 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, plotl
     theme(axis.title.x = element_blank()) +
     
     ## Only for log-scale
-    { if (!plotprop & plotlog) scale_x_continuous(trans = ggallin::pseudolog10_trans, breaks = c(-10^(1:3), 10^(1:3))) } + # breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10) , labels = scales::trans_format("log10", scales::math_format(10^.x))
-    { if (!plotprop & plotlog) annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) } +
-    { if (!plotprop & plotlog) theme(panel.grid.minor = element_blank()) } + ## !!! remove the minor gridlines
+    { if (!plotprop & plotlog) scale_x_continuous(trans = ggallin::pseudolog10_trans) } + ## breaks = c(-10^(1:3), 10^(1:3)) #ggallin::pseudolog10_trans, breaks = scales::trans_breaks("log10", function(x) 10^x, n = 8) , labels = scales::trans_format("log10", scales::math_format(10^.x)))# labels = scales::trans_format("log10", scales::math_format(10^.x))
+    # { if (!plotprop & plotlog) annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) } +
+    # { if (!plotprop & plotlog) theme(panel.grid.minor = element_blank()) } + ## !!! remove the minor gridlines
     
     { if (plotprop) labs(x = "Average yearly increment in proportion to the total basal area increment [ ]", y = "Parameter", title = "Yearly propotional contributions to the basal") } +
     { if (!plotprop) labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions to the basal area") }
@@ -1378,7 +1378,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, plotl
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
+plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename, plotpdf = FALSE,
                              color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   Trajectories %<>%
@@ -1412,6 +1412,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename,
   
   if(is.null(basename)) basename <- "Model"
   ggsave(paste0(path, "/", basename, "_trajectories", ".png"), plot, device = "png", height = 5.2, width = 12)
+  if(plotpdf) ggsave(paste0(path, "/", basename, "_trajectories", ".pdf"), plot, device = "pdf", height = 5.2, width = 12)
   
   return(plot)
 }
