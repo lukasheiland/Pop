@@ -62,13 +62,13 @@ targets_settings <- list(
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 160mm > B
-  tar_target(threshold_dbh, 200), ## [mm]
+  tar_target(threshold_dbh, 160), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
   ##    - dbh_threshold = radius_threshold/c with c == 25
   ##    - Alternatives: 99% radius == 1571 cm, 95% radius == 1188,  96% radius == 1242, 97% 1310.91
-  tar_target(radius_max, 15000), ## [mm]
+  tar_target(radius_max, 14000), ## [mm]
   
   ## Vector of taxa to select. All others will be lumped into "other".
   tar_target(taxon_select, c("Fagus.sylvatica")),
@@ -85,7 +85,7 @@ targets_settings <- list(
              list(
                prior_b_log = c(-3, 2),
                prior_c_a_log = c(-8, 2),
-               prior_c_b_log = c(-6, 1),
+               prior_c_b_log = c(-7, 1),
                prior_c_j_log = c(-14, 3),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
