@@ -735,6 +735,7 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   plots <- list(ridgeplotgrid = ridgeplotgrid, areasplot = areasplot, ridge_legendplot = legendplot)
   
   mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", height = 10, width = 12), plots, names(plots))
+  message("Parameter plots complete.")
   
   return(plots)
 }
