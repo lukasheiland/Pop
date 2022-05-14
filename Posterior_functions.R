@@ -1360,7 +1360,8 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, plotl
     theme(axis.title.x = element_blank()) +
     
     ## Only for log-scale
-    { if (!plotprop & plotlog) scale_x_continuous(trans = ggallin::pseudolog10_trans) } + ## breaks = c(-10^(1:3), 10^(1:3)) #ggallin::pseudolog10_trans, breaks = scales::trans_breaks("log10", function(x) 10^x, n = 8) , labels = scales::trans_format("log10", scales::math_format(10^.x)))# labels = scales::trans_format("log10", scales::math_format(10^.x))
+    { if (!plotprop & plotlog) scale_x_continuous(trans = pseudo_log_trans(sigma = 0.1, base = 10)) } + ## breaks = c(-10^(1:3), 10^(1:3)) #ggallin::pseudolog10_trans, breaks = scales::trans_breaks("log10", function(x) 10^x, n = 8) , labels = scales::trans_format("log10", scales::math_format(10^.x)))# labels = scales::trans_format("log10", scales::math_format(10^.x))
+    ## logticks do not seem work for the pseudo-log close to zero!
     # { if (!plotprop & plotlog) annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) } +
     # { if (!plotprop & plotlog) theme(panel.grid.minor = element_blank()) } + ## !!! remove the minor gridlines
     
