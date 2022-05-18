@@ -1263,11 +1263,30 @@ plotConditional <- function(cmdstanfit, parname, path,
       scale_color_gradient(low = color[1], high = color[2], guide = "colourbar", aesthetics = c("colour"))
   }
   
+  plotStats <- function(data, mapping, ...) {
+    
+    printStats <- function(x, y) {
+      m <- lm(y ~ x)
+      slopetext <- paste(formatC(coef(m)[2], digits = 3, format = "f"), signif_stars(summary(m)$coefficients[2,4]))
+      
+      cor <- stats::cor.test(x, y)
+      cortext <- formatC(as.numeric(cor$estimate), digits = 3, format = "f")
+      cortext <- str_c(cortext, signif_stars(cor$p.value), "\n")
+      
+      return(c(cortext, slopetext))
+    }
+    
+    gtext <- ggally_statistic(data, mapping, printStats, title = c("cor", "slope"))
+    
+    return(gtext)
+  }
+  
+  
   pairsplot <- ggpairs(D,
                        mapping = aes(fill = major), ## discrete mapping for densities
                        columns = match(paste0(rep(parname, each = 2), c("_Fagus", "_other")), colnames(D)),
                        diag = list(continuous = plotDensity),
-                       upper = list(continuous = wrap("cor", size = 3.3)),
+                       upper = list(continuous = plotStats), # wrap("cor", size = 3.3)
                        lower = list(continuous = plotPoints)) + ## wrap("points", alpha = 0.1, size = 0.6)
 
     # scale_color_manual(values = color) +
