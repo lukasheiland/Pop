@@ -33,6 +33,41 @@ functions {
     return State;
   }
   
+  
+  
+  //// Difference equations
+  matrix simulate_m(vector initialstate, int time_max, array[] vector m,
+                  vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
+                  vector ba_a_avg, real ba_a_upper,
+                  int N_spec, int N_pops,
+                  array[] int i_j, array[] int i_a, array[] int i_b) {
+    
+    // State matrix with [species, times]. Times columns is sensible in order to have col-major access in matrices and for to_vector() later on
+    matrix[N_pops, time_max] State;
+    State[,1] = initialstate;
+    
+    for (t in 2:time_max) {
+      // Structure of state[N_pops]: stage/species
+      
+      vector[N_spec] J = State[i_j, t-1];
+      vector[N_spec] A = State[i_a, t-1];
+      vector[N_spec] B = State[i_b, t-1];
+
+      vector[N_spec] BA = (A .* ba_a_avg) + B;
+      real BA_sum = sum(BA);
+      
+      /// Model
+      State[i_j, t]  =  ((r .* BA + l) .* m[t,] + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+      State[i_a, t]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
+      State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+    
+    }
+    
+    return State;
+  }
+  
+  
+  
   ////# Return states without altering them for state debugging
   // matrix simulate_null(vector initialstate, vector state_2, vector state_3, int N_pops) {
   //   
@@ -78,6 +113,7 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(array[] vector state_init, array[] int time_max, array[] int times,    //* vector unpack(array[] vector state_init_log, array[] int time_max, array[] int times,
+                array[,] vector m, //#
                 // vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, vector l_log, vector r_log, vector s_log,
                 vector b_log, vector c_a_log, vector c_b_log, vector c_j_log, vector g_log, vector h_log, array[] vector L_loc, vector r_log, vector s_log,
                 // vector b_log, vector c_a_log, vector c_b_log, matrix C_j_log, matrix G_log, vector h_log, array[] vector L_loc, matrix R_log, matrix S_log,
@@ -98,8 +134,9 @@ functions {
       // print("r", R_log);
       matrix[N_pops, time_max[loc]] States =
                         
-                        simulate(state_init[loc], //* simulate(exp(state_init[loc]),
+                        simulate_m(state_init[loc], //* simulate(exp(state_init[loc]),
                                  time_max[loc],
+                                 m[loc,], //#
                                  // exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), exp(l_log), exp(r_log), exp(s_log),
                                  exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
                                  // ... etc. ,
@@ -557,6 +594,7 @@ data {
 transformed data {
   
   // Times are all assumed to be shifted to start at 1!
+  int N_times_global = max(time_max);
 
   // priors
   // array[2] vector[N_beta] prior_Beta_c_j = transformToNormal(prior_Vertex_c_j);
@@ -626,6 +664,8 @@ parameters {
   ////#
   // array[N_locs] vector<lower=0, upper=1>[N_pops] state_2_raw;
   // array[N_locs] vector<lower=0, upper=1>[N_pops] state_3_raw;
+  
+  array[N_locs,N_times_global-1] vector<lower=0>[N_species] m; //#
 }
 
 
@@ -705,6 +745,7 @@ transformed parameters {
   
   
   vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times, //* unpack(state_init_log, time_max, times,
+                                m, //#
                                 // b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, l_log, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 b_log, c_a_log, c_b_log, c_j_log, g_log, h_log, L_loc, r_log, s_log, // rates matrix[N_locs, N_species]; will have to be transformed
                                 // b_log, c_a_log, c_b_log, C_j_log, G_log, h_log, L_loc, R_log, S_log, // rates matrix[N_locs, N_species]; will have to be transformed
@@ -750,9 +791,16 @@ model {
   // zeta ~ normal(0, 1);
   
 
-  //// Prior for initial state
-  for(l in 1:N_locs) { 
+  for (l in 1:N_locs) {
+    
+    //// Prior for initial state
     state_init[l] ~ gamma(alpha_init[l], beta_init[l]); // state_init is just a linear transform. -> No Jacobian correction necessary.
+    
+    ////# Prior  for seedling input error
+    for (u in 1:(N_times_global-1)) {
+      m[l,u,] ~ lognormal(0, 0.1);
+    }
+    
   }
   
   
