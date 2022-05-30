@@ -57,7 +57,7 @@ functions {
       real BA_sum = sum(BA);
       
       /// Model
-      State[i_j, t]  =  ((r .* BA + l) .* m[t,] + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+      State[i_j, t]  =  ((r .* BA + l) .* m[t-1,] + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
       State[i_a, t]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
       State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
     
