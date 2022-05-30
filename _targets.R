@@ -190,7 +190,7 @@ targets_parname <- list(
   tar_target(parname_sim,
              setdiff(parname, c("theta", "phi_obs", "sigma_k_loc"))),
   tar_target(exclude,
-             c(pars_exclude, locpars_exclude, sigma_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior))
+             c(pars_exclude, parname_loc, parname_sigma, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior))
 )
 
 
