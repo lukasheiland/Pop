@@ -176,17 +176,21 @@ targets_parname <- list(
                "sum_ko_1_prop_b_fix", "sum_ko_1_prop_c_a_fix", "sum_ko_1_prop_c_b_fix", "sum_ko_1_prop_c_j_fix", "sum_ko_1_prop_g_fix", "sum_ko_1_prop_h_fix", "sum_ko_1_prop_l_fix", "sum_ko_1_prop_r_fix", "sum_ko_1_prop_s_fix",
                "sum_ko_2_prop_b_fix", "sum_ko_2_prop_c_a_fix", "sum_ko_2_prop_c_b_fix", "sum_ko_2_prop_c_j_fix", "sum_ko_2_prop_g_fix", "sum_ko_2_prop_h_fix", "sum_ko_2_prop_l_fix", "sum_ko_2_prop_r_fix", "sum_ko_2_prop_s_fix",
                "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")),
-  tar_target(exclude,
-             c(pars_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior)),
+  
   tar_target(parname,
              c("phi_obs", # "sigma_k_loc", # "k_log", # "theta", 
                "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
   tar_target(parname_plotorder,
              c(l = "l_log", r = "r_log", c_j = "c_j_log", s = "s_log", g = "g_log", c_a = "c_a_log", h = "h_log", b = "b_log", c_b = "c_b_log" )),
   tar_target(parname_loc,
-             c("state_init", "L_loc")),
+             c("state_init", "L_loc",
+               "B_log", "C_a_log", "C_b_log", "C_j_log", "G_log", "H_log", "L_log", "R_log", "S_log")),
+  tar_target(parname_sigma,
+             c(l = "sigma_l", r = "sigma_r", c_j = "sigma_c_j", s = "sigma_s", g = "sigma_g", c_a = "sigma_c_a", h = "sigma_h", b = "sigma_b", c_b = "sigma_c_b" )),
   tar_target(parname_sim,
-             setdiff(parname, c("theta", "phi_obs", "sigma_k_loc")))
+             setdiff(parname, c("theta", "phi_obs", "sigma_k_loc"))),
+  tar_target(exclude,
+             c(pars_exclude, locpars_exclude, sigma_exclude, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior))
 )
 
 
