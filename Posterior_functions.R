@@ -57,7 +57,9 @@ extractDraws <- function(stanfit, exclude = helpers_exclude) {
 
 ## formatLoc --------------------------------
 ## helper for all variables that have structure array[N_locs] int/real
-# cmdstanfit <- tar_read("fit_test")
+# name <- tar_read("parname_loc")
+# cmdstanfit_ <- tar_read("fit_test")
+# data_stan_priors_ <- tar_read("data_stan_priors")
 formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors) {
   n_locs <- data_stan_priors_$N_locs
   
@@ -81,6 +83,40 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
   
   return(Draws)
 }
+
+
+## formatEnvironmental --------------------------------
+# cmdstanfit <- tar_read("fit_env")
+# parname <- tar_read("parname_env")
+# envname <- tar_read("predictor_select")
+# data_stan <- tar_read("data_stan_priors_offset")
+formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = data_stan_priors_offset,
+                                envname = predictor_select, locmeans = F) {
+  
+  draws_env <- cmdstanfit$draws(parname) %>%
+    posterior::as_draws()
+  
+  Draws_env <- tidybayes::gather_draws(draws_env, `.*`[loc,tax], regex = T) %>%
+    suppressWarnings() ## package tidyr warns about using deprecated gather_()
+
+  
+  if (locmeans) {
+    Draws_env %<>%
+      group_by(tax, loc, .variable) %>%
+      summarize(.value = mean(.value, na.rm = T))
+  }
+  
+  ## Add environmental values by loc
+  Env <- attr(data_stan, "Long") %>% ## use "Long_BA" for an sf with point coordinates
+    group_by(loc) %>%
+    summarize_at(envname, function(x) first(x[!is.na(x)])) %>%
+    ungroup()
+  
+  Draws_env <- bind_cols(Draws_env, Env[match(Draws_env$loc, Env$loc), envname])
+
+  return(Draws_env)
+}
+
 
 
 ## formatStates --------------------------------
@@ -250,6 +286,30 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
   
   message(sum(Freq_converged$value != 1), " of ", n_locs, " locations have not always converged to fixpoint.")
   return(Freq_converged)
+}
+
+## summarizeErrors --------------------------------
+# cmdstanfit <- tar_read("fit_test")
+# data_stan_priors <- tar_read("data_stan_priors")
+# path <- tar_read("dir_publish")
+summarizeErrors <- function(cmdstanfit, data_stan_priors, path) {
+  
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  
+  # n_locs <- data_stan_priors$N_locs
+  # Freq_converged <- formatLoc("converged_fix", locmeans = T, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
+  
+  errorvar <- c("m")
+  predvar <- c("b")
+  
+  ## TODO: Plot variables
+  # D <- cmdstanfit$draws(variables = c(errorvar, predvar)) %>%
+  #   as_draws_rvars()
+  
+  S <- cmdstanfit$summary(errorvar)
+
+  write.csv(S, paste0(path, "/", basename_cmdstanfit, "_summary_errors.csv"))
+  return(S)
 }
 
 
@@ -601,6 +661,78 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     left_join(Quantiles_init, by = c("draw", "stage", "tax"))
   
   return(Sims)
+}
+
+
+## fitEnvironmental --------------------------------
+# Environmental <- tar_read("Environmental_env")
+# parname <- tar_read("parname_env")
+# envname <- tar_read("predictor_select")
+# path  <- tar_read("dir_fit")
+# basename  <- tar_read("basename_fit_env")
+fitEnvironmental <- function(Environmental, parname = parname_env, envname = predictor_select, taxon = 1:2) {
+  
+  taxon <- as.integer(taxon)
+  
+  E <- filter(Environmental, tax == taxon) %>%
+    filter(.variable == parname) %>%
+    rename(v = .value)
+  
+  splineformula <- paste0("v ~ ", "te(", paste(envname, collapse = ", "), ")")
+
+  ### mgcv
+  fit <- gam(as.formula(splineformula), family = gaussian, data = E)
+    
+  # if(!is.null(path)) {
+  #   s <- summary(fit)
+  #   textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for the background basal area ...", label = paste0("tab:gam_", tax))
+  #   cat(textext, file = file.path(path, paste0(tax, "_summary_gam.tex")), fill = T) %>% invisible()
+  # }
+    
+  attr(fit, "tax") <- taxon
+  attr(fit, "par") <- parname
+    
+  return(fit)
+}
+
+
+## predictEnvironmental --------------------------------
+# fit_Envrionmental <- tar_read("fit_Environmental")
+# parname <- tar_read("parname_env")
+# envname <- tar_read("predictor_select")
+# path  <- tar_read("dir_publish")
+# basename  <- tar_read("basename_fit_test")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+predictEnvironmental <- function(fit, envname,
+                                 path = dir_fit, basename = basename_fit_env,
+                                 color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  if(length(envname) != 2) stop("There are more or fewer than 2 environmental gradients.")
+  
+  taxon <- attr(fit, "tax")
+  parname <- attr(fit, "par")
+  
+  res <- 500
+  name_y <- envname[1]
+  name_x <- envname[2]
+  range_y <- range(fit$model[[name_y]], na.rm = T)
+  range_x <- range(fit$model[[name_x]], na.rm = T)
+  y <- seq(range_y[1], range_y[2], length.out = res)
+  x <- seq(range_x[1], range_x[2], length.out = res)
+  P <- expand.grid(y, x) %>% setNames(c(name_y, name_x))
+  p <- predict(fit, newdata = P, type = "response") %>% c() # %>% matrix(nrow = res, ncol = res)
+  D <- cbind(P, z = p)
+  
+  plot <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
+    geom_raster(aes(fill = z)) +
+    geom_contour(col = "white") +
+    scale_color_manual(values = color) +
+    scale_fill_viridis_c() +
+    themefun() +
+    ggtitle(paste(parname, taxon))
+  
+  return(plot)
 }
 
 
@@ -1452,6 +1584,236 @@ animateTrajectories <- function(plot_trajectories, path, basename) {
   anim_save(paste0(path, "/", basename, "_trajectories_animation", ".mp4"))
   
   return(animation)
+}
+
+## plotStates --------------------------------
+# States <- tar_read("States_test")
+# path  <- tar_read("dir_publish")
+# basename  <- tar_read("basename_fit_test")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotStates <- function(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s"), path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  States <- States[!is.na(States$value),]
+  
+  T_major <- pivot_wider(States[1:6], names_from = "var", values_from = "value") %>%
+    na.omit() %>% ## implicit NAs appear through completion by pivot_wider
+    mutate(major_fix = as.logical(major_fix), major_init = as.logical(major_init))
+  
+  plot_major <- ggplot(T_major, aes(x = major_fix, y = ba_fix, col = tax, fill = tax)) +
+    geom_violin(trim = T, col = "black", scale = "width") +
+    
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(axis.title.x = element_blank()) +
+    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+    
+    ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
+    scale_color_manual(values = color) +
+    scale_fill_manual(values = color)
+  # geom_jitter(position = position_jitter(0.2))
+  
+  #### When
+  whenvar <- c("ba_init", "ba_fix")
+  T_when <- filter(States, var %in% whenvar) %>% # filter(States, str_starts(var, "ba")) %>%
+    rename(when = var) %>%
+    mutate(when = factor(when, levels = whenvar)) %>%
+    group_by(when, loc, draw) %>%
+    mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
+    ungroup()
+  
+  plot_when <- ggplot(T_when, aes(x = tax, y = value, col = tax, fill = tax)) + # without facet wrap: ggplot(T_when, aes(x = when, y = value, col = tax, fill = tax))
+    geom_violin(trim = T, col = "black", scale = "width") +
+    
+    # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 4, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_p10_draw,]) +
+    geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 3, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_median_draw,]) +
+    # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 2, fill = "transparent", scale = "width", data = T_when[T_when$is_loc_p90_draw,]) +
+    
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(axis.title.x = element_blank()) +
+    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+    
+    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
+                                                    ba_fix = "Equilibrium state"))) +
+    
+    labs(y = "basal area [m^2 ha^-1]") +
+    
+    scale_color_manual(values = color) +
+    scale_fill_manual(values = color)
+  
+  
+  Scatter_when <- States %>%
+    filter(var %in% whenvar) %>% # filter(States, str_starts(var, "ba")) %>%
+    filter(!is.na(value)) %>%
+    rename(when = var) %>%
+    mutate(when = factor(when, levels = whenvar)) %>%
+    dplyr::select(tax, loc, value, when, draw) %>%
+    pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
+  
+  ## For adding density colours to points
+  # group_by(when) %>%
+  # mutate(denscol = densCols(x = log10(ba_other), y = log10(ba_Fagus),
+  #                          nbin = 4000, colramp = colorRampPalette(c("#DEDEDE", "black"))))
+  
+  plot_scatter_when <- ggplot(Scatter_when, aes(x = ba_other, y = ba_Fagus)) +
+    
+    geom_hex(bins = 100) +
+    scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
+    geom_abline(slope = 1, intercept = 0, linetype = 3) +
+    # annotate(geom = 'text',  label = 'f(x) = x',
+    #          x = diff(range(Scatter_when$ba_other)) * 0.001 + min(Scatter_when$ba_other), y = diff(range(Scatter_when$ba_Fagus)) * 0.001 + min(Scatter_when$ba_Fagus),
+    #          size = 4, angle = 45) +
+    
+    ## For adding density colours directly to points, with col = denscol
+    # geom_point(size = 0.1) + ## alpha = 0.1
+    # scale_color_identity() +
+    ## Other density viz:
+    # geom_density_2d() + ## contour
+    # geom_smooth(method='lm', formula = ba_Fagus ~ ba_other) +
+    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
+                                                    ba_fix = "Equilibrium state"))) +
+    labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
+    
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+    theme(legend.position = c(0.1, 0.65), legend.background = element_rect(fill = "transparent"))
+  
+  
+  #### Three
+  threevar <- c("ba_init", "ba_fix", "ba_fix_switch_s")
+  T_3 <- filter(States, var %in% threevar) %>%
+    rename(when = var) %>%
+    mutate(when = factor(when, levels = threevar)) %>%
+    group_by(when, loc, draw) %>%
+    mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
+    ungroup()
+  
+  plot_3 <- ggplot(T_3, aes(x = tax, y = value, col = tax, fill = tax)) +
+    geom_violin(trim = T, col = "black", scale = "width") +
+    
+    # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 4, fill = "transparent", scale = "width", data = T_3[T_3$is_loc_p10_draw,]) +
+    geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 3, fill = "transparent", scale = "width", data = T_3[T_3$is_loc_median_draw,]) +
+    # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 2, fill = "transparent", scale = "width", data = T_3[T_3$is_loc_p90_draw,]) +
+    
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(axis.title.x = element_blank()) +
+    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+    
+    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
+                                                    ba_fix = "Equilibrium state",
+                                                    ba_fix_switch_s = "Equilibrium state with switched s"))) +
+    
+    labs(y = "basal area [m^2 ha^-1]") +
+    
+    scale_color_manual(values = color) +
+    scale_fill_manual(values = color)
+  
+  Scatter_3 <- States %>%
+    filter(var %in% threevar) %>% # filter(States, str_starts(var, "ba")) %>%
+    filter(!is.na(value)) %>%
+    rename(when = var) %>%
+    mutate(when = factor(when, levels = threevar)) %>%
+    dplyr::select(tax, loc, value, when, draw) %>%
+    pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
+  
+  plot_scatter_3 <- ggplot(Scatter_3, aes(x = ba_other, y = ba_Fagus)) +
+    geom_hex(bins = 100) +
+    scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
+    geom_abline(slope = 1, intercept = 0, linetype = 3) +
+    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
+                                                    ba_fix = "Equilibrium state",
+                                                    ba_fix_switch_s = "Equilibrium state with switched s"))) +
+    labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+    theme(legend.position = c(0.1, 0.65), legend.background = element_rect(fill = "transparent"))
+  
+  
+  #### All
+  T_all <- filter(States, var %in% allstatevars) %>%
+    rename(gq = var) %>%
+    mutate(gq = factor(gq, levels = allstatevars))
+  
+  plot_all <- ggplot(T_all, aes(x = tax, y = value, col = tax, fill = tax)) +
+    geom_violin(trim = T, col = "black", scale = "width") +
+    facet_wrap(~ gq, labeller = labeller(gq = c(ba_init = "Initial state",
+                                                ba_fix = "Equilibrium state",
+                                                ba_fix_ko_s = "Equilibrium state without s-effect on other",
+                                                ba_fix_switch_s = "Equilibrium state with switched s"))) +
+    ggtitle("BA") +
+    scale_color_manual(values = color) +
+    scale_fill_manual(values = color) +
+    
+    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+    annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+    themefun() +
+    theme(panel.grid.minor = element_blank())## !!! remove the minor gridlines
+  
+  # plot_diff <- ggplot(T_when, aes(x = when, y = diff_ba)) +
+  #   geom_violin(trim = FALSE, col = "black", scale = "width") +
+  #   ggtitle("log_BA_Fagus - log_BA_other at equilibirum and at initial time") +
+  #   scale_color_manual(values = color) +
+  #   themefun()
+  
+  plots <- list(plot_states_major = plot_major,
+                plot_states_when = plot_when, plot_states_scatter_when = plot_scatter_when,
+                plot_states_3 = plot_3, plot_states_scatter_3 = plot_scatter_3,
+                plot_states_all = plot_all) # plot_states_diff = plot_diff
+  
+  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", width = 10, height = 8),
+         plots, names(plots))
+  
+  stateplotgrid <- cowplot::plot_grid(plot_when + theme(legend.position = "none"), plot_scatter_when, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.4, 1))
+  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".png"), stateplotgrid, device = "png", width = 8, height = 10)
+  ggsave(paste0(path, "/", basename, "_plot_states_combined", ".pdf"), stateplotgrid, device = "pdf", width = 8, height = 10)
+  
+  stateplotgrid_3 <- cowplot::plot_grid(plot_3 + theme(legend.position = "none"), plot_scatter_3, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.3 ,1))
+  ggsave(paste0(path, "/", basename, "_plot_states_3", ".png"), stateplotgrid_3, device = "png", width = 11, height = 10)
+  ggsave(paste0(path, "/", basename, "_plot_states_3", ".pdf"), stateplotgrid_3, device = "pdf", width = 11, height = 10)
+  
+  
+  return(plots)
+}
+
+## plotEnvironmental --------------------------------
+# plots <- tar_read("surface_environmental_env")
+# path  <- tar_read("dir_publish")
+# basename  <- tar_read("basename_fit_test")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotEnvironmental <- function(plots,
+                              path = dir_publish, basename = basename_fit_env,
+                              color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  grid <- cowplot::plot_grid(plotlist = plots,  align = "v", ncol = 2)
+  ggsave(paste0(path, "/", basename, "_plot_environmental", ".pdf"), grid, device = "pdf",
+         width = 13, height = 80, limitsize = F)
+  
+  return(grid)
 }
 
 

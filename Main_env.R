@@ -32,6 +32,7 @@ tar_make(c("fit_env", "summary_env"))
 tar_make_future(c("summary_env",
                   "summary_states_env",
                   "residuals_env",
+                  "plot_environmental_env",
                   "plot_contributions_env",
                   "plot_contributions_log_env",
                   "plots_parameters_emv",

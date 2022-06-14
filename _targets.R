@@ -219,7 +219,7 @@ targets_wrangling <- list(
   # tar_load(starts_with("Env"))
   list(
     tar_target(predictor_select,
-               c("alt_loc", "waterLevel_loc", "phCaCl_esdacc")),
+               c("phCaCl_esdacc", "waterLevel_loc")), # "alt_loc"
     tar_target(Env_clean,
                cleanEnv(Data_env, predictor_select)),
     ## Summarize (mutate) predictors per cluster, but keep plot-level disturbance data etc.
@@ -574,6 +574,10 @@ targets_posterior <- list(
 
 #### posterior_env -----------
 targets_posterior_env <- list(
+  
+  tar_target(parname_env,
+             c(setdiff(parname_loc, "state_init"),
+               "ba_init", "ba_fix", "major_init", "major_fix")),
   ## Extract
   tar_target(stanfit_env,
              extractStanfit(cmdstanfit = fit_env)),
@@ -583,7 +587,68 @@ targets_posterior_env <- list(
   ## Summarize
   tar_target(summary_env,
              summarizeFit(cmdstanfit = fit_env, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc),
-                          publishpar = parname_plotorder, path = dir_publish))
+                          publishpar = parname_plotorder, path = dir_publish)),
+  tar_target(summary_states_env,
+           summarizeStates(States = States_env, data_stan = data_stan, basename = basename_fit_env, path = dir_publish)),
+  tar_target(Freq_converged_env,
+           summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors, path = dir_publish)),
+
+  ## Generate
+  tar_target(residuals_env,
+             generateResiduals(cmdstanfit = fit_env, data_stan_priors, path = dir_publish)),
+  tar_target(Trajectories_avg_env,
+             generateTrajectories(cmdstanfit = fit_env, data_stan_priors, parname, locparname = parname_loc,
+                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all")),
+
+  
+  ## Formatted posterior data stuctures
+  tar_target(States_env,
+             formatStates(cmdstanfit = fit_env, data_stan_priors)),
+  tar_target(Environmental_env,
+             formatEnvironmental(cmdstanfit = fit_env, parname = parname_env,
+                                 data_stan = data_stan_priors_offset, envname = predictor_select, locmeans = F)),
+  
+  
+  ## Post-hoc inference
+  tar_target(parname_env_gaussian, setdiff(parname_env, c("major_init", "major_fix"))),
+  
+  tar_target(fit_environmental_env,
+             fitEnvironmental(Environmental_env, parname = parname_env_gaussian, envname = predictor_select, taxon = taxon_s),
+             pattern = cross(parname_env_gaussian, taxon_s),
+             iteration = "list"),
+  
+  tar_target(surface_environmental_env,
+             predictEnvironmental(fit_environmental_env, envname = predictor_select,
+                                  path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
+             pattern = map(fit_environmental_env),
+             iteration = "list"),
+  
+  tar_target(plot_environmental_env,
+             plotEnvironmental(surface_environmental_env,
+                               path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+  
+  tar_target(test_environmental_env,
+             testEnvironmental(NULL))
+  
+  ## Plot
+  # tar_target(plots_env,
+  #            plotStanfit(stanfit = stanfit_env, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+  # tar_target(plots_parameters_env,
+  #            plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+  # tar_target(plots_predictions_posterior_env,
+  #            plotPredictions(cmdstanfit = fit_env, data_stan_priors_offset, check = "posterior", path = dir_publish)),
+  # tar_target(plots_conditional_env,
+  #            plotConditional(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  # tar_target(plot_contributions_env,
+  #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  # tar_target(plot_contributions_prop_env,
+  #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, plotprop = T, color = twocolors, themefun = themefunction)),
+  # tar_target(plots_states_env,
+  #            plotStates(States_env, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s"), path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+  # tar_target(plot_trajectories_avg_env,
+  #            plotTrajectories(Trajectories_avg_env, thicker = T, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+  # tar_target(animation_trajectories_avg_env,
+  #            animateTrajectories(plot_trajectories_avg_env, path = dir_publish, basename = basename_fit_env))
 )
 
 
