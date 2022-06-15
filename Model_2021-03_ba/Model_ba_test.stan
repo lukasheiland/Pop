@@ -798,7 +798,7 @@ model {
     
     ////# Prior  for seedling input error
     for (u in 1:(N_times_global-1)) {
-      m[l,u,] ~ lognormal(0, 0.1);
+      m[l,u,] ~ lognormal(0, 0.2);
     }
     
   }
