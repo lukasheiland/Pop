@@ -6,12 +6,15 @@
 # Stages  <- tar_read("Stages_loc")
 # Stages_transitions  <- tar_read("Stages_transitions")
 # taxon_s  <- tar_read("taxon_s")
+# predictor_select  <- tar_read("predictor_select")
 # threshold_dbh <- tar_read("threshold_dbh")
 # loclevel <- tar_read(loc)
 # timestep <- 1
 
-formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, loc = c("plot", "nested", "cluster"), timestep = 1) {
+formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, predictor_select,
+                           loc = c("plot", "nested", "cluster"), timestep = 1) {
   
+  predictor_select_s <- paste0(predictor_select, "_s")
   loclevel <- match.arg(loc)
   
   ## Prepare ba_a_upper, the upper basal area of any one tree in A.
@@ -194,9 +197,9 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
               n_pops = n_distinct(pop),
               n_obs = n_distinct(t),
               n_yhat = n_distinct(interaction(pop, t)),
-              alt_loc_s = first(alt_loc_s),
-              phCaCl_esdacc_s = first(phCaCl_esdacc_s),
-              waterLevel_loc_s = first(waterLevel_loc_s),
+              
+              across(all_of(predictor_select_s), first),
+              
               clusterid = first(clusterid),
               .groups = "drop")
   
@@ -218,7 +221,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, l
   
   
   #### Prepare design matrix
-  Env <- S_locs[c("phCaCl_esdacc_s", "waterLevel_loc_s")]
+  Env <- S_locs[predictor_select_s]
   if (anyNA(Env)) {
     X <- matrix(0, nrow = nrow(Env), ncol = ncol(Env))
     message("With Env having NAs, an empty design matrix was produced, assuming that it will not be used.")

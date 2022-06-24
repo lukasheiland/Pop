@@ -307,20 +307,12 @@ targets_wrangling <- list(
                selectLocs(Stages_s, predictor_select, selectpred = F, loc = c("plot", "nested", "cluster"), n_locations = n_locations)), # Subsetting after smooth, so that smooth can be informed by all plots.
         ## Workaround for machines where geo libraries do not work: target "Data_Stages_s" instead of "Stages_s"
     
-    tar_target(Stages_select_pred,
-               selectLocs(Stages_s, predictor_select, selectpred = T, loc = c("plot", "nested", "cluster"))), # Selection based on whether environmental variables are present
-    
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
     
-    tar_target(Stages_scaled_pred,
-               scaleData(Stages_select_pred, predictor_select)), # After selection, so that scaling includes selected plots 
-    
     tar_target(Stages_loc,
                setLocLevel(Stages_scaled, Env_cluster, loc = c("plot", "nested", "cluster"))),
-    
-    tar_target(Stages_loc_pred,
-               setLocLevel(Stages_scaled_pred, Env_cluster, loc = c("plot", "nested", "cluster"))),
+
     
     ## Publishing
     tar_target(Summary_taxa,
@@ -340,10 +332,12 @@ targets_wrangling <- list(
 #### general ----------
 targets_fit_general <- list(
   tar_target(data_stan,
-             formatStanData(Stages_loc, Stages_transitions, taxon_s, threshold_dbh, loc = c("plot", "nested", "cluster"))),
+             formatStanData(Stages_loc, Stages_transitions, taxon_s, threshold_dbh, predictor_select,
+                            loc = c("plot", "nested", "cluster"))),
   
   tar_target(data_stan_transitions,
-             formatStanData(Stages_loc, Stages_transitions, taxon_s, threshold_dbh, loc = "plot")),
+             formatStanData(Stages_loc, Stages_transitions, taxon_s, threshold_dbh, predictor_select,
+                            loc = "plot")),
   
   tar_target(file_model_transitions,
              "Model_2021-03_ba/Model_transitions.stan",
@@ -418,6 +412,43 @@ targets_fit <- list(
 
 #### fit_env ----------
 targets_fit_env <- list(
+  
+  ## Prepare data
+  tar_target(Stages_select_env,
+             selectLocs(Stages_s, predictor_select, selectpred = T, loc = c("plot", "nested", "cluster"))), # Selection based on whether environmental variables are present
+  
+  tar_target(Stages_scaled_env,
+             scaleData(Stages_select_env, predictor_select)), # After selection, so that scaling includes selected plots 
+  
+  tar_target(Stages_loc_env,
+             setLocLevel(Stages_scaled_env, Env_cluster, loc = c("plot", "nested", "cluster"))),
+  
+  tar_target(Stages_transitions_env,
+             countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select_env,
+                              taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max)),
+  
+  tar_target(data_stan_env,
+             formatStanData(Stages_loc_env, Stages_transitions_env, taxon_s, threshold_dbh,  predictor_select,
+                            loc = c("plot", "nested", "cluster"))),
+  
+  tar_target(data_stan_transitions_env,
+             formatStanData(Stages_loc, Stages_transitions_env, taxon_s, threshold_dbh, predictor_select,
+                            loc = "plot")),
+  
+  tar_target(fit_g_env,
+             fitTransition(data_stan_transitions_env, which = "g", model_transitions, fitpath = dir_fit)),
+  
+  tar_target(fit_h_env,
+             fitTransition(data_stan_transitions_env, which = "h", model_transitions, fitpath = dir_fit)),
+  
+  tar_target(data_stan_priors_env,
+             formatPriors(data_stan_env, weakpriors, fit_g_env, fit_h_env, fits_Seedlings,
+                          widthfactor_trans = 1, widthfactor_reg = 1)),
+
+  tar_target(data_stan_priors_offset_env,
+             selectOffset(offsetname_select, data_stan_priors_env)),
+
+  ## Fit
   tar_target(file_model_env,
              "Model_2021-03_ba/Model_ba_env.stan",
              format = "file"),
