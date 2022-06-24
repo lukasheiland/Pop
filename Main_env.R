@@ -21,7 +21,7 @@ sapply(package, require, character.only = TRUE) ## package is a vector of all pa
 # M <- tar_manifest(fields = c("name", "command"))
 
 ## Wrangling pipeline
-tar_make_future(c("data_stan_priors_offsets",
+tar_make_future(c("data_stan_priors_offset_env",
                   # "surfaceplots_s"
                   ), workers = if(onserver) 12 else 3, reporter = "timestamp")
 
@@ -33,13 +33,13 @@ tar_make_future(c("summary_env",
                   "summary_states_env",
                   "residuals_env",
                   "plot_environmental_env",
-                  "plot_contributions_env",
-                  "plot_contributions_log_env",
-                  "plots_parameters_emv",
-                  "plots_states_env",
-                  "plot_trajectories_avg_env",
+                  # "plot_contributions_env",
+                  # "plot_contributions_log_env",
+                  # "plots_parameters_emv",
+                  # "plots_states_env",
+                  # "plot_trajectories_avg_env",
                   # "animation_trajectories_avg",
-                  "plots_env",
+                  # "plots_env",
                   "plots_conditional_env"),
                 workers = if(onserver) 24 else 3, reporter = "timestamp")
 
