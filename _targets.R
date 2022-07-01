@@ -190,14 +190,15 @@ targets_parname <- list(
   tar_target(parname_plotorder,
              c(l = "l_log", r = "r_log", c_j = "c_j_log", s = "s_log", g = "g_log", c_a = "c_a_log", h = "h_log", b = "b_log", c_b = "c_b_log" )),
   tar_target(parname_loc,
-             c("state_init", "L_loc",
-               "B_log", "C_a_log", "C_b_log", "C_j_log", "G_log", "H_log", "L_log", "R_log", "S_log")),
+             c("state_init", "L_loc")),
+  tar_target(parname_loc_env,
+             c(parname_loc, "B_log", "C_a_log", "C_b_log", "C_j_log", "G_log", "H_log", "L_log", "R_log", "S_log")),
   tar_target(parname_sigma,
              c(l = "sigma_l", r = "sigma_r", c_j = "sigma_c_j", s = "sigma_s", g = "sigma_g", c_a = "sigma_c_a", h = "sigma_h", b = "sigma_b", c_b = "sigma_c_b" )),
   tar_target(parname_sim,
              setdiff(parname, c("theta", "phi_obs", "sigma_k_loc"))),
   tar_target(exclude,
-             c(pars_exclude, parname_loc, parname_sigma, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior))
+             c(pars_exclude, parname_loc_env, parname_sigma, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior))
 )
 
 
@@ -620,7 +621,7 @@ targets_posterior <- list(
 targets_posterior_env <- list(
   
   tar_target(parname_env,
-             c(setdiff(parname_loc, "state_init"),
+             c(setdiff(parname_loc_env, "state_init"),
                "ba_init", "ba_fix", "major_init", "major_fix")),
   ## Extract
   tar_target(stanfit_env,
@@ -630,7 +631,7 @@ targets_posterior_env <- list(
   
   ## Summarize
   tar_target(summary_env,
-             summarizeFit(cmdstanfit = fit_env, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc),
+             summarizeFit(cmdstanfit = fit_env, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc_env),
                           publishpar = parname_plotorder, path = dir_publish)),
   tar_target(summary_states_env,
            summarizeStates(States = States_env, data_stan = data_stan, basename = basename_fit_env, path = dir_publish)),
@@ -641,7 +642,7 @@ targets_posterior_env <- list(
   tar_target(residuals_env,
              generateResiduals(cmdstanfit = fit_env, data_stan_priors, path = dir_publish)),
   tar_target(Trajectories_avg_env,
-             generateTrajectories(cmdstanfit = fit_env, data_stan_priors, parname, locparname = parname_loc,
+             generateTrajectories(cmdstanfit = fit_env, data_stan_priors, parname, locparname = parname_loc_env,
                                   time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all")),
 
   
