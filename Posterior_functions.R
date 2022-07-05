@@ -1076,62 +1076,62 @@ plotStates <- function(States,
   
   
   #### Three
-  threevar <- c("ba_init", "ba_fix", "ba_fix_switch_s")
-  T_3 <- filter(States, var %in% threevar) %>%
-    rename(when = var) %>%
-    mutate(when = factor(when, levels = threevar)) %>%
-    group_by(when, loc, draw) %>%
-    mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
-    ungroup()
-  
-  plot_3 <- ggplot(T_3, aes(x = tax, y = value, col = tax, fill = tax)) +
-    geom_violin(trim = T, col = "black", scale = "width") +
-    
-    # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 4, fill = "transparent", scale = "width", data = T_3[T_3$is_loc_p10_draw,]) +
-    geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 3, fill = "transparent", scale = "width", data = T_3[T_3$is_loc_median_draw,]) +
-    # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 2, fill = "transparent", scale = "width", data = T_3[T_3$is_loc_p90_draw,]) +
-    
-    ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
-    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
-    annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
-    themefun() +
-    theme(axis.title.x = element_blank()) +
-    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
-    
-    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
-                                                    ba_fix = "Equilibrium state",
-                                                    ba_fix_switch_s = "Equilibrium state with switched s"))) +
-    
-    labs(y = "basal area [m^2 ha^-1]") +
-    
-    scale_color_manual(values = color) +
-    scale_fill_manual(values = color)
-  
-  Scatter_3 <- States %>%
-    filter(var %in% threevar) %>% # filter(States, str_starts(var, "ba")) %>%
-    filter(!is.na(value)) %>%
-    rename(when = var) %>%
-    mutate(when = factor(when, levels = threevar)) %>%
-    dplyr::select(tax, loc, value, when, draw) %>%
-    pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
-  
-  plot_scatter_3 <- ggplot(Scatter_3, aes(x = ba_other, y = ba_Fagus)) +
-    geom_hex(bins = 100) +
-    scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
-    geom_abline(slope = 1, intercept = 0, linetype = 3) +
-    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
-                                                    ba_fix = "Equilibrium state",
-                                                    ba_fix_switch_s = "Equilibrium state with switched s"))) +
-    labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
-    scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
-    scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
-    annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
-    themefun() +
-    theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
-    theme(legend.position = c(0.1, 0.65), legend.background = element_rect(fill = "transparent"))
+  # threevar <- c("ba_init", "ba_fix", "ba_fix_switch_s")
+  # T_3 <- filter(States, var %in% threevar) %>%
+  #   rename(when = var) %>%
+  #   mutate(when = factor(when, levels = threevar)) %>%
+  #   group_by(when, loc, draw) %>%
+  #   mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
+  #   ungroup()
+  # 
+  # plot_3 <- ggplot(T_3, aes(x = tax, y = value, col = tax, fill = tax)) +
+  #   geom_violin(trim = T, col = "black", scale = "width") +
+  #   
+  #   # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 4, fill = "transparent", scale = "width", data = T_3[T_3$is_loc_p10_draw,]) +
+  #   geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 3, fill = "transparent", scale = "width", data = T_3[T_3$is_loc_median_draw,]) +
+  #   # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 2, fill = "transparent", scale = "width", data = T_3[T_3$is_loc_p90_draw,]) +
+  #   
+  #   ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
+  #   scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
+  #                 labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  #   annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+  #   themefun() +
+  #   theme(axis.title.x = element_blank()) +
+  #   theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+  #   
+  #   facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
+  #                                                   ba_fix = "Equilibrium state",
+  #                                                   ba_fix_switch_s = "Equilibrium state with switched s"))) +
+  #   
+  #   labs(y = "basal area [m^2 ha^-1]") +
+  #   
+  #   scale_color_manual(values = color) +
+  #   scale_fill_manual(values = color)
+  # 
+  # Scatter_3 <- States %>%
+  #   filter(var %in% threevar) %>% # filter(States, str_starts(var, "ba")) %>%
+  #   filter(!is.na(value)) %>%
+  #   rename(when = var) %>%
+  #   mutate(when = factor(when, levels = threevar)) %>%
+  #   dplyr::select(tax, loc, value, when, draw) %>%
+  #   pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
+  # 
+  # plot_scatter_3 <- ggplot(Scatter_3, aes(x = ba_other, y = ba_Fagus)) +
+  #   geom_hex(bins = 100) +
+  #   scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
+  #   geom_abline(slope = 1, intercept = 0, linetype = 3) +
+  #   facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
+  #                                                   ba_fix = "Equilibrium state",
+  #                                                   ba_fix_switch_s = "Equilibrium state with switched s"))) +
+  #   labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
+  #   scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
+  #                 labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  #   scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
+  #                 labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  #   annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
+  #   themefun() +
+  #   theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
+  #   theme(legend.position = c(0.1, 0.65), legend.background = element_rect(fill = "transparent"))
   
   
   #### All
@@ -1164,7 +1164,7 @@ plotStates <- function(States,
   
   plots <- list(plot_states_major = plot_major,
                 plot_states_when = plot_when, plot_states_scatter_when = plot_scatter_when,
-                plot_states_3 = plot_3, plot_states_scatter_3 = plot_scatter_3,
+                # plot_states_3 = plot_3, plot_states_scatter_3 = plot_scatter_3,
                 plot_states_all = plot_all) # plot_states_diff = plot_diff
   
   mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", width = 10, height = 8),
@@ -1174,9 +1174,9 @@ plotStates <- function(States,
   ggsave(paste0(path, "/", basename, "_plot_states_combined", ".png"), stateplotgrid, device = "png", width = 8, height = 10)
   ggsave(paste0(path, "/", basename, "_plot_states_combined", ".pdf"), stateplotgrid, device = "pdf", width = 8, height = 10)
   
-  stateplotgrid_3 <- cowplot::plot_grid(plot_3 + theme(legend.position = "none"), plot_scatter_3, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.3 ,1))
-  ggsave(paste0(path, "/", basename, "_plot_states_3", ".png"), stateplotgrid_3, device = "png", width = 11, height = 10)
-  ggsave(paste0(path, "/", basename, "_plot_states_3", ".pdf"), stateplotgrid_3, device = "pdf", width = 11, height = 10)
+  # stateplotgrid_3 <- cowplot::plot_grid(plot_3 + theme(legend.position = "none"), plot_scatter_3, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.3 ,1))
+  # ggsave(paste0(path, "/", basename, "_plot_states_3", ".png"), stateplotgrid_3, device = "png", width = 11, height = 10)
+  # ggsave(paste0(path, "/", basename, "_plot_states_3", ".pdf"), stateplotgrid_3, device = "pdf", width = 11, height = 10)
   
   
   return(plots)
@@ -1444,7 +1444,7 @@ plotConditional <- function(cmdstanfit, parname, path,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 
-plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, plotlog = FALSE,
+plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_ko", "sum_ko_prop", "sum_switch"), plotlog = FALSE,
                               color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
@@ -1452,7 +1452,12 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, plotl
   n_species <- 2 ## is also used in functions below
   parorder <- names(parname)
   parname <- str_remove(setdiff(parname, "k_log"), "_log")
-  contribname <- if (plotprop) paste("sum_ko", rep(1:n_species, each = length(parname)), "prop", parname, "fix", sep = "_") else paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_")
+  plotprop <- match.arg(contribution) == "sum_ko_prop"
+  
+  contribname <- if (match.arg(contribution) == "sum_ko_prop") { paste("sum_ko", rep(1:n_species, each = length(parname)), "prop", parname, "fix", sep = "_") }
+                    else if (match.arg(contribution) == "sum_ko") { paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_") }
+                    else if (match.arg(contribution) == "sum_switch") { paste("sum_switch", parname, "fix", sep = "_") }
+                    
   
   C <- cmdstanfit$draws(variables = contribname) %>%
     as_draws_rvars()
@@ -1472,7 +1477,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, plotl
   I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
     mutate(p = parameter,
            parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
-           kotax = fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2"),
+           kotax = if(match.arg(contribution) != "sum_switch") fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2") else NA,
            tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2"), # the last number in the string
            reciprocal = kotax != tax,
            stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
@@ -1506,10 +1511,10 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, plotl
     { if (!plotprop) geom_text(aes(y = stagepos, x = xletterpos_h, label = stage), size = 10, col = "#222222") } +
     { if (plotprop) geom_text(aes(y = stagepos, x = xletterpos_l, label = stage), size = 10, col = "#222222") } +
     
-    facet_wrap(~reciprocal, # ~kotax
+    { if (match.arg(contribution) != "sum_switch") facet_wrap(~reciprocal, # ~kotax
                scales = "free",
                labeller = labeller(kotax = function(kotax) paste(kotax, "demographic rates"),
-                                   reciprocal = function(reciprocal) if_else(reciprocal == 'TRUE', "reciprocal", "intraspecific"))) +
+                                   reciprocal = function(reciprocal) if_else(reciprocal == 'TRUE', "reciprocal", "intraspecific"))) } +
     themefun() +
     scale_color_manual(values = color) +
     theme(axis.title.x = element_blank()) +
@@ -1523,7 +1528,7 @@ plotContributions <- function(cmdstanfit, parname, path, plotprop = FALSE, plotl
     { if (plotprop) labs(x = "Average yearly increment in proportion to the total basal area increment [ ]", y = "Parameter", title = "Yearly propotional contributions to the basal") } +
     { if (!plotprop) labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions to the basal area") }
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions", if(plotprop) "_prop" else "", if(plotlog) "_log" else "", ".pdf"),
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions_", contribution, if(plotlog) "_log" else "", ".pdf"),
          plot_contributions, dev = "pdf", height = 8, width = 12)
   
   return(plot_contributions)
