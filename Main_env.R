@@ -39,7 +39,6 @@ tar_make_future(c("summary_env",
                   # "plots_states_env",
                   # "plot_trajectories_avg_env",
                   # "animation_trajectories_avg",
-                  # "plots_env",
                   "plots_conditional_env"),
                 workers = if(onserver) 24 else 3, reporter = "timestamp")
 
