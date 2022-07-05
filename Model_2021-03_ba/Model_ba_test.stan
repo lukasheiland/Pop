@@ -67,6 +67,63 @@ functions {
   }
   
   
+  ////** simulate_lag(): Difference equations of the JAB model
+  // TODO: CHECK WHETHER LOOP INDEXING IS CORRECT AND lagp ADDS UP etc.
+  // TODO: CHECK MODEL PROCESS
+  matrix simulate_lag_(vector initialstate, int time_max, int lag,
+                      vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
+                      vector ba_a_avg, real ba_a_upper,
+                      int N_spec, int N_pops,
+                      array[] int i_j, array[] int i_a, array[] int i_b) {
+    
+    // State matrix with [species, times]. Times columns is sensible in order to have col-major access in matrices and for to_vector() later on
+    int lagp = lag + 1;
+    int N_steps = lagp + 1 + time_max;
+    vector[N_spec] zeroes = rep_vector(0.0, N_spec);
+    
+    matrix[N_pops, N_steps] State;
+    State[i_j,1] = initialstate[i_j];
+    State[i_a,1] = zeroes;
+    State[i_b,1] = zeroes;
+    
+    State[i_a,lagp] = initialstate[i_a];
+    State[i_b,lagp] = initialstate[i_b];
+    
+    BA_init = ( initialstate[i_a] .* ba_a_avg ) + initialstate[i_b];
+    
+    for (t in 2:N_steps) {
+      // Structure of state[N_pops]: stage/species
+      
+      vector[N_spec] J = State[i_j, t-1];
+      vector[N_spec] J_lag = State[i_j, t-1-lag];
+      vector[N_spec] A = State[i_a, t-1];
+      vector[N_spec] B = State[i_b, t-1];
+
+      vector[N_spec] BA = (A .* ba_a_avg) + B;
+      real BA_sum = sum(BA);
+      
+      /// Model
+      
+
+      if (t <= lagp) {
+
+        State[i_j, t]  =  (r .* BA_init + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*sum(BA_init));
+        State[i_a, t]  =  zeroes;
+      	State[i_b, t]  =  zeroes;
+      
+      } else {
+      
+      	State[i_j, t]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+      	State[i_a, t]  =  (g .* J_lag + (A - h .*A )) ./ (1 + c_a*BA_sum);
+      	State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+      }
+    
+    }
+    
+    return State;
+  }
+  
+  
   
   ////# Return states without altering them for state debugging
   // matrix simulate_null(vector initialstate, vector state_2, vector state_3, int N_pops) {

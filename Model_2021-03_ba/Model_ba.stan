@@ -398,9 +398,11 @@ model {
   //// "Hyperprior"
   phi_obs_inv ~ normal(0, 10);
 
-  //// Prior for initial state
   for(l in 1:N_locs) { 
-    state_init[l] ~ gamma(alpha_init[l], beta_init[l]); // state_init is just a linear transform. -> No Jacobian correction necessary.
+
+    //// Prior for initial state
+    state_init[l] ~ gamma(alpha_init[l], beta_init[l]); // state_init was just a linearly transformed. -> No Jacobian correction necessary.
+
   }
   
   
