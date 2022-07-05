@@ -38,7 +38,6 @@ tar_make_future(c("summary",
                   "plots_states",
                   "plot_trajectories_avg",
                   # "animation_trajectories_avg",
-                  "plots",
                   "plots_conditional"),
                 workers = if(onserver) 24 else 3, reporter = "timestamp")
 
