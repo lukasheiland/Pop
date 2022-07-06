@@ -207,16 +207,16 @@ functions {
         vector[N_spec] ba_ko_2_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [r[1], 0]', s, ba_a_avg, ba_a_upper, N_spec);
         vector[N_spec] ba_ko_2_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [s[1], 0]', ba_a_avg, ba_a_upper, N_spec);
         
-        
-        vector[2] switch_b = b[2:1]; // in place reversal of the parameter vector does not seem to work
-        vector[2] switch_c_a = c_a[2:1];
-        vector[2] switch_c_b = c_b[2:1];
-        vector[2] switch_c_j = c_j[2:1];
-        vector[2] switch_g = g[2:1];
-        vector[2] switch_h = h[2:1];
-        vector[2] switch_l = l[2:1];
-        vector[2] switch_r = r[2:1];
-        vector[2] switch_s = s[2:1];
+
+        vector[2] switch_b = [b[2], b[1]]'; // reversal of the parameter vector with range 2:1 does not seem to work
+        vector[2] switch_c_a = [c_a[2], c_a[1]]';
+        vector[2] switch_c_b = [c_b[2], c_b[1]]';
+        vector[2] switch_c_j = [c_j[2], c_j[1]]';
+        vector[2] switch_g = [g[2], g[1]]';
+        vector[2] switch_h = [h[2], h[1]]';
+        vector[2] switch_l = [l[2], l[1]]';
+        vector[2] switch_r = [r[2], r[1]]';
+        vector[2] switch_s = [s[2], s[1]]';
         
         vector[N_spec] ba_switch_b = simulate_1(J, A, B, switch_b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
         vector[N_spec] ba_switch_c_a  = simulate_1(J, A, B, b, switch_c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
