@@ -46,7 +46,7 @@ functions {
     /// First run: get limiting states
     vector[N_spec] J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
     vector[N_spec] A_1  =  (g .* J_1 + (A - h .*A )) ./ (1 + c_a*BA_sum);
-    vector[N_spec] B_1  =  (1+b).*((h .* A_1 * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+    vector[N_spec] B_1  =  (1+b) .* ((h .* A_1 * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
     
     real BA_sum_1 = sum(A_1 .* ba_a_avg + B_1);
         
@@ -208,15 +208,25 @@ functions {
         vector[N_spec] ba_ko_2_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [s[1], 0]', ba_a_avg, ba_a_upper, N_spec);
         
         
-        vector[N_spec] ba_switch_b = simulate_1(J, A, B, b[2:1], c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_c_a  = simulate_1(J, A, B, b, c_a[2:1], c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_c_b = simulate_1(J, A, B, b, c_a, c_b[2:1], c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_c_j = simulate_1(J, A, B, b, c_a, c_b, c_j[2:1], g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_g = simulate_1(J, A, B, b, c_a, c_b, c_j, g[2:1], h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h[2:1], l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l[2:1], r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r[2:1], s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, s[2:1], ba_a_avg, ba_a_upper, N_spec);
+        vector[2] switch_b = b[2:1]; // in place reversal of the parameter vector does not seem to work
+        vector[2] switch_c_a = c_a[2:1];
+        vector[2] switch_c_b = c_b[2:1];
+        vector[2] switch_c_j = c_j[2:1];
+        vector[2] switch_g = g[2:1];
+        vector[2] switch_h = h[2:1];
+        vector[2] switch_l = l[2:1];
+        vector[2] switch_r = r[2:1];
+        vector[2] switch_s = s[2:1];
+        
+        vector[N_spec] ba_switch_b = simulate_1(J, A, B, switch_b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_switch_c_a  = simulate_1(J, A, B, b, switch_c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_switch_c_b = simulate_1(J, A, B, b, c_a, switch_c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_switch_c_j = simulate_1(J, A, B, b, c_a, c_b, switch_c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_switch_g = simulate_1(J, A, B, b, c_a, c_b, c_j, switch_g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_switch_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, switch_h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_switch_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, switch__l, r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_switch_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, switch_r, s, ba_a_avg, ba_a_upper, N_spec);
+        vector[N_spec] ba_switch_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, switch_s, ba_a_avg, ba_a_upper, N_spec);
         
         
         /// Summed up contributions
