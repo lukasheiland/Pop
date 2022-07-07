@@ -66,7 +66,7 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(array[] vector state_init, array[] int time_max, array[] int times,    //* vector unpack(array[] vector state_init_log, array[] int time_max, array[] int times,
-                array[] vector B_log, array[] vector C_a_log, array[] vector C_b_log, array[] vector C_j_log, array[] vector G_log, array[] vector H_log, array[] vector L_loc, array[] vector R_log, array[] vector S_log,
+                vector b_log, array[] vector C_a_log, array[] vector C_b_log, array[] vector C_j_log, array[] vector G_log, array[] vector H_log, array[] vector L_loc, array[] vector R_log, array[] vector S_log, //@@
                 vector ba_a_avg, real ba_a_upper,
                 array[] int n_obs, array[] int n_yhat,
                 int N_species, int N_pops, int L_y, int N_locs,
@@ -85,8 +85,8 @@ functions {
       matrix[N_pops, time_max[loc]] States =
                         
                         simulate(state_init[loc],
-                                 time_max[loc],
-                                 exp(B_log[loc,]), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
+                                 time_max[loc], //@@ exp(B_log[loc,])
+                                 exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
                                  i_j, i_a, i_b);
@@ -138,26 +138,6 @@ functions {
     vector[N_spec] sum_ko_2_r = sum_ko_1_b;
     vector[N_spec] sum_ko_2_s = sum_ko_1_b;
     
-    vector[N_spec] sum_ko_1_prop_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_c_a = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_c_j = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_g = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_h = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_l = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_r = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_s = sum_ko_1_b;
-    
-    vector[N_spec] sum_ko_2_prop_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_c_a = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_c_j = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_g = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_h = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_l = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_r = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_s = sum_ko_1_b;
-
     
     /// initialize while loop conditions
     vector[N_spec] J = state_0[i_j];
@@ -233,29 +213,7 @@ functions {
         sum_ko_2_l += ba_ko_none - ba_ko_2_l;
         sum_ko_2_r += ba_ko_none - ba_ko_2_r;
         sum_ko_2_s += ba_ko_none - ba_ko_2_s;
-        
-        /// Summed up proportional contributions
-	    real ba_rate = sum(ba_ko_none)/BA_sum;
-  
-	    sum_ko_1_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // 1. proportional ko decline rate (how much does the basal area grow in the non-ko model compared to the k.o. model), in proportion to 2. the total basal area proportional increment 
-	    sum_ko_1_prop_c_a += (ba_ko_none ./ ba_ko_1_c_a) / ba_rate; // ... will later be divided by number of iterations
-	    sum_ko_1_prop_c_b += (ba_ko_none ./ ba_ko_1_c_b) / ba_rate;
-	    sum_ko_1_prop_c_j += (ba_ko_none ./ ba_ko_1_c_j) / ba_rate;
-	    sum_ko_1_prop_g   += (ba_ko_none ./ ba_ko_1_g) / ba_rate;
-	    sum_ko_1_prop_h   += (ba_ko_none ./ ba_ko_1_h) / ba_rate;
-	    sum_ko_1_prop_l   += (ba_ko_none ./ ba_ko_1_l) / ba_rate;
-	    sum_ko_1_prop_r   += (ba_ko_none ./ ba_ko_1_r) / ba_rate;
-	    sum_ko_1_prop_s   += (ba_ko_none ./ ba_ko_1_s) / ba_rate;
-  
-	    sum_ko_2_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
-	    sum_ko_2_prop_c_a += (ba_ko_none ./ ba_ko_2_c_a) / ba_rate;
-	    sum_ko_2_prop_c_b += (ba_ko_none ./ ba_ko_2_c_b) / ba_rate;
-	    sum_ko_2_prop_c_j += (ba_ko_none ./ ba_ko_2_c_j) / ba_rate;
-	    sum_ko_2_prop_g   += (ba_ko_none ./ ba_ko_2_g) / ba_rate;
-	    sum_ko_2_prop_h   += (ba_ko_none ./ ba_ko_2_h) / ba_rate;
-	    sum_ko_2_prop_l   += (ba_ko_none ./ ba_ko_2_l) / ba_rate;
-	    sum_ko_2_prop_r   += (ba_ko_none ./ ba_ko_2_r) / ba_rate;
-	    sum_ko_2_prop_s   += (ba_ko_none ./ ba_ko_2_s) / ba_rate;
+
       
     // }  // end if i < fixiter_min
       
@@ -274,10 +232,7 @@ functions {
                                        eps_ba, rep_vector(i, N_spec), // int i gets cast to real
                                        //// when considering the whole period, use i, when considering only the first period use fixiter_min as a denominator here
                                        sum_ko_1_b/i, sum_ko_1_c_a/i, sum_ko_1_c_b/i, sum_ko_1_c_j/i, sum_ko_1_g/i, sum_ko_1_h/i, sum_ko_1_l/i, sum_ko_1_r/i, sum_ko_1_s/i,
-                                       sum_ko_2_b/i, sum_ko_2_c_a/i, sum_ko_2_c_b/i, sum_ko_2_c_j/i, sum_ko_2_g/i, sum_ko_2_h/i, sum_ko_2_l/i, sum_ko_2_r/i, sum_ko_2_s/i,
-                                       //
-                                       sum_ko_1_prop_b/i, sum_ko_1_prop_c_a/i, sum_ko_1_prop_c_b/i, sum_ko_1_prop_c_j/i, sum_ko_1_prop_g/i, sum_ko_1_prop_h/i, sum_ko_1_prop_l/i, sum_ko_1_prop_r/i, sum_ko_1_prop_s/i,
-                                       sum_ko_2_prop_b/i, sum_ko_2_prop_c_a/i, sum_ko_2_prop_c_b/i, sum_ko_2_prop_c_j/i, sum_ko_2_prop_g/i, sum_ko_2_prop_h/i, sum_ko_2_prop_l/i, sum_ko_2_prop_r/i, sum_ko_2_prop_s/i};
+                                       sum_ko_2_b/i, sum_ko_2_c_a/i, sum_ko_2_c_b/i, sum_ko_2_c_j/i, sum_ko_2_g/i, sum_ko_2_h/i, sum_ko_2_l/i, sum_ko_2_r/i, sum_ko_2_s/i};
                                     
     return fix;
   }  
@@ -363,7 +318,7 @@ transformed data {
   // Times are all assumed to be shifted to start at 1!
   
   //// Data for generated quantities
-  int N_fix = 42; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter, 2 * 2 * 9 diff_ko_parameter }
+  int N_fix = 24; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter, 2 * 9 diff_ko_parameter }
   
 }
 
@@ -385,23 +340,23 @@ parameters {
   vector[N_species] s_log;
   
   //// Model parameters at loc level
-  array[N_locs] vector[N_species] B_log;
+  // array[N_locs] vector[N_species] B_log;
   array[N_locs] vector[N_species] C_a_log;
   array[N_locs] vector[N_species] C_b_log;
   array[N_locs] vector[N_species] C_j_log;
   array[N_locs] vector<upper=0>[N_species] G_log;
   array[N_locs] vector<upper=0>[N_species] H_log;
-  array[N_locs] vector[N_species] L_log;
+  // array[N_locs] vector[N_species] L_log; ///**
   array[N_locs] vector[N_species] R_log;
   array[N_locs] vector[N_species] S_log;
   
-  vector<lower=0>[N_species] sigma_b;
+  // vector<lower=0>[N_species] sigma_b; ///@@
   vector<lower=0>[N_species] sigma_c_a;
   vector<lower=0>[N_species] sigma_c_b;
   vector<lower=0>[N_species] sigma_c_j;
   vector<lower=0>[N_species] sigma_g;
   vector<lower=0>[N_species] sigma_h;
-  vector<lower=0>[N_species] sigma_l;
+  // vector<lower=0>[N_species] sigma_l; ///**
   vector<lower=0>[N_species] sigma_r;
   vector<lower=0>[N_species] sigma_s;
   
@@ -429,12 +384,13 @@ transformed parameters {
     
     state_init[loc] = state_init_raw[loc] .* upper_init;
 
-    L_loc[loc, ] = exp(L_log[loc, ] + L_smooth_log[loc, ]);
+    L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
+    // L_loc[loc, ] = exp(L_log[loc, ] + L_smooth_log[loc, ]); ///** version with random L
     
   }
   
-  vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times,
-                                B_log, C_a_log, C_b_log, C_j_log, G_log, H_log, L_loc, R_log, S_log,
+  vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times, //@B_log
+                                b_log, C_a_log, C_b_log, C_j_log, G_log, H_log, L_loc, R_log, S_log,
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat,
                                 N_species, N_pops, L_y, N_locs, // fixed numbers
@@ -459,13 +415,13 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  sigma_b ~ normal(0, 0.1);
+  // sigma_b ~ normal(0, 0.1); ///@@
   sigma_c_a ~ normal(0, 0.1);
   sigma_c_b ~ normal(0, 0.1);
   sigma_c_j ~ normal(0, 0.1);
   sigma_g ~ normal(0, 0.1);
   sigma_h ~ normal(0, 0.1);
-  sigma_l ~ normal(0, 0.1);
+  // sigma_l ~ normal(0, 0.1); ///**
   sigma_r ~ normal(0, 0.1);
   sigma_s ~ normal(0, 0.1);
   
@@ -490,13 +446,13 @@ model {
     
     
     //// Hierarchical distribution of parameters
-    B_log[l] ~ normal(b_log, sigma_b);
+    // B_log[l] ~ normal(b_log, sigma_b); ///@@
     C_a_log[l] ~ normal(c_a_log, sigma_c_a);
     C_b_log[l] ~ normal(c_b_log, sigma_c_b);
     C_j_log[l] ~ normal(c_j_log, sigma_c_j);
     G_log[l] ~ normal(g_log, sigma_g);
     H_log[l] ~ normal(h_log, sigma_h);
-    L_log[l] ~ normal(l_log, sigma_l);
+    // L_log[l] ~ normal(l_log, sigma_l); ///**
     R_log[l] ~ normal(r_log, sigma_r);
     S_log[l] ~ normal(s_log, sigma_s);
   }
@@ -611,26 +567,6 @@ generated quantities {
   array[N_locs] vector[N_species] sum_ko_2_l_fix = J_init;
   array[N_locs] vector[N_species] sum_ko_2_r_fix = J_init;
   array[N_locs] vector[N_species] sum_ko_2_s_fix = J_init;
-  
-  array[N_locs] vector[N_species] sum_ko_1_prop_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_c_a_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_c_j_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_g_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_h_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_l_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_r_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_s_fix = J_init;
-  
-  array[N_locs] vector[N_species] sum_ko_2_prop_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_c_a_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_c_j_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_g_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_h_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_l_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_r_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_s_fix = J_init;
 
   
   int fixiter_max = 5000;
@@ -643,16 +579,18 @@ generated quantities {
   array[N_locs] int dominant_fix = converged_fix;
   array[N_locs] int major_init = converged_fix;
   array[N_locs] int major_fix = converged_fix;
-  array[N_locs] int major_fix_ko_s = converged_fix;
-  array[N_locs] int major_fix_switch_s = converged_fix;
+  
   
   //// Declarations of counterfactual posterior quantities
-  array[N_locs, N_fix] vector[N_species] Fix_ko_s = Fix;
-  array[N_locs] vector[N_species] ba_fix_ko_s = J_init;
+  // array[N_locs, N_fix] vector[N_species] Fix_ko_s = Fix;
+  // array[N_locs] vector[N_species] ba_fix_ko_s = J_init;
+  // array[N_locs] int major_fix_ko_s = converged_fix;
+  // 
+  // array[N_locs, N_fix] vector[N_species] Fix_switch_s = Fix;
+  // array[N_locs] vector[N_species] ba_fix_switch_s = J_init;
+  // array[N_locs] int major_fix_switch_s = converged_fix;
   
-  array[N_locs, N_fix] vector[N_species] Fix_switch_s = Fix;
-  array[N_locs] vector[N_species] ba_fix_switch_s = J_init;
-
+  
 
   //———————————————————————————————————————————————————————————————————//
   // Generate Posterior quantities conditioned on setting  -----------//
@@ -678,8 +616,8 @@ generated quantities {
       
 
       //// Simulate fix point, given parameters
-      Fix[loc] = iterateFix(state_init[loc],
-                            exp(B_log[loc,]), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
+      Fix[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,])
+                            exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
                             ba_a_avg, ba_a_upper,
                             N_species, i_j, i_a, i_b,
                             tolerance_fix, fixiter_max, fixiter_min, N_fix);
@@ -717,50 +655,32 @@ generated quantities {
         sum_ko_2_r_fix[loc] = Fix[loc, 23];
         sum_ko_2_s_fix[loc] = Fix[loc, 24];
         
-        sum_ko_1_prop_b_fix[loc] = Fix[loc, 25];
-		sum_ko_1_prop_c_a_fix[loc] = Fix[loc, 26];
-		sum_ko_1_prop_c_b_fix[loc] = Fix[loc, 27];
-		sum_ko_1_prop_c_j_fix[loc] = Fix[loc, 28];
-		sum_ko_1_prop_g_fix[loc] = Fix[loc, 29];
-		sum_ko_1_prop_h_fix[loc] = Fix[loc, 30];
-		sum_ko_1_prop_l_fix[loc] = Fix[loc, 31];
-		sum_ko_1_prop_r_fix[loc] = Fix[loc, 32];
-		sum_ko_1_prop_s_fix[loc] = Fix[loc, 33];
-		
-		sum_ko_2_prop_b_fix[loc] = Fix[loc, 34];
-		sum_ko_2_prop_c_a_fix[loc] = Fix[loc, 35];
-		sum_ko_2_prop_c_b_fix[loc] = Fix[loc, 36];
-		sum_ko_2_prop_c_j_fix[loc] = Fix[loc, 37];
-		sum_ko_2_prop_g_fix[loc] = Fix[loc, 38];
-		sum_ko_2_prop_h_fix[loc] = Fix[loc, 39];
-		sum_ko_2_prop_l_fix[loc] = Fix[loc, 40];
-		sum_ko_2_prop_r_fix[loc] = Fix[loc, 41];
-		sum_ko_2_prop_s_fix[loc] = Fix[loc, 42];
-
-
- 
-        //// Counterfactual fix point iteration
-        vector[N_pops] state_fix = append_row(append_row(J_fix[loc],  A_fix[loc]),  B_fix[loc]);
         
-        vector[N_species] ko_s_2 = [exp(S_log[loc,1]), 0]';		
-		Fix_ko_s[loc] = iterateFix(state_init[loc],
-		                           exp(B_log[loc,]), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), ko_s_2,
-		                           ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);		
-		ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
-		
-		
-		vector[N_species] switch_s = exp(S_log[loc,2:1]);		
-		Fix_switch_s[loc] = iterateFix(state_init[loc],
-		                               exp(B_log[loc,]), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), switch_s,
-		                               ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
-		ba_fix_switch_s[loc] = Fix_switch_s[loc, 4];
-		
-		
-		//// Booleans at fixpoint
+    	//// Booleans at fixpoint
         dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
         major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
-        major_fix_ko_s[loc] = ba_fix_ko_s[loc, 1] > ba_fix_ko_s[loc, 2]; // ba_1 > 50%
-        major_fix_switch_s[loc] = ba_fix_switch_s[loc, 1] > ba_fix_switch_s[loc, 2]; // ba_1 > 50%
+
+ 
+        // //// Counterfactual fix point iteration
+        // vector[N_pops] state_fix = append_row(append_row(J_fix[loc],  A_fix[loc]),  B_fix[loc]);
+        // 
+        // vector[N_species] ko_s_2 = [exp(S_log[loc,1]), 0]';		
+		// Fix_ko_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,])
+		//                            exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), ko_s_2,
+		//                            ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);		
+		// ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
+		// 
+		// 
+		// vector[N_species] switch_s = exp(S_log[loc,2:1]);		
+		// Fix_switch_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,])
+		//                                exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), switch_s,
+		//                                ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+		// ba_fix_switch_s[loc] = Fix_switch_s[loc, 4];
+		// 
+		// 
+		// // Counterfactual booleans
+        // major_fix_ko_s[loc] = ba_fix_ko_s[loc, 1] > ba_fix_ko_s[loc, 2]; // ba_1 > 50%
+        // major_fix_switch_s[loc] = ba_fix_switch_s[loc, 1] > ba_fix_switch_s[loc, 2]; // ba_1 > 50%
       
       }
   
