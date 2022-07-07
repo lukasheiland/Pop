@@ -127,7 +127,8 @@ formatStates <- function(cmdstanfit, data_stan_priors) {
   majorname <- c("major_init", "major_fix", "major_fix_ko_s", "major_fix_switch_s")
   statename <- c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s",
                  "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix")
-  varname <- c(majorname, statename)
+  varname_draws <- cmdstanfit$metadata()$stan_variables
+  varname <- intersect(c(majorname, statename), varname_draws)
   
   States <- lapply(varname, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
   States <- lapply(States, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, {i <- 2})) else S )
@@ -977,6 +978,8 @@ plotStates <- function(States,
                                         "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l", "ba_fix_switch_s"),
                        path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
+  allstatevars <- intersect(as.character(unique(States$var)), allstatevars)
+  
   States <- States[!is.na(States$value),]
   
   T_major <- pivot_wider(States[1:6], names_from = "var", values_from = "value") %>%
@@ -1477,9 +1480,9 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
     mutate(p = parameter,
            parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
-           kotax = if(match.arg(contribution) != "sum_switch") fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2") else NA,
-           tax = fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2"), # the last number in the string
-           reciprocal = kotax != tax,
+           kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2") ),
+           tax = suppressWarnings( fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2") ), # the last number in the string
+           reciprocal = as.character(kotax) != as.character(tax), # there might be different level sets
            stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
