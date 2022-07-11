@@ -76,7 +76,7 @@ targets_settings <- list(
   ## Regeneration classes to include
   ## here we select all 20cm height <= trees < 7cm dbh: regglass_select <- c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)
   ## These are all size classes that are consistent across the three surveys.
-  tar_target(regclass_select, c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5)), ## [mm]
+  tar_target(regclass_select, c("h[20,50)" = 1, "h[50,130)" = 2, "hd[130,Inf)[0,5)" = 3, "d[5,6)" = 4, "d[6,7)" = 5, "hd[130,Inf)[0,7)" = 9)), ## [mm]; the last level (9) is a special category of counts in the second survey DE_BWI_2 over all classes
   
   ## Weakly informative priors.
   ## If provided, they are prioritzed over the fitted priors
