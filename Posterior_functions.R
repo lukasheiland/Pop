@@ -93,6 +93,9 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = data_stan_priors_offset,
                                 envname = predictor_select, locmeans = F) {
   
+  varname_draws <- cmdstanfit$metadata()$stan_variables
+  parname <- intersect(parname, varname_draws)
+  
   draws_env <- cmdstanfit$draws(parname) %>%
     posterior::as_draws()
   
@@ -427,7 +430,10 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1,
                                  average = c("none", "locsperdraws_all", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
   
-  parname <- setdiff(parname, c("phi_obs", "sigma_k_loc"))
+  varname_draws <- cmdstanfit$metadata()$stan_variables
+  
+  parname <- setdiff(parname, c("phi_obs", "sigma_k_loc")) %>%
+    intersect(varname_draws)
   parname_sans_log <- gsub("_log$", "", parname)
   locparname_avg <- gsub("_log$", "", locparname) %>% paste0("avg_", .)
   
