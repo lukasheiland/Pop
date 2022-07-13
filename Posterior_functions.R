@@ -1257,7 +1257,7 @@ plotConditional_resampling <- function(cmdstanfit, parname, path,
   
   message("Dropped ", sum(!isconverged), " draw(s), because the simulations have not converged to fixpoint.")
   
-  freq_major <- cmdstanfit$draws(variables = "major_fix_switch_s", format = "draws_matrix") %>%
+  freq_major <- cmdstanfit$draws(variables = "major_fix", format = "draws_matrix") %>%
     subset_draws(draw = which(isconverged)) %>%
     rowMeans()
   
@@ -1374,7 +1374,7 @@ plotConditional <- function(cmdstanfit, parname, path,
   
   message("Dropped ", sum(!isconverged), " draw(s), because the simulations have not converged to fixpoint.")
   
-  freq_major <- cmdstanfit$draws(variables = "major_fix_switch_s", format = "draws_matrix") %>%
+  freq_major <- cmdstanfit$draws(variables = "major_fix", format = "draws_matrix") %>%
     subset_draws(draw = which(isconverged)) %>%
     rowMeans()
   
