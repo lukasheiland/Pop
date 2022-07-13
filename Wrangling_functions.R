@@ -202,7 +202,9 @@ prepareSmallData <- function(J,
                            regclass_select,
                            id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time")
                            ) {
+  
   id_select_S <- intersect(names(J), id_select)
+  regclass_smaller <- c("h[20,50)", "h[50,130)") ## The smaller size classes, that have been sampled on more or less consistent areas
   
   selectTaxa <- function(Abundance, taxon_select) {
     Abundance %>%
@@ -220,8 +222,8 @@ prepareSmallData <- function(J,
     ### subset to time-constant regclasses, NOTE: There are more here.
     ## levels(J$regclass)
     ## table(J$regclass,J$obsid)
-    dplyr::filter(as.integer(regclass) %in% regclass_select)  %>%
-    ## these classes are all present in all three obsids, but consider different amounts of plots: # %>% dplyr::group_by(regclass, obsid) %>% dplyr::summarize(count_ha = sum(count/countarea))
+    dplyr::filter(as.integer(regclass) %in% regclass_select)  %>% ## these classes are all present in all three obsids, but consider different amounts of plots: # %>% dplyr::group_by(regclass, obsid) %>% dplyr::summarize(count_ha = sum(count/countarea))
+    dplyr::mutate(issmallerregclass = as.character(regclass) %in% regclass_smaller) %>% ## boolean for selection of smaller plots in DE_BWI1987
 
     dplyr::group_by(methodid) %>%
     dplyr::mutate(area_0_methodid = mean(unique(countarea)), na.rm = T) %>%
@@ -232,6 +234,7 @@ prepareSmallData <- function(J,
     dplyr::summarize(count_ha = sum(count/countarea, na.rm = TRUE),
                      area_obs = weighted.mean(countarea, count/countarea, na.rm = TRUE), ## this produces NaNs when count is 0
                      count_obs = sum(count, na.rm = TRUE), ## The average weighted by the count of trees within this size class.
+                     anysmallerregclass = any(issmallerregclas)
                      ) %>% 
     dplyr::ungroup() %>%
     
@@ -511,11 +514,15 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
     mutate(isclear = sum(count_ha, na.rm = T) == 0) %>% ## sum will replace vectors with exclusively NAs with 0
     
     group_by(plotid) %>%
+    
+    ## subset to plots that have any observation in a smaller regclass (height 20--130cm)
+    mutate(anysmallerregclass1987 = anysmallerregclass & obsid == "DE_BWI_1987") %>%
+    
     mutate(isclearcut_2002 = any( (!isclear[obsid == "DE_BWI_1987"]) & isclear[obsid == "DE_BWI_2002"]),
            isclearcut_2012 = any( (!isclear[obsid == "DE_BWI_2002"]) & isclear[obsid == "DE_BWI_2012"]),
            isclearcut = isclearcut_2002 | isclearcut_2012) %>%
-    filter(!isclearcut)
-      ## dropping 37 plots; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
+    filter((!isclearcut) & anysmallerregclass1987)
+      ## dropping ... plots; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
     
   
   if (loclevel %in% c("nested", "cluster")) {
