@@ -155,6 +155,7 @@ targets_parname <- list(
              c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_raw", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt", "m")),
   tar_target(helpers_exclude,
              c("Fix", "Fix_ko_s", "Fix_switch_s",
+               "B_log_raw", "C_a_log_raw", "C_b_log_raw", "C_j_log_raw", "G_log_raw", "H_log_raw", "L_log_raw", "R_log_raw", "S_log_raw",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "avg_state_init", "avg_L_loc",

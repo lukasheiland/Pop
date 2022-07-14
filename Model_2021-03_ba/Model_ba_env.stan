@@ -66,7 +66,7 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(array[] vector state_init, array[] int time_max, array[] int times,    //* vector unpack(array[] vector state_init_log, array[] int time_max, array[] int times,
-                vector b_log, array[] vector C_a_log, array[] vector C_b_log, array[] vector C_j_log, array[] vector G_log, array[] vector H_log, array[] vector L_loc, array[] vector R_log, array[] vector S_log, //@@
+                vector b_log, vector c_a_log, array[] vector C_b_log, array[] vector C_j_log, array[] vector G_log, array[] vector H_log, array[] vector L_loc, array[] vector R_log, array[] vector S_log, //@@
                 vector ba_a_avg, real ba_a_upper,
                 array[] int n_obs, array[] int n_yhat,
                 int N_species, int N_pops, int L_y, int N_locs,
@@ -85,8 +85,8 @@ functions {
       matrix[N_pops, time_max[loc]] States =
                         
                         simulate(state_init[loc],
-                                 time_max[loc], //@@ exp(B_log[loc,])
-                                 exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
+                                 time_max[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
+                                 exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
                                  i_j, i_a, i_b);
@@ -339,19 +339,21 @@ parameters {
   vector[N_species] r_log;
   vector[N_species] s_log;
   
+
   //// Model parameters at loc level
-  // array[N_locs] vector[N_species] B_log;
-  array[N_locs] vector[N_species] C_a_log;
-  array[N_locs] vector[N_species] C_b_log;
-  array[N_locs] vector[N_species] C_j_log;
-  array[N_locs] vector<upper=0>[N_species] G_log;
-  array[N_locs] vector<upper=0>[N_species] H_log;
-  // array[N_locs] vector[N_species] L_log; ///**
-  array[N_locs] vector[N_species] R_log;
-  array[N_locs] vector[N_species] S_log;
+  // array[N_locs] vector[N_species] B_log_raw; ///@@
+  // array[N_locs] vector[N_species] C_a_log_raw; ///@@
+  array[N_locs] vector[N_species] C_b_log_raw;
+  array[N_locs] vector[N_species] C_j_log_raw;
+  array[N_locs] vector[N_species] G_log_raw; // <upper=-g_log ./ sigma_g>
+  array[N_locs] vector[N_species] H_log_raw; // <upper=-h_log ./ sigma_h>
+  // array[N_locs] vector[N_species] L_log_raw; ///**
+  array[N_locs] vector[N_species] R_log_raw;
+  array[N_locs] vector[N_species] S_log_raw;
+
   
   // vector<lower=0>[N_species] sigma_b; ///@@
-  vector<lower=0>[N_species] sigma_c_a;
+  // vector<lower=0>[N_species] sigma_c_a; ///@@
   vector<lower=0>[N_species] sigma_c_b;
   vector<lower=0>[N_species] sigma_c_j;
   vector<lower=0>[N_species] sigma_g;
@@ -379,6 +381,17 @@ transformed parameters {
   //// Local variables
   array[N_locs] vector<lower=0>[N_species] L_loc;
   array[N_locs] vector<lower=0>[N_pops] state_init;
+  
+  //// Model parameters at loc level
+  // array[N_locs] vector[N_species] B_log; ///@@
+  // array[N_locs] vector[N_species] C_a_log; ///@@
+  array[N_locs] vector[N_species] C_b_log;
+  array[N_locs] vector[N_species] C_j_log;
+  array[N_locs] vector[N_species] G_log;
+  array[N_locs] vector[N_species] H_log;
+  // array[N_locs] vector[N_species] L_log; ///**
+  array[N_locs] vector[N_species] R_log;
+  array[N_locs] vector[N_species] S_log;
 
   for(loc in 1:N_locs) {
     
@@ -387,10 +400,20 @@ transformed parameters {
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
     // L_loc[loc, ] = exp(L_log[loc, ] + L_smooth_log[loc, ]); ///** version with random L
     
+    // B_log[loc,] = b_log + B_log_raw[loc,] .* sigma_b; ///@@
+    // C_a_log[loc,] = c_a_log + C_a_log_raw[loc,] .* sigma_c_a; ///@@
+    C_b_log[loc,] = c_b_log + C_b_log_raw[loc,] .* sigma_c_b;
+    C_j_log[loc,] = c_j_log + C_j_log_raw[loc,] .* sigma_c_j;
+    G_log[loc,] = g_log + G_log_raw[loc,] .* sigma_g;
+    H_log[loc,] = h_log + H_log_raw[loc,] .* sigma_h;
+    // L_log[loc,] = l_log + L_log_raw[loc,] .* sigma_l; ///**
+    R_log[loc,] = r_log + R_log_raw[loc,] .* sigma_r;
+    S_log[loc,] = s_log + S_log_raw[loc,] .* sigma_s;
+    
   }
   
-  vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times, //@B_log
-                                b_log, C_a_log, C_b_log, C_j_log, G_log, H_log, L_loc, R_log, S_log,
+  vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times, //@B_log, C_a_log
+                                b_log, c_a_log, C_b_log, C_j_log, G_log, H_log, L_loc, R_log, S_log,
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat,
                                 N_species, N_pops, L_y, N_locs, // fixed numbers
@@ -415,15 +438,15 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  // sigma_b ~ normal(0, 0.1); ///@@
-  sigma_c_a ~ normal(0, 0.1);
-  sigma_c_b ~ normal(0, 0.1);
-  sigma_c_j ~ normal(0, 0.1);
-  sigma_g ~ normal(0, 0.1);
-  sigma_h ~ normal(0, 0.1);
-  // sigma_l ~ normal(0, 0.1); ///**
-  sigma_r ~ normal(0, 0.1);
-  sigma_s ~ normal(0, 0.1);
+  // sigma_b ~ normal(0, 0.5); ///@@
+  // sigma_c_a ~ normal(0, 0.5); ///@@
+  sigma_c_b ~ normal(0, 0.5);
+  sigma_c_j ~ normal(0, 0.5);
+  sigma_g ~ normal(0, 0.5);
+  sigma_h ~ normal(0, 0.5);
+  // sigma_l ~ normal(0, 0.5); ///**
+  sigma_r ~ normal(0, 0.5);
+  sigma_s ~ normal(0, 0.5);
   
   phi_obs_inv ~ normal(0, 10);
   
@@ -432,10 +455,10 @@ model {
   c_a_log ~ normal(prior_c_a_log[1], prior_c_a_log[2]);
   c_b_log ~ normal(prior_c_b_log[1], prior_c_b_log[2]);
   c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]);
-  g_log ~ normal(prior_g_log[1], prior_g_log[2]); // specific! 
-  h_log ~ normal(prior_h_log[1], prior_h_log[2]); // specific!
+  g_log ~ normal(prior_g_log[1], prior_g_log[2]); // species-specific! 
+  h_log ~ normal(prior_h_log[1], prior_h_log[2]); // species-specific!
   l_log ~ normal(prior_l_log[1], prior_l_log[2]);
-  r_log ~ normal(prior_r_log[1], prior_r_log[2]); // specific!
+  r_log ~ normal(prior_r_log[1], prior_r_log[2]); // species-specific!
   s_log ~ normal(prior_s_log[1], prior_s_log[2]);
   
   
@@ -447,7 +470,7 @@ model {
     
     //// Hierarchical distribution of parameters
     // B_log[l] ~ normal(b_log, sigma_b); ///@@
-    C_a_log[l] ~ normal(c_a_log, sigma_c_a);
+    // C_a_log[l] ~ normal(c_a_log, sigma_c_a); ///@@
     C_b_log[l] ~ normal(c_b_log, sigma_c_b);
     C_j_log[l] ~ normal(c_j_log, sigma_c_j);
     G_log[l] ~ normal(g_log, sigma_g);
@@ -616,8 +639,8 @@ generated quantities {
       
 
       //// Simulate fix point, given parameters
-      Fix[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,])
-                            exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
+      Fix[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
+                            exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
                             ba_a_avg, ba_a_upper,
                             N_species, i_j, i_a, i_b,
                             tolerance_fix, fixiter_max, fixiter_min, N_fix);
@@ -665,15 +688,15 @@ generated quantities {
         // vector[N_pops] state_fix = append_row(append_row(J_fix[loc],  A_fix[loc]),  B_fix[loc]);
         // 
         // vector[N_species] ko_s_2 = [exp(S_log[loc,1]), 0]';		
-		// Fix_ko_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,])
-		//                            exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), ko_s_2,
+		// Fix_ko_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
+		//                            exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), ko_s_2,
 		//                            ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);		
 		// ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
 		// 
 		// 
 		// vector[N_species] switch_s = exp(S_log[loc,2:1]);		
-		// Fix_switch_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,])
-		//                                exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), switch_s,
+		// Fix_switch_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
+		//                                exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), switch_s,
 		//                                ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
 		// ba_fix_switch_s[loc] = Fix_switch_s[loc, 4];
 		// 
