@@ -234,7 +234,7 @@ prepareSmallData <- function(J,
     dplyr::summarize(count_ha = sum(count/countarea, na.rm = TRUE),
                      area_obs = weighted.mean(countarea, count/countarea, na.rm = TRUE), ## this produces NaNs when count is 0
                      count_obs = sum(count, na.rm = TRUE), ## The average weighted by the count of trees within this size class.
-                     anysmallerregclass = any(issmallerregclas)
+                     anysmallerregclass = any(issmallerregclass, na.rm = T)
                      ) %>% 
     dplyr::ungroup() %>%
     
@@ -516,13 +516,13 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
     group_by(plotid) %>%
     
     ## subset to plots that have any observation in a smaller regclass (height 20--130cm)
-    mutate(anysmallerregclass1987 = anysmallerregclass & obsid == "DE_BWI_1987") %>%
+    mutate(anysmallerregclass1987 = any(anysmallerregclass & obsid == "DE_BWI_1987")) %>%
     
     mutate(isclearcut_2002 = any( (!isclear[obsid == "DE_BWI_1987"]) & isclear[obsid == "DE_BWI_2002"]),
            isclearcut_2012 = any( (!isclear[obsid == "DE_BWI_2002"]) & isclear[obsid == "DE_BWI_2012"]),
            isclearcut = isclearcut_2002 | isclearcut_2012) %>%
     filter((!isclearcut) & anysmallerregclass1987)
-      ## dropping ... plots; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
+      ## 5012 plots remaining; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
     
   
   if (loclevel %in% c("nested", "cluster")) {
