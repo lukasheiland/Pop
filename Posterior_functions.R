@@ -1446,6 +1446,86 @@ plotConditional <- function(cmdstanfit, parname, path,
 }
 
 
+## plotPairs --------------------------------
+# parname  <- tar_read("parname_plotorder")
+# cmdstanfit  <- tar_read("fit_test")
+# cmdstanfit  <- tar_read("fit")[[1]]
+# path  <- tar_read("dir_publish")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotPairs <- function(cmdstanfit, parname, path,
+                      color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  
+  d <- cmdstanfit$draws(variables = parname) %>%
+    as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
+  
+  ## Pairs plot
+  # D <- d %>%
+  #   gather_draws(`.*`[i], regex = T) %>% suppressWarnings() %>% ## package tidyr warns about using deprecated gather_()
+  #   ungroup() %>%
+  #   mutate(tax = fct_recode(as.character(i), "Fagus" = "1", "other" = "2")) %>%
+  #   mutate(parameter = str_extract(.variable, "([a-z]|c_.+)_log")) %>%
+  #   mutate(parameter = factor(parameter, levels = parname)) %>%
+  #   pivot_wider(id_cols = c(".draw"), names_from = c("parameter", "tax"), values_from = ".value")
+  
+  nutsparam <- nuts_params(cmdstanfit)
+  # logposterior <- log_posterior(cmdstanfit)
+  # mcmc_nuts_divergence(nutsparam, logposterior)
+  
+  color_scheme_set("viridis")
+  pairsplot <- mcmc_pairs(d,
+                          # pars = c("..."), transform = list(sigma = "log"),
+                          diag_fun = "dens",
+                          # diag_args = "",
+                          off_diag_fun = "hex", # "scatter",
+                          # off_diag_args = list(size = 0.3, alpha = 0.5), ## for "scatter"
+                          # condition = pairs_condition(nuts = "lp__"),
+                          # lp = logposterior,
+                          np = nutsparam,
+                          np_style = pairs_style_np(div_color = "red",
+                                                    div_shape = 4,
+                                                    div_size = 1,
+                                                    div_alpha = 1,
+                                                    td_color = "yellow2",
+                                                    td_shape = 3,
+                                                    td_size = 1,
+                                                    td_alpha = 1)
+                          ) # + theme_fagus()
+  
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs", ".png"), pairsplot, device = "png", height = 28, width = 28)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs", ".pdf"), pairsplot, device = "pdf", height = 28, width = 28)
+  
+  return(list('pairs' = pairsplot))
+}
+
+
+## plotTrace --------------------------------
+# parname  <- tar_read("parname_plotorder")
+# cmdstanfit  <- tar_read("fit_test")
+# cmdstanfit  <- tar_read("fit")[[1]]
+# path  <- tar_read("dir_publish")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotTrace <- function(cmdstanfit, parname, path,
+                      color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  
+  d <- cmdstanfit$draws(variables = parname) %>%
+    as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
+  
+  color_scheme_set("viridis")
+  traceplot <- mcmc_trace(d) + # # pars = c("..."), transformations = list(sigma = "log")
+    theme_fagus()
+  
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_trace", ".png"), traceplot, device = "png", height = 15, width = 20)
+  
+  return(list('trace' = traceplot))
+}
+
+
 ## plotContributions --------------------------------
 # parname  <- tar_read("parname_plotorder")
 # cmdstanfit  <- tar_read("fit_test")
