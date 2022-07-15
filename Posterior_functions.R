@@ -99,9 +99,13 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
   draws_env <- cmdstanfit$draws(parname) %>%
     posterior::as_draws()
   
-  Draws_env <- tidybayes::gather_draws(draws_env, `.*`[loc,tax], regex = T) %>%
+  Draws_env_bin <- tidybayes::gather_draws(draws_env, major_fix[loc], major_init[loc]) %>%
+    bind_cols(tax = 0) %>%
     suppressWarnings() ## package tidyr warns about using deprecated gather_()
-
+  
+  Draws_env <- tidybayes::gather_draws(draws_env, `.*`[loc,tax], regex = T) %>%
+    suppressWarnings() %>% ## package tidyr warns about using deprecated gather_()
+    bind_rows(Draws_env_bin)
   
   if (locmeans) {
     Draws_env %<>%
@@ -116,7 +120,7 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
     ungroup()
   
   Draws_env <- bind_cols(Draws_env, Env[match(Draws_env$loc, Env$loc), envname])
-
+  
   return(Draws_env)
 }
 
@@ -677,28 +681,30 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
 # basename  <- tar_read("basename_fit_env")
-fitEnvironmental <- function(Environmental, parname = parname_env, envname = predictor_select, taxon = 1:2) {
+fitEnvironmental <- function(Environmental, parname = parname_env, envname = predictor_select, taxon = c(1:2, 0), fam = c("gaussian", "binomial")) {
   
   taxon <- as.integer(taxon)
+  fam <- match.arg(fam)
   
-  E <- filter(Environmental, tax == taxon) %>%
+  E <- Environmental %>% 
+    filter(tax %in% taxon) %>%
     filter(.variable == parname) %>%
     rename(v = .value)
   
   splineformula <- paste0("v ~ ", "te(", paste(envname, collapse = ", "), ")")
-
+  
   ### mgcv
-  fit <- gam(as.formula(splineformula), family = gaussian, data = E)
-    
+  fit <- gam(as.formula(splineformula), family = fam, data = E)
+  
   # if(!is.null(path)) {
   #   s <- summary(fit)
   #   textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for the background basal area ...", label = paste0("tab:gam_", tax))
   #   cat(textext, file = file.path(path, paste0(tax, "_summary_gam.tex")), fill = T) %>% invisible()
   # }
-    
+  
   attr(fit, "tax") <- taxon
   attr(fit, "par") <- parname
-    
+  
   return(fit)
 }
 
@@ -1458,11 +1464,11 @@ plotPairs <- function(cmdstanfit, parname, path,
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
-  d <- cmdstanfit$draws(variables = parname) %>%
-    as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
+  d <- cmdstanfit$draws(variables = parname)
   
-  ## Pairs plot
+  ## Extract info from variable names
   # D <- d %>%
+  #   as_draws_rvars() %>%
   #   gather_draws(`.*`[i], regex = T) %>% suppressWarnings() %>% ## package tidyr warns about using deprecated gather_()
   #   ungroup() %>%
   #   mutate(tax = fct_recode(as.character(i), "Fagus" = "1", "other" = "2")) %>%
@@ -1513,8 +1519,7 @@ plotTrace <- function(cmdstanfit, parname, path,
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
-  d <- cmdstanfit$draws(variables = parname) %>%
-    as_draws_rvars() ## For some reason, only extraction as array first and then as_draws_rvars() restores the desired data_structure!
+  d <- cmdstanfit$draws(variables = parname)
   
   color_scheme_set("viridis")
   traceplot <- mcmc_trace(d) + # # pars = c("..."), transformations = list(sigma = "log")
