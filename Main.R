@@ -32,6 +32,8 @@ tar_make(c("fit", "summary"))
 tar_make_future(c("summary",
                   "summary_states",
                   "residuals",
+                  "plots_trace",
+                  "plots_pairs",
                   "plot_contributions_log",
                   "plot_contributions_switch",
                   "plots_parameters",
