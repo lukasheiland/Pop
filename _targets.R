@@ -83,7 +83,7 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-4, 1),
+               prior_b_log = c(-4, 2),
                prior_c_a_log = c(-8, 2),
                prior_c_b_log = c(-8, 2),
                prior_c_j_log = c(-15, 3),
@@ -604,9 +604,11 @@ targets_posterior <- list(
              plotParameters(stanfit = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_trace,
-             plotTrace(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+             plotTrace(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
+             pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_pairs,
-             plotPairs(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+             plotPairs(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
+             pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_conditional,
              plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
@@ -635,7 +637,7 @@ targets_posterior_env <- list(
   
   tar_target(parname_env,
              c(setdiff(parname_loc_env, "state_init"),
-               "ba_init", "ba_fix", "major_init", "major_fix")),
+               "ba_init", "ba_fix", "major_fix", "major_init")),
   ## Extract
   tar_target(stanfit_env,
              extractStanfit(cmdstanfit = fit_env)),
@@ -668,13 +670,20 @@ targets_posterior_env <- list(
   
   
   ## Post-hoc inference
+  ## Post-hoc inference
   tar_target(parname_env_gaussian, setdiff(parname_env, c("major_init", "major_fix"))),
+  tar_target(parname_env_binomial, c("major_init", "major_fix")),
   
-  tar_target(fit_environmental_env,
-             fitEnvironmental(Environmental_env, parname = parname_env_gaussian, envname = predictor_select, taxon = taxon_s),
+  tar_target(fit_environmental_env_gaussian,
+             fitEnvironmental(Environmental_env, parname = parname_env_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian"),
              pattern = cross(parname_env_gaussian, taxon_s),
              iteration = "list"),
-  
+  tar_target(fit_environmental_env_binomial,
+             fitEnvironmental(Environmental_env, parname = parname_env_binomial, envname = predictor_select, taxon = 0, fam = "binomial"),
+             pattern = map(parname_env_binomial),
+             iteration = "list"),
+  tar_target(fit_environmental_env,
+             c(fit_environmental_env_gaussian, fit_environmental_env_binomial)),  
   tar_target(surface_environmental_env,
              predictEnvironmental(fit_environmental_env, envname = predictor_select,
                                   path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
