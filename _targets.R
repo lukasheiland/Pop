@@ -83,13 +83,13 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 2),
+               prior_b_log = c(-4, 1),
                prior_c_a_log = c(-8, 2),
-               prior_c_b_log = c(-7, 1),
-               prior_c_j_log = c(-14, 3),
+               prior_c_b_log = c(-8, 2),
+               prior_c_j_log = c(-15, 3),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               prior_l_log = c(6, 1),
+               prior_l_log = c(7, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
                prior_s_log = c(-3, 2)
              )
@@ -532,6 +532,10 @@ targets_posterior_test <- list(
   #            plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
   tar_target(plots_predictions_posterior_test,
              plotPredictions(cmdstanfit = fit_test, data_stan_priors_offset, check = "posterior", path = dir_publish)),
+  tar_target(plots_trace_test,
+             plotTrace(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plots_pairs_test,
+             plotPairs(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plots_conditional_test,
              plotConditional(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plot_contributions_test,
@@ -599,6 +603,10 @@ targets_posterior <- list(
   tar_target(plots_parameters,
              plotParameters(stanfit = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(stanfit, basename_fit), iteration = "list"),
+  tar_target(plots_trace,
+             plotTrace(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plots_pairs,
+             plotPairs(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plots_conditional,
              plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
@@ -609,7 +617,7 @@ targets_posterior <- list(
              plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions_switch,
-             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_switch", plotlog = F, color = twocolors, themefun = themefunction),
+             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_switch", plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plots_states,
              plotStates(States, allstatevars = c("ba_init", "ba_fix"),
@@ -681,6 +689,10 @@ targets_posterior_env <- list(
              testEnvironmental(NULL))
   
   ## Plot
+  tar_target(plots_trace_env,
+             plotTrace(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plots_pairs_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   # tar_target(plots_env,
   #            plotStanfit(stanfit = stanfit_env, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   # tar_target(plots_parameters_env,
@@ -694,7 +706,7 @@ targets_posterior_env <- list(
   # tar_target(plot_contributions_prop_env,
   #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, contribution = "sum_ko_prop", color = twocolors, themefun = themefunction)),
   # tar_target(plot_contributions_switch_env,
-  #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, contribution = "sum_switch", color = twocolors, themefun = themefunction)),
+  #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, plotlog = T, path = dir_publish, contribution = "sum_switch", color = twocolors, themefun = themefunction)),
   # tar_target(plots_states_env,
   #            plotStates(States_env, allstatevars = c("ba_init", "ba_fix"),
   #                        path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
