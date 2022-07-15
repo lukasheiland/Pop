@@ -685,9 +685,6 @@ targets_posterior_env <- list(
              plotEnvironmental(surface_environmental_env,
                                path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   
-  tar_target(test_environmental_env,
-             testEnvironmental(NULL))
-  
   ## Plot
   tar_target(plots_trace_env,
              plotTrace(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
