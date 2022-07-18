@@ -83,15 +83,15 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-4, 2),
-               prior_c_a_log = c(-8, 2),
-               prior_c_b_log = c(-8, 2),
-               prior_c_j_log = c(-15, 3),
+               prior_b_log = c(-3, 1),
+               prior_c_a_log = c(-7, 1),
+               prior_c_b_log = c(-6, 1),
+               prior_c_j_log = c(-15, 2),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               prior_l_log = c(7, 1),
+               prior_l_log = c(6, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-3, 2)
+               prior_s_log = c(-4, 2)
              )
   ),
   
@@ -467,8 +467,10 @@ targets_fit_env <- list(
   tar_target(model_env,
              cmdstan_model(file_model_env)),
   tar_target(fit_env,
-             fitModel(model = model_env, data_stan = data_stan_priors_offset, gpq = TRUE,
-                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit)),
+             fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
+                      method = "mcmc", n_chains = 4, iter_warmup = 1200, iter_sampling = 800, fitpath = dir_fit,
+                      adapt_delta = 0.95)
+             ),
   tar_target(basename_fit_env,
              getBaseName(fit_env))
 )
@@ -605,10 +607,10 @@ targets_posterior <- list(
              pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_trace,
              plotTrace(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
-             pattern = map(stanfit, basename_fit), iteration = "list"),
+             pattern = map(fit, basename_fit), iteration = "list"),
   tar_target(plots_pairs,
              plotPairs(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
-             pattern = map(stanfit, basename_fit), iteration = "list"),
+             pattern = map(fit, basename_fit), iteration = "list"),
   tar_target(plots_conditional,
              plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
@@ -666,7 +668,7 @@ targets_posterior_env <- list(
              formatStates(cmdstanfit = fit_env, data_stan_priors)),
   tar_target(Environmental_env,
              formatEnvironmental(cmdstanfit = fit_env, parname = parname_env,
-                                 data_stan = data_stan_priors_offset, envname = predictor_select, locmeans = F)),
+                                 data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),
   
   
   ## Post-hoc inference
@@ -698,13 +700,13 @@ targets_posterior_env <- list(
   tar_target(plots_trace_env,
              plotTrace(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plots_pairs_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction))
+             plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plots_parameters_env,
+             plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction))
   # tar_target(plots_env,
   #            plotStanfit(stanfit = stanfit_env, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
-  # tar_target(plots_parameters_env,
-  #            plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   # tar_target(plots_predictions_posterior_env,
-  #            plotPredictions(cmdstanfit = fit_env, data_stan_priors_offset, check = "posterior", path = dir_publish)),
+  #            plotPredictions(cmdstanfit = fit_env, data_stan_priors_offset_env, check = "posterior", path = dir_publish)),
   # tar_target(plots_conditional_env,
   #            plotConditional(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   # tar_target(plot_contributions_env,

@@ -616,7 +616,7 @@ selectOffset <- function(offsetname, data_stan_priors) {
 # fitpath  <- tar_read("dir_fit")
 fitModel <- function(model, data_stan, gpq = FALSE,
                      method = c("mcmc", "chkptstanr","variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
-                     fitpath = dir_fit) {
+                     fitpath = dir_fit, ...) {
   
   require(cmdstanr)
   
@@ -658,7 +658,8 @@ fitModel <- function(model, data_stan, gpq = FALSE,
                         # opencl_ids = openclid,
                         # adapt_delta = 0.99,
                         # max_treedepth = 16,
-                        chains = n_chains, parallel_chains = getOption("mc.cores", n_chains))
+                        chains = n_chains, parallel_chains = getOption("mc.cores", n_chains),
+                        ...)
     
   } else if (match.arg(method) == "chkptstanr") {
     
