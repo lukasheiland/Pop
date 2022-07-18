@@ -467,17 +467,16 @@ model {
     //// Prior for initial state
     state_init[l] ~ gamma(alpha_init[l], beta_init[l]); // state_init is just a linear transform. -> No Jacobian correction necessary.
     
-    
     //// Hierarchical distribution of parameters
-    // B_log[l] ~ normal(b_log, sigma_b); ///@@
-    // C_a_log[l] ~ normal(c_a_log, sigma_c_a); ///@@
-    C_b_log[l] ~ normal(c_b_log, sigma_c_b);
-    C_j_log[l] ~ normal(c_j_log, sigma_c_j);
-    G_log[l] ~ normal(g_log, sigma_g);
-    H_log[l] ~ normal(h_log, sigma_h);
-    // L_log[l] ~ normal(l_log, sigma_l); ///**
-    R_log[l] ~ normal(r_log, sigma_r);
-    S_log[l] ~ normal(s_log, sigma_s);
+    // B_log_raw[l] ~ std_normal(); ///@@
+    // C_a_log_raw[l] ~ std_normal(); ///@@
+    C_b_log_raw[l] ~ std_normal();
+    C_j_log_raw[l] ~ std_normal();
+    G_log_raw[l] ~ std_normal();
+    H_log_raw[l] ~ std_normal();
+    // L_log_raw[l] ~ std_normal(); ///**
+    R_log_raw[l] ~ std_normal();
+    S_log_raw[l] ~ std_normal();
   }
 
   

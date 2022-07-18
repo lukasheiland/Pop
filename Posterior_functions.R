@@ -89,7 +89,7 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 # cmdstanfit <- tar_read("fit_env")
 # parname <- tar_read("parname_env")
 # envname <- tar_read("predictor_select")
-# data_stan <- tar_read("data_stan_priors_offset")
+# data_stan <- tar_read("data_stan_priors_offset_env")
 formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = data_stan_priors_offset,
                                 envname = predictor_select, locmeans = F) {
   
@@ -119,7 +119,12 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
     summarize_at(envname, function(x) first(x[!is.na(x)])) %>%
     ungroup()
   
-  Draws_env <- bind_cols(Draws_env, Env[match(Draws_env$loc, Env$loc), envname])
+  n_row <- nrow(Draws_env)
+  Draws_env <- bind_cols(Draws_env, Env[match(Draws_env$loc, Env$loc), envname]) %>%
+    filter(!(.variable %in% c("major_fix", "ba_fix") & .value == 9))
+  
+  n_dropped <- n_row - nrow(Draws_env)
+  message("There were ", n_dropped ," draws*variables dropped, because not in all iterations the simulation has converged to the the fix point (equilibrium).")
   
   return(Draws_env)
 }
@@ -677,7 +682,8 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 
 ## fitEnvironmental --------------------------------
 # Environmental <- tar_read("Environmental_env")
-# parname <- tar_read("parname_env")
+# parname <- tar_read("parname_env")[1]
+# parname <- tar_read("parname_env_binomial")[1]
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
 # basename  <- tar_read("basename_fit_env")
