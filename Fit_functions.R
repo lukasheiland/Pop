@@ -53,11 +53,17 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   
   G <- Stages_transitions %>%
     # filter(!is.na(g_plot))
-    filter(!is.na(count_J2A_plot_obs) & isTRUE(count_J_integr_plot > 0)) ## also drops NAs
+    filter(!is.na(count_J2A_plot_obs) & !is.na(count_J_integr_plot)) ## also drops NAs
+    
+    ### Version with y_base from data
+    # filter(!is.na(count_J2A_plot_obs) & isTRUE(count_J_integr_plot > 0)) ## also drops NAs
   
   H <- Stages_transitions %>%
     # filter(!is.na(h_plot))
-    filter(!is.na(count_A2B_plot_obs) & isTRUE(count_A_integr_plot > 0)) ## also drops NAs
+    filter(!is.na(count_A2B_plot_obs) & !is.na(count_A_integr_plot)) ## also drops NAs
+    
+    ### Version with y_base from data
+    # filter(!is.na(count_A2B_plot_obs) & isTRUE(count_A_integr_plot > 0)) ## also drops NAs
   
   
   if(loclevel == "nested") {
@@ -452,8 +458,13 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
     y_a2b = H$count_A2B_plot_obs, # integer
     area_log_j2a = log(G$area_J2A),
     area_log_a2b = log(H$area_A2B),
-    y_j = G$count_J_integr_plot, # [1/ha]
-    y_a = H$count_A_integr_plot, # # [1/ha]
+    
+    y_j = as.integer(round(G$count_J_integr_plot)), # [1/ha]
+    y_a = as.integer(round(H$count_A_integr_plot)), # # [1/ha]
+    
+    ## Version with y_base as data:
+    # y_j = G$count_J_integr_plot, # [1/ha]
+    # y_a = H$count_A_integr_plot, # # [1/ha]
     species_g = as.integer(factor(G$tax, levels = levels(taxon_s))),
     species_h = as.integer(factor(H$tax, levels = levels(taxon_s)))
   )
@@ -492,6 +503,7 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit
   n_chains <- 4
   fit_transition <- model_transitions$sample(data = d,
                                              output_dir = fitpath,
+                                             init = 0.1,
                                              # init = lapply(1:n_chains, function(x) list(phi_inv = c(1, 1), rate_loc = c(-1, -1))),
                                              # iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                                              adapt_delta = 0.95, ## difficult geometry
