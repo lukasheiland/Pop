@@ -515,14 +515,14 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
     
     group_by(plotid) %>%
     
-    ## subset to plots that have any observation in a smaller regclass (height 20--130cm)
-    mutate(anysmallerregclass1987 = any(anysmallerregclass & obsid == "DE_BWI_1987")) %>%
+    ## plots that have any observation in a smaller regclass (height 20--130cm)
+    # mutate(anysmallerregclass1987 = any(anysmallerregclass & obsid == "DE_BWI_1987")) %>%
     
     mutate(isclearcut_2002 = any( (!isclear[obsid == "DE_BWI_1987"]) & isclear[obsid == "DE_BWI_2002"]),
            isclearcut_2012 = any( (!isclear[obsid == "DE_BWI_2002"]) & isclear[obsid == "DE_BWI_2012"]),
            isclearcut = isclearcut_2002 | isclearcut_2012) %>%
-    filter((!isclearcut) & anysmallerregclass1987)
-      ## 5012 plots remaining; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
+    filter(!isclearcut)
+      ## ,,, plots remaining; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
     
   
   if (loclevel %in% c("nested", "cluster")) {
@@ -676,7 +676,11 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
 # threshold_dbh <- tar_read("threshold_dbh")
 # radius_max <- tar_read("radius_max")
 
-countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_select, taxon_select, threshold_dbh, radius_max) {
+countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_select,
+                             taxon_select, threshold_dbh, radius_max,
+                             loc = c("plot", "nested", "cluster")) {
+  
+  loclevel <- match.arg(loc)
   
   ### local functions
   selectTaxa <- function(Abundance, taxon_select) {
@@ -754,7 +758,11 @@ countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
   E <- Env_cluster[c('plotid', 'clusterid')] %>%
     st_drop_geometry()
   
-  clusterid_select <- unique(Stages_select$clusterid)
+  if (loclevel == "plot") {
+    plotid_select <- unique(Stages_select$plotid)
+  } else {
+    clusterid_select <- unique(Stages_select$clusterid)
+  }
   
   ## Areas and radii
   radius_max_B_cm <- radius_max/10 ## conversion from mm to cm
@@ -823,8 +831,10 @@ countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
     ## add clusters via matching
     bind_cols(clusterid = E$clusterid[match(.$plotid, E$plotid)]) %>%
     
-    ## select clusters
-    filter(clusterid %in% clusterid_select) %>%
+    ## select plots
+    {
+      if (loclevel == "plot") filter(., plotid %in% plotid_select)  else filter(., clusterid %in% clusterid_select)
+    }  %>%
     
     ### All trees on a plot have an id!
     # group_by(plotid) %>%
@@ -849,7 +859,7 @@ countTransitions <- function(Data_big, Data_big_status, Env_cluster, Stages_sele
     mutate(yearbefore_plot = findPrecedingTime(year), timediff_plot = year - yearbefore_plot) %>% # table(Stages_transitions$timediff_plot, Stages_transitions$year)
     
     group_by(clusterid) %>%
-    ## some clusters have been more times than singular plots on them: table(Stages_transitions$timediff_cluster, Stages_transitions$timediff_plot)
+    ## some clusters have been surveyed more times than any of the singular plots on them: table(Stages_transitions$timediff_cluster, Stages_transitions$timediff_plot)
     mutate(yearbefore_cluster = findPrecedingTime(year), timediff_cluster = year - yearbefore_cluster) %>% # 
     ungroup()
   

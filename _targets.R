@@ -62,7 +62,7 @@ targets_settings <- list(
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 160mm > B
-  tar_target(threshold_dbh, 160), ## [mm]
+  tar_target(threshold_dbh, 200), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
@@ -83,15 +83,15 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-7, 1),
-               prior_c_b_log = c(-6, 1),
-               prior_c_j_log = c(-15, 2),
+               prior_b_log = c(-3, 2),
+               prior_c_a_log = c(-7, 2),
+               prior_c_b_log = c(-6, 2),
+               prior_c_j_log = c(-10, 4),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                prior_l_log = c(6, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-4, 2)
+               prior_s_log = c(-5, 4)
              )
   ),
   
@@ -252,7 +252,8 @@ targets_wrangling <- list(
     
     tar_target(Stages_transitions,
                countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select,
-                                taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max)),
+                                taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max,
+                                loc = c("plot", "nested", "cluster"))),
     
     tar_target(Stages,
                joinStages(Data_big_area, Data_small_area, taxon_select = taxon_select, threshold_dbh = threshold_dbh)),
@@ -437,7 +438,8 @@ targets_fit_env <- list(
   
   tar_target(Stages_transitions_env,
              countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select_env,
-                              taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max)),
+                              taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max,
+                              loc = c("plot", "nested", "cluster"))),
   
   tar_target(data_stan_env,
              formatStanData(Stages_loc_env, Stages_transitions_env, taxon_s, threshold_dbh,  predictor_select,

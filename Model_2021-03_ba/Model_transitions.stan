@@ -26,7 +26,7 @@ data {
   int<lower=0> N_species;
   
   array[L] int<lower=0> rep_species;
-  vector<lower=0>[L] y_base;
+  array[L] int<lower=0> y_base;
   array[L] int<lower=0> y_trans;  
   vector[L] area_log;
 
@@ -34,7 +34,8 @@ data {
 
 
 transformed data {
-  vector[L] y_base_log = log(y_base);
+  //// Version with base population as data
+  // vector[L] y_base_log = log(y_base);
 }
 
 
@@ -47,10 +48,13 @@ parameters {
   //// ZI-version
   // real<lower=0,upper=1> theta;
   
+  //// Version with latent base pop
+  vector[L] y_base_log;
+  
   vector[N_species] rate_log;
   
-  // vector<lower=0>[N_species] phi;
-  //@ vector<lower=0>[N_species] phi_inv;
+  // vector<lower=0>[N_species] phi_base_inv;
+  // vector<lower=0>[N_species] phi_trans_inv;
   
 }
 
@@ -63,11 +67,13 @@ transformed parameters {
   //// ZI-version
   // vector[L] theta_rep = rep_vector(theta, L);
   
-  //@ vector<lower=0>[N_species] phi = inv(phi_inv);
+  // vector<lower=0>[N_species] phi_base = inv(phi_base_inv);
+  // vector<lower=0>[N_species] phi_trans = inv(phi_trans_inv);
   
   vector<lower=0>[L] y_hat = exp(y_base_log + rate_log[rep_species] + area_log);
-  //@ vector<lower=0>[L] phi_rep = phi[rep_species];
-
+  
+  // vector<lower=0>[L] phi_base_rep = phi_base[rep_species];
+  // vector<lower=0>[L] phi_trans_rep = phi_trans[rep_species];
 
 }
 
@@ -77,8 +83,12 @@ model {
   //// Priors
   // theta ~ beta(1, 20);
   
-  //@ phi_inv ~ normal(0, 5);
-  rate_log ~ normal(0, 10);
+  // phi_base_inv ~ normal(0, 5);
+  // phi_trans_inv ~ normal(0, 5);
+  
+  y_base_log ~ normal(0, 50);
+  
+  rate_log ~ normal(-4, 5);
   
   //// Hierarchical version
   /// Hyperpriors
@@ -90,14 +100,18 @@ model {
   //  y_trans[l] ~ neg_binomial_0(y_hat[l], phi_rep[l], theta);
   //}
   
-  //@ y_trans ~ neg_binomial_2(y_hat, phi_rep);
+  //// Version with latent base pop
+  y_base ~ poisson(exp(y_base_log));
+  // y_base ~ neg_binomial_2(exp(y_base_log), phi_base_rep);
+  
   y_trans ~ poisson(y_hat);
+  // y_trans ~ neg_binomial_2(y_hat, phi_trans_rep);
   
 }
 
 generated quantities {
 
-  //@ array[L] int y_sim = neg_binomial_2_rng(y_hat, phi_rep);
+  // array[L] int y_sim = neg_binomial_2_rng(y_hat, phi_trans_rep);
   array[L] int y_sim = poisson_rng(y_hat);
 
 }
