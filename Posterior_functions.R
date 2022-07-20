@@ -1010,7 +1010,8 @@ plotStates <- function(States,
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  ) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
     theme(axis.title.x = element_blank()) +
@@ -1039,7 +1040,8 @@ plotStates <- function(States,
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  ) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
     theme(axis.title.x = element_blank()) +
@@ -1088,9 +1090,11 @@ plotStates <- function(States,
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  ) +
     scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+                  # labels = scales::trans_format("log10", scales::math_format(10^.x))\
+                  ) +
     annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
     theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
@@ -1115,7 +1119,8 @@ plotStates <- function(States,
   #   
   #   ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
   #   scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-  #                 labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  #                 # labels = scales::trans_format("log10", scales::math_format(10^.x))
+  #                 ) +
   #   annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
   #   themefun() +
   #   theme(axis.title.x = element_blank()) +
@@ -1147,9 +1152,11 @@ plotStates <- function(States,
   #                                                   ba_fix_switch_s = "Equilibrium state with switched s"))) +
   #   labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
   #   scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-  #                 labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  #                 # labels = scales::trans_format("log10", scales::math_format(10^.x))
+  #                 ) +
   #   scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-  #                 labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+  #                 # labels = scales::trans_format("log10", scales::math_format(10^.x))
+  #                 ) +
   #   annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
   #   themefun() +
   #   theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
@@ -1173,7 +1180,8 @@ plotStates <- function(States,
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  ) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
     theme(panel.grid.minor = element_blank())## !!! remove the minor gridlines
@@ -1233,9 +1241,11 @@ plotScatter <- function(States, path, basename, color = c("#208E50", "#FFC800"),
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  ) +
     scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
+                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  ) +
     annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
     theme(panel.grid.minor = element_blank())## !!! remove the minor gridlines

@@ -89,7 +89,7 @@ functions {
     State[i_a,lagp] = initialstate[i_a];
     State[i_b,lagp] = initialstate[i_b];
     
-    BA_init = ( initialstate[i_a] .* ba_a_avg ) + initialstate[i_b];
+    vector[N_spec] BA_init = ( initialstate[i_a] .* ba_a_avg ) + initialstate[i_b];
     
     for (t in 2:N_steps) {
       // Structure of state[N_pops]: stage/species
