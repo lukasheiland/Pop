@@ -29,6 +29,8 @@ source("Theme/Theme.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
+tar_option_set(error = "null")
+
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", "knitr", # "multidplyr" ## extended tidyverse
              "lubridate", "DescTools", # "zoo",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
@@ -83,15 +85,15 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 2),
-               prior_c_a_log = c(-7, 2),
+               prior_b_log = c(-3, 1),
+               prior_c_a_log = c(-6, 2),
                prior_c_b_log = c(-6, 2),
-               prior_c_j_log = c(-10, 4),
+               prior_c_j_log = c(-10, 3),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               prior_l_log = c(6, 1),
+               prior_l_log = c(5, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-5, 4)
+               prior_s_log = c(-4, 2)
              )
   ),
   
@@ -626,7 +628,7 @@ targets_posterior <- list(
              plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_switch", plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plots_states,
-             plotStates(States, allstatevars = c("ba_init", "ba_fix"),
+             plotStates(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_switch_b", "ba_fix_switch_b_c_b", "ba_fix_switch_s"),
                         path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(States, basename_fit), iteration = "list"),
   tar_target(plot_trajectories_avg,
