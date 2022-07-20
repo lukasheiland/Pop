@@ -733,25 +733,25 @@ generated quantities {
         // 
         // 
         // ////// ... with switched parameters
-        vector[N_species] switch_b = exp(b_log[2:1]);        
+        vector[N_species] switch_b = exp([b_log[2], b_log[1]]'); // b_log[2:1] does not work at runtime
         Fix_switch_b[loc] = iterateFix(state_init[loc], switch_b, exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_b[loc] = Fix_switch_b[loc, 4];
         
-        vector[N_species] switch_c_b = exp(c_b_log[2:1]);        
+        vector[N_species] switch_c_b = exp([c_b_log[2], c_b_log[1]]');        
         // Fix_switch_c_b[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), switch_c_b, exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         // ba_fix_switch_b[loc] = Fix_switch_c_b[loc, 4];
         
         Fix_switch_b_c_b[loc] = iterateFix(state_init[loc], switch_b, exp(c_a_log), switch_c_b, exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_b_c_b[loc] = Fix_switch_b_c_b[loc, 4];
         
-        // vector[N_species] switch_g = exp(g_log[2:1]);
+        // vector[N_species] switch_g = exp([g_log[2], g_log[1]]');
         // Fix_switch_g[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), switch_g, exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         // ba_fix_switch_g[loc] = Fix_switch_g[loc, 4];
         // 
         // Fix_switch_l[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, 2:1], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         // ba_fix_switch_l[loc] = Fix_switch_l[loc, 4];
         
-        vector[N_species] switch_s = exp(s_log[2:1]);        
+        vector[N_species] switch_s = exp([s_log[2], s_log[1]]');        
         Fix_switch_s[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), switch_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);       
         ba_fix_switch_s[loc] = Fix_switch_s[loc, 4];
 

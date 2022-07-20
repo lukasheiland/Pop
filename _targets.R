@@ -59,7 +59,7 @@ targets_settings <- list(
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")
-  tar_target(n_locations, 1000),
+  tar_target(n_locations, 700),
   
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
@@ -418,7 +418,7 @@ targets_fit <- list(
              cmdstan_model(file_model)),
   tar_target(fit,
              fitModel(model = model, data_stan = data_stan_priors_offsets_1, gpq = TRUE, ## data_stan_priors_offsets ## for testing all offsets
-                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit),
+                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit),
              pattern = map(data_stan_priors_offsets_1), iteration = "list"), ## data_stan_priors_offsets ## for testing all offsets
   tar_target(basename_fit,
              getBaseName(fit),
@@ -472,7 +472,7 @@ targets_fit_env <- list(
              cmdstan_model(file_model_env)),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 4, iter_warmup = 1200, iter_sampling = 800, fitpath = dir_fit,
+                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 700, fitpath = dir_fit,
                       adapt_delta = 0.95)
              ),
   tar_target(basename_fit_env,
