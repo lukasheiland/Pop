@@ -258,6 +258,7 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
 summarizeStates <- function(States, data_stan, basename, path) {
   
   D <- attr(data_stan, "Long_BA") %>%
+    st_drop_geometry() %>% ## avoiding potential problems from sf methods
     group_by(stage, tax) %>%
     summarize(mean = mean(y_prior, na.rm = T), sd = sd(y_prior, na.rm = T)) %>% ## y is count_ha for J and A, ba_ha for B and BA
     mutate(value = paste0(formatNumber(mean, signif.digits = 5), " ± ", formatNumber(sd, signif.digits = 5))) %>%

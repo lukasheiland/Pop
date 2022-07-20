@@ -655,7 +655,7 @@ targets_posterior_env <- list(
              summarizeFit(cmdstanfit = fit_env, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc_env),
                           publishpar = parname_plotorder, path = dir_publish)),
   tar_target(summary_states_env,
-           summarizeStates(States = States_env, data_stan = data_stan, basename = basename_fit_env, path = dir_publish)),
+           summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
   tar_target(Freq_converged_env,
            summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors, path = dir_publish)),
 
