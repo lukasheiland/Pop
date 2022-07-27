@@ -1617,7 +1617,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
     geom_point(color = "black", position = pos, size = 1.7) +
     coord_flip() +
     geom_vline(xintercept = if (plotprop) 1 else 0, linetype = 3, size = 0.6, col = "#222222") +
-    geom_hline(yintercept = c(4.5, 6.5), linetype = 1, size = 0.5, col = "#222222") +
+    geom_hline(yintercept = c(4.5, 6.5), linetype = 3, size = 0.6, col = "#222222") +
     
     { if (!plotprop) geom_text(aes(y = stagepos, x = xletterpos_h, label = stage), size = 10, col = "#222222") } +
     { if (plotprop) geom_text(aes(y = stagepos, x = xletterpos_l, label = stage), size = 10, col = "#222222") } +
@@ -1625,7 +1625,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
     { if (match.arg(contribution) != "sum_switch") facet_wrap(~reciprocal, # ~kotax
                scales = "free",
                labeller = labeller(kotax = function(kotax) paste(kotax, "demographic rates"),
-                                   reciprocal = function(reciprocal) if_else(reciprocal == 'TRUE', "reciprocal", "intraspecific"))) } +
+                                   reciprocal = function(reciprocal) if_else(reciprocal == 'TRUE', "indirect", "direct"))) } +
     themefun() +
     scale_color_manual(values = color) +
     theme(axis.title.x = element_blank()) +

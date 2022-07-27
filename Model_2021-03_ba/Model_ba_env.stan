@@ -298,12 +298,13 @@ data {
   vector[2] prior_c_a_log;
   vector[2] prior_c_b_log;
   vector[2] prior_c_j_log;
-  vector[2] prior_l_log;
+  // vector[2] prior_l_log;
   vector[2] prior_s_log;
 
   // Specific priors
   array[2] vector[N_species] prior_g_log;
   array[2] vector[N_species] prior_h_log;
+  array[2] vector[N_species] prior_l_log;
   array[2] vector[N_species] prior_r_log;
 
 }
@@ -457,7 +458,7 @@ model {
   c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]);
   g_log ~ normal(prior_g_log[1], prior_g_log[2]); // species-specific! 
   h_log ~ normal(prior_h_log[1], prior_h_log[2]); // species-specific!
-  l_log ~ normal(prior_l_log[1], prior_l_log[2]);
+  l_log ~ normal(prior_l_log[1], prior_l_log[2]); // species-specific!
   r_log ~ normal(prior_r_log[1], prior_r_log[2]); // species-specific!
   s_log ~ normal(prior_s_log[1], prior_s_log[2]);
   
@@ -524,16 +525,10 @@ generated quantities {
   real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]);
   vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
   vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
-  real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
+  // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
+  vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));  
   real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
-  
-  vector[N_species] vector_b_log_prior = to_vector(normal_rng(rep_vector(prior_b_log[1], N_species), rep_vector(prior_b_log[2], N_species)));
-  vector[N_species] vector_c_a_log_prior = to_vector(normal_rng(rep_vector(prior_c_a_log[1], N_species), rep_vector(prior_c_a_log[2], N_species)));
-  vector[N_species] vector_c_b_log_prior = to_vector(normal_rng(rep_vector(prior_c_b_log[1], N_species), rep_vector(prior_c_b_log[2], N_species)));
-  vector[N_species] vector_c_j_log_prior = to_vector(normal_rng(rep_vector(prior_c_j_log[1], N_species), rep_vector(prior_c_j_log[2], N_species)));
-  vector[N_species] vector_l_log_prior = to_vector(normal_rng(rep_vector(prior_l_log[1], N_species), rep_vector(prior_l_log[2], N_species)));
-  vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_vector(prior_s_log[1], N_species), rep_vector(prior_s_log[2], N_species)));
   
   
   //—————————————————————————————————————————————————————————————————————————//

@@ -346,28 +346,28 @@ functions {
         sum_ko_2_s += ba_ko_none - ba_ko_2_s;
         
       
-      /// Summed up proportional contributions
-	    // real ba_rate = sum(ba_ko_none)/BA_sum;
+        /// Summed up proportional contributions
+	    // real ba_sum_rate = sum(ba_ko_none) / BA_sum;
   
-	    // sum_ko_1_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // 1. proportional ko decline rate (how much does the basal area grow in the non-ko model compared to the k.o. model), in proportion to 2. the total basal area proportional increment 
-	    // sum_ko_1_prop_c_a += (ba_ko_none ./ ba_ko_1_c_a) / ba_rate; // ... will later be divided by number of iterations
-	    // sum_ko_1_prop_c_b += (ba_ko_none ./ ba_ko_1_c_b) / ba_rate;
-	    // sum_ko_1_prop_c_j += (ba_ko_none ./ ba_ko_1_c_j) / ba_rate;
-	    // sum_ko_1_prop_g   += (ba_ko_none ./ ba_ko_1_g) / ba_rate;
-	    // sum_ko_1_prop_h   += (ba_ko_none ./ ba_ko_1_h) / ba_rate;
-	    // sum_ko_1_prop_l   += (ba_ko_none ./ ba_ko_1_l) / ba_rate;
-	    // sum_ko_1_prop_r   += (ba_ko_none ./ ba_ko_1_r) / ba_rate;
-	    // sum_ko_1_prop_s   += (ba_ko_none ./ ba_ko_1_s) / ba_rate;
+	    // sum_ko_1_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_sum_rate; // 1. proportional ko decline rate (how much does the basal area grow in the non-ko model compared to the k.o. model), in proportion to 2. the total basal area proportional increment 
+	    // sum_ko_1_prop_c_a += (ba_ko_none ./ ba_ko_1_c_a) / ba_sum_rate; // ... will later be divided by number of iterations
+	    // sum_ko_1_prop_c_b += (ba_ko_none ./ ba_ko_1_c_b) / ba_sum_rate;
+	    // sum_ko_1_prop_c_j += (ba_ko_none ./ ba_ko_1_c_j) / ba_sum_rate;
+	    // sum_ko_1_prop_g   += (ba_ko_none ./ ba_ko_1_g) / ba_sum_rate;
+	    // sum_ko_1_prop_h   += (ba_ko_none ./ ba_ko_1_h) / ba_sum_rate;
+	    // sum_ko_1_prop_l   += (ba_ko_none ./ ba_ko_1_l) / ba_sum_rate;
+	    // sum_ko_1_prop_r   += (ba_ko_none ./ ba_ko_1_r) / ba_sum_rate;
+	    // sum_ko_1_prop_s   += (ba_ko_none ./ ba_ko_1_s) / ba_sum_rate;
  
-	    // sum_ko_2_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
-	    // sum_ko_2_prop_c_a += (ba_ko_none ./ ba_ko_2_c_a) / ba_rate;
-	    // sum_ko_2_prop_c_b += (ba_ko_none ./ ba_ko_2_c_b) / ba_rate;
-	    // sum_ko_2_prop_c_j += (ba_ko_none ./ ba_ko_2_c_j) / ba_rate;
-	    // sum_ko_2_prop_g   += (ba_ko_none ./ ba_ko_2_g) / ba_rate;
-	    // sum_ko_2_prop_h   += (ba_ko_none ./ ba_ko_2_h) / ba_rate;
-	    // sum_ko_2_prop_l   += (ba_ko_none ./ ba_ko_2_l) / ba_rate;
-	    // sum_ko_2_prop_r   += (ba_ko_none ./ ba_ko_2_r) / ba_rate;
-	    // sum_ko_2_prop_s   += (ba_ko_none ./ ba_ko_2_s) / ba_rate;
+	    // sum_ko_2_prop_b   += (ba_ko_none ./ ba_ko_2_b) / ba_sum_rate; // proportion of the ko growth rate to the overall ba growth rate, i.e. 
+	    // sum_ko_2_prop_c_a += (ba_ko_none ./ ba_ko_2_c_a) / ba_sum_rate;
+	    // sum_ko_2_prop_c_b += (ba_ko_none ./ ba_ko_2_c_b) / ba_sum_rate;
+	    // sum_ko_2_prop_c_j += (ba_ko_none ./ ba_ko_2_c_j) / ba_sum_rate;
+	    // sum_ko_2_prop_g   += (ba_ko_none ./ ba_ko_2_g) / ba_sum_rate;
+	    // sum_ko_2_prop_h   += (ba_ko_none ./ ba_ko_2_h) / ba_sum_rate;
+	    // sum_ko_2_prop_l   += (ba_ko_none ./ ba_ko_2_l) / ba_sum_rate;
+	    // sum_ko_2_prop_r   += (ba_ko_none ./ ba_ko_2_r) / ba_sum_rate;
+	    // sum_ko_2_prop_s   += (ba_ko_none ./ ba_ko_2_s) / ba_sum_rate;
       
       // } // end if (i < fixiter_min)
       
@@ -623,8 +623,10 @@ data {
     
   // array[2] vector[N_species] prior_k_log;
   // vector[N_species] prior_k_log;
-  // array[2] vector[N_species] prior_l_log;
-  vector[2] prior_l_log;
+  
+  // vector[2] prior_l_log;
+  array[2] vector[N_species] prior_l_log;
+  
   array[2] vector[N_species] prior_r_log;
   // vector[N_species] prior_r_log;
   
@@ -882,7 +884,8 @@ model {
   h_log ~ normal(prior_h_log[1,], prior_h_log[2,]);
 
   // k_log ~ normal(prior_k_log[1], prior_k_log[2]);
-  l_log ~ normal(prior_l_log[1], prior_l_log[2]);
+  // l_log ~ normal(prior_l_log[1], prior_l_log[2]);
+  l_log ~ normal(prior_l_log[1,], prior_l_log[2,]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]);
   
   s_log ~ normal(prior_s_log[1], prior_s_log[2]); // s_log ~ student_t(nu_student, prior_s_log[1], prior_s_log[2]);
@@ -958,10 +961,13 @@ generated quantities {
   vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
   
   // vector[N_species] k_log_prior = to_vector(normal_rng(prior_k_log[1,], prior_k_log[2,]));
-  // vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
-  real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
-  vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));
+  
+  // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
+  vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
+  
   // real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]);
+  vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));
+  
 
   
   
@@ -971,7 +977,7 @@ generated quantities {
   vector[N_species] vector_c_a_log_prior = to_vector(normal_rng(rep_vector(prior_c_a_log[1], N_species), rep_vector(prior_c_a_log[2], N_species)));
   vector[N_species] vector_c_b_log_prior = to_vector(normal_rng(rep_vector(prior_c_b_log[1], N_species), rep_vector(prior_c_b_log[2], N_species)));
   vector[N_species] vector_c_j_log_prior = to_vector(normal_rng(rep_vector(prior_c_j_log[1], N_species), rep_vector(prior_c_j_log[2], N_species)));
-  vector[N_species] vector_l_log_prior = to_vector(normal_rng(rep_vector(prior_l_log[1], N_species), rep_vector(prior_l_log[2], N_species)));
+  // vector[N_species] vector_l_log_prior = to_vector(normal_rng(rep_vector(prior_l_log[1], N_species), rep_vector(prior_l_log[2], N_species)));
   // vector[N_species] vector_r_log_prior = to_vector(normal_rng(rep_vector(prior_r_log[1], N_species), rep_vector(prior_r_log[2], N_species)));
   vector[N_species] vector_s_log_prior = to_vector(normal_rng(rep_vector(prior_s_log[1], N_species), rep_vector(prior_s_log[2], N_species)));
   

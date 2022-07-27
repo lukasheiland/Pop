@@ -29,7 +29,7 @@ source("Theme/Theme.R")
 
 ### Options
 options(tidyverse.quiet = TRUE)
-tar_option_set(error = "null")
+tar_option_set(error = "abridge")
 
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", "knitr", # "multidplyr" ## extended tidyverse
              "lubridate", "DescTools", # "zoo",
@@ -64,7 +64,7 @@ targets_settings <- list(
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 160mm > B
-  tar_target(threshold_dbh, 200), ## [mm]
+  tar_target(threshold_dbh, 180), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
@@ -85,13 +85,14 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-6, 2),
-               prior_c_b_log = c(-6, 2),
-               prior_c_j_log = c(-10, 3),
+               prior_b_log = c(-4, 1),
+               prior_c_a_log = c(-7, 2),
+               prior_c_b_log = c(-7, 1),
+               prior_c_j_log = c(-12, 2),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               prior_l_log = c(5, 1),
+               # prior_l_log = c(5, 2),
+               prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
                prior_s_log = c(-4, 2)
              )
@@ -369,7 +370,7 @@ targets_fit_general <- list(
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
-                          widthfactor_trans = 1, widthfactor_reg = 1)),
+                          widthfactor_trans = 1, widthfactor_reg = 1.5)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")),
@@ -619,10 +620,10 @@ targets_posterior <- list(
              plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions,
-             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, plotlog = F, color = twocolors, themefun = themefunction),
-             pattern = map(fit), iteration = "list"),
-  tar_target(plot_contributions_log,
              plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
+             pattern = map(fit), iteration = "list"),
+  tar_target(plot_contributions_prop,
+             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_ko_prop", plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions_switch,
              plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_switch", plotlog = T, color = twocolors, themefun = themefunction),
