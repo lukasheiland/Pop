@@ -137,8 +137,14 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
 formatStates <- function(cmdstanfit, data_stan_priors) {
   
   majorname <- c("major_init", "major_fix", "major_fix_ko_s", "major_fix_switch_s")
-  statename <- c("ba_init", "ba_fix", "ba_fix_ko_s", "ba_fix_switch_s",
-                 "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix")
+  statename <- c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix",
+                 
+                 "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
+                 "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
+                 
+                 "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l", "ba_fix_switch_l_r", "ba_fix_switch_s",
+                 "major_fix_switch_b", "major_fix_switch_c_b", "major_fix_switch_b_c_b", "major_fix_switch_g", "major_fix_switch_l", "major_fix_switch_l_r", "major_fix_switch_s")
+  
   varname_draws <- cmdstanfit$metadata()$stan_variables
   varname <- intersect(c(majorname, statename), varname_draws)
   
@@ -681,6 +687,18 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 }
 
 
+## selectParnameEnvironmental --------------------------------
+## Helper for excluding variables that are not in the fit.
+selectParnameEnvironmental <- function(parname, Environmental_env) {
+  
+  parname_drawn <- unique(Environmental_env$.variable)
+  message("fitEnvironmental(): The variables ", paste(setdiff(parname, parname_drawn), collapse = ", "), " are not in the posterior to be regressed against the environmental variables!")
+  parname_environmental <- intersect(parname, parname_drawn)
+  
+  return(parname_environmental)
+}
+
+
 ## fitEnvironmental --------------------------------
 # Environmental <- tar_read("Environmental_env")
 # parname <- tar_read("parname_env")[1]
@@ -698,7 +716,7 @@ fitEnvironmental <- function(Environmental, parname = parname_env, envname = pre
     filter(.variable == parname) %>%
     rename(v = .value)
   
-  splineformula <- paste0("v ~ ", "te(", paste(envname, collapse = ", "), ")")
+  splineformula <- paste0("v ~ ", "te(", paste(envname, collapse = ", "), ", k = c(3, 3))")
   
   ### mgcv
   fit <- gam(as.formula(splineformula), family = fam, data = E)
@@ -717,8 +735,7 @@ fitEnvironmental <- function(Environmental, parname = parname_env, envname = pre
 
 
 ## predictEnvironmental --------------------------------
-# fit_Envrionmental <- tar_read("fit_Environmental")
-# parname <- tar_read("parname_env")
+# fit <- tar_read("fit_environmental_env")[[1]]
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_publish")
 # basename  <- tar_read("basename_fit_test")
@@ -734,15 +751,25 @@ predictEnvironmental <- function(fit, envname,
   parname <- attr(fit, "par")
   
   res <- 500
-  name_y <- envname[1]
-  name_x <- envname[2]
-  range_y <- range(fit$model[[name_y]], na.rm = T)
+  name_x <- envname[1]
+  name_y <- envname[2]
+  O <- cbind(x = fit$model[[name_x]], y = fit$model[[name_y]])
+  ch <- chull(O)
+  Hullpoint <- O[c(ch, ch[1]),] ## close the polygon
+  poly <- st_sfc(st_polygon(list(Hullpoint)))
+  
   range_x <- range(fit$model[[name_x]], na.rm = T)
-  y <- seq(range_y[1], range_y[2], length.out = res)
+  range_y <- range(fit$model[[name_y]], na.rm = T)
   x <- seq(range_x[1], range_x[2], length.out = res)
-  P <- expand.grid(y, x) %>% setNames(c(name_y, name_x))
-  p <- predict(fit, newdata = P, type = "response") %>% c() # %>% matrix(nrow = res, ncol = res)
-  D <- cbind(P, z = p)
+  y <- seq(range_y[1], range_y[2], length.out = res)
+  P <- expand.grid(x, y) %>% setNames(c(name_x, name_y))
+  points <- st_sfc(lapply(1:nrow(P), function(i) st_point(c(as.matrix(P[i,])))))
+  
+  iscovered <- st_covered_by(points, poly, sparse = F)
+  P_covered <- P[iscovered,]
+  
+  p <- predict(fit, newdata = P_covered, type = "response") %>% c() # %>% matrix(nrow = res, ncol = res)
+  D <- cbind(P_covered, z = p)
   
   plot <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
     geom_raster(aes(fill = z)) +
@@ -750,7 +777,8 @@ predictEnvironmental <- function(fit, envname,
     scale_color_manual(values = color) +
     scale_fill_viridis_c() +
     themefun() +
-    ggtitle(paste(parname, taxon))
+    ggtitle(paste(parname, taxon)) +
+    scale_y_reverse() ## invert water level scale, consistent with Ökogramm.
   
   return(plot)
 }
@@ -1172,7 +1200,16 @@ plotStates <- function(States,
     geom_violin(trim = T, col = "black", scale = "width") +
     facet_wrap(~ gq, labeller = labeller(gq = c(ba_init = "Initial state",
                                                 ba_fix = "Equilibrium state",
-                                                ba_fix_ko_s = "Equilibrium state without s-effect on other",
+                                                ba_fix_ko_b = "Equilibrium state without b",
+                                                ba_fix_ko_s = "Equilibrium state without s",
+                                                ba_fix_ko_2_b = "Equilibrium state without b of others",
+                                                ba_fix_ko_2_s = "Equilibrium state without s effect on others",
+                                                ba_fix_switch_b = "Equilibrium state with switched b",
+                                                ba_fix_switch_c_b = "Equilibrium state with switched c_B",
+                                                ba_fix_switch_b_c_b = "Equilibrium state with switched b and c_B",
+                                                ba_fix_switch_g = "Equilibrium state with switched g",
+                                                ba_fix_switch_l = "Equilibrium state with switched l",
+                                                ba_fix_switch_l_r = "Equilibrium state with switched l and r",
                                                 ba_fix_switch_s = "Equilibrium state with switched s"))) +
     ggtitle("BA") +
     scale_color_manual(values = color) +
@@ -1600,8 +1637,8 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
     
     ## Letter Positions
     group_by(reciprocal) %>%
-    mutate(xletterpos_h = max(hh) * 0.85,
-           xletterpos_l = min(ll) * 0.85) %>%
+    mutate(xletterpos_h = max(hh) * 0.85, ## for !plotprop
+           xletterpos_l = min(ll) * 0.99) %>% ## for plotprop
     
     arrange(stage, parameter)
   
@@ -1619,8 +1656,8 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
     geom_vline(xintercept = if (plotprop) 1 else 0, linetype = 3, size = 0.6, col = "#222222") +
     geom_hline(yintercept = c(4.5, 6.5), linetype = 3, size = 0.6, col = "#222222") +
     
-    { if (!plotprop) geom_text(aes(y = stagepos, x = xletterpos_h, label = stage), size = 10, col = "#222222") } +
-    { if (plotprop) geom_text(aes(y = stagepos, x = xletterpos_l, label = stage), size = 10, col = "#222222") } +
+    { if (!plotprop) geom_text(aes(y = stagepos, x = xletterpos_h, label = stage), size = 9, col = "#222222") } +
+    { if (plotprop) geom_text(aes(y = stagepos, x = xletterpos_l, label = stage), size = 9, col = "#222222") } +
     
     { if (match.arg(contribution) != "sum_switch") facet_wrap(~reciprocal, # ~kotax
                scales = "free",
