@@ -844,7 +844,8 @@ generated quantities {
         // ba_fix_switch_l[loc] = Fix_switch_l[loc, 4];
         
         vector[N_species] switch_r = exp([r_log[2], r_log[1]]');
-        Fix_switch_l_r[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, 2:1], switch_r, exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        vector[N_species] switch_l = [L_loc[loc, 2], L_loc[loc, 1]]';
+        Fix_switch_l_r[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), switch_l, switch_r, exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_l_r[loc] = Fix_switch_l_r[loc, 4];
         
         vector[N_species] switch_s = exp([s_log[2], s_log[1]]');        
