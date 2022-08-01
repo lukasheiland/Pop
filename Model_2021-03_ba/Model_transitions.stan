@@ -11,7 +11,7 @@ functions {
    	t = log_sum_exp(bernoulli_lpmf(1 | theta),
                         bernoulli_lpmf(0 | theta) + neg_binomial_2_lpmf(y | y_hat, phi_obs));
    } else {
-  // Joint Likelihood of 0 coming from probability theta_rep or negbinonial
+    // Joint Likelihood of 0 coming from probability theta_rep or negbinonial
    	t = bernoulli_lpmf(0 | theta) +  // log1m(theta) synonymous to bernoulli_lpmf(0 | theta_rep)?
    		neg_binomial_2_lpmf(y | y_hat, phi_obs);
    }

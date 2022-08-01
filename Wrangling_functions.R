@@ -343,7 +343,7 @@ fitS <- function(BA, path = NULL) {
   # n_k_lat <- round(dist_lat / 8000)
   
   ### mgcv
-  fit <- gam(ba_ha ~ s(Y, X, bs = "sos", k = 600), family = nb, data = BA_coordinates) ## The first argument is taken to be latitude (in degrees) and the second longitude (in degrees).
+  fit <- gam(ba_ha ~ s(Y, X, bs = "sos", k = 200), family = nb, data = BA_coordinates) ## The first argument is taken to be latitude (in degrees) and the second longitude (in degrees).
   
   if(!is.null(path)) {
     s <- summary(fit)

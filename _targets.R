@@ -85,10 +85,10 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-4, 1),
-               prior_c_a_log = c(-7, 2),
-               prior_c_b_log = c(-7, 1),
-               prior_c_j_log = c(-12, 2),
+               prior_b_log = c(-3, 1),
+               prior_c_a_log = c(-6, 2),
+               prior_c_b_log = c(-5, 2),
+               prior_c_j_log = c(-10, 2),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                # prior_l_log = c(5, 2),
@@ -157,7 +157,8 @@ targets_parname <- list(
   tar_target(pars_exclude,
              c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_raw", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt", "m")),
   tar_target(helpers_exclude,
-             c("Fix", "Fix_ko_s", "Fix_switch_s",
+             c("Fix", "Fix_ko_s",
+               "Fix_switch_b", "Fix_switch_c_b", "Fix_switch_b_c_b", "Fix_switch_g", "Fix_switch_h", "Fix_switch_l", "Fix_switch_l_r", "Fix_switch_r", "Fix_switch_s",
                "B_log_raw", "C_a_log_raw", "C_b_log_raw", "C_j_log_raw", "G_log_raw", "H_log_raw", "L_log_raw", "R_log_raw", "S_log_raw",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
@@ -176,9 +177,9 @@ targets_parname <- list(
                "Fix_ko_b", "Fix_ko_s", "Fix_ko_2_b", "Fix_ko_2_s",
                "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
                "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
-               "Fix_switch_b", "Fix_switch_c_b", "Fix_switch_b_c_b", "Fix_switch_g", "Fix_switch_l", "Fix_switch_s",
-               "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l", "ba_fix_switch_s",
-               "major_fix_switch_b", "major_fix_switch_c_b", "major_fix_switch_b_c_b", "major_fix_switch_g", "major_fix_switch_l", "major_fix_switch_s",
+               "Fix_switch_b", "Fix_switch_c_b", "Fix_switch_b_c_b", "Fix_switch_g", "Fix_switch_h", "Fix_switch_l", "Fix_switch_r", "Fix_switch_l_r", "Fix_switch_s",
+               "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_h", "ba_fix_switch_l",  "ba_fix_switch_l_r",  "ba_fix_switch_r", "ba_fix_switch_s",
+               "major_fix_switch_b", "major_fix_switch_c_b", "major_fix_switch_b_c_b", "major_fix_switch_g", "major_fix_switch_h", "major_fix_switch_l", "major_fix_switch_l_r", "major_fix_switch_r", "major_fix_switch_s",
                "converged_fix", "iterations_fix", "fixiter_max", "fixiter_min", "eps_ba_fix",
                "sum_ko_1_b_fix", "sum_ko_1_c_a_fix", "sum_ko_1_c_b_fix", "sum_ko_1_c_j_fix", "sum_ko_1_g_fix", "sum_ko_1_h_fix", "sum_ko_1_l_fix", "sum_ko_1_r_fix", "sum_ko_1_s_fix",
                "sum_ko_2_b_fix", "sum_ko_2_c_a_fix", "sum_ko_2_c_b_fix", "sum_ko_2_c_j_fix", "sum_ko_2_g_fix", "sum_ko_2_h_fix", "sum_ko_2_l_fix", "sum_ko_2_r_fix", "sum_ko_2_s_fix",
@@ -552,7 +553,7 @@ targets_posterior_test <- list(
   tar_target(plots_states_test,
              plotStates(States_test, allstatevars = c("ba_init", "ba_fix",
                                                       "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
-                                                      "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l", "ba_fix_switch_s"),
+                                                      "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l_r", "ba_fix_switch_s"),
                         path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plot_trajectories_avg_test,
              plotTrajectories(Trajectories_avg_test, thicker = T, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
@@ -629,7 +630,7 @@ targets_posterior <- list(
              plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_switch", plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plots_states,
-             plotStates(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_switch_b", "ba_fix_switch_b_c_b", "ba_fix_switch_s"),
+             plotStates(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_switch_b_c_b", "ba_fix_l_r", "ba_fix_switch_s"),
                         path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(States, basename_fit), iteration = "list"),
   tar_target(plot_trajectories_avg,
@@ -642,9 +643,10 @@ targets_posterior <- list(
 #### posterior_env -----------
 targets_posterior_env <- list(
   
-  tar_target(parname_env,
-             c(setdiff(parname_loc_env, "state_init"),
-               "ba_init", "ba_fix", "major_fix", "major_init")),
+  tar_target(parname_env, c(setdiff(parname_loc_env, "state_init"),
+                            "ba_init", "ba_fix", "major_fix", "major_init")),
+  tar_target(parname_environmental, selectParnameEnvironmental(parname_env, Environmental_env)), ## selects the variables, that are actually in the fit
+  
   ## Extract
   tar_target(stanfit_env,
              extractStanfit(cmdstanfit = fit_env)),
@@ -677,45 +679,47 @@ targets_posterior_env <- list(
   
   
   ## Post-hoc inference
-  ## Post-hoc inference
-  tar_target(parname_env_gaussian, setdiff(parname_env, c("major_init", "major_fix"))),
-  tar_target(parname_env_binomial, c("major_init", "major_fix")),
+  tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c("major_init", "major_fix"))),
+  tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
   
   tar_target(fit_environmental_env_gaussian,
-             fitEnvironmental(Environmental_env, parname = parname_env_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian"),
-             pattern = cross(parname_env_gaussian, taxon_s),
+             fitEnvironmental(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian"),
+             pattern = cross(parname_environmental_gaussian, taxon_s),
              iteration = "list"),
   tar_target(fit_environmental_env_binomial,
-             fitEnvironmental(Environmental_env, parname = parname_env_binomial, envname = predictor_select, taxon = 0, fam = "binomial"),
-             pattern = map(parname_env_binomial),
+             fitEnvironmental(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial"),
+             pattern = map(parname_environmental_binomial),
              iteration = "list"),
   tar_target(fit_environmental_env,
-             c(fit_environmental_env_gaussian, fit_environmental_env_binomial)),  
+             c(fit_environmental_env_gaussian, fit_environmental_env_binomial),
+             iteration = "list"),  
   tar_target(surface_environmental_env,
              predictEnvironmental(fit_environmental_env, envname = predictor_select,
                                   path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
              pattern = map(fit_environmental_env),
              iteration = "list"),
   
-  tar_target(plot_environmental_env,
-             plotEnvironmental(surface_environmental_env,
-                               path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
-  
+
   ## Plot
+  tar_target(plot_environmental_env,
+             ggsave(filename = paste0(dir_publish, "/", basename_fit_env, "_plot_environmental", ".pdf"),
+                    plot = cowplot::plot_grid(plotlist = surface_environmental_env, ncol = 2), device = "pdf", width = 15, height = 90, limitsize = FALSE)),
   tar_target(plots_trace_env,
              plotTrace(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plots_pairs_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plots_parameters_env,
-             plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction))
+             plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+  tar_target(plot_contributions_env,
+             plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, plotlog = T,
+                               color = twocolors, themefun = themefunction))
+  
   # tar_target(plots_env,
   #            plotStanfit(stanfit = stanfit_env, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   # tar_target(plots_predictions_posterior_env,
   #            plotPredictions(cmdstanfit = fit_env, data_stan_priors_offset_env, check = "posterior", path = dir_publish)),
   # tar_target(plots_conditional_env,
   #            plotConditional(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  # tar_target(plot_contributions_env,
-  #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   # tar_target(plot_contributions_prop_env,
   #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, contribution = "sum_ko_prop", color = twocolors, themefun = themefunction)),
   # tar_target(plot_contributions_switch_env,
