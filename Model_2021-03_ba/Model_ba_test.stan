@@ -579,6 +579,7 @@ data {
   
   matrix[N_locs, N_beta] X; // design matrix
   array[N_locs] vector[N_species] L_smooth_log;
+  // array[N_locs] vector[N_species] L_random_log; //^ Random slope version
   
   vector<lower=0>[L_y] offset_data;
   
@@ -782,10 +783,13 @@ transformed parameters {
     	// k + l * L_smooth
     	// k == exp(k_log + normal(k_loc, sigma)) // intercept, with non-centered loc-level random intercepts
     	// l * L_smooth == exp(l_log + L_smooth_log)
-    	
+    
+    ////^ Random slope version
+    // L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ] + L_random_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
     
     //// L version
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
+    
     
     
     state_init[loc] = state_init_raw[loc] .* upper_init; //@
@@ -863,6 +867,9 @@ model {
     for (u in 1:(N_times_global-1)) {
       m[l,u,] ~ lognormal(0, 0.2);
     }
+    
+    ////^ Prior for l random slope
+    // L_random_log[l,] ~ normal(0, 0.5); // L_random_log == 0 -> no random loc-level effect, 
     
   }
   

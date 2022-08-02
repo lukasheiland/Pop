@@ -379,6 +379,7 @@ data {
   array[N_locs] int time_max;
   array[L_times] int times; // locations/observations
   array[N_locs] vector[N_species] L_smooth_log;
+  array[N_locs] vector[N_species] L_random_log;
   vector<lower=0>[L_y] offset_data;
   array[L_y] int y; // the response
 
@@ -463,7 +464,7 @@ transformed parameters {
 
   for(loc in 1:N_locs) {
     
-    L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
+    L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ] + L_random_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
     
     state_init[loc] = state_init_raw[loc] .* upper_init;
     
@@ -501,6 +502,9 @@ model {
 
     //// Prior for initial state
     state_init[l] ~ gamma(alpha_init[l], beta_init[l]); // state_init was just a linearly transformed. -> No Jacobian correction necessary.
+    
+    //// Prior for l random slope
+    L_random_log[l,] ~ normal(0, 0.5); // L_random_log == 0 -> no random loc-level effect, 
 
   }
   
