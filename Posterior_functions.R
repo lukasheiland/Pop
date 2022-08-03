@@ -1638,7 +1638,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
     ## Letter Positions
     group_by(reciprocal) %>%
     mutate(xletterpos_h = max(hh) * 0.85, ## for !plotprop
-           xletterpos_l = min(ll) * 0.99) %>% ## for plotprop
+           xletterpos_l = min(ll) * 1.01) %>% ## for plotprop
     
     arrange(stage, parameter)
   

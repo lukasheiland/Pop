@@ -625,8 +625,8 @@ data {
   // array[2] vector[N_species] prior_k_log;
   // vector[N_species] prior_k_log;
   
-  // vector[2] prior_l_log;
-  array[2] vector[N_species] prior_l_log;
+  vector[2] prior_l_log;
+  // array[2] vector[N_species] prior_l_log;
   
   array[2] vector[N_species] prior_r_log;
   // vector[N_species] prior_r_log;
@@ -641,8 +641,6 @@ data {
   // array[2] vector[N_species] prior_b_log;
   // array[2] vector[N_species] prior_c_a_log;
   // array[2] vector[N_species] prior_c_b_log;
-  
-  // array[2] vector[N_species] prior_l_log;
   
   //// nu from student-t for weak priors
   // real nu_student;
@@ -891,8 +889,8 @@ model {
   h_log ~ normal(prior_h_log[1,], prior_h_log[2,]);
 
   // k_log ~ normal(prior_k_log[1], prior_k_log[2]);
-  // l_log ~ normal(prior_l_log[1], prior_l_log[2]);
-  l_log ~ normal(prior_l_log[1,], prior_l_log[2,]);
+  // l_log ~ normal(prior_l_log[1,], prior_l_log[2,]);
+  l_log ~ normal(prior_l_log[1], prior_l_log[2]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]);
   
   s_log ~ normal(prior_s_log[1], prior_s_log[2]); // s_log ~ student_t(nu_student, prior_s_log[1], prior_s_log[2]);
@@ -969,8 +967,8 @@ generated quantities {
   
   // vector[N_species] k_log_prior = to_vector(normal_rng(prior_k_log[1,], prior_k_log[2,]));
   
-  // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
-  vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
+  real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
+  // vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   
   // real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]);
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));

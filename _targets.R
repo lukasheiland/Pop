@@ -87,12 +87,12 @@ targets_settings <- list(
              list(
                prior_b_log = c(-3, 1),
                prior_c_a_log = c(-6, 2),
-               prior_c_b_log = c(-5, 2),
-               prior_c_j_log = c(-10, 2),
+               prior_c_b_log = c(-6, 2),
+               prior_c_j_log = c(-12, 2),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               # prior_l_log = c(5, 2),
-               prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
+               # prior_l_log = cbind(Fagus = c(5, 1), others = c(5, 1)),
+               prior_l_log = c(5, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
                prior_s_log = c(-4, 2)
              )
@@ -310,13 +310,8 @@ targets_wrangling <- list(
                  iteration = "list"),
       tar_target(Seedlings_s,
                  predictS(fits_Seedlings_s, Seedlings)),
-        ## Former workaround for Linux installlations, where the geo libraries did not work. Assumes upload of "Data/Stages_s.rds"
-        # tar_target(file_Seedlings_s,  if(!! onserver) "Data/Seedlings_s.rds" else saveSeedlings_s(Seedlings_s), format = "file"),
-        # tar_target(Data_Seedlings_s, readRDS(file_Seedlings_s)),
-      
-      tar_target(fits_Seedlings,
-                 fitSeedlings(Seedlings_s, fitpath = dir_fit), # Workaround: "Data_Seedlings_s" instead of "Seedlings_s"
-                 iteration = "list")
+      tar_target(fit_Seedlings,
+                 fitSeedlings(Seedlings_s, fitpath = dir_fit))
     ),
     
     
@@ -370,7 +365,7 @@ targets_fit_general <- list(
              fitTransition(data_stan_transitions, which = "h", model_transitions, fitpath = dir_fit)),
   
   tar_target(data_stan_priors,
-             formatPriors(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings,
+             formatPriors(data_stan, weakpriors, fit_g, fit_h, fit_Seedlings,
                           widthfactor_trans = 1, widthfactor_reg = 1.5)),
   
   tar_target(offsetname,
@@ -460,7 +455,7 @@ targets_fit_env <- list(
              fitTransition(data_stan_transitions_env, which = "h", model_transitions, fitpath = dir_fit)),
   
   tar_target(data_stan_priors_env,
-             formatPriors(data_stan_env, weakpriors, fit_g_env, fit_h_env, fits_Seedlings,
+             formatPriors(data_stan_env, weakpriors, fit_g_env, fit_h_env, fit_Seedlings,
                           widthfactor_trans = 1, widthfactor_reg = 1)),
 
   tar_target(data_stan_priors_offset_env,
