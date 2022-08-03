@@ -293,18 +293,18 @@ data {
   array[N_locs] vector<lower=0>[N_pops] beta_init;
   vector<lower=0>[N_pops] upper_init; // The upper is provided for linear rescaling of the data to sample the parameter in [0, 1]
 
-  // Non-specific priors
+  // Non-species-specific priors
   vector[2] prior_b_log;
   vector[2] prior_c_a_log;
   vector[2] prior_c_b_log;
   vector[2] prior_c_j_log;
-  // vector[2] prior_l_log;
+  vector[2] prior_l_log;
   vector[2] prior_s_log;
 
   // Specific priors
   array[2] vector[N_species] prior_g_log;
   array[2] vector[N_species] prior_h_log;
-  array[2] vector[N_species] prior_l_log;
+  // array[2] vector[N_species] prior_l_log;
   array[2] vector[N_species] prior_r_log;
 
 }
@@ -458,7 +458,7 @@ model {
   c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]);
   g_log ~ normal(prior_g_log[1], prior_g_log[2]); // species-specific! 
   h_log ~ normal(prior_h_log[1], prior_h_log[2]); // species-specific!
-  l_log ~ normal(prior_l_log[1], prior_l_log[2]); // species-specific!
+  l_log ~ normal(prior_l_log[1], prior_l_log[2]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]); // species-specific!
   s_log ~ normal(prior_s_log[1], prior_s_log[2]);
   
@@ -525,8 +525,8 @@ generated quantities {
   real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]);
   vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
   vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
-  // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
-  vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
+  real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
+  // vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));  
   real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
   
@@ -673,7 +673,7 @@ generated quantities {
         sum_ko_2_s_fix[loc] = Fix[loc, 24];
         
         
-    	  //// Booleans at fixpoint
+    	//// Booleans at fixpoint
         dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
         major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
 
@@ -682,20 +682,20 @@ generated quantities {
         // vector[N_pops] state_fix = append_row(append_row(J_fix[loc],  A_fix[loc]),  B_fix[loc]);
         // 
         // vector[N_species] ko_s_2 = [exp(S_log[loc,1]), 0]';		
-		    // Fix_ko_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
-		    //                            exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), ko_s_2,
-		    //                            ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);		
-		    // ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
-		    // 
-		    // 
-		    // vector[N_species] switch_s = exp(S_log[loc,2:1]);		
-		    // Fix_switch_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
-		    //                                exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), switch_s,
-		    //                                ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
-		    // ba_fix_switch_s[loc] = Fix_switch_s[loc, 4];
-		    // 
-		    // 
-		    // // Counterfactual booleans
+		// Fix_ko_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
+		//                            exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), ko_s_2,
+		//                            ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);		
+		// ba_fix_ko_s[loc] = Fix_ko_s[loc, 4];
+		// 
+		// 
+		// vector[N_species] switch_s = exp(S_log[loc,2:1]);		
+		// Fix_switch_s[loc] = iterateFix(state_init[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
+		//                                exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), switch_s,
+		//                                ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+		// ba_fix_switch_s[loc] = Fix_switch_s[loc, 4];
+		// 
+		// 
+		// // Counterfactual booleans
         // major_fix_ko_s[loc] = ba_fix_ko_s[loc, 1] > ba_fix_ko_s[loc, 2]; // ba_1 > 50%
         // major_fix_switch_s[loc] = ba_fix_switch_s[loc, 1] > ba_fix_switch_s[loc, 2]; // ba_1 > 50%
       

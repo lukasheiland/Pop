@@ -9,7 +9,7 @@
 
 wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, threshold_dbh = threshold_dbh) {
   
-  if (taxon_select != "Fagus.sylvatica") stop("Prior for seedling regeneration rate r is only implemented for Fagus.sylvatica!")
+  if (taxon_select != "Fagus.sylvatica") stop("Prior inference for seedling regeneration rate r is only implemented for Fagus.sylvatica!")
   
   Data_seedlings <- Data_seedlings %>%
     mutate(tax = str_replace_all(taxon, " ", replacement = ".")) %>%
@@ -31,8 +31,6 @@ wrangleSeedlings <- function(Data_seedlings, taxon_select = taxon_select, thresh
     # group_by(plotid) %>%
     # mutate(anyFagus = any(count_ha > 0 & tax == "Fagus.sylvatica", na.rm = T)) %>%
     # filter(anyFagus) %>%
-    
-    ## Any observations on plots were removed that had unnatural regeneration within a year and if they did not have any Fagus in any sizeclass and year
     
     ## implicitly I wanna filter to keep:
     ## EITHER (sizeclass == "small" & height < 0.2) -> this has been ensured in SK complete file before
@@ -213,103 +211,86 @@ saveSeedlings_s <- function(Seedlings_s) {
 # Seedlings_s  <- tar_read("Seedlings_s")
 # fitpath  <- tar_read("dir_fit")
 fitSeedlings <- function(Seedlings_s, fitpath) {
-
-  #### fitModel() ---------------------
-  #
-  fitModel <- function(tax) {
+  
+  S <- Seedlings_s %>%
+    st_drop_geometry() %>%
+    dplyr::select(tax, plotid, year, sizeclass, count_obs, count_ha, offset, ba_ha, count_ha_sum, ba_ha_sum, s_other, s_Fagus.sylvatica) %>%
+    pivot_wider(id_cols = c("plotid", "year", "tax"),
+                names_from = "sizeclass",
+                values_from = c("count_obs", "count_ha", "ba_ha", "count_ha_sum", "ba_ha_sum", "offset", "s_other", "s_Fagus.sylvatica"))
+  
+  model_seedlings <- cmdstanr::cmdstan_model(stan_file = "Model_2021-03_ba/Model_seedlings.stan")
+  
+  data_seedlings <- list(
+    N = nrow(S),
+    y = as.integer(S$count_obs_small),
     
-    S <- Seedlings_s[Seedlings_s$tax == tax,] %>%
-      st_drop_geometry() %>%
-      dplyr::select(plotid, year, sizeclass, count_obs, count_ha, offset, ba_ha, count_ha_sum, ba_ha_sum, s_other, s_Fagus.sylvatica) %>%
-      pivot_wider(id_cols = c("plotid", "year"),
-                  names_from = "sizeclass",
-                  values_from = c("count_obs", "count_ha", "ba_ha", "count_ha_sum", "ba_ha_sum", "offset", "s_other", "s_Fagus.sylvatica"))
-
-    model_seedlings <- cmdstanr::cmdstan_model(stan_file = "Model_2021-03_ba/Model_seedlings.stan")
-
-    data_seedlings <- list(
-      N = nrow(S),
-      y = as.integer(S$count_obs_small),
-      
-      ## In the hurdle model, the fake offset area_0 will only get used as a factor level for determining the prob of getting a zero. 
-      offset_data = S$offset_small,
-      # offset_scaled = c(scale(S$offset_small)),
-      rep_offset = as.integer(as.factor(S$offset_small)),
-      N_offset = n_distinct(S$offset_small),
-      
-      ba_sum = S$ba_ha_sum_big,
-      l_smooth = exp(S[, paste0("s_", tax, "_big"), drop = T]), ## predictions are on the log scale!
-      ba = S$ba_ha_big
-    )
+    ## In the hurdle model, the fake offset area_0 will only get used as a factor level for determining the prob of getting a zero. 
+    offset_data = S$offset_small,
+    # offset_scaled = c(scale(S$offset_small)),
+    rep_offset = as.integer(as.factor(S$offset_small)),
+    N_offset = n_distinct(S$offset_small),
     
-    getInits <- function(chain_id) return(list(l_log = 0.1, r_log = 0.1, theta_logit = rep(-1.0, data_seedlings$N_offset), m_logit = -2, phi_inv_sqrt = rep(10, data_seedlings$N_offset)))
-    fit_Seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4), output_dir = fitpath, init = getInits)
+    rep_species = as.integer(as.factor(S$tax)),
+    rep_plot = as.integer(as.factor(S$plotid)),
+    N_plots = n_distinct(S$plotid),
     
-    attr(fit_Seedlings, "data") <- data_seedlings
-    attr(fit_Seedlings, "taxon") <- tax
-    
-    var <- c("r_log", "k_log", "theta_logit", "m_logit", "phi")
-    
-    ggsave(file.path(fitpath, paste0("Pairs_Seedlings_", tax, ".png")),
-           mcmc_pairs(fit_Seedlings$draws(variables = setdiff(var, "phi"))))
-    
-    s <- fit_Seedlings$summary(variables = var)
-    write.csv(s, file.path(fitpath, paste0("Summary_Seedlings_", tax, ".csv")))
-
-    message("Summary of the the fit for ", tax, ":")
-    print(s)
-    
-    return(fit_Seedlings)
-  }
+    ba_sum = S$ba_ha_sum_big,
+    l_smooth = exp(if_else(S$tax == "Fagus.sylvatica", S$s_Fagus.sylvatica_big, S$s_other_big)), ## predictions are on the log scale!
+    ba = S$ba_ha_big
+  )
+  
+  getInits <- function(chain_id) return(list(l_log = rep(0.1, 2), r_log = rep(0.1, 2), theta_logit = rep(-1.0, data_seedlings$N_offset), m_logit = -2, phi_inv_sqrt = rep(10, data_seedlings$N_offset)))
+  fit_Seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4), output_dir = fitpath, init = getInits)
+  
+  attr(fit_Seedlings, "data") <- data_seedlings
+  
+  var <- c("r_log", "k_log", "theta_logit", "m_logit", "phi")
   
   
-  #### generateResiudals() ---------------------
-  #
-  generateResiduals <- function(taxon) {
-    
-    fit_Seedlings <- fits_Seedlings[[taxon]]
-    data_seedlings <- attr(fit_Seedlings, "data")
-    
-    y_sim <- fit_Seedlings$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
-    # y_hat <- fit_Seedlings$draws(variables = "y_hat", format = "draws_matrix") %>% apply(2, median, na.rm = T) ## This does not work for zero-altered models
-    y <- data_seedlings$y
-    
-    # plot(y_hat/data_seedlings$offset ~ data_seedlings$ba)
-    
-    is0 <- !data_seedlings$y
-    residuals <- DHARMa::createDHARMa(simulatedResponse = y_sim, observedResponse = y, integerResponse = T) # fittedPredictedResponse = y_hat
-    
-    # testZeroInflation(residuals)
-    
-    saveRDS(residuals, paste0(fitpath, "/Seedlings_", taxon, "_DHARMa", ".rds"))
-
-    png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa", ".png"), width = 1600, height = 1000)
-    plot(residuals, quantreg = T, smoothScatter = F)
-    dev.off()
-    
-    png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa_ba.sum", ".png"), width = 1600, height = 1000)
-    plotResiduals(residuals, form = data_seedlings$ba_sum, quantreg = T, smoothScatter = F)
-    dev.off()
-    
-    png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa_0", ".png"), width = 1600, height = 1000)
-    plotResiduals(residuals, form = is0, quantreg = T, smoothScatter = F)
-    dev.off()
-    
-    png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa_ba", ".png"), width = 1600, height = 1000)
-    plotResiduals(residuals, form = data_seedlings$ba, quantreg = T, smoothScatter = F)
-    dev.off()
-    
-    # png(paste0(fitpath, "/Seedlings_", taxon, "_DHARMa_offset", ".png"), width = 1600, height = 1000)
-    # plotResiduals(residuals, form = data_seedlings$offset, quantreg = T, smoothScatter = F)
-    # dev.off()
-    
-    return(NULL)
-  }
+  ## Plot and summarize
+  ggsave(file.path(fitpath, paste0("Pairs_Seedlings_", ".png")),
+         mcmc_pairs(fit_Seedlings$draws(variables = setdiff(var, "phi"))))
   
-  fits_Seedlings <- sapply(c("Fagus.sylvatica", "other"), fitModel, USE.NAMES = T, simplify = F)
-  sapply(names(fits_Seedlings), generateResiduals)
+  s <- fit_Seedlings$summary(variables = var)
+  write.csv(s, file.path(fitpath, paste0("Summary_Seedlings_", ".csv")))
+  
+  message("Summary of the the seedling fit:")
+  print(s)
+  
 
-  return(fits_Seedlings)
+  ## Residueals
+
+  y_sim <- fit_Seedlings$draws(variables = "y_sim", format = "draws_matrix") %>% t()# matrix of observations simulated from the fitted model - row index for observations and colum index for simulations
+  # y_hat <- fit_Seedlings$draws(variables = "y_hat", format = "draws_matrix") %>% apply(2, median, na.rm = T) ## This does not work for zero-altered models
+  y <- data_seedlings$y
+  
+  # plot(y_hat/data_seedlings$offset ~ data_seedlings$ba)
+  
+  is0 <- !data_seedlings$y
+  residuals <- DHARMa::createDHARMa(simulatedResponse = y_sim, observedResponse = y, integerResponse = T) # fittedPredictedResponse = y_hat
+  
+  # testZeroInflation(residuals)
+  
+  saveRDS(residuals, paste0(fitpath, "/Seedlings_", "_DHARMa", ".rds"))
+
+  png(paste0(fitpath, "/Seedlings_", "_DHARMa", ".png"), width = 1600, height = 1000)
+  plot(residuals, quantreg = T, smoothScatter = F)
+  dev.off()
+  
+  png(paste0(fitpath, "/Seedlings_", "_DHARMa_ba.sum", ".png"), width = 1600, height = 1000)
+  plotResiduals(residuals, form = data_seedlings$ba_sum, quantreg = T, smoothScatter = F)
+  dev.off()
+  
+  png(paste0(fitpath, "/Seedlings_", "_DHARMa_0", ".png"), width = 1600, height = 1000)
+  plotResiduals(residuals, form = is0, quantreg = T, smoothScatter = F)
+  dev.off()
+  
+  png(paste0(fitpath, "/Seedlings_", "_DHARMa_ba", ".png"), width = 1600, height = 1000)
+  plotResiduals(residuals, form = data_seedlings$ba, quantreg = T, smoothScatter = F)
+  dev.off()
+
+  return(fit_Seedlings)
   
 }
 

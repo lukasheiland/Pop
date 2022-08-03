@@ -541,20 +541,20 @@ fitTransition <- function(data_stan, which, model_transitions, fitpath = dir_fit
 # data_stan  <- tar_read("data_stan")
 # fit_g  <- tar_read("fit_g")
 # fit_h  <- tar_read("fit_h")
-# fits_Seedlings  <- tar_read("fits_Seedlings")
+# fit_Seedlings  <- tar_read("fit_Seedlings")
 
-formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fits_Seedlings, widthfactor_trans = 1, widthfactor_reg = 1) {
+formatPriors <- function(data_stan, weakpriors, fit_g, fit_h, fit_Seedlings, widthfactor_trans = 1, widthfactor_reg = 1) {
   
   ## Matrices[draws, species]
   Draws_g <- fit_g$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
   Draws_h <- fit_h$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
+  
   seedlingpar <- c("r_log") # , "k_log", "l_log"
   draws_seedlings <- sapply(seedlingpar,
-                            function(v) lapply(fits_Seedlings, function(f, var = v) f$draws(variables = var, format = "draws_matrix") %>% as.data.frame()),
+                            function(v) fit_Seedlings$draws(variables = v, format = "draws_matrix") %>% as.data.frame(),
                             simplify = F, USE.NAMES = T)
-  draws_seedlings <- lapply(draws_seedlings, bind_cols)
-  
-  # Draws_seedlings <- posterior_samples(fits_Seedlings, fixed = F, pars = c("b_ba_ha$", "b_s_"))
+
+  # Draws_seedlings <- posterior_samples(fit_Seedlings, fixed = F, pars = c("b_ba_ha$", "b_s_"))
   
   pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
   pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)

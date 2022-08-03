@@ -379,7 +379,6 @@ data {
   array[N_locs] int time_max;
   array[L_times] int times; // locations/observations
   array[N_locs] vector[N_species] L_smooth_log;
-  array[N_locs] vector[N_species] L_random_log;
   vector<lower=0>[L_y] offset_data;
   array[L_y] int y; // the response
 
@@ -395,18 +394,18 @@ data {
   array[N_locs] vector<lower=0>[N_pops] beta_init;
   vector<lower=0>[N_pops] upper_init; // The upper is provided for linear rescaling of the data to sample the parameter in [0, 1]
 
-  // Non-specific priors
+  // Non-species-specific priors
   vector[2] prior_b_log;
   vector[2] prior_c_a_log;
   vector[2] prior_c_b_log;
   vector[2] prior_c_j_log;
-  // vector[2] prior_l_log;
+  vector[2] prior_l_log;
   vector[2] prior_s_log;
 
   // Specific priors
   array[2] vector[N_species] prior_g_log;
   array[2] vector[N_species] prior_h_log;
-  array[2] vector[N_species] prior_l_log;
+  // array[2] vector[N_species] prior_l_log;
   array[2] vector[N_species] prior_r_log;
 
 }
@@ -464,7 +463,7 @@ transformed parameters {
 
   for(loc in 1:N_locs) {
     
-    L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ] + L_random_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
+    L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
     
     state_init[loc] = state_init_raw[loc] .* upper_init;
     
@@ -502,9 +501,6 @@ model {
 
     //// Prior for initial state
     state_init[l] ~ gamma(alpha_init[l], beta_init[l]); // state_init was just a linearly transformed. -> No Jacobian correction necessary.
-    
-    //// Prior for l random slope
-    L_random_log[l,] ~ normal(0, 0.5); // L_random_log == 0 -> no random loc-level effect, 
 
   }
   
@@ -516,7 +512,7 @@ model {
   c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]);
   g_log ~ normal(prior_g_log[1], prior_g_log[2]); // species-specific! 
   h_log ~ normal(prior_h_log[1], prior_h_log[2]); // species-specific! 
-  l_log ~ normal(prior_l_log[1], prior_l_log[2]); // species-specific! 
+  l_log ~ normal(prior_l_log[1], prior_l_log[2]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]); // species-specific! 
   s_log ~ normal(prior_s_log[1], prior_s_log[2]);
 
@@ -565,8 +561,8 @@ generated quantities {
   real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]);
   vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
   vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
-  // real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
-  vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
+  real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
+  // vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));  
   real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
   
