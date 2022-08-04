@@ -1595,12 +1595,14 @@ plotTrace <- function(cmdstanfit, parname, path,
 plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_ko", "sum_ko_prop", "sum_switch"), plotlog = FALSE,
                               color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
+
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
   n_species <- 2 ## is also used in functions below
   parorder <- names(parname)
   parname <- str_remove(setdiff(parname, "k_log"), "_log")
   plotprop <- match.arg(contribution) == "sum_ko_prop"
+  if (plotprop & plotlog) warning("Log-scale was discarded because it does not make sense with proportions.")
   
   contribname <- if (match.arg(contribution) == "sum_ko_prop") { paste("sum_ko", rep(1:n_species, each = length(parname)), "prop", parname, "fix", sep = "_") }
                     else if (match.arg(contribution) == "sum_ko") { paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_") }
