@@ -68,9 +68,9 @@ model {
   
   phi_inv_sqrt ~ std_normal();
   
-  k_log ~ normal(0, 3);
+  k_log ~ normal(4, 5);
   // l_log ~ normal(0, 3);
-  r_log ~ normal(0, 3);
+  r_log ~ normal(3, 5);
   
 
   //// Model

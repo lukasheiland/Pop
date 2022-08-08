@@ -11,7 +11,7 @@ functions {
    	t = log_sum_exp(bernoulli_lpmf(1 | theta),
                         bernoulli_lpmf(0 | theta) + neg_binomial_2_lpmf(y | y_hat, phi_obs));
    } else {
-    // Joint Likelihood of 0 coming from probability theta_rep or negbinonial
+  // Joint Likelihood of 0 coming from probability theta_rep or negbinonial
    	t = bernoulli_lpmf(0 | theta) +  // log1m(theta) synonymous to bernoulli_lpmf(0 | theta_rep)?
    		neg_binomial_2_lpmf(y | y_hat, phi_obs);
    }
@@ -29,6 +29,8 @@ data {
   array[L] int<lower=0> y_base;
   array[L] int<lower=0> y_trans;  
   vector[L] area_log;
+  
+  real prior_rate;
 
 }
 
@@ -86,9 +88,9 @@ model {
   // phi_base_inv ~ normal(0, 5);
   // phi_trans_inv ~ normal(0, 5);
   
-  y_base_log ~ normal(0, 50);
+  y_base_log ~ normal(0, 100);
   
-  rate_log ~ normal(-4, 5);
+  rate_log ~ normal(prior_rate, 3);
   
   //// Hierarchical version
   /// Hyperpriors

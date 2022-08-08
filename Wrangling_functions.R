@@ -461,17 +461,18 @@ saveStages_s <- function(Stages_s) {
 # Stages_s <- tar_read("Stages_s")
 # predictor_select <- tar_read("predictor_select")
 # loclevel <- tar_read("loc")
-selectLocs <- function(Stages_s, predictor_select, selectpred = F,
+selectLocs <- function(Stages_s, predictor_select,
+                       selectpred = F, stratpred = F, n_locations = 1000,
                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
                        loc = c("plot", "nested", "cluster"),
-                       n_locations = 1000
+                       tablepath = "~"
                        ) {
 
   loclevel <- match.arg(loc)
   
   message(paste(Stages_s %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
                 Stages_s %>% pull(plotid) %>% unique() %>% length(), "plots before selectLocs()."))
-
+  
   ## for reference
   disturbance_select = c("standage_DE_BWI_1",
                          "allNatRegen_DE_BWI_2", "allNatRegen_DE_BWI_3", "anyUnnatRegen_DE_BWI_3", "anyUnnatRegen_DE_BWI_2",
@@ -503,6 +504,20 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
     filter( !(anyForestryDamage_DE_BWI_2 | anyForestryDamage_DE_BWI_3))
     
     # unique(Stages_select$clusterid) %>% length() ## 5236
+  
+  ## Drop clusters that don't have an associated time
+  if(anyNA(Stages_select$time)) {
+    
+    n_na <- Stages_select %>%
+      filter(is.na(time)) %>%
+      pull(clusterid) %>%
+      n_distinct()
+    
+    Stages_select %<>%
+      filter(!is.na(time))
+    
+    warning("selectLocs(): There were ", n_na, " clusters with missing variable `time`. These clusters have been dropped.")
+  }
     
   
   ## Filter plots based on tree observations
@@ -571,25 +586,61 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
       mutate(anySmallOther = any(count_ha > 0 & tax == "other" & stage == "J")) %>%
       mutate(anyBigFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage %in% c("A", "B"))) %>%
       mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
-      ungroup()
+      ungroup() %>%
       
-    
-    ## Confined to plots with any observation of the taxa in defined sizeclasses
-    Stages_select %<>%
+      ## subset to plots with any observation of the taxa in defined sizeclasses
       filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 3468
-    
+
     ## Select only one random plot per cluster
+    ## Holds for both cases stratpred and !stratpred
     Stages_select %<>%
       group_by(clusterid) %>%
       mutate(plotid_select = sample(unique(plotid), 1, replace = F)) %>%
-      filter(plotid == plotid_select)
-    
-    ## Subset n_plots
-    plotid_subset <- Stages_select$plotid %>% unique() %>% sample(n_locations, replace = FALSE)
-    Stages_select %<>%
-      filter(plotid %in% plotid_subset)
+      filter(plotid == plotid_select) %>%
+      ungroup()
       
+    if (stratpred & !selectpred) warning("Cannot stratify based on predictors, when locations are not selected based on predictors.")
+    
+    if (stratpred & selectpred) {
+      
+      Stages_strata <- Stages_select %>%
+        ungroup() %>% 
+        st_drop_geometry() %>%
+        filter(stage == "B") %>%
+        filter(obsid == "DE_BWI_1987") %>%
+        mutate_at(predictor_select, cut, breaks = 7) %>%
+        mutate(bin2d = interaction(get(predictor_select[1]), get(predictor_select[2])))
+        
+      Strata <- table(Stages_strata[,predictor_select[1], drop = T], Stages_strata[,predictor_select[2], drop = T])
+      write.csv(Strata, file.path(tablepath, "Strata_plots_DE.csv"))
+      
+      sampleAtMost <- function(X, n = 25) {
+        n_x <- nrow(X)
+        if(n_x >= n) slice_sample(X, n = n, replace = F)
+        else if (n_x < n) return(X)
+      }
+      
+      plotid_subset <- Stages_strata %>%
+        split(.$bin2d) %>%
+        lapply(sampleAtMost, n = 25) %>%
+        bind_rows() %>%
+        pull(plotid)
+      
+      if (length(plotid_subset) > n_locations) {
+        plotid_subset <- sample(plotid_subset, n_locations, replace = FALSE)
+      }
+      
+    } else { ## case: !(stratpred & selectpred)
+      
+      ## Subset n_plots
+      plotid_subset <- Stages_select$plotid %>% unique() %>% sample(n_locations, replace = FALSE)
+      
+    }
   }
+  
+  ## in any case:
+  Stages_select %<>%
+    filter(plotid %in% plotid_subset)
   
   
   # ## Selecting an equal no. of plots with and without Fagus
@@ -611,19 +662,6 @@ selectLocs <- function(Stages_s, predictor_select, selectpred = F,
   
   message(paste(Stages_select %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
                 Stages_select %>% pull(plotid) %>% unique() %>% length(), "plots after selectLocs()."))
-  
-  if(anyNA(Stages_select$time)) {
-    
-    n_na <- Stages_select %>%
-      filter(is.na(time)) %>%
-      pull(clusterid) %>%
-      n_distinct()
-    
-    Stages_select %<>%
-      filter(!is.na(time))
-
-    warning("selectLocs(): There were ", n_na, " clusters with missing variable `time`. These clusters have been dropped.")
-  }
   
   ## Filter clusters based on succession
   # Stages_select %<>%

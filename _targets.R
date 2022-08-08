@@ -32,7 +32,7 @@ options(tidyverse.quiet = TRUE)
 tar_option_set(error = "abridge")
 
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", "knitr", # "multidplyr" ## extended tidyverse
-             "lubridate", "DescTools", # "zoo",
+             "lubridate", "DescTools",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "mgcv", "itsadug", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
@@ -86,15 +86,15 @@ targets_settings <- list(
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
                prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-6, 2),
-               prior_c_b_log = c(-6, 2),
-               prior_c_j_log = c(-9, 2),
+               prior_c_a_log = c(-4, 2),
+               prior_c_b_log = c(-5, 2),
+               prior_c_j_log = c(-10, 3),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               # prior_l_log = cbind(Fagus = c(5, 1), others = c(5, 1)),
-               prior_l_log = c(4, 1),
+               # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
+               prior_l_log = c(5, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-5, 2)
+               prior_s_log = c(-4, 2)
              )
   ),
   
@@ -316,9 +316,8 @@ targets_wrangling <- list(
     
     
     tar_target(Stages_select,
-               selectLocs(Stages_s, predictor_select, selectpred = F, loc = c("plot", "nested", "cluster"), n_locations = n_locations)), # Subsetting after smooth, so that smooth can be informed by all plots.
-        ## Workaround for machines where geo libraries do not work: target "Data_Stages_s" instead of "Stages_s"
-    
+               selectLocs(Stages_s, predictor_select,
+                          selectpred = F, stratpred = F, n_locations = n_locations, loc = c("plot", "nested", "cluster"), tablepath = dir_publish)), # Subsetting after smooth, so that smooth can be informed by all plots.
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
     
@@ -427,7 +426,8 @@ targets_fit_env <- list(
   
   ## Prepare data
   tar_target(Stages_select_env,
-             selectLocs(Stages_s, predictor_select, selectpred = T, loc = c("plot", "nested", "cluster"))), # Selection based on whether environmental variables are present
+             selectLocs(Stages_s, predictor_select,
+                        selectpred = T, stratpred = T, n_locations = n_locations, loc = c("plot", "nested", "cluster"), tablepath = dir_publish)), # Selection based on whether environmental variables are present
   
   tar_target(Stages_scaled_env,
              scaleData(Stages_select_env, predictor_select)), # After selection, so that scaling includes selected plots 
