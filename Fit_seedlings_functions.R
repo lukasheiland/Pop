@@ -208,9 +208,10 @@ saveSeedlings_s <- function(Seedlings_s) {
 
 
 ## fitSeedlings --------------------------------
+# model_Seedlings  <- tar_read("model_Seedlings")
 # Seedlings_s  <- tar_read("Seedlings_s")
 # fitpath  <- tar_read("dir_fit")
-fitSeedlings <- function(Seedlings_s, fitpath) {
+fitSeedlings <- function(model_Seedlings, Seedlings_s, fitpath) {
   
   S <- Seedlings_s %>%
     st_drop_geometry() %>%
@@ -218,8 +219,6 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
     pivot_wider(id_cols = c("plotid", "year", "tax"),
                 names_from = "sizeclass",
                 values_from = c("count_obs", "count_ha", "ba_ha", "count_ha_sum", "ba_ha_sum", "offset", "s_other", "s_Fagus.sylvatica"))
-  
-  model_seedlings <- cmdstanr::cmdstan_model(stan_file = "Model_2021-03_ba/Model_seedlings.stan")
   
   data_seedlings <- list(
     N = nrow(S),
@@ -241,7 +240,7 @@ fitSeedlings <- function(Seedlings_s, fitpath) {
   )
   
   getInits <- function(chain_id) return(list(l_log = rep(0.1, 2), r_log = rep(0.1, 2), theta_logit = rep(-1.0, data_seedlings$N_offset), m_logit = -2, phi_inv_sqrt = rep(10, data_seedlings$N_offset)))
-  fit_Seedlings <- model_seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4), output_dir = fitpath, init = getInits)
+  fit_Seedlings <- model_Seedlings$sample(data = data_seedlings, parallel_chains = getOption("mc.cores", 4), output_dir = fitpath, init = getInits)
   
   attr(fit_Seedlings, "data") <- data_seedlings
   

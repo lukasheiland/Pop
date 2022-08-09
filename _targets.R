@@ -86,9 +86,9 @@ targets_settings <- list(
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
                prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-4, 2),
-               prior_c_b_log = c(-5, 2),
-               prior_c_j_log = c(-10, 3),
+               prior_c_a_log = c(-6, 2),
+               prior_c_b_log = c(-6, 2),
+               prior_c_j_log = c(-12, 3),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
@@ -310,8 +310,13 @@ targets_wrangling <- list(
                  iteration = "list"),
       tar_target(Seedlings_s,
                  predictS(fits_Seedlings_s, Seedlings)),
+      tar_target(file_model_Seedlings,
+                 "Model_2021-03_ba/Model_seedlings.stan",
+                 format = "file"),
+      tar_target(model_Seedlings,
+                 cmdstan_model(file_model_Seedlings, stanc_options = list("O1"))),
       tar_target(fit_Seedlings,
-                 fitSeedlings(Seedlings_s, fitpath = dir_fit))
+                 fitSeedlings(model_Seedlings, Seedlings_s, fitpath = dir_fit))
     ),
     
     
@@ -355,7 +360,7 @@ targets_fit_general <- list(
              format = "file"),
   
   tar_target(model_transitions,
-             cmdstan_model(file_model_transitions)),
+             cmdstan_model(file_model_transitions, stanc_options = list("O1"))),
   
   tar_target(fit_g,
              fitTransition(data_stan_transitions, which = "g", model_transitions, fitpath = dir_fit)),
@@ -387,7 +392,7 @@ targets_fit_test <- list(
              "Model_2021-03_ba/Model_ba_test.stan",
              format = "file"),
   tar_target(model_test,
-             cmdstan_model(file_model_test) #, cpp_options = list(stan_opencl = TRUE)
+             cmdstan_model(file_model_test, stanc_options = list("O1")) #, cpp_options = list(stan_opencl = TRUE)
              ),
   ## Prior predictive tests that rely on currently out-commented generated quantities
   # tar_target(priorsim_test,
@@ -411,7 +416,7 @@ targets_fit <- list(
              "Model_2021-03_ba/Model_ba.stan",
              format = "file"),
   tar_target(model,
-             cmdstan_model(file_model)),
+             cmdstan_model(file_model, stanc_options = list("O1"))),
   tar_target(fit,
              fitModel(model = model, data_stan = data_stan_priors_offsets_1, gpq = TRUE, ## data_stan_priors_offsets ## for testing all offsets
                       method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit),
@@ -466,7 +471,7 @@ targets_fit_env <- list(
              "Model_2021-03_ba/Model_ba_env.stan",
              format = "file"),
   tar_target(model_env,
-             cmdstan_model(file_model_env)),
+             cmdstan_model(file_model_env, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
                       method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 700, fitpath = dir_fit,
