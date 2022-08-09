@@ -108,9 +108,8 @@ functions {
 
   return y_hat; // Structure: locations/observations/pops(==stages/species)
   }
-    
-
-
+  
+  
   //// iterateFix(): Difference equations simulated up to the fix point (i.e. equilibrium) given a maximum tolerance over all states.
   // Expects a state vector[N_pops]
   // returns a state vector of the form [J1, J2, A1, A2, B1, B2, BA1, BA2, eps_BA1, eps_BA2, iterations]
@@ -119,6 +118,64 @@ functions {
                             vector ba_a_avg, real ba_a_upper,
                             int N_spec, array[] int i_j, array[] int i_a, array[] int i_b,
                             real tolerance_fix, int fixiter_max, int fixiter_min, int N_fix) {
+                       
+
+    /// initialize while loop conditions
+    vector[N_spec] J = state_0[i_j];
+    vector[N_spec] A = state_0[i_a];
+    vector[N_spec] B = state_0[i_b];
+    
+    vector[N_spec] J_1;
+    vector[N_spec] A_1;
+    vector[N_spec] B_1;
+    vector[N_spec] BA_1;
+
+    vector[N_spec] eps_ba = rep_vector(1.0, N_spec); // tolerance_fix is set to <upper=0.5>, that's why it is enough to set it to one for the while loop to run
+    int i = 0;
+
+    
+    while ( i < fixiter_min || (max(eps_ba) > tolerance_fix && i < fixiter_max) ) {
+            
+      vector[N_spec] BA = A .* ba_a_avg + B;
+      real BA_sum = sum(BA);
+      
+      // s_1[i_j]  =  ((r .* BA)/(1 + BA_sum) + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+      J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
+      A_1  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
+      B_1  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+      
+      BA_1 = A_1 .* ba_a_avg + B_1; // New BA as additional state.
+
+      eps_ba = fabs((BA_1 - BA) ./ BA_1);
+      
+
+      /// !
+      J = J_1;
+      A = A_1;
+      B = B_1;
+      
+      i += 1;
+
+    } // end while i < fixiter_max
+    
+    // array with 3 (states) + 1 (BA) + 1 (eps) + 1 (n_iter) + some variables (overall N_fix)
+    array[N_fix] vector[N_spec] fix = {J_1, A_1, B_1, BA_1,
+                                       eps_ba, rep_vector(i, N_spec) // int i gets cast to real
+                                       };
+                                    
+    return fix;
+  
+  }
+    
+
+  //// iterateFix(): Difference equations simulated up to the fix point (i.e. equilibrium) given a maximum tolerance over all states.
+  // Expects a state vector[N_pops]
+  // returns a state vector of the form [J1, J2, A1, A2, B1, B2, BA1, BA2, eps_BA1, eps_BA2, iterations]
+  array[] vector iterateFix_contributions(vector state_0,
+                                          vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
+                                          vector ba_a_avg, real ba_a_upper,
+                                          int N_spec, array[] int i_j, array[] int i_a, array[] int i_b,
+                                          real tolerance_fix, int fixiter_max, int fixiter_min, int N_fix) {
                        
         
     /// Summed up contributions, initialize with 0 to avoid NaNs
@@ -203,7 +260,7 @@ functions {
       eps_ba = fabs((BA_1 - BA) ./ BA_1);
       
       //// This is here to only calculate the contributions for an earlier period
-      // if (i < fixiter_min) {
+      if (i < fixiter_min) {
       
         vector[N_spec] ba_ko_none = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
 
@@ -284,30 +341,30 @@ functions {
         
         
         /// Summed up proportional contributions
-	    real ba_sum_rate = sum(ba_ko_none) / BA_sum;
-  
-	    sum_ko_1_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_sum_rate;
-	    sum_ko_1_prop_c_a += (ba_ko_none ./ ba_ko_1_c_a) / ba_sum_rate;
-	    sum_ko_1_prop_c_b += (ba_ko_none ./ ba_ko_1_c_b) / ba_sum_rate;
-	    sum_ko_1_prop_c_j += (ba_ko_none ./ ba_ko_1_c_j) / ba_sum_rate;
-	    sum_ko_1_prop_g   += (ba_ko_none ./ ba_ko_1_g) / ba_sum_rate;
-	    sum_ko_1_prop_h   += (ba_ko_none ./ ba_ko_1_h) / ba_sum_rate;
-	    sum_ko_1_prop_l   += (ba_ko_none ./ ba_ko_1_l) / ba_sum_rate;
-	    sum_ko_1_prop_r   += (ba_ko_none ./ ba_ko_1_r) / ba_sum_rate;
-	    sum_ko_1_prop_s   += (ba_ko_none ./ ba_ko_1_s) / ba_sum_rate;
- 
-	    sum_ko_2_prop_b   += (ba_ko_none ./ ba_ko_2_b) / ba_sum_rate;
-	    sum_ko_2_prop_c_a += (ba_ko_none ./ ba_ko_2_c_a) / ba_sum_rate;
-	    sum_ko_2_prop_c_b += (ba_ko_none ./ ba_ko_2_c_b) / ba_sum_rate;
-	    sum_ko_2_prop_c_j += (ba_ko_none ./ ba_ko_2_c_j) / ba_sum_rate;
-	    sum_ko_2_prop_g   += (ba_ko_none ./ ba_ko_2_g) / ba_sum_rate;
-	    sum_ko_2_prop_h   += (ba_ko_none ./ ba_ko_2_h) / ba_sum_rate;
-	    sum_ko_2_prop_l   += (ba_ko_none ./ ba_ko_2_l) / ba_sum_rate;
-	    sum_ko_2_prop_r   += (ba_ko_none ./ ba_ko_2_r) / ba_sum_rate;
-	    sum_ko_2_prop_s   += (ba_ko_none ./ ba_ko_2_s) / ba_sum_rate;
+	      real ba_sum_rate = sum(ba_ko_none) / BA_sum;
         
-      
-      // }  // end if i < fixiter_min
+	      sum_ko_1_prop_b   += (ba_ko_none ./ ba_ko_1_b) / ba_sum_rate;
+	      sum_ko_1_prop_c_a += (ba_ko_none ./ ba_ko_1_c_a) / ba_sum_rate;
+	      sum_ko_1_prop_c_b += (ba_ko_none ./ ba_ko_1_c_b) / ba_sum_rate;
+	      sum_ko_1_prop_c_j += (ba_ko_none ./ ba_ko_1_c_j) / ba_sum_rate;
+	      sum_ko_1_prop_g   += (ba_ko_none ./ ba_ko_1_g) / ba_sum_rate;
+	      sum_ko_1_prop_h   += (ba_ko_none ./ ba_ko_1_h) / ba_sum_rate;
+	      sum_ko_1_prop_l   += (ba_ko_none ./ ba_ko_1_l) / ba_sum_rate;
+	      sum_ko_1_prop_r   += (ba_ko_none ./ ba_ko_1_r) / ba_sum_rate;
+	      sum_ko_1_prop_s   += (ba_ko_none ./ ba_ko_1_s) / ba_sum_rate;
+        
+	      sum_ko_2_prop_b   += (ba_ko_none ./ ba_ko_2_b) / ba_sum_rate;
+	      sum_ko_2_prop_c_a += (ba_ko_none ./ ba_ko_2_c_a) / ba_sum_rate;
+	      sum_ko_2_prop_c_b += (ba_ko_none ./ ba_ko_2_c_b) / ba_sum_rate;
+	      sum_ko_2_prop_c_j += (ba_ko_none ./ ba_ko_2_c_j) / ba_sum_rate;
+	      sum_ko_2_prop_g   += (ba_ko_none ./ ba_ko_2_g) / ba_sum_rate;
+	      sum_ko_2_prop_h   += (ba_ko_none ./ ba_ko_2_h) / ba_sum_rate;
+	      sum_ko_2_prop_l   += (ba_ko_none ./ ba_ko_2_l) / ba_sum_rate;
+	      sum_ko_2_prop_r   += (ba_ko_none ./ ba_ko_2_r) / ba_sum_rate;
+	      sum_ko_2_prop_s   += (ba_ko_none ./ ba_ko_2_s) / ba_sum_rate;
+          
+        
+      }  // end if i < fixiter_min
       
       
       /// !
@@ -324,16 +381,16 @@ functions {
                                        eps_ba, rep_vector(i, N_spec), // int i gets cast to real
                                        
                                        //// when considering the whole period, use i, when considering only the first period use fixiter_min as a denominator here
-                                       // indices 6–24
-                                       sum_ko_1_b/i, sum_ko_1_c_a/i, sum_ko_1_c_b/i, sum_ko_1_c_j/i, sum_ko_1_g/i, sum_ko_1_h/i, sum_ko_1_l/i, sum_ko_1_r/i, sum_ko_1_s/i,
-                                       sum_ko_2_b/i, sum_ko_2_c_a/i, sum_ko_2_c_b/i, sum_ko_2_c_j/i, sum_ko_2_g/i, sum_ko_2_h/i, sum_ko_2_l/i, sum_ko_2_r/i, sum_ko_2_s/i,
+                                       // indices 7–24
+                                       sum_ko_1_b/fixiter_min, sum_ko_1_c_a/fixiter_min, sum_ko_1_c_b/fixiter_min, sum_ko_1_c_j/fixiter_min, sum_ko_1_g/fixiter_min, sum_ko_1_h/fixiter_min, sum_ko_1_l/fixiter_min, sum_ko_1_r/fixiter_min, sum_ko_1_s/fixiter_min,
+                                       sum_ko_2_b/fixiter_min, sum_ko_2_c_a/fixiter_min, sum_ko_2_c_b/fixiter_min, sum_ko_2_c_j/fixiter_min, sum_ko_2_g/fixiter_min, sum_ko_2_h/fixiter_min, sum_ko_2_l/fixiter_min, sum_ko_2_r/fixiter_min, sum_ko_2_s/fixiter_min,
                                        
                                        // indices 25–42
-                                       sum_ko_1_prop_b/i, sum_ko_1_prop_c_a/i, sum_ko_1_prop_c_b/i, sum_ko_1_prop_c_j/i, sum_ko_1_prop_g/i, sum_ko_1_prop_h/i, sum_ko_1_prop_l/i, sum_ko_1_prop_r/i, sum_ko_1_prop_s/i,
-                                       sum_ko_2_prop_b/i, sum_ko_2_prop_c_a/i, sum_ko_2_prop_c_b/i, sum_ko_2_prop_c_j/i, sum_ko_2_prop_g/i, sum_ko_2_prop_h/i, sum_ko_2_prop_l/i, sum_ko_2_prop_r/i, sum_ko_2_prop_s/i,
+                                       sum_ko_1_prop_b/fixiter_min, sum_ko_1_prop_c_a/fixiter_min, sum_ko_1_prop_c_b/fixiter_min, sum_ko_1_prop_c_j/fixiter_min, sum_ko_1_prop_g/fixiter_min, sum_ko_1_prop_h/fixiter_min, sum_ko_1_prop_l/fixiter_min, sum_ko_1_prop_r/fixiter_min, sum_ko_1_prop_s/fixiter_min,
+                                       sum_ko_2_prop_b/fixiter_min, sum_ko_2_prop_c_a/fixiter_min, sum_ko_2_prop_c_b/fixiter_min, sum_ko_2_prop_c_j/fixiter_min, sum_ko_2_prop_g/fixiter_min, sum_ko_2_prop_h/fixiter_min, sum_ko_2_prop_l/fixiter_min, sum_ko_2_prop_r/fixiter_min, sum_ko_2_prop_s/fixiter_min,
                                        
                                        // indices 43–51
-                                       sum_switch_b/i, sum_switch_c_a/i, sum_switch_c_b/i, sum_switch_c_j/i, sum_switch_g/i, sum_switch_h/i, sum_switch_l/i, sum_switch_r/i, sum_switch_s/i};
+                                       sum_switch_b/fixiter_min, sum_switch_c_a/fixiter_min, sum_switch_c_b/fixiter_min, sum_switch_c_j/fixiter_min, sum_switch_g/fixiter_min, sum_switch_h/fixiter_min, sum_switch_l/fixiter_min, sum_switch_r/fixiter_min, sum_switch_s/fixiter_min};
                                     
     return fix;
   }  
@@ -420,7 +477,8 @@ transformed data {
   // Times are all assumed to be shifted to start at 1!
   
   //// Data for generated quantities
-  int N_fix = 51; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter, 5 * 9 contributions }
+  int N_fix = 6; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter}
+  int N_fix_contributions = 51; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter, 2 * 9 diff_ko_parameter }
   
 }
 
@@ -489,6 +547,21 @@ transformed parameters {
 
 
 model {
+  
+  //—————————————————————————————————————————————————————————————————————//
+  // Print MC state       ----------------------------------------------//
+  //———————————————————————————————————————————————————————————————————// 
+  
+  print("b_log: ", b_log);
+  print("c_a_log: ", c_a_log);
+  print("c_b_log: ", c_b_log);
+  print("c_j_log: ", c_j_log);
+  print("g_log: ", g_log);
+  print("h_log: ", h_log);
+  print("l_log: ", l_log);
+  print("r_log: ", r_log);
+  print("s_log: ", s_log);
+  
 
   //—————————————————————————————————————————————————————————————————————//
   // Priors       ------------------------------------------------------//
@@ -587,7 +660,7 @@ generated quantities {
   //// Declarations of posterior quantites (as global variables).
   // … are directly initiated with zeroes or 9, so that there are never NaNs in generated quantities.
   
-  array[N_locs, N_fix] vector[N_species] Fix = rep_array(rep_vector(0, N_species), N_locs, N_fix); // N_locs arrays of vectors[N_specices] { J, A, B, BA, eps, n_iter, 2 * 9 * diff_ko_parameter }
+  array[N_locs, N_fix_contributions] vector[N_species] Fix = rep_array(rep_vector(0, N_species), N_locs, N_fix_contributions); // N_locs arrays of vectors[N_specices] { J, A, B, BA, eps, n_iter, 2 * 9 * diff_ko_parameter }
   
   array[N_locs] vector[N_species] J_init = rep_array(rep_vector(0.0, N_species), N_locs);
   array[N_locs] vector[N_species] A_init = J_init;
@@ -653,7 +726,7 @@ generated quantities {
   array[N_locs] vector[N_species] sum_switch_s_fix = J_init;
 
   int fixiter_max = 5000;
-  int fixiter_min = 500;
+  int fixiter_min = 250;
 
   
   array[N_locs] int converged_fix = rep_array(9, N_locs); // tolerance has been reached
@@ -728,11 +801,11 @@ generated quantities {
       
 
       //// Simulate fix point, given parameters
-      Fix[loc] = iterateFix(state_init[loc],
-                            exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
-                            ba_a_avg, ba_a_upper,
-                            N_species, i_j, i_a, i_b,
-                            tolerance_fix, fixiter_max, fixiter_min, N_fix);
+      Fix[loc] = iterateFix_contributions(state_init[loc],
+                                          exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log),
+                                          ba_a_avg, ba_a_upper,
+                                          N_species, i_j, i_a, i_b,
+                                          tolerance_fix, fixiter_max, fixiter_min, N_fix);
                                      
       iterations_fix[loc] = Fix[loc, 6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
       converged_fix[loc] = iterations_fix[loc] < fixiter_max; // (i starts at 0), when fixiter_max is reached the model ran 5001 times

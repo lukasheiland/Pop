@@ -142,7 +142,7 @@ formatStates <- function(cmdstanfit, data_stan_priors) {
                  )
   statename <- c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix",
                  "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
-                 "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l", "ba_fix_switch_l_r", "ba_fix_switch_s",
+                 "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l", "ba_fix_switch_l_r", "ba_fix_switch_s"
                  )
   
   varname_draws <- cmdstanfit$metadata()$stan_variables
