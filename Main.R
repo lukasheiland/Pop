@@ -23,7 +23,7 @@ sapply(package, require, character.only = TRUE) ## package is a vector of all pa
 ## Wrangling pipeline
 tar_make_future(c("data_stan_priors_offsets",
                   # "surfaceplots_s"
-                  ), workers = if(onserver) 24 else 3, reporter = "timestamp")
+                  ), workers = if(onserver) 16 else 3, reporter = "timestamp")
 
 ## Fitting, parallelized internally
 tar_make(c("fit", "summary"))
@@ -31,18 +31,18 @@ tar_make(c("fit", "summary"))
 ## Posterior
 tar_make_future(c("summary",
                   "summary_states",
-                  "residuals",
-                  "plots_trace",
-                  "plots_pairs",
+                  "plots_parameters",
                   "plot_contributions",
                   "plot_contributions_prop",
                   "plot_contributions_switch",
-                  "plots_parameters",
                   "plots_states",
+                  "plots_trace",
+                  "plots_pairs",
                   "plot_trajectories_avg",
                   # "animation_trajectories_avg",
-                  "plots_conditional"),
-                workers = if(onserver) 24 else 3, reporter = "timestamp")
+                  # "plots_conditional"
+                  "residuals"),
+                workers = if(onserver) 16 else 3, reporter = "timestamp")
 
 ## Publishing
 tar_make_future(c("Summary_taxa",

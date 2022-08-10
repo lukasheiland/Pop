@@ -133,20 +133,12 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
 
 ## formatStates --------------------------------
 # cmdstanfit <- tar_read("fit_test")
+# statename <- tar_read("statenames_posterior")
 # data_stan_priors <- tar_read("data_stan_priors")
-formatStates <- function(cmdstanfit, data_stan_priors) {
-  
-  majorname <- c("major_init", "major_fix",
-                 "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
-                 "major_fix_switch_b", "major_fix_switch_c_b", "major_fix_switch_b_c_b", "major_fix_switch_g", "major_fix_switch_l", "major_fix_switch_l_r", "major_fix_switch_s"
-                 )
-  statename <- c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix",
-                 "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
-                 "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l", "ba_fix_switch_l_r", "ba_fix_switch_s"
-                 )
+formatStates <- function(cmdstanfit, statename, data_stan_priors) {
   
   varname_draws <- cmdstanfit$metadata()$stan_variables
-  varname <- intersect(c(majorname, statename), varname_draws)
+  varname <- intersect(statename, varname_draws)
   
   States <- lapply(varname, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
   States <- lapply(States, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, {i <- 2})) else S )
@@ -240,9 +232,6 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   
   
   ## Console output
-  head(summary, 20) %>%
-    as.data.frame() %>%
-    print()
   
   drawconverged <- cmdstanfit$draws(variables = "converged_fix", format = "draws_matrix") %>%
     apply(1, all)
@@ -253,6 +242,14 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
     message("For ", sum(!drawconverged), " draws, not all of the clusters have converged to the fix point, i.e. not all population trajectories ran into an equilibrium.")
   }
   
+  head(summary, 20) %>%
+    as.data.frame() %>%
+    print()
+  
+  summary_publish %>%
+    as.data.frame() %>%
+    print()
+
   return(summary)
 }
 
@@ -1015,17 +1012,34 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 
 ## plotStates --------------------------------
 # States <- tar_read("States_test")
+# statenames_posterior <- tar_read(statenames_posterior)
 # path  <- tar_read("dir_publish")
 # basename  <- tar_read("basename_fit_test")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotStates <- function(States,
-                       allstatevars = c("ba_init", "ba_fix",
-                                        "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
-                                        "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l", "ba_fix_switch_s"),
+                       allstatevars = statenames_posterior,
                        path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   allstatevars <- intersect(as.character(unique(States$var)), allstatevars)
+  
+  statelabel <- c(ba_init = "Initial state",
+                  ba_fix = "Equilibrium state",
+                  
+                  ba_fix_ko_b = "Equilibrium without b",
+                  ba_fix_ko_s = "Equilibrium without s",
+                  ba_fix_ko_2_b = "Equilibrium without b of others",
+                  ba_fix_ko_2_s = "Equilibrium without s effect on others",
+                  
+                  ba_fix_switch_b = "Equilibrium with switched b",
+                  ba_fix_switch_c_b = "Equilibrium with switched c_B",
+                  ba_fix_switch_b_c_b = "Equilibrium with switched b and c_B",
+                  ba_fix_switch_b_c_a_c_b_h = "Equilibrium with switched overstory parameters",
+                  ba_fix_switch_g = "Equilibrium with switched g",
+                  ba_fix_switch_l = "Equilibrium with switched l",
+                  ba_fix_switch_l_r = "Equilibrium with switched l and r",
+                  ba_fix_switch_g_l_r_s = "Equilibrium with switched understory parameters",
+                  ba_fix_switch_s = "Equilibrium with switched s")
   
   States <- States[!is.na(States$value),]
   
@@ -1075,8 +1089,7 @@ plotStates <- function(States,
   #   theme(axis.title.x = element_blank()) +
   #   theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
   #   
-  #   facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
-  #                                                   ba_fix = "Equilibrium state"))) +
+  #   facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
   #   
   #   labs(y = "basal area [m^2 ha^-1]") +
   #   
@@ -1112,8 +1125,7 @@ plotStates <- function(States,
   #   ## Other density viz:
   #   # geom_density_2d() + ## contour
   #   # geom_smooth(method='lm', formula = ba_Fagus ~ ba_other) +
-  #   facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
-  #                                                   ba_fix = "Equilibrium state"))) +
+  #   facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
   #   labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
   #   
   #   ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
@@ -1130,7 +1142,7 @@ plotStates <- function(States,
   
   
   #### Main
-  threevar <- c("ba_init", "ba_fix", "ba_fix_switch_s")
+  threevar <- c("ba_init", "ba_fix", "ba_fix_switch_g_l_r_s")
   T_main <- filter(States, var %in% threevar) %>%
     rename(when = var) %>%
     mutate(when = factor(when, levels = threevar)) %>%
@@ -1154,9 +1166,7 @@ plotStates <- function(States,
     theme(axis.title.x = element_blank()) +
     theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
 
-    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
-                                                    ba_fix = "Equilibrium state",
-                                                    ba_fix_switch_s = "Equilibrium state with switched s"))) +
+    facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
 
     labs(y = "basal area [m^2 ha^-1]") +
 
@@ -1175,9 +1185,7 @@ plotStates <- function(States,
     geom_hex(bins = 100) +
     scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
     geom_abline(slope = 1, intercept = 0, linetype = 3) +
-    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
-                                                    ba_fix = "Equilibrium state",
-                                                    ba_fix_switch_s = "Equilibrium state with switched s"))) +
+    facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
     labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
                   # labels = scales::trans_format("log10", scales::math_format(10^.x))
@@ -1192,7 +1200,7 @@ plotStates <- function(States,
   
   
   #### Supplementary
-  fourvar <- c("ba_fix", "ba_fix_switch_s", "ba_fix_switch_g", "ba_fix_switch_l_r", "ba_fix_switch_c_b")
+  fourvar <- c("ba_fix", "ba_fix_switch_g_l_r_s", "ba_fix_switch_b_c_a_c_b_h", "ba_fix_switch_s")
   T_supp <- filter(States, var %in% fourvar) %>%
     rename(when = var) %>%
     mutate(when = factor(when, levels = fourvar)) %>%
@@ -1216,9 +1224,7 @@ plotStates <- function(States,
     theme(axis.title.x = element_blank()) +
     theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
     
-    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
-                                                    ba_fix = "Equilibrium state",
-                                                    ba_fix_switch_s = "Equilibrium state with switched s"))) +
+    facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
     
     labs(y = "basal area [m^2 ha^-1]") +
     
@@ -1237,9 +1243,7 @@ plotStates <- function(States,
     geom_hex(bins = 100) +
     scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
     geom_abline(slope = 1, intercept = 0, linetype = 3) +
-    facet_wrap(~ when, labeller = labeller(when = c(ba_init = "Initial state",
-                                                    ba_fix = "Equilibrium state",
-                                                    ba_fix_switch_s = "Equilibrium state with switched s"))) +
+    facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
     labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
                   # labels = scales::trans_format("log10", scales::math_format(10^.x))
@@ -1260,19 +1264,7 @@ plotStates <- function(States,
   
   plot_all <- ggplot(T_all, aes(x = tax, y = value, col = tax, fill = tax)) +
     geom_violin(trim = T, col = "black", scale = "width") +
-    facet_wrap(~ gq, labeller = labeller(gq = c(ba_init = "Initial state",
-                                                ba_fix = "Equilibrium state",
-                                                ba_fix_ko_b = "Equilibrium state without b",
-                                                ba_fix_ko_s = "Equilibrium state without s",
-                                                ba_fix_ko_2_b = "Equilibrium state without b of others",
-                                                ba_fix_ko_2_s = "Equilibrium state without s effect on others",
-                                                ba_fix_switch_b = "Equilibrium state with switched b",
-                                                ba_fix_switch_c_b = "Equilibrium state with switched c_B",
-                                                ba_fix_switch_b_c_b = "Equilibrium state with switched b and c_B",
-                                                ba_fix_switch_g = "Equilibrium state with switched g",
-                                                ba_fix_switch_l = "Equilibrium state with switched l",
-                                                ba_fix_switch_l_r = "Equilibrium state with switched l and r",
-                                                ba_fix_switch_s = "Equilibrium state with switched s"))) +
+    facet_wrap(~ gq, labeller = labeller(gq = statelabel)) +
     ggtitle("BA") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
@@ -1659,7 +1651,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
            stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
-    mutate(stagepos = as.integer(as.character(fct_recode(stage, "1" = "J", "5" = "A", "7" = "B")))) %>%
+    mutate(stagepos = as.integer(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
     mutate(parameter = ordered(parameter, parorder)) %>%
     mutate(parameter = fct_reorder(parameter, as.numeric(stage))) %>%
     
@@ -1682,7 +1674,8 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
     geom_point(color = "black", position = pos, size = 1.7) +
     coord_flip() +
     geom_vline(xintercept = if (plotprop) 1 else 0, linetype = 3, size = 0.6, col = "#222222") +
-    geom_hline(yintercept = c(4.5, 6.5), linetype = 3, size = 0.6, col = "#222222") +
+    # geom_hline(yintercept = c(4.5, 6.5), linetype = 3, size = 0.6, col = "#222222") + ## lines before g/h
+    geom_hline(yintercept = c(5, 7), linetype = 3, size = 0.6, col = "#222222") + ## lines through g/h
     
     { if (!plotprop) geom_text(aes(y = stagepos, x = xletterpos_h, label = stage), size = 9, col = "#222222") } +
     { if (plotprop) geom_text(aes(y = stagepos, x = xletterpos_l, label = stage), size = 9, col = "#222222") } +

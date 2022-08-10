@@ -1405,7 +1405,7 @@ generated quantities {
 		    
 		    vector[N_species] switch_c_b = exp(c_b_log[2:1]);		
 		    Fix_switch_c_b[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), switch_c_b, exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
-		    ba_fix_switch_b[loc] = Fix_switch_c_b[loc, 4];
+		    ba_fix_switch_c_b[loc] = Fix_switch_c_b[loc, 4];
 		    
 		    Fix_switch_b_c_b[loc] = iterateFix(state_init[loc], switch_b, exp(c_a_log), switch_c_b, exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
 		    ba_fix_switch_b_c_b[loc] = Fix_switch_b_c_b[loc, 4];

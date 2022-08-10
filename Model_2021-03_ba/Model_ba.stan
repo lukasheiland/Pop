@@ -547,21 +547,6 @@ transformed parameters {
 
 
 model {
-  
-  //—————————————————————————————————————————————————————————————————————//
-  // Print MC state       ----------------------------------------------//
-  //———————————————————————————————————————————————————————————————————// 
-  
-  print("b_log: ", b_log);
-  print("c_a_log: ", c_a_log);
-  print("c_b_log: ", c_b_log);
-  print("c_j_log: ", c_j_log);
-  print("g_log: ", g_log);
-  print("h_log: ", h_log);
-  print("l_log: ", l_log);
-  print("r_log: ", r_log);
-  print("s_log: ", s_log);
-  
 
   //—————————————————————————————————————————————————————————————————————//
   // Priors       ------------------------------------------------------//
@@ -604,6 +589,21 @@ model {
 
 
 generated quantities {
+  
+  //—————————————————————————————————————————————————————————————————————//
+  // Print MC state       ----------------------------------------------//
+  //———————————————————————————————————————————————————————————————————// 
+  
+  // print("b_log: ", b_log);
+  // print("c_a_log: ", c_a_log);
+  // print("c_b_log: ", c_b_log);
+  // print("c_j_log: ", c_j_log);
+  // print("g_log: ", g_log);
+  // print("h_log: ", h_log);
+  // print("l_log: ", l_log);
+  // print("r_log: ", r_log);
+  // print("s_log: ", s_log);
+
 
   //—————————————————————————————————————————————————————————————————————//
   // Prediction  -------------------------------------------------------//
@@ -646,15 +646,15 @@ generated quantities {
   
   
   //// Rate tests -------------------------------------
-  int greater_b = b_log[1] > b_log[2];
-  int greater_c_a = c_a_log[1] > c_a_log[2];
-  int greater_c_b = c_b_log[1] > c_b_log[2];
-  int greater_c_j = c_j_log[1] > c_j_log[2];
-  int greater_g = g_log[1] > g_log[2];
-  int greater_h = h_log[1] > h_log[2];
-  int greater_l = l_log[1] > l_log[2];
-  int greater_r = r_log[1] > r_log[2];
-  int greater_s = s_log[1] > s_log[2];
+  // int greater_b = b_log[1] > b_log[2];
+  // int greater_c_a = c_a_log[1] > c_a_log[2];
+  // int greater_c_b = c_b_log[1] > c_b_log[2];
+  // int greater_c_j = c_j_log[1] > c_j_log[2];
+  // int greater_g = g_log[1] > g_log[2];
+  // int greater_h = h_log[1] > h_log[2];
+  // int greater_l = l_log[1] > l_log[2];
+  // int greater_r = r_log[1] > r_log[2];
+  // int greater_s = s_log[1] > s_log[2];
   
   
   //// Declarations of posterior quantites (as global variables).
@@ -744,10 +744,13 @@ generated quantities {
   // array[N_locs] int major_fix_switch_b = converged_fix;
   // array[N_locs] int major_fix_switch_c_b = converged_fix;
   array[N_locs] int major_fix_switch_b_c_b = converged_fix;
+  array[N_locs] int major_fix_switch_b_c_a_c_b_h = converged_fix;
+  array[N_locs] int major_fix_switch_c_j = converged_fix;
   array[N_locs] int major_fix_switch_g = converged_fix;
   // array[N_locs] int major_fix_switch_l = converged_fix;
-  array[N_locs] int major_fix_switch_l_r = converged_fix;
   array[N_locs] int major_fix_switch_s = converged_fix;
+  array[N_locs] int major_fix_switch_l_r = converged_fix;
+  array[N_locs] int major_fix_switch_g_l_r_s = converged_fix;
   // 
   // //// Declarations of counterfactual posterior quantities
   // array[N_locs, N_fix] vector[N_species] Fix_ko_b = Fix;
@@ -763,18 +766,24 @@ generated quantities {
   // array[N_locs, N_fix] vector[N_species] Fix_switch_b = Fix;
   // array[N_locs, N_fix] vector[N_species] Fix_switch_c_b = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_b_c_b = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_switch_b_c_a_c_b_h = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_switch_c_j = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_g = Fix;
   // array[N_locs, N_fix] vector[N_species] Fix_switch_l = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_switch_l_r = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_s = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_switch_l_r = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_switch_g_l_r_s = Fix;
    
   // array[N_locs] vector[N_species] ba_fix_switch_b = J_init;
   // array[N_locs] vector[N_species] ba_fix_switch_c_b = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_b_c_b = J_init;
+  array[N_locs] vector[N_species] ba_fix_switch_b_c_a_c_b_h = J_init;
+  array[N_locs] vector[N_species] ba_fix_switch_c_j = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_g = J_init;
   // array[N_locs] vector[N_species] ba_fix_switch_l = J_init;
-  array[N_locs] vector[N_species] ba_fix_switch_l_r = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_s = J_init;
+  array[N_locs] vector[N_species] ba_fix_switch_l_r = J_init;
+  array[N_locs] vector[N_species] ba_fix_switch_g_l_r_s = J_init;
 
 
   //———————————————————————————————————————————————————————————————————//
@@ -899,32 +908,45 @@ generated quantities {
 
         // ////// ... with switched parameters
         vector[N_species] switch_b = exp([b_log[2], b_log[1]]'); // b_log[2:1] does not work at runtime
+        vector[N_species] switch_c_a = exp([c_a_log[2], c_a_log[1]]');
+        vector[N_species] switch_c_b = exp([c_b_log[2], c_b_log[1]]');
+        vector[N_species] switch_c_j = exp([c_j_log[2], c_j_log[1]]');
+        vector[N_species] switch_g = exp([g_log[2], g_log[1]]');
+        vector[N_species] switch_h = exp([h_log[2], h_log[1]]');
+        vector[N_species] switch_l = [L_loc[loc, 2], L_loc[loc, 1]]';
+        vector[N_species] switch_r = exp([r_log[2], r_log[1]]');
+        vector[N_species] switch_s = exp([s_log[2], s_log[1]]');
+        
         // Fix_switch_b[loc] = iterateFix(state_init[loc], switch_b, exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         //ba_fix_switch_b[loc] = Fix_switch_b[loc, 4];
         
-        vector[N_species] switch_c_b = exp([c_b_log[2], c_b_log[1]]');        
+                
         // Fix_switch_c_b[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), switch_c_b, exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
-        // ba_fix_switch_b[loc] = Fix_switch_c_b[loc, 4];
+        // ba_fix_switch_c_b[loc] = Fix_switch_c_b[loc, 4];
+        
+        Fix_switch_c_j[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), switch_c_j , exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        ba_fix_switch_c_j[loc] = Fix_switch_c_j[loc, 4];
         
         Fix_switch_b_c_b[loc] = iterateFix(state_init[loc], switch_b, exp(c_a_log), switch_c_b, exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_b_c_b[loc] = Fix_switch_b_c_b[loc, 4];
         
-        vector[N_species] switch_g = exp([g_log[2], g_log[1]]');
         Fix_switch_g[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), switch_g, exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_g[loc] = Fix_switch_g[loc, 4];
+        
+        Fix_switch_b_c_a_c_b_h[loc] = iterateFix(state_init[loc], switch_b, switch_c_a, switch_c_b, exp(c_j_log), exp(g_log), switch_h, L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        ba_fix_switch_b_c_a_c_b_h[loc] = Fix_switch_b_c_a_c_b_h[loc, 4];
         
         // Fix_switch_l[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, 2:1], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         // ba_fix_switch_l[loc] = Fix_switch_l[loc, 4];
         
-        vector[N_species] switch_r = exp([r_log[2], r_log[1]]');
-        vector[N_species] switch_l = [L_loc[loc, 2], L_loc[loc, 1]]';
-        Fix_switch_l_r[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), switch_l, switch_r, exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
-        ba_fix_switch_l_r[loc] = Fix_switch_l_r[loc, 4];
-        
-        vector[N_species] switch_s = exp([s_log[2], s_log[1]]');        
         Fix_switch_s[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), switch_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);       
         ba_fix_switch_s[loc] = Fix_switch_s[loc, 4];
 
+        Fix_switch_l_r[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), switch_l, switch_r, exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        ba_fix_switch_l_r[loc] = Fix_switch_l_r[loc, 4];
+        
+        Fix_switch_g_l_r_s[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), switch_g, exp(h_log), switch_l, switch_r, switch_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        ba_fix_switch_g_l_r_s[loc] = Fix_switch_g_l_r_s[loc, 4];
 
         // //// Counterfactual Booleans at fixpoint
         // major_fix_ko_b[loc] = ba_fix_ko_b[loc, 1] > ba_fix_ko_b[loc, 2]; // ba_1 > 50%
@@ -934,12 +956,15 @@ generated quantities {
          
         // major_fix_switch_b[loc] = ba_fix_switch_b[loc, 1] > ba_fix_switch_b[loc, 2]; // ba_1 > 50%
         // major_fix_switch_c_b[loc] = ba_fix_switch_c_b[loc, 1] > ba_fix_switch_c_b[loc, 2]; // ba_1 > 50%
+        major_fix_switch_c_j[loc] = ba_fix_switch_c_j[loc, 1] > ba_fix_switch_c_j[loc, 2]; // ba_1 > 50%
         major_fix_switch_b_c_b[loc] = ba_fix_switch_b_c_b[loc, 1] > ba_fix_switch_b_c_b[loc, 2]; // ba_1 > 50%
+        major_fix_switch_b_c_a_c_b_h[loc] = ba_fix_switch_b_c_a_c_b_h[loc, 1] > ba_fix_switch_b_c_a_c_b_h[loc, 2]; // ba_1 > 50%
         major_fix_switch_g[loc] = ba_fix_switch_g[loc, 1] > ba_fix_switch_g[loc, 2]; // ba_1 > 50%
         // major_fix_switch_l[loc] = ba_fix_switch_l[loc, 1] > ba_fix_switch_l[loc, 2]; // ba_1 > 50%
-        major_fix_switch_l_r[loc] = ba_fix_switch_l_r[loc, 1] > ba_fix_switch_l_r[loc, 2]; // ba_1 > 50%
         major_fix_switch_s[loc] = ba_fix_switch_s[loc, 1] > ba_fix_switch_s[loc, 2]; // ba_1 > 50%
-      
+        major_fix_switch_l_r[loc] = ba_fix_switch_l_r[loc, 1] > ba_fix_switch_l_r[loc, 2]; // ba_1 > 50%
+        major_fix_switch_g_l_r_s[loc] = ba_fix_switch_g_l_r_s[loc, 1] > ba_fix_switch_g_l_r_s[loc, 2]; // ba_1 > 50%
+
       }
   
     }
