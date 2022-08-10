@@ -88,11 +88,11 @@ targets_settings <- list(
                prior_b_log = c(-3, 1),
                prior_c_a_log = c(-6, 2),
                prior_c_b_log = c(-6, 2),
-               prior_c_j_log = c(-12, 3),
+               prior_c_j_log = c(-12, 2),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
-               prior_l_log = c(5, 1),
+               prior_l_log = c(5, 0.5),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
                prior_s_log = c(-4, 2)
              )
@@ -156,55 +156,71 @@ targets_parname <- list(
   
   tar_target(pars_exclude,
              c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_raw", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt", "m")),
+  
   tar_target(helpers_exclude,
              c("Fix", "Fix_ko_s",
-               "Fix_switch_b", "Fix_switch_c_b", "Fix_switch_b_c_b", "Fix_switch_g", "Fix_switch_h", "Fix_switch_l", "Fix_switch_l_r", "Fix_switch_r", "Fix_switch_s",
+               paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                "B_log_raw", "C_a_log_raw", "C_b_log_raw", "C_j_log_raw", "G_log_raw", "H_log_raw", "L_log_raw", "R_log_raw", "S_log_raw",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "avg_state_init", "avg_L_loc",
                "fixiter_max", "fixiter_min", "eps_ba_fix",
                "log_prior", "log_lik", "lp__", "state_init_log_raw", "state_2", "state_2_raw", "state_3", "state_3_raw")),
+  
   tar_target(rep_exclude,
              c("phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "y_hat_rep", "y_hat_prior_rep", "y_hat_offset", "y_hat_rep_offset", "y_hat_prior_rep_offset")),
+  
   tar_target(simnames_prior,
              c("y_hat_prior", "y_hat_prior_rep", "y_hat_prior_offset", "y_hat_prior_rep_offset", "y_prior_sim")),
-  tar_target(simnames_posterior,
-             c("y_hat_rep", "y_hat_offset", "y_hat_rep_offset", "y_sim", "y_hat_prior",
-               "dominant_init", "major_init", "ba_init", "J_init", "A_init", "B_init", 
-               "Fix", "ba_fix", "J_fix", "A_fix", "B_fix", "dominant_fix", "major_fix",
-               "Fix_ko_b", "Fix_ko_s", "Fix_ko_2_b", "Fix_ko_2_s",
+  
+  tar_target(statenames_posterior,
+             c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix",
                "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
+               "major_init", "major_fix", "dominant_init", "dominant_fix",
                "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
-               "Fix_switch_b", "Fix_switch_c_b", "Fix_switch_b_c_b", "Fix_switch_g", "Fix_switch_h", "Fix_switch_l", "Fix_switch_r", "Fix_switch_l_r", "Fix_switch_s",
-               "ba_fix_switch_b", "ba_fix_switch_c_b", "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_h", "ba_fix_switch_l",  "ba_fix_switch_l_r",  "ba_fix_switch_r", "ba_fix_switch_s",
-               "major_fix_switch_b", "major_fix_switch_c_b", "major_fix_switch_b_c_b", "major_fix_switch_g", "major_fix_switch_h", "major_fix_switch_l", "major_fix_switch_l_r", "major_fix_switch_r", "major_fix_switch_s",
+               paste0("major_fix_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
+               "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
+               paste0("ba_fix_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")))
+             ),
+  
+  tar_target(banames_posterior, statenames_posterior[str_starts(statenames_posterior, "ba")]),
+
+  tar_target(simnames_posterior,
+             c(statenames_posterior,
+               paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
+               
                "converged_fix", "iterations_fix", "fixiter_max", "fixiter_min", "eps_ba_fix",
                "sum_ko_1_b_fix", "sum_ko_1_c_a_fix", "sum_ko_1_c_b_fix", "sum_ko_1_c_j_fix", "sum_ko_1_g_fix", "sum_ko_1_h_fix", "sum_ko_1_l_fix", "sum_ko_1_r_fix", "sum_ko_1_s_fix",
                "sum_ko_2_b_fix", "sum_ko_2_c_a_fix", "sum_ko_2_c_b_fix", "sum_ko_2_c_j_fix", "sum_ko_2_g_fix", "sum_ko_2_h_fix", "sum_ko_2_l_fix", "sum_ko_2_r_fix", "sum_ko_2_s_fix",
                
                "sum_switch_b_fix", "sum_switch_c_a_fix", "sum_switch_c_b_fix", "sum_switch_c_j_fix", "sum_switch_g_fix", "sum_switch_h_fix", "sum_switch_l_fix", "sum_switch_r_fix", "sum_switch_s_fix",
-                                                                        
                
                "sum_ko_1_prop_b_fix", "sum_ko_1_prop_c_a_fix", "sum_ko_1_prop_c_b_fix", "sum_ko_1_prop_c_j_fix", "sum_ko_1_prop_g_fix", "sum_ko_1_prop_h_fix", "sum_ko_1_prop_l_fix", "sum_ko_1_prop_r_fix", "sum_ko_1_prop_s_fix",
                "sum_ko_2_prop_b_fix", "sum_ko_2_prop_c_a_fix", "sum_ko_2_prop_c_b_fix", "sum_ko_2_prop_c_j_fix", "sum_ko_2_prop_g_fix", "sum_ko_2_prop_h_fix", "sum_ko_2_prop_l_fix", "sum_ko_2_prop_r_fix", "sum_ko_2_prop_s_fix",
                
-               "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")),
+               "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")
+             ),
   
   tar_target(parname,
              c("phi_obs", # "sigma_k_loc", # "k_log", # "theta", 
                "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
+  
   tar_target(parname_plotorder,
              c(l = "l_log", r = "r_log", c_j = "c_j_log", s = "s_log", g = "g_log", c_a = "c_a_log", h = "h_log", b = "b_log", c_b = "c_b_log" )),
+  
   tar_target(parname_loc,
              c("state_init", "L_loc")),
+  
   tar_target(parname_loc_env,
              c(parname_loc, "B_log", "C_a_log", "C_b_log", "C_j_log", "G_log", "H_log", "L_log", "R_log", "S_log")),
+  
   tar_target(parname_sigma,
              c(l = "sigma_l", r = "sigma_r", c_j = "sigma_c_j", s = "sigma_s", g = "sigma_g", c_a = "sigma_c_a", h = "sigma_h", b = "sigma_b", c_b = "sigma_c_b" )),
+  
   tar_target(parname_sim,
              setdiff(parname, c("theta", "phi_obs", "sigma_k_loc"))),
+  
   tar_target(exclude,
              c(pars_exclude, parname_loc_env, parname_sigma, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior))
 )
@@ -551,9 +567,7 @@ targets_posterior_test <- list(
   # tar_target(plot_contributions_prop_test,
   #            plotContributions(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, contribution = "sum_ko_prop", color = twocolors, themefun = themefunction)),
   tar_target(plots_states_test,
-             plotStates(States_test, allstatevars = c("ba_init", "ba_fix",
-                                                      "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
-                                                      "ba_fix_switch_b_c_b", "ba_fix_switch_g", "ba_fix_switch_l_r", "ba_fix_switch_s"),
+             plotStates(States_test, allstatevars = banames_posterior,
                         path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plot_trajectories_avg_test,
              plotTrajectories(Trajectories_avg_test, thicker = T, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
@@ -601,7 +615,7 @@ targets_posterior <- list(
   
   ## Formatted posterior data stuctures
   tar_target(States,
-             formatStates(cmdstanfit = fit, data_stan_priors),
+             formatStates(cmdstanfit = fit, names = statename_posterior, data_stan_priors),
              pattern = map(fit), iteration = "list"),
   
   ## Plot
@@ -630,7 +644,7 @@ targets_posterior <- list(
              plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_switch", plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plots_states,
-             plotStates(States, allstatevars = c("ba_init", "ba_fix", "ba_fix_switch_b_c_b", "ba_fix_l_r", "ba_fix_switch_s"),
+             plotStates(States, allstatevars = banames_posterior,
                         path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(States, basename_fit), iteration = "list"),
   tar_target(plot_trajectories_avg,
