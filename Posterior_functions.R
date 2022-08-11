@@ -1652,7 +1652,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
            stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
-    mutate(stagepos = as.integer(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
+    mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
     mutate(parameter = ordered(parameter, parorder)) %>%
     mutate(parameter = fct_reorder(parameter, as.numeric(stage))) %>%
     

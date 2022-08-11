@@ -88,11 +88,11 @@ targets_settings <- list(
                prior_b_log = c(-3, 1),
                prior_c_a_log = c(-6, 2),
                prior_c_b_log = c(-6, 2),
-               prior_c_j_log = c(-12, 2),
+               prior_c_j_log = c(-12, 3),
                # prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
-               prior_l_log = c(5, 0.5),
+               prior_l_log = c(2.5, 2),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
                prior_s_log = c(-4, 2)
              )
@@ -181,7 +181,7 @@ targets_parname <- list(
                "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
                paste0("major_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
-               paste0("ba_fix__switch", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")))
+               paste0("ba_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")))
              ),
   
   tar_target(basalareaname, statename[str_starts(statename, "ba")]),
