@@ -148,7 +148,7 @@ formatStates <- function(cmdstanfit, statename, data_stan_priors) {
     mutate(tax = factor(c("Fagus", "other")[i]))
   
   States$value[States$value == 9 & States$var %in% majorname] <- NA
-  States$value[States$value == 0 & States$var %in% statename] <- NA # not ba_fix_ko_s
+  # States$value[States$value == 0 & !(States$var %in% majorname)] <- NA
   
   Quantiles <- filter(States, var == "ba_init") %>%
     group_by(draw, tax) %>%
