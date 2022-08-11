@@ -47,7 +47,7 @@ extractStanfit <- function(cmdstanfit, purge = FALSE) {
 # stanfit  <- tar_read("stanfit")
 # stanfit  <- tar_read("stanfit_test")
 # helpers_exclude  <- tar_read("helpers_exclude")
-extractDraws <- function(stanfit, exclude = helpers_exclude) {
+extractDraws <- function(stanfit, exclude = helper_exclude) {
   
   draws <- rstan::extract(stanfit, pars = exclude, include = F)
   
@@ -133,7 +133,7 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
 
 ## formatStates --------------------------------
 # cmdstanfit <- tar_read("fit_test")
-# statename <- tar_read("statenames_posterior")
+# statename <- tar_read("statename")
 # data_stan_priors <- tar_read("data_stan_priors")
 formatStates <- function(cmdstanfit, statename, data_stan_priors) {
   
@@ -1012,13 +1012,13 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 
 ## plotStates --------------------------------
 # States <- tar_read("States_test")
-# statenames_posterior <- tar_read(statenames_posterior)
+# allstatevars <- tar_read(basalareaname)
 # path  <- tar_read("dir_publish")
 # basename  <- tar_read("basename_fit_test")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotStates <- function(States,
-                       allstatevars = statenames_posterior,
+                       allstatevars = basalareaname,
                        path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   allstatevars <- intersect(as.character(unique(States$var)), allstatevars)
