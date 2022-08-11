@@ -139,6 +139,7 @@ formatStates <- function(cmdstanfit, statename, data_stan_priors) {
   
   varname_draws <- cmdstanfit$metadata()$stan_variables
   varname <- intersect(statename, varname_draws)
+  majorname <- varname[str_starts(varname, "major")]
   
   States <- lapply(varname, formatLoc, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
   States <- lapply(States, function(S) if( length(unique(S$i)) == 1 ) bind_rows(S, within(S, {i <- 2})) else S )
