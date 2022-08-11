@@ -154,10 +154,10 @@ targets_paths <- list(
 ## Parameter spec pipeline ------------------------------------------------------
 targets_parname <- list(
   
-  tar_target(pars_exclude,
+  tar_target(par_exclude,
              c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_raw", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt", "m")),
   
-  tar_target(helpers_exclude,
+  tar_target(helper_exclude,
              c("Fix", "Fix_ko_s",
                paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                "B_log_raw", "C_a_log_raw", "C_b_log_raw", "C_j_log_raw", "G_log_raw", "H_log_raw", "L_log_raw", "R_log_raw", "S_log_raw",
@@ -171,10 +171,10 @@ targets_parname <- list(
              c("phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "y_hat_rep", "y_hat_prior_rep", "y_hat_offset", "y_hat_rep_offset", "y_hat_prior_rep_offset")),
   
-  tar_target(simnames_prior,
+  tar_target(simname_prior,
              c("y_hat_prior", "y_hat_prior_rep", "y_hat_prior_offset", "y_hat_prior_rep_offset", "y_prior_sim")),
   
-  tar_target(statenames_posterior,
+  tar_target(statename,
              c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix",
                "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
                "major_init", "major_fix", "dominant_init", "dominant_fix",
@@ -184,10 +184,10 @@ targets_parname <- list(
                paste0("ba_fix_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")))
              ),
   
-  tar_target(banames_posterior, statenames_posterior[str_starts(statenames_posterior, "ba")]),
+  tar_target(basalareaname, statename[str_starts(statename, "ba")]),
 
-  tar_target(simnames_posterior,
-             c(statenames_posterior,
+  tar_target(simname_posterior,
+             c(statename,
                paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                
                "converged_fix", "iterations_fix", "fixiter_max", "fixiter_min", "eps_ba_fix",
@@ -222,7 +222,7 @@ targets_parname <- list(
              setdiff(parname, c("theta", "phi_obs", "sigma_k_loc"))),
   
   tar_target(exclude,
-             c(pars_exclude, parname_loc_env, parname_sigma, helpers_exclude, rep_exclude, simnames_prior, simnames_posterior))
+             c(par_exclude, parname_loc_env, parname_sigma, helper_exclude, rep_exclude, simname_prior, simname_posterior))
 )
 
 
@@ -507,14 +507,14 @@ targets_posterior_test <- list(
   tar_target(stanfit_test,
              extractStanfit(cmdstanfit = fit_test)),
   tar_target(draws_test,
-             extractDraws(stanfit = stanfit_test, exclude = helpers_exclude)),
+             extractDraws(stanfit = stanfit_test, exclude = helper_exclude)),
   # tar_target(stanfit_test_plotting,
   #            extractStanfit(fit_test_sansgq, purge = TRUE)),
   
   
   ## Summarize
   tar_target(summary_test,
-             summarizeFit(cmdstanfit = fit_test, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc),
+             summarizeFit(cmdstanfit = fit_test, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, parname_loc),
                           publishpar = parname_plotorder, path = dir_publish)),
   tar_target(summary_states_test,
              summarizeStates(States = States_test, data_stan = data_stan, basename = basename_fit_test, path = dir_publish)),
@@ -567,7 +567,7 @@ targets_posterior_test <- list(
   # tar_target(plot_contributions_prop_test,
   #            plotContributions(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, contribution = "sum_ko_prop", color = twocolors, themefun = themefunction)),
   tar_target(plots_states_test,
-             plotStates(States_test, allstatevars = banames_posterior,
+             plotStates(States_test, allstatevars = basalareaname,
                         path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plot_trajectories_avg_test,
              plotTrajectories(Trajectories_avg_test, thicker = T, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
@@ -589,12 +589,12 @@ targets_posterior <- list(
              extractStanfit(cmdstanfit = fit),
              pattern = map(fit), iteration = "list"),
   tar_target(draws,
-             extractDraws(stanfit = stanfit, exclude = helpers_exclude),
+             extractDraws(stanfit = stanfit, exclude = helper_exclude),
              pattern = map(stanfit), iteration = "list"),
   
   ## Summarize
   tar_target(summary,
-             summarizeFit(cmdstanfit = fit, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc),
+             summarizeFit(cmdstanfit = fit, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, parname_loc),
                           publishpar = parname_plotorder, path = dir_publish),
              pattern = map(fit), iteration = "list"),
   tar_target(summary_states,
@@ -615,7 +615,7 @@ targets_posterior <- list(
   
   ## Formatted posterior data stuctures
   tar_target(States,
-             formatStates(cmdstanfit = fit, names = statename_posterior, data_stan_priors),
+             formatStates(cmdstanfit = fit, statename = statename, data_stan_priors),
              pattern = map(fit), iteration = "list"),
   
   ## Plot
@@ -644,7 +644,7 @@ targets_posterior <- list(
              plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_switch", plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plots_states,
-             plotStates(States, allstatevars = banames_posterior,
+             plotStates(States, allstatevars = basalareaname,
                         path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(States, basename_fit), iteration = "list"),
   tar_target(plot_trajectories_avg,
@@ -665,11 +665,11 @@ targets_posterior_env <- list(
   tar_target(stanfit_env,
              extractStanfit(cmdstanfit = fit_env)),
   tar_target(draws_env,
-             extractDraws(stanfit = stanfit_env, exclude = helpers_exclude)),
+             extractDraws(stanfit = stanfit_env, exclude = helper_exclude)),
   
   ## Summarize
   tar_target(summary_env,
-             summarizeFit(cmdstanfit = fit_env, exclude = c(helpers_exclude, rep_exclude, pars_exclude, simnames_prior, parname_loc_env),
+             summarizeFit(cmdstanfit = fit_env, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, parname_loc_env),
                           publishpar = parname_plotorder, path = dir_publish)),
   tar_target(summary_states_env,
            summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
@@ -765,7 +765,7 @@ targets_posterior_env <- list(
 #   # tar_target(rstanfit_gq_test,
 #   #            extractStanfit(fit_gq_test)),
 #   # tar_target(draws_gq_test,
-#   #            extractDraws(rstanfit_gq_test, exclude = helpers_exclude)),
+#   #            extractDraws(rstanfit_gq_test, exclude = helper_exclude)),
 #   
 # )
 
