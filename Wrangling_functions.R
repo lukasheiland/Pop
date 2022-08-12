@@ -462,7 +462,7 @@ saveStages_s <- function(Stages_s) {
 # predictor_select <- tar_read("predictor_select")
 # loclevel <- tar_read("loc")
 selectLocs <- function(Stages_s, predictor_select,
-                       selectpred = F, stratpred = F, n_locations = 1000,
+                       selectspec = T, selectpred = F, stratpred = F, n_locations = 1000,
                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
                        loc = c("plot", "nested", "cluster"),
                        tablepath = "~"
@@ -565,9 +565,14 @@ selectLocs <- function(Stages_s, predictor_select,
       mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
       ungroup()
     
-    ## Confined to clusters with any observation of the taxa in defined sizeclasses
-    Stages_select %<>%
-      filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
+    
+    if (selectspec) {
+      
+      ## subset to plots with any observation of the taxa in defined sizeclasses
+      Stages_select %<>%
+        filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
+    
+    }
   
   } else { ## case loclevel == "plot"
     
@@ -586,10 +591,14 @@ selectLocs <- function(Stages_s, predictor_select,
       mutate(anySmallOther = any(count_ha > 0 & tax == "other" & stage == "J")) %>%
       mutate(anyBigFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage %in% c("A", "B"))) %>%
       mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
-      ungroup() %>%
+      ungroup()
+      
+    if (selectspec) {
       
       ## subset to plots with any observation of the taxa in defined sizeclasses
-      filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 3468
+      Stages_select %<>%
+        filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
+    }
 
     ## Select only one random plot per cluster
     ## Holds for both cases stratpred and !stratpred
@@ -626,23 +635,35 @@ selectLocs <- function(Stages_s, predictor_select,
         bind_rows() %>%
         pull(plotid)
       
-      if (length(plotid_subset) > n_locations) {
-        plotid_subset <- sample(plotid_subset, n_locations, replace = FALSE)
-      }
-      
     } else { ## case: !(stratpred & selectpred)
       
-      ## Subset n_plots
-      plotid_subset <- Stages_select$plotid %>% unique() %>% sample(n_locations, replace = FALSE)
+      if(FALSE) { ## case !(stratpred & selectpred & stratspat)
+        
+        ## Implementation for spatial stratification here
+        # geom_subset <- Stages_select %>%
+        #   st_sample(nx = 10, type = "strat") # plot(geom_subset)
+        ## should use: spatstat.random::rstrat
+        ## does not seem to work
+        
+        plotid_subset <- Stages_select$plotid
+        
+      } 
+      
+      ## still case: !(stratpred & selectpred)
+      plotid_subset <- Stages_select$plotid
       
     }
   }
   
   ## in any case:
+  if (length(plotid_subset) > n_locations) {
+    plotid_subset <- sample(plotid_subset, n_locations, replace = FALSE)
+  }
+  
   Stages_select %<>%
     filter(plotid %in% plotid_subset)
   
-  
+
   # ## Selecting an equal no. of plots with and without Fagus
   # Stages_Fagus <- Stages_select %>%
   #   filter(anyFagus)
