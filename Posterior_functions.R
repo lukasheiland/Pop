@@ -1034,6 +1034,7 @@ plotStates <- function(States,
                   
                   ba_fix_switch_b = "Equilibrium with switched b",
                   ba_fix_switch_c_b = "Equilibrium with switched c_B",
+                  ba_fix_switch_c_b = "Equilibrium with switched c_J",
                   ba_fix_switch_b_c_b = "Equilibrium with switched b and c_B",
                   ba_fix_switch_b_c_a_c_b_h = "Equilibrium with switched overstory parameters",
                   ba_fix_switch_g = "Equilibrium with switched g",
