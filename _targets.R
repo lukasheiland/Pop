@@ -85,9 +85,9 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-6, 2),
-               prior_c_b_log = c(-6, 2),
+               prior_b_log = c(-6, 1),
+               prior_c_a_log = c(-8, 2),
+               prior_c_b_log = c(-8, 1),
                prior_c_j_log = c(-12, 3),
                # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
@@ -338,7 +338,7 @@ targets_wrangling <- list(
     
     tar_target(Stages_select,
                selectLocs(Stages_s, predictor_select,
-                          selectspec = F, selectpred = F, stratpred = F, n_locations = n_locations, loc = c("plot", "nested", "cluster"), tablepath = dir_publish)), # Subsetting after smooth, so that smooth can be informed by all plots.
+                          selectspec = T, selectpred = F, stratpred = F, n_locations = n_locations, loc = c("plot", "nested", "cluster"), tablepath = dir_publish)), # Subsetting after smooth, so that smooth can be informed by all plots.
     
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
