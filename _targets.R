@@ -85,9 +85,9 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-6, 1),
-               prior_c_a_log = c(-8, 2),
-               prior_c_b_log = c(-8, 1),
+               prior_b_log = c(-3, 1),
+               prior_c_a_log = c(-6, 2),
+               prior_c_b_log = c(-6, 2),
                prior_c_j_log = c(-12, 3),
                # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
@@ -191,13 +191,13 @@ targets_parname <- list(
                paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                
                "converged_fix", "iterations_fix", "fixiter_max", "fixiter_min", "eps_ba_fix",
-               "sum_ko_1_b_fix", "sum_ko_1_c_a_fix", "sum_ko_1_c_b_fix", "sum_ko_1_c_j_fix", "sum_ko_1_g_fix", "sum_ko_1_h_fix", "sum_ko_1_l_fix", "sum_ko_1_r_fix", "sum_ko_1_s_fix",
-               "sum_ko_2_b_fix", "sum_ko_2_c_a_fix", "sum_ko_2_c_b_fix", "sum_ko_2_c_j_fix", "sum_ko_2_g_fix", "sum_ko_2_h_fix", "sum_ko_2_l_fix", "sum_ko_2_r_fix", "sum_ko_2_s_fix",
+               "sum_ko_1_b_fix", "sum_ko_1_b_c_b_fix", "sum_ko_1_c_a_fix", "sum_ko_1_c_b_fix", "sum_ko_1_c_j_fix", "sum_ko_1_g_fix", "sum_ko_1_h_fix", "sum_ko_1_l_fix", "sum_ko_1_r_fix", "sum_ko_1_s_fix",
+               "sum_ko_2_b_fix", "sum_ko_2_b_c_b_fix", "sum_ko_2_c_a_fix", "sum_ko_2_c_b_fix", "sum_ko_2_c_j_fix", "sum_ko_2_g_fix", "sum_ko_2_h_fix", "sum_ko_2_l_fix", "sum_ko_2_r_fix", "sum_ko_2_s_fix",
                
-               "sum_switch_b_fix", "sum_switch_c_a_fix", "sum_switch_c_b_fix", "sum_switch_c_j_fix", "sum_switch_g_fix", "sum_switch_h_fix", "sum_switch_l_fix", "sum_switch_r_fix", "sum_switch_s_fix",
+               "sum_switch_b_fix", "sum_switch_b_c_b_fix", "sum_switch_c_a_fix", "sum_switch_c_b_fix", "sum_switch_c_j_fix", "sum_switch_g_fix", "sum_switch_h_fix", "sum_switch_l_fix", "sum_switch_r_fix", "sum_switch_s_fix",
                
-               "sum_ko_1_prop_b_fix", "sum_ko_1_prop_c_a_fix", "sum_ko_1_prop_c_b_fix", "sum_ko_1_prop_c_j_fix", "sum_ko_1_prop_g_fix", "sum_ko_1_prop_h_fix", "sum_ko_1_prop_l_fix", "sum_ko_1_prop_r_fix", "sum_ko_1_prop_s_fix",
-               "sum_ko_2_prop_b_fix", "sum_ko_2_prop_c_a_fix", "sum_ko_2_prop_c_b_fix", "sum_ko_2_prop_c_j_fix", "sum_ko_2_prop_g_fix", "sum_ko_2_prop_h_fix", "sum_ko_2_prop_l_fix", "sum_ko_2_prop_r_fix", "sum_ko_2_prop_s_fix",
+               "sum_ko_1_prop_b_fix", "sum_ko_1_prop_b_c_b_fix", "sum_ko_1_prop_c_a_fix", "sum_ko_1_prop_c_b_fix", "sum_ko_1_prop_c_j_fix", "sum_ko_1_prop_g_fix", "sum_ko_1_prop_h_fix", "sum_ko_1_prop_l_fix", "sum_ko_1_prop_r_fix", "sum_ko_1_prop_s_fix",
+               "sum_ko_2_prop_b_fix", "sum_ko_2_prop_b_c_b_fix", "sum_ko_2_prop_c_a_fix", "sum_ko_2_prop_c_b_fix", "sum_ko_2_prop_c_j_fix", "sum_ko_2_prop_g_fix", "sum_ko_2_prop_h_fix", "sum_ko_2_prop_l_fix", "sum_ko_2_prop_r_fix", "sum_ko_2_prop_s_fix",
                
                "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")
              ),
@@ -564,9 +564,9 @@ targets_posterior_test <- list(
   tar_target(plots_conditional_test,
              plotConditional(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plot_contributions_test,
-             plotContributions(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+             plotContributions(cmdstanfit = fit_test, parname = c(parname_plotorder, b_c_b = "b_c_b"), path = dir_publish, color = twocolors, themefun = themefunction)),
   # tar_target(plot_contributions_prop_test,
-  #            plotContributions(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, contribution = "sum_ko_prop", color = twocolors, themefun = themefunction)),
+  #            plotContributions(cmdstanfit = fit_test, parname = c(parname_plotorder, b_c_b = "b_c_b"), path = dir_publish, contribution = "sum_ko_prop", color = twocolors, themefun = themefunction)),
   tar_target(plots_states_test,
              plotStates(States_test, allstatevars = basalareaname,
                         path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
@@ -636,13 +636,13 @@ targets_posterior <- list(
              plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions,
-             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
+             plotContributions(cmdstanfit = fit, parname = c(parname_plotorder, b_c_b = "b_c_b"), path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions_prop,
-             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_ko_prop", plotlog = F, color = twocolors, themefun = themefunction),
+             plotContributions(cmdstanfit = fit, parname = c(parname_plotorder, b_c_b = "b_c_b"), path = dir_publish, contribution = "sum_ko_prop", plotlog = F, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions_switch,
-             plotContributions(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, contribution = "sum_switch", plotlog = T, color = twocolors, themefun = themefunction),
+             plotContributions(cmdstanfit = fit, parname = c(parname_plotorder, b_c_b = "b_c_b"), path = dir_publish, contribution = "sum_switch", plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plots_states,
              plotStates(States, allstatevars = basalareaname,
@@ -726,7 +726,7 @@ targets_posterior_env <- list(
   tar_target(plots_parameters_env,
              plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   tar_target(plot_contributions_env,
-             plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, plotlog = T,
+             plotContributions(cmdstanfit = fit_env, parname = c(parname_plotorder, b_c_b = "b_c_b"), path = dir_publish, plotlog = T,
                                color = twocolors, themefun = themefunction))
   
   # tar_target(plots_env,

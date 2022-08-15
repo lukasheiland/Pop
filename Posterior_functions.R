@@ -1054,7 +1054,7 @@ plotStates <- function(States,
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
                   ) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
@@ -1084,7 +1084,7 @@ plotStates <- function(States,
   #   
   #   ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
   #   scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-  #                 # labels = scales::trans_format("log10", scales::math_format(10^.x))
+  #                 labels = scales::trans_format("log10", scales::math_format(10^.x))
   #                 ) +
   #   annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
   #   themefun() +
@@ -1132,10 +1132,10 @@ plotStates <- function(States,
   #   
   #   ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
   #   scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-  #                 # labels = scales::trans_format("log10", scales::math_format(10^.x))
+  #                 labels = scales::trans_format("log10", scales::math_format(10^.x))
   #                 ) +
   #   scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-  #                 # labels = scales::trans_format("log10", scales::math_format(10^.x))\
+  #                 labels = scales::trans_format("log10", scales::math_format(10^.x))\
   #                 ) +
   #   annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
   #   themefun() +
@@ -1161,7 +1161,7 @@ plotStates <- function(States,
 
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
                   ) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
@@ -1190,10 +1190,10 @@ plotStates <- function(States,
     facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
     labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
                   ) +
     scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
                   ) +
     annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
@@ -1219,7 +1219,7 @@ plotStates <- function(States,
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
     ) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
@@ -1248,10 +1248,10 @@ plotStates <- function(States,
     facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
     labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
     ) +
     scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
     ) +
     annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
@@ -1273,7 +1273,7 @@ plotStates <- function(States,
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  # labels = scales::trans_format("log10", scales::math_format(10^.x))
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))
                   ) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
@@ -1622,7 +1622,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   parorder <- names(parname)
   parname <- str_remove(setdiff(parname, "k_log"), "_log")
   plotprop <- match.arg(contribution) == "sum_ko_prop"
-  if (plotprop & plotlog) warning("Log-scale was discarded because it does not make sense with proportions.")
+  if (plotprop & plotlog) warning("Log-scale option was discarded because it does not make sense with proportions.")
   
   contribname <- if (match.arg(contribution) == "sum_ko_prop") { paste("sum_ko", rep(1:n_species, each = length(parname)), "prop", parname, "fix", sep = "_") }
                     else if (match.arg(contribution) == "sum_ko") { paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_") }

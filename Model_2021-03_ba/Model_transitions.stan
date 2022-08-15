@@ -51,7 +51,7 @@ parameters {
   // real<lower=0,upper=1> theta;
   
   //// Version with latent base pop
-  vector[L] y_base_log;
+  vector<upper=17>[L] y_base_log; // max is log(15)
   
   vector[N_species] rate_log;
   
@@ -88,7 +88,7 @@ model {
   // phi_base_inv ~ normal(0, 5);
   // phi_trans_inv ~ normal(0, 5);
   
-  y_base_log ~ normal(0, 100);
+  y_base_log ~ normal(10, 100);
   
   rate_log ~ normal(prior_rate, 3);
   
