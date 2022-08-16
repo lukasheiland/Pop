@@ -59,7 +59,7 @@ targets_settings <- list(
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")
-  tar_target(n_locations, 700),
+  tar_target(n_locations, 1000),
   
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
@@ -85,16 +85,16 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-6, 2),
-               prior_c_b_log = c(-6, 2),
+               prior_b_log = c(-3, 2),
+               prior_c_a_log = c(-7, 2),
+               prior_c_b_log = c(-7, 2),
                prior_c_j_log = c(-12, 3),
                # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
-               prior_l_log = c(3, 2),
+               prior_l_log = c(4, 3),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-4, 2)
+               prior_s_log = c(-4, 3)
              )
   ),
   
@@ -436,7 +436,7 @@ targets_fit <- list(
              cmdstan_model(file_model, stanc_options = list("O1"))),
   tar_target(fit,
              fitModel(model = model, data_stan = data_stan_priors_offsets_1, gpq = TRUE, ## data_stan_priors_offsets ## for testing all offsets
-                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit),
+                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit),
              pattern = map(data_stan_priors_offsets_1), iteration = "list"), ## data_stan_priors_offsets ## for testing all offsets
   tar_target(basename_fit,
              getBaseName(fit),

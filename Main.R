@@ -40,14 +40,15 @@ tar_make_future(c("summary",
                   "plots_pairs",
                   "plot_trajectories_avg",
                   # "animation_trajectories_avg",
-                  # "plots_conditional"
+                  "plots_conditional"
                   "residuals"),
                 workers = if(onserver) 16 else 3, reporter = "timestamp")
 
 ## Publishing
 tar_make_future(c("Summary_taxa",
                   "Summary_NFIs",
-                  # "map_select"
+                  "map_select",
+                  "surfaceplots_s"
                   ),
                 workers = if(onserver) 12 else 3, reporter = "timestamp")
 

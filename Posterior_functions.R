@@ -1607,7 +1607,7 @@ plotTrace <- function(cmdstanfit, parname, path,
 
 ## plotContributions --------------------------------
 # parname  <- c(tar_read("parname_plotorder"), b_c_b = "b_c_b_log")
-# contribname <- paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_")
+# contribname <- paste("sum_ko", rep(1:2, each = length(parname)), names(parname), "fix", sep = "_")
 # cmdstanfit  <- tar_read("fit")[[1]]
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
@@ -1647,7 +1647,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
   I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
     mutate(p = parameter,
-           parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j|b_c_b)(?=_)"),
+           parameter = str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2") ),
            tax = suppressWarnings( fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2") ), # the last number in the string
            reciprocal = as.character(kotax) != as.character(tax), # there might be different level sets

@@ -44,11 +44,13 @@ tar_make_future(c("summary_env",
                 workers = if(onserver) 24 else 3, reporter = "timestamp")
 
 ## Publishing
+## Publishing
 tar_make_future(c("Summary_taxa",
                   "Summary_NFIs",
-                  # "map_select"
+                  # "map_select",
+                  # "surfaceplots_s"
                   ),
-                workers = if(onserver) 12 else 3, reporter = "timestamp")
+workers = if(onserver) 12 else 3, reporter = "timestamp")
 
 
 # Inspect pipeline ----------------------------------------------------------------
