@@ -26,7 +26,8 @@ data {
   int<lower=0> N_species;
   
   array[L] int<lower=0> rep_species;
-  array[L] int<lower=0> y_base;
+  vector<lower=0>[L] y_base;
+  /// array[L] int<lower=0> y_base;
   array[L] int<lower=0> y_trans;  
   vector[L] area_log;
   
@@ -37,7 +38,7 @@ data {
 
 transformed data {
   //// Version with base population as data
-  // vector[L] y_base_log = log(y_base);
+  vector[L] y_base_log = log(y_base);
 }
 
 
@@ -51,7 +52,7 @@ parameters {
   // real<lower=0,upper=1> theta;
   
   //// Version with latent base pop
-  vector<upper=17>[L] y_base_log; // max is log(15)
+  // vector<upper=17>[L] y_base_log; // max is log(15)
   
   vector[N_species] rate_log;
   
@@ -88,7 +89,7 @@ model {
   // phi_base_inv ~ normal(0, 5);
   // phi_trans_inv ~ normal(0, 5);
   
-  y_base_log ~ normal(10, 100);
+  /// y_base_log ~ normal(10, 10);
   
   rate_log ~ normal(prior_rate, 3);
   
@@ -103,7 +104,7 @@ model {
   //}
   
   //// Version with latent base pop
-  y_base ~ poisson(exp(y_base_log));
+  /// y_base ~ poisson(exp(y_base_log));
   // y_base ~ neg_binomial_2(exp(y_base_log), phi_base_rep);
   
   y_trans ~ poisson(y_hat);

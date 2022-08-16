@@ -53,17 +53,17 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   
   G <- Stages_transitions %>%
     # filter(!is.na(g_plot))
-    filter(!is.na(count_J2A_plot_obs) & !is.na(count_J_integr_plot)) ## also drops NAs
+    filter(!is.na(count_J2A_plot_obs) & !is.na(count_J_integr_plot)) %>% ## also drops NAs
     
-    ### Version with y_base from data
-    # filter(!is.na(count_J2A_plot_obs) & isTRUE(count_J_integr_plot > 0)) ## also drops NAs
+    ### Version with y_base from data:
+    filter(!is.na(count_J2A_plot_obs) & isTRUE(count_J_integr_plot > 0)) ## also drops NAs
   
   H <- Stages_transitions %>%
     # filter(!is.na(h_plot))
-    filter(!is.na(count_A2B_plot_obs) & !is.na(count_A_integr_plot)) ## also drops NAs
+    filter(!is.na(count_A2B_plot_obs) & !is.na(count_A_integr_plot)) %>% ## also drops NAs
     
-    ### Version with y_base from data
-    # filter(!is.na(count_A2B_plot_obs) & isTRUE(count_A_integr_plot > 0)) ## also drops NAs
+    ### Version with y_base from data:
+    filter(!is.na(count_A2B_plot_obs) & isTRUE(count_A_integr_plot > 0)) ## also drops NAs
   
   
   if(loclevel == "nested") {
@@ -459,12 +459,14 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
     area_log_j2a = log(G$area_J2A),
     area_log_a2b = log(H$area_A2B),
     
-    y_j = as.integer(round(G$count_J_integr_plot)), # [1/ha]
-    y_a = as.integer(round(H$count_A_integr_plot)), # # [1/ha]
+    ## Version with y_base as latent population fitted to counts:
+    # y_j = as.integer(round(G$count_J_integr_plot)), # [1/ha]
+    # y_a = as.integer(round(H$count_A_integr_plot)), # # [1/ha]
     
     ## Version with y_base as data:
-    # y_j = G$count_J_integr_plot, # [1/ha]
-    # y_a = H$count_A_integr_plot, # # [1/ha]
+    y_j = G$count_J_integr_plot, # [1/ha]
+    y_a = H$count_A_integr_plot, # # [1/ha]
+    
     species_g = as.integer(factor(G$tax, levels = levels(taxon_s))),
     species_h = as.integer(factor(H$tax, levels = levels(taxon_s)))
   )

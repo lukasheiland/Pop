@@ -1606,8 +1606,9 @@ plotTrace <- function(cmdstanfit, parname, path,
 
 
 ## plotContributions --------------------------------
-# parname  <- tar_read("parname_plotorder")
-# cmdstanfit  <- tar_read("fit_test")
+# parname  <- c(tar_read("parname_plotorder"), b_c_b = "b_c_b_log")
+# contribname <- paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_")
+# cmdstanfit  <- tar_read("fit")[[1]]
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
@@ -1615,7 +1616,7 @@ plotTrace <- function(cmdstanfit, parname, path,
 plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_ko", "sum_ko_prop", "sum_switch"), plotlog = FALSE,
                               color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
-
+  
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
   n_species <- 2 ## is also used in functions below
@@ -1627,7 +1628,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   contribname <- if (match.arg(contribution) == "sum_ko_prop") { paste("sum_ko", rep(1:n_species, each = length(parname)), "prop", parname, "fix", sep = "_") }
                     else if (match.arg(contribution) == "sum_ko") { paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_") }
                     else if (match.arg(contribution) == "sum_switch") { paste("sum_switch", parname, "fix", sep = "_") }
-                    
+  
   
   C <- cmdstanfit$draws(variables = contribname) %>%
     as_draws_rvars()
@@ -1646,11 +1647,11 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
   I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
     mutate(p = parameter,
-           parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j)(?=_)"),
+           parameter = str_extract(p, "(?<=_)([bghlrs]{1}|c_a|c_b|c_j|b_c_b)(?=_)"),
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2") ),
            tax = suppressWarnings( fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2") ), # the last number in the string
            reciprocal = as.character(kotax) != as.character(tax), # there might be different level sets
-           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h"),)
+           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h", "b_c_b"),)
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
@@ -1683,9 +1684,9 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
     { if (plotprop) geom_text(aes(y = stagepos, x = xletterpos_l, label = stage), size = 9, col = "#222222") } +
     
     { if (match.arg(contribution) != "sum_switch") facet_wrap(~reciprocal, # ~kotax
-               scales = "free",
-               labeller = labeller(kotax = function(kotax) paste(kotax, "demographic rates"),
-                                   reciprocal = function(reciprocal) if_else(reciprocal == 'TRUE', "indirect", "direct"))) } +
+                                                              scales = "free",
+                                                              labeller = labeller(kotax = function(kotax) paste(kotax, "demographic rates"),
+                                                                                  reciprocal = function(reciprocal) if_else(reciprocal == 'TRUE', "indirect", "direct"))) } +
     themefun() +
     scale_color_manual(values = color) +
     theme(axis.title.x = element_blank()) +
