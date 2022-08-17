@@ -87,12 +87,12 @@ targets_settings <- list(
              list(
                prior_b_log = c(-3, 2),
                prior_c_a_log = c(-7, 2),
-               prior_c_b_log = c(-7, 2),
+               prior_c_b_log = c(-6, 2),
                prior_c_j_log = c(-12, 3),
                # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
-               prior_l_log = c(4, 3),
+               prior_l_log = c(3, 2),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
                prior_s_log = c(-4, 3)
              )
@@ -636,6 +636,8 @@ targets_posterior <- list(
              plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions,
+             plotContributions(cmdstanfit = fit, parname = c(parname_plotorder[1:7], b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
+  tar_target(plot_contributions_supp,
              plotContributions(cmdstanfit = fit, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions_prop,

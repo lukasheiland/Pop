@@ -1034,7 +1034,7 @@ plotStates <- function(States,
                   
                   ba_fix_switch_b = "Equilibrium with switched b",
                   ba_fix_switch_c_b = "Equilibrium with switched c_B",
-                  ba_fix_switch_c_b = "Equilibrium with switched c_J",
+                  ba_fix_switch_c_j = "Equilibrium with switched c_J",
                   ba_fix_switch_b_c_b = "Equilibrium with switched b and c_B",
                   ba_fix_switch_b_c_a_c_b_h = "Equilibrium with switched overstory parameters",
                   ba_fix_switch_g = "Equilibrium with switched g",
@@ -1144,7 +1144,7 @@ plotStates <- function(States,
   
   
   #### Main
-  threevar <- c("ba_init", "ba_fix", "ba_fix_switch_g_l_r_s")
+  threevar <- c("ba_init", "ba_fix", "ba_fix_switch_s")
   T_main <- filter(States, var %in% threevar) %>%
     rename(when = var) %>%
     mutate(when = factor(when, levels = threevar)) %>%
@@ -1202,7 +1202,8 @@ plotStates <- function(States,
   
   
   #### Supplementary
-  fourvar <- c("ba_fix", "ba_fix_switch_g_l_r_s", "ba_fix_switch_b_c_a_c_b_h", "ba_fix_switch_s")
+  fourvar <- c("ba_fix", "ba_fix_switch_s", "ba_fix_c_j", "ba_fix_switch_l_r",
+               "ba_fix_switch_g", "ba_fix_switch_b_c_b")
   T_supp <- filter(States, var %in% fourvar) %>%
     rename(when = var) %>%
     mutate(when = factor(when, levels = fourvar)) %>%
@@ -1302,12 +1303,12 @@ plotStates <- function(States,
   # ggsave(paste0(path, "/", basename, "_plot_states_combined", ".pdf"), stateplotgrid, device = "pdf", width = 8, height = 10)
   
   stateplotgrid_main <- cowplot::plot_grid(plot_main + theme(legend.position = "none"), plot_scatter_main, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.3 ,1))
-  ggsave(paste0(path, "/", basename, "_plot_states_main", ".png"), stateplotgrid_main, device = "png", width = 11, height = 10)
-  ggsave(paste0(path, "/", basename, "_plot_states_main", ".pdf"), stateplotgrid_main, device = "pdf", width = 11, height = 10)
+  ggsave(paste0(path, "/", basename, "_plot_states_main", ".png"), stateplotgrid_main, device = "png", width = 10, height = 9)
+  ggsave(paste0(path, "/", basename, "_plot_states_main", ".pdf"), stateplotgrid_main, device = "pdf", width = 10, height = 9)
   
   stateplotgrid_supp <- cowplot::plot_grid(plot_supp + theme(legend.position = "none"), plot_scatter_supp, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.3 ,1))
-  ggsave(paste0(path, "/", basename, "_plot_states_supp", ".png"), stateplotgrid_supp, device = "png", width = 11, height = 10)
-  ggsave(paste0(path, "/", basename, "_plot_states_supp", ".pdf"), stateplotgrid_supp, device = "pdf", width = 11, height = 10)
+  ggsave(paste0(path, "/", basename, "_plot_states_supp", ".png"), stateplotgrid_supp, device = "png", width = 14, height = 8)
+  ggsave(paste0(path, "/", basename, "_plot_states_supp", ".pdf"), stateplotgrid_supp, device = "pdf", width = 14, height = 8)
   
   return(plots)
 }
@@ -1750,6 +1751,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename, plot
   
   return(plot)
 }
+
 
 ## animateTrajectories --------------------------------
 # plot_trajectories <- tar_read("plot_trajectories_avg_test")
