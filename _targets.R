@@ -637,6 +637,7 @@ targets_posterior <- list(
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions,
              plotContributions(cmdstanfit = fit, parname = c(parname_plotorder[1:7], b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
+             pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions_supp,
              plotContributions(cmdstanfit = fit, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),

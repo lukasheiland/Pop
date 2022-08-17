@@ -1012,10 +1012,10 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 
 
 ## plotStates --------------------------------
-# States <- tar_read("States_test")
+# States <- tar_read("States")[[1]]
 # allstatevars <- tar_read(basalareaname)
 # path  <- tar_read("dir_publish")
-# basename  <- tar_read("basename_fit_test")
+# basename  <- tar_read("basename_fit")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotStates <- function(States,
