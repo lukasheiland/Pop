@@ -85,16 +85,28 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 2),
-               prior_c_a_log = c(-7, 2),
-               prior_c_b_log = c(-6, 2),
-               prior_c_j_log = c(-12, 3),
+               prior_b_log = c(-3.5, 2),
+               prior_c_a_log = c(-8, 2),
+               prior_c_b_log = c(-7, 2),
+               prior_c_j_log = c(-14, 4),
                # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
-               prior_l_log = c(3, 2),
+               prior_l_log = c(4, 2),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-4, 3)
+               prior_s_log = c(-4, 2)
+             )
+  ),
+  
+  tar_target(weakpriors_env,
+             list(
+               prior_b_log = c(-3.5, 1),
+               prior_c_a_log = c(-8, 1),
+               prior_c_b_log = c(-7, 1),
+               prior_c_j_log = c(-12, 2),
+               prior_l_log = c(4, 1),
+               # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
+               prior_s_log = c(-4, 1)
              )
   ),
   
@@ -338,7 +350,7 @@ targets_wrangling <- list(
     
     tar_target(Stages_select,
                selectLocs(Stages_s, predictor_select,
-                          selectspec = T, selectpred = F, stratpred = F, n_locations = n_locations, loc = c("plot", "nested", "cluster"), tablepath = dir_publish)), # Subsetting after smooth, so that smooth can be informed by all plots.
+                          selectspec = T, selectpred = F, stratpred = F, n_locations = n_locations, loc = "plot", tablepath = dir_publish)), # Subsetting after smooth, so that smooth can be informed by all plots.
     
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
@@ -449,7 +461,7 @@ targets_fit_env <- list(
   ## Prepare data
   tar_target(Stages_select_env,
              selectLocs(Stages_s, predictor_select,
-                        selectspec = T, selectpred = T, stratpred = T, n_locations = n_locations, loc = c("plot", "nested", "cluster"), tablepath = dir_publish)), # Selection based on whether environmental variables are present
+                        selectspec = T, selectpred = T, stratpred = T, n_locations = n_locations, loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
   
   tar_target(Stages_scaled_env,
              scaleData(Stages_select_env, predictor_select)), # After selection, so that scaling includes selected plots 
@@ -477,7 +489,7 @@ targets_fit_env <- list(
              fitTransition(data_stan_transitions_env, which = "h", model_transitions, fitpath = dir_fit)),
   
   tar_target(data_stan_priors_env,
-             formatPriors(data_stan_env, weakpriors, fit_g_env, fit_h_env, fit_Seedlings,
+             formatPriors(data_stan_env, weakpriors_env, fit_g_env, fit_h_env, fit_Seedlings,
                           widthfactor_trans = 1, widthfactor_reg = 1)),
 
   tar_target(data_stan_priors_offset_env,
@@ -636,10 +648,10 @@ targets_posterior <- list(
              plotConditional(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions,
-             plotContributions(cmdstanfit = fit, parname = c(parname_plotorder[1:7], b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
+             plotContributions(cmdstanfit = fit, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions_supp,
-             plotContributions(cmdstanfit = fit, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
+             plotContributions(cmdstanfit = fit, parname = c(parname_plotorder[1:7], b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plot_contributions_prop,
              plotContributions(cmdstanfit = fit, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, contribution = "sum_ko_prop", plotlog = F, color = twocolors, themefun = themefunction),

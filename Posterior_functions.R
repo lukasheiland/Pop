@@ -1701,7 +1701,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
     { if (plotprop) labs(x = "Average yearly increment in proportion to the total basal area increment [ ]", y = "Parameter", title = "Yearly propotional contributions to the basal") } +
     { if (!plotprop) labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions to the basal area") }
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions_", contribution, if(plotlog) "_log" else "", ".pdf"),
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions_", contribution, if(plotlog) "_log_" else "_", length(contribname), ".pdf"),
          plot_contributions, dev = "pdf", height = 8, width = 12)
   
   return(plot_contributions)

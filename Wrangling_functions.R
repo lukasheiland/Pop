@@ -460,14 +460,14 @@ saveStages_s <- function(Stages_s) {
 ## selectLocs --------------------------------
 # Stages_s <- tar_read("Stages_s")
 # predictor_select <- tar_read("predictor_select")
-# loclevel <- tar_read("loc")
+# loclevel <- "plot"
 selectLocs <- function(Stages_s, predictor_select,
                        selectspec = T, selectpred = F, stratpred = F, n_locations = 1000,
                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
                        loc = c("plot", "nested", "cluster"),
                        tablepath = "~"
                        ) {
-
+  
   loclevel <- match.arg(loc)
   
   message(paste(Stages_s %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
@@ -502,8 +502,8 @@ selectLocs <- function(Stages_s, predictor_select,
     
     ## Any damage through forestry
     filter( !(anyForestryDamage_DE_BWI_2 | anyForestryDamage_DE_BWI_3))
-    
-    # unique(Stages_select$clusterid) %>% length() ## 5236
+  
+  # unique(Stages_select$clusterid) %>% length() ## 5236
   
   ## Drop clusters that don't have an associated time
   if(anyNA(Stages_select$time)) {
@@ -518,7 +518,7 @@ selectLocs <- function(Stages_s, predictor_select,
     
     warning("selectLocs(): There were ", n_na, " clusters with missing variable `time`. These clusters have been dropped.")
   }
-    
+  
   
   ## Filter plots based on tree observations
   Stages_select %<>%
@@ -537,8 +537,8 @@ selectLocs <- function(Stages_s, predictor_select,
            isclearcut_2012 = any( (!isclear[obsid == "DE_BWI_2002"]) & isclear[obsid == "DE_BWI_2012"]),
            isclearcut = isclearcut_2002 | isclearcut_2012) %>%
     filter(!isclearcut)
-      ## ,,, plots remaining; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
-    
+       ## ,,, plots remaining; # Stages_select %>% filter(isclearcut) %>% pull(plotid) %>% unique()
+  
   
   if (loclevel %in% c("nested", "cluster")) {
     
@@ -566,14 +566,14 @@ selectLocs <- function(Stages_s, predictor_select,
       ungroup()
     
     
-    if (selectspec) {
+    if (selectspec) { # case: (loclevel %in% c("nested", "cluster")) & selectspec
       
       ## subset to plots with any observation of the taxa in defined sizeclasses
       Stages_select %<>%
         filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
-    
+      
     }
-  
+    
   } else { ## case loclevel == "plot"
     
     Stages_select %<>% 
@@ -592,14 +592,14 @@ selectLocs <- function(Stages_s, predictor_select,
       mutate(anyBigFagus = any(count_ha > 0 & tax == "Fagus.sylvatica" & stage %in% c("A", "B"))) %>%
       mutate(anyBigOther = any(count_ha > 0 & tax == "other" & stage %in% c("A", "B"))) %>%
       ungroup()
-      
+    
     if (selectspec) {
       
       ## subset to plots with any observation of the taxa in defined sizeclasses
       Stages_select %<>%
-        filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length() ## 635
+        filter(anyFagus & anyOther) # %>% pull(clusterid) %>% unique() %>% length()
     }
-
+    
     ## Select only one random plot per cluster
     ## Holds for both cases stratpred and !stratpred
     Stages_select %<>%
@@ -607,8 +607,13 @@ selectLocs <- function(Stages_s, predictor_select,
       mutate(plotid_select = sample(unique(plotid), 1, replace = F)) %>%
       filter(plotid == plotid_select) %>%
       ungroup()
+    
+    if (stratpred & !selectpred) {
       
-    if (stratpred & !selectpred) warning("Cannot stratify based on predictors, when locations are not selected based on predictors.")
+      warning("Cannot stratify based on predictors, when locations are not selected based on predictors.")
+      plotid_subset <- unique(Stages_select$plotid) #!!!
+    
+    }
     
     if (stratpred & selectpred) {
       
@@ -619,7 +624,7 @@ selectLocs <- function(Stages_s, predictor_select,
         filter(obsid == "DE_BWI_1987") %>%
         mutate_at(predictor_select, cut, breaks = 7) %>%
         mutate(bin2d = interaction(get(predictor_select[1]), get(predictor_select[2])))
-        
+      
       Strata <- table(Stages_strata[,predictor_select[1], drop = T], Stages_strata[,predictor_select[2], drop = T])
       write.csv(Strata, file.path(tablepath, "Strata_plots_DE.csv"))
       
@@ -629,6 +634,7 @@ selectLocs <- function(Stages_s, predictor_select,
         else if (n_x < n) return(X)
       }
       
+      ##!!!
       plotid_subset <- Stages_strata %>%
         split(.$bin2d) %>%
         lapply(sampleAtMost, n = 25) %>%
@@ -645,25 +651,25 @@ selectLocs <- function(Stages_s, predictor_select,
         ## should use: spatstat.random::rstrat
         ## does not seem to work
         
-        plotid_subset <- Stages_select$plotid
-        
       } 
       
-      ## still case: !(stratpred & selectpred)
-      plotid_subset <- Stages_select$plotid
+      ## still case where: !(stratpred & selectpred)
+      ##!!!
+      plotid_subset <- unique(Stages_select$plotid) ## this is here for later filtering in any case
       
     }
-  }
+    
+    ## in any case where: loclevel == "plot"
+    if (length(plotid_subset) > n_locations) {
+      plotid_subset <- sample(plotid_subset, n_locations, replace = FALSE)
+    }
+    
+    Stages_select %<>%
+      filter(plotid %in% plotid_subset)
+    
+  } ## close case: loclevel == "plot"
   
-  ## in any case:
-  if (length(plotid_subset) > n_locations) {
-    plotid_subset <- sample(plotid_subset, n_locations, replace = FALSE)
-  }
   
-  Stages_select %<>%
-    filter(plotid %in% plotid_subset)
-  
-
   # ## Selecting an equal no. of plots with and without Fagus
   # Stages_Fagus <- Stages_select %>%
   #   filter(anyFagus)
@@ -710,7 +716,7 @@ selectLocs <- function(Stages_s, predictor_select,
   # 
   # hist(Check$prop_Fagus)
   # table(Check$prop_Fagus > 0.5)
-
+  
   ## Are there similar counts_ha per survey?
   # Check_consistency <- Stages_select %>%
   #   group_by(plotid, obsid, stage) %>%
