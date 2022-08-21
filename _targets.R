@@ -92,9 +92,9 @@ targets_settings <- list(
                # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
                # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
                # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
-               prior_l_log = c(4, 4),
+               prior_l_log = c(4, 2),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-4, 4)
+               prior_s_log = c(-4, 3)
              )
   ),
   
@@ -365,8 +365,8 @@ targets_wrangling <- list(
     tar_target(Summary_NFIs,
                summarizeNFIs(Data_big, Data_seedlings, Stages_select, Seedlings_s, tablepath = dir_publish)),
     tar_target(map_select,
-               mapClusters(Stages_select, path = dir_publish, themefun = themefunction),
-               packages = c("dplyr", "ggplot2", "magrittr", "sf", "raster", "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist"))
+               mapLocations(Stages_select, path = dir_publish, themefun = themefunction),
+               packages = c(package, "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist"))
     
   )
 )

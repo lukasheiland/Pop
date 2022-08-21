@@ -48,10 +48,11 @@ tar_make_future(c("summary",
 ## Publishing
 tar_make_future(c("Summary_taxa",
                   "Summary_NFIs",
-                  "map_select",
                   "surfaceplots_s"
                   ),
                 workers = if(onserver) 12 else 3, reporter = "timestamp")
+
+tar_make(map_select)
 
 
 # Inspect pipeline ----------------------------------------------------------------
@@ -61,4 +62,4 @@ network %>%
 
 
 # Load results ----------------------------------------------------------------
-tar_load(c("summary", "fit"))
+# tar_load(c("summary", "fit"))

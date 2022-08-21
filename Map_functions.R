@@ -14,13 +14,13 @@ theme_map <- function(th = theme_fagus){
 }
 
 
-## mapClusters --------------------------------
+## mapLocations --------------------------------
 # Stages_select <- tar_read(Stages_select)
 # themefun <- tar_read(themefunction)
-# pack <- c("dplyr", "ggplot2", "magrittr", "sf", "raster", "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist")
-# lapply(pack, require, character.only = TRUE)
+# pack <- c(package, "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist")
+# all(sapply(pack, require, character.only = TRUE))
 
-mapClusters <- function(Stages_select, color = NULL, themefun, path = dir_publish) {
+mapLocations <- function(Stages_select, color = NULL, themefun, path = dir_publish) {
   
   if (is.null(color)) color <- c("#00A4DB", "#3EFC38", "#FFEE00", "#FFFFFF") # lighter versions of the twocolors, for shading
   

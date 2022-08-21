@@ -410,33 +410,34 @@ predictSurfaces <- function(fits) {
 
 ## plotSurfaces ------------------------------------
 # surfaces <- tar_read(surfaces_Seedlings_s)
+# surfaces <- tar_read(surfaces_s)
 # path  <- tar_read("dir_publish")
+# themefun <- tar_read("themefunction")
 plotSurfaces <- function(surfaces, path, themefun) {
   
   plotRaster <- function(r) {
     require(rasterVis)
     
-    gplot(r) +
+    p <- rasterVis::gplot(r) +
       geom_tile(aes(fill = value)) +
       labs(fill = "Basal area [m^2 ha^-1]") +
       scale_fill_viridis_c(na.value = "transparent") +
       coord_quickmap() + ## for coord_map: projection = "lambert", lat1 = 48, lat2 = 54
       theme_map(themefun) +
-      
-      
-      ## Fix at some time
-      # annotation_scale(width_hint = 0.3,
-      #                 style = "bar",
-      #                 location = "br",
-      #                 bar_cols = c("black", "white"),
-      #                 line_col = "black",
-      #                 text_col = "black",
-      #                 text_cex = 1.1,
-      #                 pad_x = unit(0.3, "cm")) +
+        ## Fix at some time
+        # annotation_scale(width_hint = 0.3,
+        #                 style = "bar",
+        #                 location = "br",
+        #                 bar_cols = c("black", "white"),
+        #                 line_col = "black",
+        #                 text_col = "black",
+        #                 text_cex = 1.1,
+        #                 pad_x = unit(0.3, "cm")) +
       annotation_north_arrow(which_north = "true",
                             location = "tl",
                             pad_x = unit(0.3, "cm"),
                             style = north_arrow_minimal(line_col = "black", text_col = "black", fill = c("black"), text_size = 17))
+    return(p)
   }
 
   surfaceplots <- lapply(surfaces, function(s) plotRaster(s))
