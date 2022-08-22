@@ -94,19 +94,19 @@ targets_settings <- list(
                # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
                prior_l_log = c(4, 2),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-4, 3)
+               prior_s_log = c(-4, 2)
              )
   ),
   
   tar_target(weakpriors_env,
              list(
-               prior_b_log = c(-3, 1),
+               prior_b_log = c(-3, 2),
                prior_c_a_log = c(-7, 2),
                prior_c_b_log = c(-7, 2),
                prior_c_j_log = c(-12, 3),
-               prior_l_log = c(4, 3),
+               prior_l_log = c(4, 2),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-4, 3)
+               prior_s_log = c(-4, 2)
              )
   ),
   
@@ -196,7 +196,9 @@ targets_parname <- list(
                paste0("ba_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")))
              ),
   
-  tar_target(basalareaname, statename[str_starts(statename, "ba")]),
+  tar_target(basalareaname, statename[str_starts(statename, "ba_")]),
+  
+  tar_target(majorname, statename[str_starts(statename, "major_")]),
 
   tar_target(simname_posterior,
              c(statename,
@@ -399,7 +401,7 @@ targets_fit_general <- list(
   
   tar_target(data_stan_priors,
              formatPriors(data_stan, weakpriors, fit_g, fit_h, fit_Seedlings,
-                          widthfactor_trans = 5, widthfactor_reg = 5)),
+                          widthfactor_trans = 4, widthfactor_reg = 2)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")),
@@ -490,7 +492,7 @@ targets_fit_env <- list(
   
   tar_target(data_stan_priors_env,
              formatPriors(data_stan_env, weakpriors_env, fit_g_env, fit_h_env, fit_Seedlings,
-                          widthfactor_trans = 1, widthfactor_reg = 1)),
+                          widthfactor_trans = 4, widthfactor_reg = 2)),
 
   tar_target(data_stan_priors_offset_env,
              selectOffset(offsetname_select, data_stan_priors_env)),
@@ -556,8 +558,7 @@ targets_posterior_test <- list(
   
   ## Formatted posterior data stuctures
   tar_target(States_test,
-             formatStates(cmdstanfit = fit_test, data_stan_priors)),
-  
+             formatStates(cmdstanfit = fit_test, statename = statename, data_stan_priors)),
   
   ## Plot
   tar_target(plots_test,
@@ -662,6 +663,10 @@ targets_posterior <- list(
   tar_target(plots_states,
              plotStates(States, allstatevars = basalareaname,
                         path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             pattern = map(States, basename_fit), iteration = "list"),
+  tar_target(plot_predominant,
+             plotPredominant(States, majorname,
+                             path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(States, basename_fit), iteration = "list"),
   tar_target(plot_trajectories_avg,
              plotTrajectories(Trajectories_avg, thicker = T, path = dir_publish, basename = basename_fit, plotpdf = TRUE, color = twocolors, themefun = themefunction),

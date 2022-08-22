@@ -1038,6 +1038,7 @@ plotStates <- function(States,
                   ba_fix_switch_b_c_b = "Equilibrium with switched b and c_B",
                   ba_fix_switch_b_c_a_c_b_h = "Equilibrium with switched overstory parameters",
                   ba_fix_switch_g = "Equilibrium with switched g",
+                  ba_fix_switch_h = "Equilibrium with switched g",
                   ba_fix_switch_l = "Equilibrium with switched l",
                   ba_fix_switch_l_r = "Equilibrium with switched l and r",
                   ba_fix_switch_g_l_r_s = "Equilibrium with switched understory parameters",
@@ -1705,6 +1706,81 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
          plot_contributions, dev = "pdf", height = 8, width = 12)
   
   return(plot_contributions)
+}
+
+
+## plotPredominant --------------------------------
+# States  <- tar_read("States")[[1]]
+# majorname  <- c(majorname)
+# path  <- tar_read("dir_publish")
+# basename  <- tar_read("basename_fit")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotPredominant <- function(States, majorname,
+                            path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  States <- States[!is.na(States$value),]
+  
+  majorname <- intersect(unique(States$var), majorname)
+  
+  majorlabel <- c(major_init = "Initial state",
+                  major_fix = "Equilibrium state",
+                  
+                  major_fix_switch_l = "switched h",
+                  major_fix_switch_l_r = "switched l and r",
+                  major_fix_switch_c_j = "switched c_J",
+                  major_fix_switch_s = "switched s",
+                  major_fix_switch_g = "switched g",
+                  major_fix_switch_g_l_r_s = "switched understory parameters",
+                  major_fix_switch_c_a = "switched c_A",
+                  major_fix_switch_h = "switched h",
+                  major_fix_switch_b = "switched b",
+                  major_fix_switch_c_b = "switched c_B",
+                  major_fix_switch_b_c_b = "switched b and c_B",
+                  major_fix_switch_b_c_a_c_b_h = "switched overstory parameters")
+  
+  
+  D <- States[1:6] %>%
+    
+    filter(var %in% majorname) %>%
+    
+    mutate(value_ = 1 - value) %>%
+    mutate(value = if_else(tax == "Fagus", value, value_)) %>% ## more efficient than doing the if_else inside groups
+    
+    ## average over draws
+    group_by(var, tax, loc) %>%
+    summarize(value = mean(value), sd = sd(value)) %>%
+    ungroup() %>%
+    
+    group_by(var, tax) %>%
+    summarize(value = mean(value)) %>%
+    ungroup()
+  
+  
+  plot_predominant <- ggplot(D, aes(x = factor(var, levels = rev(names(majorlabel))),
+                                    y = value,
+                                    ymin = if_else(tax == "Fagus", value - 0.05, as.numeric(NA)),
+                                    ymax = if_else(tax == "Fagus", value + 0.03, as.numeric(NA)),
+                                    fill = tax)) + 
+    geom_col(position = position_fill(reverse = TRUE), width = 0.4, color = "black", size = 0.5) +
+    geom_errorbar(width = .2, position = "identity") +
+    geom_text(aes(label = if_else(value >= 0.07, paste0(sprintf("%.1f", value * 100),"%"),"")),
+              position = position_fill(reverse = TRUE, vjust = 0.5), colour = "black", size = 4) +
+    ylab("% predominant subpopulations") +
+    scale_y_continuous(labels = scales::percent) +
+    # scale_color_manual(values = color) +
+    scale_fill_manual(values = color) +
+    themefun() +
+    coord_flip() +
+    theme(axis.title.y = element_blank()) +
+    theme(legend.position = c(-0.4, 0))
+  
+  
+  ggsave(paste0(path, "/", basename, "_plot_predominance", ".pdf"),
+         plot, dev = "pdf", height = 8, width = 4)
+  
+  
+  return(plot_predominant)
 }
 
 

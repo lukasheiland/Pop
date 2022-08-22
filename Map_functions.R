@@ -30,17 +30,17 @@ mapLocations <- function(Stages_select, color = NULL, themefun, path = dir_publi
   Clusters <- Stages_select %>%
     filter(!duplicated(clusterid)) %>%
     st_transform(crs = projection)
-
+  
   adminid <- c("DE")
   Area <- eurostat::get_eurostat_geospatial(resolution = "01", # hightest possible 1:1million
-                                             nuts_level = 0) %>%  # Administrative level. There are quite a few small scale levels, all with different ids!
+                                            nuts_level = 0) %>%  # Administrative level. There are quite a few small scale levels, all with different ids!
     dplyr::filter(id %in% !!adminid) %>%
     st_transform(crs = projection)
   
   Elevation <- elevatr::get_elev_raster(Area, z = 8) %>% # Zoom level: determines resolution, crs is determined by Area. 8 is minimum for not getting artefacts after projection
     raster::crop(as_Spatial(Area)) %>%
     raster::mask(as_Spatial(Area))
-
+  
   ext <- raster::extent(Elevation)
   
   E <- Elevation %>%
@@ -62,18 +62,24 @@ mapLocations <- function(Stages_select, color = NULL, themefun, path = dir_publi
     add_shadow(ray_shade(E, lambert = FALSE, sunangle = 315, sunaltitude = 55, zscale = 10, multicore = T), max_darken = 0.6) %>% # shadowmap E, will be rescaled to match hillshade
     add_shadow(lamb_shade(E, zscale = 10, sunangle = 315, sunaltitude = 55), max_darken = 0.5)
   
+  # E_resampled <- raster::resample(raster(E), raster(relief[,,1,drop = T])) %>%  ## bilinear rescaling for matching dimensions
+  #   raster_to_matrix()
+  
   ## add these before lamb_shade, otherwise it will make the background black
-    # add_overlay(generate_point_overlay(Clusters, extent = ext, heightmap = E,
-    #                                    pch = 1, color = "white", size = 30), rescale_original = T) %>%
-    # add_overlay(generate_line_overlay(Area, extent = ext, heightmap = E)) %>%
+  # add_overlay(generate_point_overlay(Clusters, extent = ext, heightmap = E,
+  #                                    pch = 1, color = "white", size = 30), rescale_original = T) %>%
+  # add_overlay(generate_line_overlay(Area, extent = ext, heightmap = E)) %>%
   
   # plot_map(relief)
-
+  
   ## Convert rayshader array to RasterStack with some tricks
   B <- brick(relief) %>% stack()
   extent(B) <- extent(Elevation)
   crs(B) <- crs(Elevation)
-  names(B) <- c("red", "green", "blue", "alpha")
+  n_channels <- dim(B)[3] ## in some version of rayshader this did or did not have a fourth alpha channel
+  if(n_channels == 3) names(B) <- c("red", "green", "blue")
+  if(n_channels == 4) names(B) <- c("red", "green", "blue", "alpha")
+  
   # res(B) <- res(B) * 10
   
   # raster::plotRGB(B, r = 1, g = 2, b = 3, scale = 1.0)
@@ -84,14 +90,14 @@ mapLocations <- function(Stages_select, color = NULL, themefun, path = dir_publi
     ## Base raster layer
     # coord_sf(crs = 3034) + ## implicitly added through geom_sf
     geom_spatial_rgb(data = B, mapping = aes(x = x, y = y, r = red, g = green, b = blue), scale = 1.0) +
-
+    
     ## For making a legend. (Include dataframe with all elevations in ggplot data.)
     # scale_color_continuous(elevtexture) +
     # guides(color = guide_colourbar(barwidth = 0.45, barheight = 10, ticks.linewidth = 0.8, draw.ulim = TRUE, draw.llim = TRUE, frame.linewidth = 1, nbin = 100, title = "Elevation")) +
     # theme(legend.position = c(0.1, 0.8)) +
     
     ## Points
-    geom_sf(data = Clusters, col = "black", fill = "white", pch = 21, size = 1.4, stroke = 1.25) +
+    geom_sf(data = Clusters, col = "black", fill = "white", pch = 21, size = 1.35, stroke = 1.2) +
     
     annotation_scale(width_hint = 0.3,
                      style = "bar",
@@ -107,7 +113,7 @@ mapLocations <- function(Stages_select, color = NULL, themefun, path = dir_publi
                            pad_x = unit(0.6, "cm"),
                            style = north_arrow_minimal(line_col = "black", text_col = "black", fill = c("black"), text_size = 17)) +
     theme_map(themefun)
-    
+  
   
   ggsave(paste0(path, "/", "Map_clusters", ".pdf"), map, device = "pdf", height = 9, width = 8)
   ggsave(paste0(path, "/", "Map_clusters", ".png"), map, device = "png", height = 9, width = 8)
