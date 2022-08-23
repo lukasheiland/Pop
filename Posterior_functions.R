@@ -1711,9 +1711,9 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
 
 ## plotPredominant --------------------------------
 # States  <- tar_read("States")[[1]]
-# majorname  <- c(majorname)
+# majorname  <- tar_read(majorname)
 # path  <- tar_read("dir_publish")
-# basename  <- tar_read("basename_fit")
+# basename  <- tar_read("basename_fit")[[1]]
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotPredominant <- function(States, majorname,
@@ -1742,7 +1742,7 @@ plotPredominant <- function(States, majorname,
   
   D <- States[1:6] %>%
     
-    filter(var %in% majorname) %>%
+    dplyr::filter(var %in% majorname) %>%
     
     mutate(value_ = 1 - value) %>%
     mutate(value = if_else(tax == "Fagus", value, value_)) %>% ## more efficient than doing the if_else inside groups
@@ -1777,8 +1777,8 @@ plotPredominant <- function(States, majorname,
   
   
   ggsave(paste0(path, "/", basename, "_plot_predominance", ".pdf"),
-         plot, dev = "pdf", height = 8, width = 4)
-  
+         plot_predominant,
+         dev = "pdf", height = 8, width = 4)
   
   return(plot_predominant)
 }
