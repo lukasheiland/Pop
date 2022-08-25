@@ -256,18 +256,19 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
 
 
 ## summarizeStates --------------------------------
-# States <- tar_read("States_test")
+# States <- tar_read("States")[[1]]
 # data_stan <- tar_read("data_stan")
 # path <- tar_read("dir_publish")
 summarizeStates <- function(States, data_stan, basename, path) {
   
   D <- attr(data_stan, "Long_BA") %>%
     st_drop_geometry() %>% ## avoiding potential problems from sf methods
-    group_by(stage, tax) %>%
+    mutate(obsid = as.numeric(factor(obsid, levels = c("DE_BWI_1987", "DE_BWI_2002", "DE_BWI_2012")))) %>% # mutate(obsid = str_extract(obsid, "[0-9]{4}")) %>%
+    group_by(stage, tax, obsid) %>%
     summarize(mean = mean(y_prior, na.rm = T), sd = sd(y_prior, na.rm = T)) %>% ## y is count_ha for J and A, ba_ha for B and BA
     mutate(value = paste0(formatNumber(mean, signif.digits = 5), " ± ", formatNumber(sd, signif.digits = 5))) %>%
-    pivot_wider(names_from = "tax", id_cols = "stage") %>%
-    mutate(stage = paste0(stage, "_data_init")) %>%
+    pivot_wider(names_from = "tax", id_cols = c("stage", "obsid")) %>%
+    mutate(stage = paste0(stage, "_data_", obsid)) %>%
     dplyr::select(var = stage, Fagus = Fagus.sylvatica, other)
   
   S <- States %>%
@@ -280,7 +281,8 @@ summarizeStates <- function(States, data_stan, basename, path) {
     mutate(value = paste0(formatNumber(mean, signif.digits = 5), " ± ", formatNumber(sd, signif.digits = 5))) %>%
     pivot_wider(names_from = "tax", id_cols = "var") %>%
     bind_rows(D) %>%
-    bind_rows(c(var = "ba_a_avg", setNames(formatNumber(data_stan$ba_a_avg, signif.digits = 5), c("Fagus", "other"))))
+    bind_rows(c(var = "ba_a_avg", setNames(formatNumber(data_stan$ba_a_avg, signif.digits = 5), c("Fagus", "other")))) %>%
+    arrange(var)
   
   write.csv(S, paste0(path, "/", basename, "_summary_states.csv"))
   print(S)
@@ -1746,26 +1748,27 @@ plotPredominant <- function(States, majorname,
     
     mutate(value_ = 1 - value) %>%
     mutate(value = if_else(tax == "Fagus", value, value_)) %>% ## more efficient than doing the if_else inside groups
+    mutate(stage = fct_collapse(var,
+                                J = c("major_fix_switch_l_r", "major_fix_switch_c_j", "major_fix_switch_s", "major_fix_switch_g"),
+                                A = c("major_fix_switch_c_a", "major_fix_switch_h"),
+                                B = c("major_fix_switch_b_c_b"))
+    ) %>%
     
     ## average over draws
-    group_by(var, tax, loc) %>%
-    summarize(value = mean(value), sd = sd(value)) %>%
-    ungroup() %>%
-    
     group_by(var, tax) %>%
-    summarize(value = mean(value)) %>%
+    summarize(value = mean(value), sd = sd(value), q10 = quantile(value, 0.1), q90 = quantile(value, 0.9)) %>%
     ungroup()
-  
   
   plot_predominant <- ggplot(D, aes(x = factor(var, levels = rev(names(majorlabel))),
                                     y = value,
-                                    ymin = if_else(tax == "Fagus", value - 0.05, as.numeric(NA)),
-                                    ymax = if_else(tax == "Fagus", value + 0.03, as.numeric(NA)),
+                                    group = stage,
+                                    # ymin = if_else(tax == "Fagus", q10, as.numeric(NA)),
+                                    # ymax = if_else(tax == "Fagus", q90, as.numeric(NA)),
                                     fill = tax)) + 
     geom_col(position = position_fill(reverse = TRUE), width = 0.4, color = "black", size = 0.5) +
-    geom_errorbar(width = .2, position = "identity") +
-    geom_text(aes(label = if_else(value >= 0.07, paste0(sprintf("%.1f", value * 100),"%"),"")),
-              position = position_fill(reverse = TRUE, vjust = 0.5), colour = "black", size = 4) +
+    # geom_errorbar(width = .2, position = "identity") +
+    geom_text(aes(label = if_else(value >= 0.07, paste0(sprintf("%.1f", value * 100), "% ", if_else(value >= 0.5, as.character(tax), "")),"")),
+              position = position_fill(reverse = TRUE, vjust = 0.5), colour = "white", size = 4) +
     ylab("% predominant subpopulations") +
     scale_y_continuous(labels = scales::percent) +
     # scale_color_manual(values = color) +
@@ -1778,7 +1781,7 @@ plotPredominant <- function(States, majorname,
   
   ggsave(paste0(path, "/", basename, "_plot_predominance", ".pdf"),
          plot_predominant,
-         dev = "pdf", height = 8, width = 4)
+         dev = "pdf", height = 8, width = 5)
   
   return(plot_predominant)
 }
