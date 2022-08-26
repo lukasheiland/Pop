@@ -1755,7 +1755,7 @@ plotPredominant <- function(States, majorname,
     ) %>%
     
     ## average over draws
-    group_by(var, tax) %>%
+    group_by(var, tax, stage) %>%
     summarize(value = mean(value), sd = sd(value), q10 = quantile(value, 0.1), q90 = quantile(value, 0.9)) %>%
     ungroup()
   

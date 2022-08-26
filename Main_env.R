@@ -21,12 +21,10 @@ sapply(package, require, character.only = TRUE) ## package is a vector of all pa
 # M <- tar_manifest(fields = c("name", "command"))
 
 ## Wrangling pipeline
-tar_make_future(c("data_stan_priors_offset_env",
-                  # "surfaceplots_s"
-                  ), workers = if(onserver) 12 else 3, reporter = "timestamp")
+tar_make_future(c("data_stan_priors_offset_env"), workers = if(onserver) 12 else 3, reporter = "timestamp")
 
 ## Fitting, parallelized internally
-tar_make(c("fit_env", "summary_env"))
+tar_make(c("fit_env"))
 
 ## Posterior
 tar_make_future(c("summary_env",
@@ -45,12 +43,11 @@ tar_make_future(c("summary_env",
 
 ## Publishing
 tar_make_future(c("Summary_taxa",
-                  "Summary_NFIs",
-                  # "surfaceplots_s"
-                  ),
+                  "Summary_NFIs"),
                 workers = if(onserver) 12 else 3, reporter = "timestamp")
 
-tar_make(map_select)
+tar_make(c("map_select", "surfaceplots_s")) ## For some reason, future does not work with rasterVis and ggplot addition (some problem with correct overloading of `+`)
+
 
 
 # Inspect pipeline ----------------------------------------------------------------

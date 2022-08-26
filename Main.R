@@ -26,11 +26,13 @@ tar_make_future(c("data_stan_priors_offsets",
                   ), workers = if(onserver) 16 else 3, reporter = "timestamp")
 
 ## Fitting, parallelized internally
-tar_make(c("fit", "summary"))
+tar_make(c("fit"))
 
 ## Posterior
 tar_make_future(c("summary",
                   "summary_states",
+                  "Summary_taxa",
+                  "Summary_NFIs",
                   "plots_parameters",
                   "plot_contributions",
                   "plot_contributions_supp",
@@ -46,14 +48,8 @@ tar_make_future(c("summary",
                   "residuals"),
                 workers = if(onserver) 16 else 3, reporter = "timestamp")
 
-## Publishing
-tar_make_future(c("Summary_taxa",
-                  "Summary_NFIs",
-                  "surfaceplots_s"
-                  ),
-                workers = if(onserver) 12 else 3, reporter = "timestamp")
-
-tar_make(map_select)
+## Mapping outside future
+tar_make(c("map_select", "surfaceplots_s")) ## For some reason, future seems to not work with rasterVis and ggplot addition (some problem with correct overloading of `+`)
 
 
 # Inspect pipeline ----------------------------------------------------------------
