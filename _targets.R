@@ -390,7 +390,7 @@ targets_fit_general <- list(
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")),
   tar_target(offsetname_select,
-             offsetname[1]),
+             offsetname), ## use e.g., offsetname[1] to only do the analyses with one offset variant
   tar_target(data_stan_priors_offset,
              selectOffset(offsetname_select, data_stan_priors)),
   tar_target(data_stan_priors_offsets,
