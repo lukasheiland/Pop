@@ -66,7 +66,7 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(array[] vector state_init, array[] int time_max, array[] int times,    //* vector unpack(array[] vector state_init_log, array[] int time_max, array[] int times,
-                vector b_log, vector c_a_log, array[] vector C_b_log, array[] vector C_j_log, array[] vector G_log, array[] vector H_log, array[] vector L_loc, array[] vector R_log, array[] vector S_log, //@@
+                vector b_log, array[] vector C_a_log, array[] vector C_b_log, array[] vector C_j_log, array[] vector G_log, array[] vector H_log, array[] vector L_loc, array[] vector R_log, array[] vector S_log, //@@
                 vector ba_a_avg, real ba_a_upper,
                 array[] int n_obs, array[] int n_yhat,
                 int N_species, int N_pops, int L_y, int N_locs,
@@ -85,8 +85,8 @@ functions {
       matrix[N_pops, time_max[loc]] States =
                         
                         simulate(state_init[loc],
-                                 time_max[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
-                                 exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
+                                 time_max[loc], //@@ exp(B_log[loc,])
+                                 exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
                                  i_j, i_a, i_b);
@@ -513,7 +513,7 @@ parameters {
 
   //// Model parameters at loc level
   // array[N_locs] vector[N_species] B_log_raw; ///@@
-  // array[N_locs] vector[N_species] C_a_log_raw; ///@@
+  array[N_locs] vector[N_species] C_a_log_raw;
   array[N_locs] vector[N_species] C_b_log_raw;
   array[N_locs] vector[N_species] C_j_log_raw;
   array[N_locs] vector[N_species] G_log_raw; // <upper=-g_log ./ sigma_g>
@@ -523,15 +523,25 @@ parameters {
   array[N_locs] vector[N_species] S_log_raw;
 
   
-  // vector<lower=0>[N_species] sigma_b; ///@@
-  // vector<lower=0>[N_species] sigma_c_a; ///@@
-  vector<lower=0>[N_species] sigma_c_b;
-  vector<lower=0>[N_species] sigma_c_j;
-  vector<lower=0>[N_species] sigma_g;
-  vector<lower=0>[N_species] sigma_h;
-  // vector<lower=0>[N_species] sigma_l; ///**
-  vector<lower=0>[N_species] sigma_r;
-  vector<lower=0>[N_species] sigma_s;
+  // // vector<lower=0>[N_species] sigma_b; ///@@
+  // vector<lower=0>[N_species] sigma_c_a;
+  // vector<lower=0>[N_species] sigma_c_b;
+  // vector<lower=0>[N_species] sigma_c_j;
+  // vector<lower=0>[N_species] sigma_g;
+  // vector<lower=0>[N_species] sigma_h;
+  // // vector<lower=0>[N_species] sigma_l; ///**
+  // vector<lower=0>[N_species] sigma_r;
+  // vector<lower=0>[N_species] sigma_s;
+  
+  // vector<lower=0>[N_species] alpha_b; ///@@
+  vector<lower=0>[N_species] alpha_c_a;
+  vector<lower=0>[N_species] alpha_c_b;
+  vector<lower=0>[N_species] alpha_c_j;
+  vector<lower=0>[N_species] alpha_g;
+  vector<lower=0>[N_species] alpha_h;
+  // vector<lower=0>[N_species] alpha_l; ///**
+  vector<lower=0>[N_species] alpha_r;
+  vector<lower=0>[N_species] alpha_s;
   
 
   //// Dispersion
@@ -555,7 +565,7 @@ transformed parameters {
   
   //// Model parameters at loc level
   // array[N_locs] vector[N_species] B_log; ///@@
-  // array[N_locs] vector[N_species] C_a_log; ///@@
+  array[N_locs] vector[N_species] C_a_log;
   array[N_locs] vector[N_species] C_b_log;
   array[N_locs] vector[N_species] C_j_log;
   array[N_locs] vector[N_species] G_log;
@@ -571,20 +581,27 @@ transformed parameters {
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
     // L_loc[loc, ] = exp(L_log[loc, ] + L_smooth_log[loc, ]); ///** version with random L
     
-    // B_log[loc,] = b_log + B_log_raw[loc,] .* sigma_b; ///@@
-    // C_a_log[loc,] = c_a_log + C_a_log_raw[loc,] .* sigma_c_a; ///@@
-    C_b_log[loc,] = c_b_log + C_b_log_raw[loc,] .* sigma_c_b;
-    C_j_log[loc,] = c_j_log + C_j_log_raw[loc,] .* sigma_c_j;
-    G_log[loc,] = g_log + G_log_raw[loc,] .* sigma_g;
-    H_log[loc,] = h_log + H_log_raw[loc,] .* sigma_h;
-    // L_log[loc,] = l_log + L_log_raw[loc,] .* sigma_l; ///**
-    R_log[loc,] = r_log + R_log_raw[loc,] .* sigma_r;
-    S_log[loc,] = s_log + S_log_raw[loc,] .* sigma_s;
+    // B_log[loc,] = b_log + B_log_raw[loc,] .* alpha_b; ///@@
+    C_a_log[loc,] = c_a_log + C_a_log_raw[loc,] .* alpha_c_a; // alternatively, for ridge use sigma_*
+    C_b_log[loc,] = c_b_log + C_b_log_raw[loc,] .* alpha_c_b;
+    C_j_log[loc,] = c_j_log + C_j_log_raw[loc,] .* alpha_c_j;
+    G_log[loc,] = g_log + G_log_raw[loc,] .* alpha_g;
+    H_log[loc,] = h_log + H_log_raw[loc,] .* alpha_h;
+    // L_log[loc,] = l_log + L_log_raw[loc,] .* alpha_l; ///**
+    R_log[loc,] = r_log + R_log_raw[loc,] .* alpha_r;
+    S_log[loc,] = s_log + S_log_raw[loc,] .* alpha_s;
+    
+    //// Non-centered parameterization of Parameter p_log
+    // P_log ~ p_log + P_log_raw * alpha_p
+    // with P_log_raw ~ normal(0, 1)
+    // and alpha_p ~ exponential(1/lambda)
+    // is equivalent to
+    // P_log ~ double_exponential(p_log, lambda) // with the scale parameter lambda
     
   }
   
-  vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times, //@B_log, C_a_log
-                                b_log, c_a_log, C_b_log, C_j_log, G_log, H_log, L_loc, R_log, S_log,
+  vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times, //@@ B_log
+                                b_log,  C_a_log, C_b_log, C_j_log, G_log, H_log, L_loc, R_log, S_log,
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat,
                                 N_species, N_pops, L_y, N_locs, // fixed numbers
@@ -609,15 +626,25 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  // sigma_b ~ normal(0, 0.5); ///@@
-  // sigma_c_a ~ normal(0, 0.5); ///@@
-  sigma_c_b ~ normal(0, 0.5);
-  sigma_c_j ~ normal(0, 0.5);
-  sigma_g ~ normal(0, 0.5);
-  sigma_h ~ normal(0, 0.5);
-  // sigma_l ~ normal(0, 0.5); ///**
-  sigma_r ~ normal(0, 0.5);
-  sigma_s ~ normal(0, 0.5);
+  // // sigma_b ~ normal(0, 0.5); ///@@
+  // sigma_c_a ~ normal(0, 0.5);
+  // sigma_c_b ~ normal(0, 0.5);
+  // sigma_c_j ~ normal(0, 0.5);
+  // sigma_g ~ normal(0, 0.5);
+  // sigma_h ~ normal(0, 0.5);
+  // // sigma_l ~ normal(0, 0.5); ///**
+  // sigma_r ~ normal(0, 0.5);
+  // sigma_s ~ normal(0, 0.5);
+  
+  // alpha_b ~ exponential(1/0.5); ///@@
+  alpha_c_a ~ exponential(2); // exponential(1/scale) == exponential(rate)
+  alpha_c_b ~ exponential(2);
+  alpha_c_j ~ exponential(2);
+  alpha_g ~ exponential(2);
+  alpha_h ~ exponential(2);
+  // alpha_l ~ exponential(2); ///**
+  alpha_r ~ exponential(2);
+  alpha_s ~ exponential(2);
   
   phi_obs_inv ~ normal(0, 10);
   
@@ -640,7 +667,7 @@ model {
     
     //// Hierarchical distribution of parameters
     // B_log_raw[l] ~ std_normal(); ///@@
-    // C_a_log_raw[l] ~ std_normal(); ///@@
+    C_a_log_raw[l] ~ std_normal();
     C_b_log_raw[l] ~ std_normal();
     C_j_log_raw[l] ~ std_normal();
     G_log_raw[l] ~ std_normal();
@@ -831,8 +858,8 @@ generated quantities {
       
 
       //// Simulate fix point, given parameters
-      Fix[loc] = iterateFix_contributions(state_init[loc], //@@ exp(B_log[loc,]), exp(C_a_log[loc,])
-                                          exp(b_log), exp(c_a_log), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
+      Fix[loc] = iterateFix_contributions(state_init[loc], //@@ exp(B_log[loc,])
+                                          exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
                                           ba_a_avg, ba_a_upper,
                                           N_species, i_j, i_a, i_b,
                                           tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);

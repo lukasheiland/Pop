@@ -106,7 +106,7 @@ targets_settings <- list(
                prior_c_j_log = c(-12, 3),
                prior_l_log = c(4, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-4, 2)
+               prior_s_log = c(-5, 2)
              )
   ),
   
@@ -232,11 +232,14 @@ targets_parname <- list(
   tar_target(parname_sigma,
              c(l = "sigma_l", r = "sigma_r", c_j = "sigma_c_j", s = "sigma_s", g = "sigma_g", c_a = "sigma_c_a", h = "sigma_h", b = "sigma_b", c_b = "sigma_c_b" )),
   
+  tar_target(parname_alpha,
+             c(l = "alpha_l", r = "alpha_r", c_j = "alpha_c_j", s = "alpha_s", g = "alpha_g", c_a = "alpha_c_a", h = "alpha_h", b = "alpha_b", c_b = "alpha_c_b" )),
+  
   tar_target(parname_sim,
              setdiff(parname, c("theta", "phi_obs", "sigma_k_loc"))),
   
   tar_target(exclude,
-             c(par_exclude, parname_loc_env, parname_sigma, helper_exclude, rep_exclude, simname_prior, simname_posterior))
+             c(par_exclude, parname_loc_env, parname_sigma, parname_alpha, helper_exclude, rep_exclude, simname_prior, simname_posterior))
 )
 
 
