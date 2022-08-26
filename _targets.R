@@ -89,24 +89,8 @@ targets_settings <- list(
                prior_c_a_log = c(-7, 3),
                prior_c_b_log = c(-7, 3),
                prior_c_j_log = c(-12, 4),
-               # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
-               # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
                prior_l_log = c(4, 1),
-               # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
                prior_s_log = c(-5, 2)
-             )
-  ),
-  
-  tar_target(weakpriors_env,
-             list(
-               prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-7, 2),
-               prior_c_b_log = c(-7, 2),
-               prior_c_j_log = c(-12, 3),
-               prior_l_log = c(4, 1),
-               # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-4, 2)
              )
   ),
   
@@ -416,30 +400,6 @@ targets_fit_general <- list(
              data_stan_priors_offsets[1], iteration = "list")
 )
 
-#### fit_test ----------
-targets_fit_test <- list(
-
-  tar_target(file_model_test,
-             "Model_2021-03_ba/Model_ba_test.stan",
-             format = "file"),
-  tar_target(model_test,
-             cmdstan_model(file_model_test, stanc_options = list("O1")) #, cpp_options = list(stan_opencl = TRUE)
-             ),
-  ## Prior predictive tests that rely on currently out-commented generated quantities
-  # tar_target(priorsim_test,
-  #            drawTest(model = model_test, data_stan = data_stan_priors_offset, method = "sim", gpq = FALSE, fitpath = dir_fit)),
-  # tar_target(plots_predictions_priorsim_test,
-  #            plotPredictions(cmdstanfit = priorsim_test, data_stan_priors_offset, check = "prior")),
-
-  tar_target(fit_test_sansgq,
-             fitModel(model = model_test, data_stan = data_stan_priors_offset, gpq = FALSE,
-                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit)),
-  tar_target(fit_test,
-             fitModel(model = model_test, data_stan = data_stan_priors_offset, gpq = TRUE,
-                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, fitpath = dir_fit)),
-  tar_target(basename_fit_test,
-             getBaseName(fit_test))
-)
 
 #### fit ----------
 targets_fit <- list(
@@ -457,144 +417,9 @@ targets_fit <- list(
              pattern = map(fit), iteration = "list")
 )
 
-#### fit_env ----------
-targets_fit_env <- list(
-  
-  ## Prepare data
-  tar_target(Stages_select_env,
-             selectLocs(Stages_s, predictor_select,
-                        selectspec = T, selectpred = T, stratpred = T, n_locations = n_locations, loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
-  
-  tar_target(Stages_scaled_env,
-             scaleData(Stages_select_env, predictor_select)), # After selection, so that scaling includes selected plots 
-  
-  tar_target(Stages_loc_env,
-             setLocLevel(Stages_scaled_env, Env_cluster, loc = c("plot", "nested", "cluster"))),
-  
-  tar_target(Stages_transitions_env,
-             countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select_env,
-                              taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max,
-                              loc = c("plot", "nested", "cluster"))),
-  
-  tar_target(data_stan_env,
-             formatStanData(Stages_loc_env, Stages_transitions_env, taxon_s, threshold_dbh,  predictor_select,
-                            loc = c("plot", "nested", "cluster"))),
-  
-  tar_target(data_stan_transitions_env,
-             formatStanData(Stages_loc, Stages_transitions_env, taxon_s, threshold_dbh, predictor_select,
-                            loc = "plot")),
-  
-  tar_target(fit_g_env,
-             fitTransition(data_stan_transitions_env, which = "g", model_transitions, fitpath = dir_fit)),
-  
-  tar_target(fit_h_env,
-             fitTransition(data_stan_transitions_env, which = "h", model_transitions, fitpath = dir_fit)),
-  
-  tar_target(data_stan_priors_env,
-             formatPriors(data_stan_env, weakpriors_env, fit_g_env, fit_h_env, fit_Seedlings,
-                          widthfactor_trans = 4, widthfactor_reg = 2)),
-
-  tar_target(data_stan_priors_offset_env,
-             selectOffset(offsetname_select, data_stan_priors_env)),
-
-  ## Fit
-  tar_target(file_model_env,
-             "Model_2021-03_ba/Model_ba_env.stan",
-             format = "file"),
-  tar_target(model_env,
-             cmdstan_model(file_model_env, stanc_options = list("O1"))),
-  tar_target(fit_env,
-             fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 700, fitpath = dir_fit,
-                      adapt_delta = 0.95)
-             ),
-  tar_target(basename_fit_env,
-             getBaseName(fit_env))
-)
-
 
 
 ## Posterior pipeline ------------------------------------------------------
-#### posterior_test -----------
-targets_posterior_test <- list(
-  
-  ## Extract
-  tar_target(stanfit_test,
-             extractStanfit(cmdstanfit = fit_test)),
-  tar_target(draws_test,
-             extractDraws(stanfit = stanfit_test, exclude = helper_exclude)),
-  # tar_target(stanfit_test_plotting,
-  #            extractStanfit(fit_test_sansgq, purge = TRUE)),
-  
-  
-  ## Summarize
-  tar_target(summary_test,
-             summarizeFit(cmdstanfit = fit_test, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, parname_loc),
-                          publishpar = parname_plotorder, path = dir_publish)),
-  tar_target(summary_states_test,
-             summarizeStates(States = States_test, data_stan = data_stan, basename = basename_fit_test, path = dir_publish)),
-  tar_target(Freq_converged_test,
-             summarizeFreqConverged(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
-  
-  
-  ## Generate
-  tar_target(residuals_test,
-             generateResiduals(cmdstanfit = fit_test, data_stan_priors, path = dir_publish)),
-  # tar_target(Trajectories_test,
-  #            generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
-  #                                 time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 50, average = "none")),
-  tar_target(Trajectories_avg_test,
-             generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
-                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all")),
-  # tar_target(Trajectories_quantiles_test,
-  #            generateTrajectories(cmdstanfit = fit_test, data_stan_priors, parname, locparname = parname_loc,
-  #                                 time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_avgL_qInit")),
-            ### average options:
-            ## c("none",            # — no averaging. Paraneters in simulations vary per loc and draw
-            ## "locsperdraws_all",  # — average all loc-wise parameters per draw
-            ## "drawsperlocs_all",  # — average all parameters per loc, so that there is only one trajectory per cluster
-            ## "locsperdraws_avgL", # — average only "L_loc" per draw, so that there are initial values that vary with cluster
-            ## "locsperdraws_avgL_qInit", # — average only "L_loc" per draw, so that there are initial values that vary with cluster
-  
-  ## Formatted posterior data stuctures
-  tar_target(States_test,
-             formatStates(cmdstanfit = fit_test, statename = statename, data_stan_priors)),
-  
-  ## Plot
-  tar_target(plots_test,
-             plotStanfit(stanfit = stanfit_test, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
-  tar_target(plots_parameters_test,
-             plotParameters(stanfit = stanfit_test, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
-  ## Prior predictive tests that rely on currently out-commented generated quantities
-  # tar_target(plots_predictions_prior_test,
-  #            plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
-  tar_target(plots_predictions_posterior_test,
-             plotPredictions(cmdstanfit = fit_test, data_stan_priors_offset, check = "posterior", path = dir_publish)),
-  tar_target(plots_trace_test,
-             plotTrace(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plots_pairs_test,
-             plotPairs(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plots_conditional_test,
-             plotConditional(cmdstanfit = fit_test, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plot_contributions_test,
-             plotContributions(cmdstanfit = fit_test, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, color = twocolors, themefun = themefunction)),
-  # tar_target(plot_contributions_prop_test,
-  #            plotContributions(cmdstanfit = fit_test, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, contribution = "sum_ko_prop", color = twocolors, themefun = themefunction)),
-  tar_target(plots_states_test,
-             plotStates(States_test, allstatevars = basalareaname,
-                        path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
-  tar_target(plot_trajectories_avg_test,
-             plotTrajectories(Trajectories_avg_test, thicker = T, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
-  tar_target(animation_trajectories_avg_test,
-             animateTrajectories(plot_trajectories_avg_test, path = dir_publish, basename = basename_fit_test)),
-  
-  # tar_target(plot_powerscale_test,
-  #            plotSensitivity(cmdstanfit = fit_test, include = parname, path = dir_publish)),
-  
-  ## Test
-  tar_target(sensitivity_test,
-             testSensitivity(fit_test, include = parname, path = dir_publish))
-)
 
 #### posterior -----------
 targets_posterior <- list(
@@ -675,122 +500,6 @@ targets_posterior <- list(
              animateTrajectories(plot_trajectories_avg[[1]], path = dir_publish, basename = basename_fit[[1]]))
 )
 
-#### posterior_env -----------
-targets_posterior_env <- list(
-  
-  tar_target(parname_env, c(setdiff(parname_loc_env, "state_init"),
-                            "ba_init", "ba_fix", "major_fix", "major_init")),
-  tar_target(parname_environmental, selectParnameEnvironmental(parname_env, Environmental_env)), ## selects the variables, that are actually in the fit
-  
-  ## Extract
-  tar_target(stanfit_env,
-             extractStanfit(cmdstanfit = fit_env)),
-  tar_target(draws_env,
-             extractDraws(stanfit = stanfit_env, exclude = helper_exclude)),
-  
-  ## Summarize
-  tar_target(summary_env,
-             summarizeFit(cmdstanfit = fit_env, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, parname_loc_env),
-                          publishpar = parname_plotorder, path = dir_publish)),
-  tar_target(summary_states_env,
-           summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
-  tar_target(Freq_converged_env,
-           summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors, path = dir_publish)),
-
-  ## Generate
-  tar_target(residuals_env,
-             generateResiduals(cmdstanfit = fit_env, data_stan_priors, path = dir_publish)),
-  tar_target(Trajectories_avg_env,
-             generateTrajectories(cmdstanfit = fit_env, data_stan_priors, parname, locparname = parname_loc_env,
-                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all")),
-
-  
-  ## Formatted posterior data stuctures
-  tar_target(States_env,
-             formatStates(cmdstanfit = fit_env, data_stan_priors)),
-  tar_target(Environmental_env,
-             formatEnvironmental(cmdstanfit = fit_env, parname = parname_env,
-                                 data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),
-  
-  
-  ## Post-hoc inference
-  tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c("major_init", "major_fix"))),
-  tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
-  
-  tar_target(fit_environmental_env_gaussian,
-             fitEnvironmental(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian"),
-             pattern = cross(parname_environmental_gaussian, taxon_s),
-             iteration = "list"),
-  tar_target(fit_environmental_env_binomial,
-             fitEnvironmental(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial"),
-             pattern = map(parname_environmental_binomial),
-             iteration = "list"),
-  tar_target(fit_environmental_env,
-             c(fit_environmental_env_gaussian, fit_environmental_env_binomial),
-             iteration = "list"),  
-  tar_target(surface_environmental_env,
-             predictEnvironmental(fit_environmental_env, envname = predictor_select,
-                                  path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
-             pattern = map(fit_environmental_env),
-             iteration = "list"),
-  
-
-  ## Plot
-  tar_target(plot_environmental_env,
-             ggsave(filename = paste0(dir_publish, "/", basename_fit_env, "_plot_environmental", ".pdf"),
-                    plot = cowplot::plot_grid(plotlist = surface_environmental_env, ncol = 2), device = "pdf", width = 15, height = 90, limitsize = FALSE)),
-  tar_target(plots_trace_env,
-             plotTrace(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plots_pairs_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plots_parameters_env,
-             plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
-  tar_target(plot_contributions_env,
-             plotContributions(cmdstanfit = fit_env, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T,
-                               color = twocolors, themefun = themefunction))
-  
-  # tar_target(plots_env,
-  #            plotStanfit(stanfit = stanfit_env, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
-  # tar_target(plots_predictions_posterior_env,
-  #            plotPredictions(cmdstanfit = fit_env, data_stan_priors_offset_env, check = "posterior", path = dir_publish)),
-  # tar_target(plots_conditional_env,
-  #            plotConditional(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  # tar_target(plot_contributions_prop_env,
-  #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, contribution = "sum_ko_prop", color = twocolors, themefun = themefunction)),
-  # tar_target(plot_contributions_switch_env,
-  #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, plotlog = T, path = dir_publish, contribution = "sum_switch", color = twocolors, themefun = themefunction)),
-  # tar_target(plots_states_env,
-  #            plotStates(States_env, allstatevars = c("ba_init", "ba_fix"),
-  #                        path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
-  # tar_target(plot_trajectories_avg_env,
-  #            plotTrajectories(Trajectories_avg_env, thicker = T, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
-  # tar_target(animation_trajectories_avg_env,
-  #            animateTrajectories(plot_trajectories_avg_env, path = dir_publish, basename = basename_fit_env))
-)
-
-
-
-## Standalone generated quantities pipeline -----------------------------------
-# targets_sgq <- list(
-#   
-#   tar_target(file_gq,
-#              paste0(tools::file_path_sans_ext(file_model),"_gq.stan"), format = "file"),
-#   tar_target(model_gq,
-#              cmdstan_model(file_gq)),
-#   tar_target(fit_gq,
-#              model_gq$generate_quantities(fitted_params = fit$output_files(),
-#                                           data = data_stan_priors,
-#                                           output_dir = dir_fit,
-#                                           parallel_chains = getOption("mc.cores", 4)))
-#   
-#   # tar_target(rstanfit_gq_test,
-#   #            extractStanfit(fit_gq_test)),
-#   # tar_target(draws_gq_test,
-#   #            extractDraws(rstanfit_gq_test, exclude = helper_exclude)),
-#   
-# )
-
-
 
 # ————————————————————————————————————————————————————————————————————————————————— #
 # Outer pipeline -----------------------------------------------------------------
@@ -802,11 +511,7 @@ list(
   targets_wrangling,
   targets_parname,
   targets_fit_general,
-  targets_fit_test,
   targets_fit,
-  targets_fit_env,
-  targets_posterior_test,
-  targets_posterior,
-  targets_posterior_env
+  targets_posterior
 )
 

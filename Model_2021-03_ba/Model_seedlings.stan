@@ -13,8 +13,6 @@ data {
   
   vector[N] ba;
   vector<lower=0>[N] l_smooth;
-  // vector[N] offset_scaled;
-  // vector[N] ba_sum;
   
 }
 
@@ -22,7 +20,6 @@ data {
 parameters {
   
   vector[2] k_log;
-  // vector[2] l_log;
   vector[2] r_log;
 
   // real theta_logit;
@@ -38,7 +35,6 @@ transformed parameters {
   vector<lower=0>[N_plots] y_hat_ha_total = rep_vector(0, N_plots);
   vector[N] y_hat_ha_total_centered;
 
-  // vector<lower=0>[N] y_hat_ha = exp(l_log) * l_smooth + exp(r_log) * ba;
   vector<lower=0>[N] y_hat_ha = exp(k_log[rep_species]) + exp(r_log[rep_species]) .* ba;
   vector<lower=0>[N] y_hat =  y_hat_ha .* offset_data;
   
