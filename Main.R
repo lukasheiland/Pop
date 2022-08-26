@@ -12,9 +12,6 @@ sapply(package, require, character.only = TRUE) ## package is a vector of all pa
 ## This is, how the system is determined in _targets.R
 # onserver <- Sys.info()["sysname"] != "Darwin"
 
-## assumed to have run and produced output files:
-# source("Inventory.nosync/Main.R", chdir = T)
-
 
 # Make targets pipeline -----------------------------------------------------------------
 # tar_glimpse()
