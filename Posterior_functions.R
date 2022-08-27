@@ -1444,11 +1444,11 @@ plotConditional_resampling <- function(cmdstanfit, parname, path,
 ## but simply colors the posterior samples by freq_major.
 ## - here, the posterior is the actual posterior.
 # parname  <- tar_read("parname_plotorder")
-# cmdstanfit  <- tar_read("fit_test")
+# cmdstanfit  <- tar_read("fit")[[1]]
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotConditional <- function(cmdstanfit, parname, path,
+plotConditional <- function(cmdstanfit, parname, path, conditional = T,
                             color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
@@ -1492,6 +1492,12 @@ plotConditional <- function(cmdstanfit, parname, path,
       scale_color_gradient(low = color[1], high = color[2], guide = "colourbar", aesthetics = c("colour"))
   }
   
+  plotHex <- function(data, mapping, ...) {
+    ggplot(data = data, mapping) +
+      geom_hex(bins = 30) + ## everything else but col gets inherited!
+      scale_fill_viridis_b()
+  }
+  
   plotStats <- function(data, mapping, ...) {
     
     printStats <- function(x, y) {
@@ -1512,14 +1518,14 @@ plotConditional <- function(cmdstanfit, parname, path,
   
   
   pairsplot <- ggpairs(D,
-                       mapping = aes(fill = major), ## discrete mapping for densities
+                       mapping = aes(fill = !!if (conditional) major else NULL), ## discrete mapping for densities
                        columns = match(paste0(rep(parname, each = 2), c("_Fagus", "_other")), colnames(D)),
                        diag = list(continuous = plotDensity),
                        upper = list(continuous = plotStats), # wrap("cor", size = 3.3)
-                       lower = list(continuous = plotPoints)) + ## wrap("points", alpha = 0.1, size = 0.6)
-
+                       lower = list( continuous = if (conditional) plotPoints else plotHex ) ) + ## wrap("points", alpha = 0.1, size = 0.6)
+    
     # scale_color_manual(values = color) +
-    scale_fill_manual(values = color) +
+    { if(conditional) scale_fill_manual(values = color)  else scale_fill_viridis_b() } +
     themefun() +
     theme(panel.spacing = unit(0.1, "lines"))
   
