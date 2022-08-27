@@ -64,7 +64,7 @@ targets_settings <- list(
   ## Threshold to discriminate A and B [mm]
   # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
   ## lower in the data is 100, so that: 100mm > A > 160mm > B
-  tar_target(threshold_dbh, 160), ## [mm]
+  tar_target(threshold_dbh, 180), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
@@ -86,11 +86,15 @@ targets_settings <- list(
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
                prior_b_log = c(-3, 2),
-               prior_c_a_log = c(-7, 3),
+               prior_c_a_log = c(-8, 3),
                prior_c_b_log = c(-7, 3),
-               prior_c_j_log = c(-12, 4),
+               prior_c_j_log = c(-9, 3),
+               # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
+               # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
+               # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
                prior_l_log = c(4, 1),
-               prior_s_log = c(-5, 2)
+               # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
+               prior_s_log = c(-6, 2)
              )
   ),
   
