@@ -62,8 +62,8 @@ targets_settings <- list(
   tar_target(n_locations, 1000),
   
   ## Threshold to discriminate A and B [mm]
-  # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
-  ## lower in the data is 100, so that: 100mm > A > 160mm > B
+  ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile
+  ## lower in the data is 100, so that: 100mm > A > threshold_dbh > B
   tar_target(threshold_dbh, 180), ## [mm]
   
   ## Upper sampling radius
@@ -101,12 +101,12 @@ targets_settings <- list(
   tar_target(weakpriors_env,
              list(
                prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-7, 2),
+               prior_c_a_log = c(-8, 2),
                prior_c_b_log = c(-7, 2),
-               prior_c_j_log = c(-12, 3),
+               prior_c_j_log = c(-9, 3),
                prior_l_log = c(4, 1),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-5, 2)
+               prior_s_log = c(-6, 2)
              )
   ),
   
