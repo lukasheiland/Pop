@@ -1448,7 +1448,7 @@ plotConditional_resampling <- function(cmdstanfit, parname, path,
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotConditional <- function(cmdstanfit, parname, path, conditional = T,
+plotConditional <- function(cmdstanfit, parname, conditional = T, path, 
                             color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
