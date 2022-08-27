@@ -113,8 +113,8 @@ prepareBigData <- function(B, B_status,
     mutate(ba_ha = ba * count_ha) %>%
 
     ### make stages
-    # quantile(B$dbh, seq(0, 1, by = 1e-1), na.rm = T): 160 is the 10%tile, 206 is the 20%tile
-    ## 100mm…200mm == a
+    # quantile(B$dbh, seq(0, 1, by = 0.5e-1), na.rm = T):
+    ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile
     mutate(stage = as.factor(if_else(dbh < threshold_dbh, "A", "B"))) %>%
 
     ## summarize per all ids, ... "plotobsid", "tax", "stage", being the fastest-varying
