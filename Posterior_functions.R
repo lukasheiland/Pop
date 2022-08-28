@@ -1495,7 +1495,7 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
   plotHex <- function(data, mapping, ...) {
     ggplot(data = data, mapping) +
       geom_hex(bins = 30) + ## everything else but col gets inherited!
-      scale_fill_viridis_b()
+      scale_fill_continuous(trans = "reverse")
   }
   
   plotStats <- function(data, mapping, ...) {
@@ -1525,7 +1525,7 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
                        lower = list( continuous = if (conditional) plotPoints else plotHex ) ) + ## wrap("points", alpha = 0.1, size = 0.6)
     
     # scale_color_manual(values = color) +
-    { if(conditional) scale_fill_manual(values = color)  else scale_fill_viridis_b() } +
+    { if(conditional) scale_fill_manual(values = color)  else scale_fill_continuous(trans = "reverse") } +
     themefun() +
     theme(panel.spacing = unit(0.1, "lines"))
   
