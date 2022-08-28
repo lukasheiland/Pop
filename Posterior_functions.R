@@ -1518,7 +1518,7 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
   
   
   pairsplot <- ggpairs(D,
-                       mapping = aes(fill = !!if (conditional) major else NULL), ## discrete mapping for densities
+                       mapping = aes(fill = !!if (conditional) D$major else NULL), ## discrete mapping for densities
                        columns = match(paste0(rep(parname, each = 2), c("_Fagus", "_other")), colnames(D)),
                        diag = list(continuous = plotDensity),
                        upper = list(continuous = plotStats), # wrap("cor", size = 3.3)
