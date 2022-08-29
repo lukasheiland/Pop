@@ -89,11 +89,7 @@ targets_settings <- list(
                prior_c_a_log = c(-8, 3),
                prior_c_b_log = c(-7, 3),
                prior_c_j_log = c(-9, 3),
-               # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
-               # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
                prior_l_log = c(4, 1),
-               # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
                prior_s_log = c(-6, 2)
              )
   ),
@@ -394,7 +390,7 @@ targets_fit_general <- list(
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")),
   tar_target(offsetname_select,
-             offsetname), ## use e.g., offsetname[1] to only do the analyses with one offset variant
+             offsetname[c(1, 3:4)]), ## use e.g., offsetname[1] to only do the analyses with one offset variant
   tar_target(data_stan_priors_offset,
              selectOffset(offsetname_select, data_stan_priors)),
   tar_target(data_stan_priors_offsets,
@@ -413,9 +409,9 @@ targets_fit <- list(
   tar_target(model,
              cmdstan_model(file_model, stanc_options = list("O1"))),
   tar_target(fit,
-             fitModel(model = model, data_stan = data_stan_priors_offsets_1, gpq = TRUE, ## data_stan_priors_offsets ## for testing all offsets
+             fitModel(model = model, data_stan = data_stan_priors_offsets, gpq = TRUE, ## data_stan_priors_offsets_1 for using only the main offset variant
                       method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit),
-             pattern = map(data_stan_priors_offsets_1), iteration = "list"), ## data_stan_priors_offsets ## for testing all offsets
+             pattern = map(data_stan_priors_offsets), iteration = "list"), ## data_stan_priors_offsets_1 for using only the main offset variant
   tar_target(basename_fit,
              getBaseName(fit),
              pattern = map(fit), iteration = "list")
