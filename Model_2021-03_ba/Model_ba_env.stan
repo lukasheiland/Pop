@@ -637,17 +637,17 @@ model {
   sigma_r ~ normal(0, 0.5);
   sigma_s ~ normal(0, 0.5);
   
-  alpha_b ~ exponential(1/0.25);
-  alpha_c_a ~ exponential(4); // exponential(1/scale) == exponential(rate)
-  alpha_c_b ~ exponential(4);
-  // alpha_c_j ~ exponential(4);
-  // alpha_g ~ exponential(4);
-  alpha_h ~ exponential(4);
-  // //  alpha_l ~ exponential(4); ///**
-  // alpha_r ~ exponential(4);
-  // alpha_s ~ exponential(4);
+  alpha_b ~ exponential(10); // exponential(1/10)
+  alpha_c_a ~ exponential(10); // exponential(1/scale) == exponential(rate)
+  alpha_c_b ~ exponential(10);
+  // alpha_c_j ~ exponential(10);
+  // alpha_g ~ exponential(10);
+  alpha_h ~ exponential(10);
+  // //  alpha_l ~ exponential(10); ///**
+  // alpha_r ~ exponential(10);
+  // alpha_s ~ exponential(10);
   
-  phi_obs_inv ~ normal(0, 10);
+  phi_obs_inv ~ std_normal();
   
   //// Priors for Parameters  
   b_log ~ normal(prior_b_log[1], prior_b_log[2]);
