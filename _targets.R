@@ -103,7 +103,7 @@ targets_settings <- list(
                prior_b_log = c(-3, 1),
                prior_c_a_log = c(-8, 2),
                prior_c_b_log = c(-7, 2),
-               prior_c_j_log = c(-9, 3),
+               prior_c_j_log = c(-10, 2),
                prior_g_log = cbind(Fagus = c(-6, 1), others = c(-6, 1)),
                prior_h_log = cbind(Fagus = c(-3, 1), others = c(-3, 1)),
                prior_l_log = c(4, 1),
@@ -563,7 +563,7 @@ targets_posterior_test <- list(
   
   ## Formatted posterior data stuctures
   tar_target(States_test,
-             formatStates(cmdstanfit = fit_test, statename = statename, data_stan_priors)),
+             formatStates(cmdstanfit = fit_test, statename = statename, data_stan_priors = data_stan_priors)),
   
   ## Plot
   tar_target(plots_test,
@@ -634,7 +634,7 @@ targets_posterior <- list(
   
   ## Formatted posterior data stuctures
   tar_target(States,
-             formatStates(cmdstanfit = fit, statename = statename, data_stan_priors),
+             formatStates(cmdstanfit = fit, statename = statename, data_stan_priors = data_stan_priors),
              pattern = map(fit), iteration = "list"),
   
   ## Plot
@@ -701,19 +701,19 @@ targets_posterior_env <- list(
   tar_target(summary_states_env,
            summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
   tar_target(Freq_converged_env,
-           summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors, path = dir_publish)),
+           summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
 
   ## Generate
   tar_target(residuals_env,
-             generateResiduals(cmdstanfit = fit_env, data_stan_priors, path = dir_publish)),
+             generateResiduals(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
   tar_target(Trajectories_avg_env,
-             generateTrajectories(cmdstanfit = fit_env, data_stan_priors, parname, locparname = parname_loc_env,
+             generateTrajectories(cmdstanfit = fit_env, data_stan_priors_env, parname, locparname = parname_loc_env,
                                   time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all")),
 
   
   ## Formatted posterior data stuctures
   tar_target(States_env,
-             formatStates(cmdstanfit = fit_env, data_stan_priors)),
+             formatStates(cmdstanfit = fit_env, statename = statename, data_stan_priors = data_stan_priors_env)),
   tar_target(Environmental_env,
              formatEnvironmental(cmdstanfit = fit_env, parname = parname_env,
                                  data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),

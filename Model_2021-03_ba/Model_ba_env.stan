@@ -512,7 +512,7 @@ parameters {
   
 
   //// Model parameters at loc level
-  // array[N_locs] vector[N_species] B_log_raw; ///@@
+  array[N_locs] vector[N_species] B_log_raw;
   array[N_locs] vector[N_species] C_a_log_raw;
   array[N_locs] vector[N_species] C_b_log_raw;
   array[N_locs] vector[N_species] C_j_log_raw;
@@ -523,25 +523,25 @@ parameters {
   array[N_locs] vector[N_species] S_log_raw;
 
   
-  // // vector<lower=0>[N_species] sigma_b; ///@@
+  // vector<lower=0>[N_species] sigma_b;
   // vector<lower=0>[N_species] sigma_c_a;
   // vector<lower=0>[N_species] sigma_c_b;
-  // vector<lower=0>[N_species] sigma_c_j;
-  // vector<lower=0>[N_species] sigma_g;
+  vector<lower=0>[N_species] sigma_c_j;
+  vector<lower=0>[N_species] sigma_g;
   // vector<lower=0>[N_species] sigma_h;
   // // vector<lower=0>[N_species] sigma_l; ///**
-  // vector<lower=0>[N_species] sigma_r;
-  // vector<lower=0>[N_species] sigma_s;
+  vector<lower=0>[N_species] sigma_r;
+  vector<lower=0>[N_species] sigma_s;
   
-  // vector<lower=0>[N_species] alpha_b; ///@@
+  vector<lower=0>[N_species] alpha_b;
   vector<lower=0>[N_species] alpha_c_a;
   vector<lower=0>[N_species] alpha_c_b;
-  vector<lower=0>[N_species] alpha_c_j;
-  vector<lower=0>[N_species] alpha_g;
+  // vector<lower=0>[N_species] alpha_c_j;
+  // vector<lower=0>[N_species] alpha_g;
   vector<lower=0>[N_species] alpha_h;
   // vector<lower=0>[N_species] alpha_l; ///**
-  vector<lower=0>[N_species] alpha_r;
-  vector<lower=0>[N_species] alpha_s;
+  // vector<lower=0>[N_species] alpha_r;
+  // vector<lower=0>[N_species] alpha_s;
   
 
   //// Dispersion
@@ -564,7 +564,7 @@ transformed parameters {
   array[N_locs] vector<lower=0>[N_pops] state_init;
   
   //// Model parameters at loc level
-  // array[N_locs] vector[N_species] B_log; ///@@
+  array[N_locs] vector[N_species] B_log;
   array[N_locs] vector[N_species] C_a_log;
   array[N_locs] vector[N_species] C_b_log;
   array[N_locs] vector[N_species] C_j_log;
@@ -581,15 +581,16 @@ transformed parameters {
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
     // L_loc[loc, ] = exp(L_log[loc, ] + L_smooth_log[loc, ]); ///** version with random L
     
-    // B_log[loc,] = b_log + B_log_raw[loc,] .* alpha_b; ///@@
-    C_a_log[loc,] = c_a_log + C_a_log_raw[loc,] .* alpha_c_a; // alternatively, for ridge use sigma_*
+    //// Lasso with alpha_*, ridge with sigma_*
+    B_log[loc,] = b_log + B_log_raw[loc,] .* alpha_b;
+    C_a_log[loc,] = c_a_log + C_a_log_raw[loc,] .* alpha_c_a;
     C_b_log[loc,] = c_b_log + C_b_log_raw[loc,] .* alpha_c_b;
-    C_j_log[loc,] = c_j_log + C_j_log_raw[loc,] .* alpha_c_j;
-    G_log[loc,] = g_log + G_log_raw[loc,] .* alpha_g;
+    C_j_log[loc,] = c_j_log + C_j_log_raw[loc,] .* sigma_c_j;
+    G_log[loc,] = g_log + G_log_raw[loc,] .* sigma_g;
     H_log[loc,] = h_log + H_log_raw[loc,] .* alpha_h;
     // L_log[loc,] = l_log + L_log_raw[loc,] .* alpha_l; ///**
-    R_log[loc,] = r_log + R_log_raw[loc,] .* alpha_r;
-    S_log[loc,] = s_log + S_log_raw[loc,] .* alpha_s;
+    R_log[loc,] = r_log + R_log_raw[loc,] .* sigma_r;
+    S_log[loc,] = s_log + S_log_raw[loc,] .* sigma_s;
     
     //// Non-centered parameterization of Parameter p_log
     // P_log ~ p_log + P_log_raw * alpha_p
@@ -626,25 +627,25 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  // // sigma_b ~ normal(0, 0.5); ///@@
+  // sigma_b ~ normal(0, 0.5);
   // sigma_c_a ~ normal(0, 0.5);
   // sigma_c_b ~ normal(0, 0.5);
-  // sigma_c_j ~ normal(0, 0.5);
-  // sigma_g ~ normal(0, 0.5);
+  sigma_c_j ~ normal(0, 0.5);
+  sigma_g ~ normal(0, 0.5);
   // sigma_h ~ normal(0, 0.5);
   // // sigma_l ~ normal(0, 0.5); ///**
-  // sigma_r ~ normal(0, 0.5);
-  // sigma_s ~ normal(0, 0.5);
+  sigma_r ~ normal(0, 0.5);
+  sigma_s ~ normal(0, 0.5);
   
-  // alpha_b ~ exponential(1/0.5); ///@@
-  alpha_c_a ~ exponential(2); // exponential(1/scale) == exponential(rate)
-  alpha_c_b ~ exponential(2);
-  alpha_c_j ~ exponential(2);
-  alpha_g ~ exponential(2);
-  alpha_h ~ exponential(2);
-  // alpha_l ~ exponential(2); ///**
-  alpha_r ~ exponential(2);
-  alpha_s ~ exponential(2);
+  alpha_b ~ exponential(1/0.25);
+  alpha_c_a ~ exponential(4); // exponential(1/scale) == exponential(rate)
+  alpha_c_b ~ exponential(4);
+  // alpha_c_j ~ exponential(4);
+  // alpha_g ~ exponential(4);
+  alpha_h ~ exponential(4);
+  // //  alpha_l ~ exponential(4); ///**
+  // alpha_r ~ exponential(4);
+  // alpha_s ~ exponential(4);
   
   phi_obs_inv ~ normal(0, 10);
   
@@ -666,7 +667,7 @@ model {
     state_init[l] ~ gamma(alpha_init[l], beta_init[l]); // state_init is just a linear transform. -> No Jacobian correction necessary.
     
     //// Hierarchical distribution of parameters
-    // B_log_raw[l] ~ std_normal(); ///@@
+    B_log_raw[l] ~ std_normal();
     C_a_log_raw[l] ~ std_normal();
     C_b_log_raw[l] ~ std_normal();
     C_j_log_raw[l] ~ std_normal();
