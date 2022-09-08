@@ -199,41 +199,7 @@ functions {
     vector[N_spec] sum_ko_2_r = sum_ko_1_b;
     vector[N_spec] sum_ko_2_s = sum_ko_1_b;
     
-    vector[N_spec] sum_ko_1_prop_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_b_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_c_a = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_c_j = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_g = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_h = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_l = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_r = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_prop_s = sum_ko_1_b;
     
-    vector[N_spec] sum_ko_2_prop_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_b_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_c_a = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_c_j = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_g = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_h = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_l = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_r = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_prop_s = sum_ko_1_b;
-    
-    
-    vector[N_spec] sum_switch_b = sum_ko_1_b;
-    vector[N_spec] sum_switch_b_c_b = sum_ko_1_b;
-    vector[N_spec] sum_switch_c_a = sum_ko_1_b;
-    vector[N_spec] sum_switch_c_b = sum_ko_1_b;
-    vector[N_spec] sum_switch_c_j = sum_ko_1_b;
-    vector[N_spec] sum_switch_g = sum_ko_1_b;
-    vector[N_spec] sum_switch_h = sum_ko_1_b;
-    vector[N_spec] sum_switch_l = sum_ko_1_b;
-    vector[N_spec] sum_switch_r = sum_ko_1_b;
-    vector[N_spec] sum_switch_s = sum_ko_1_b;
-
-
     /// initialize while loop conditions
     vector[N_spec] J = state_0[i_j];
     vector[N_spec] A = state_0[i_a];
@@ -289,28 +255,6 @@ functions {
         vector[N_spec] ba_ko_2_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [r[1], 0]', s, ba_a_avg, ba_a_upper, N_spec);
         vector[N_spec] ba_ko_2_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [s[1], 0]', ba_a_avg, ba_a_upper, N_spec);
         
-
-        vector[2] switch_b = [b[2], b[1]]'; // reversal of the parameter vector with range 2:1 does not seem to work
-        vector[2] switch_c_a = [c_a[2], c_a[1]]';
-        vector[2] switch_c_b = [c_b[2], c_b[1]]';
-        vector[2] switch_c_j = [c_j[2], c_j[1]]';
-        vector[2] switch_g = [g[2], g[1]]';
-        vector[2] switch_h = [h[2], h[1]]';
-        vector[2] switch_l = [l[2], l[1]]';
-        vector[2] switch_r = [r[2], r[1]]';
-        vector[2] switch_s = [s[2], s[1]]';
-        
-        vector[N_spec] ba_switch_b = simulate_1(J, A, B, switch_b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_b_c_b = simulate_1(J, A, B, switch_b, c_a, switch_c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_c_a  = simulate_1(J, A, B, b, switch_c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_c_b = simulate_1(J, A, B, b, c_a, switch_c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_c_j = simulate_1(J, A, B, b, c_a, c_b, switch_c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_g = simulate_1(J, A, B, b, c_a, c_b, c_j, switch_g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, switch_h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, switch_l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, switch_r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_switch_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, switch_s, ba_a_avg, ba_a_upper, N_spec);
-        
         
         /// Summed up contributions
         sum_ko_1_b += ba_ko_none - ba_ko_1_b;
@@ -336,45 +280,6 @@ functions {
         sum_ko_2_s += ba_ko_none - ba_ko_2_s;
         
 
-        /// Summed up contributions of the difference
-        sum_switch_b += ba_ko_none - ba_switch_b;
-        sum_switch_b_c_b += ba_ko_none - ba_switch_b_c_b;
-        sum_switch_c_a += ba_ko_none - ba_switch_c_a;
-        sum_switch_c_b += ba_ko_none - ba_switch_c_b;
-        sum_switch_c_j += ba_ko_none - ba_switch_c_j;
-        sum_switch_g += ba_ko_none - ba_switch_g;
-        sum_switch_h += ba_ko_none - ba_switch_h;
-        sum_switch_l += ba_ko_none - ba_switch_l;
-        sum_switch_r += ba_ko_none - ba_switch_r;
-        sum_switch_s += ba_ko_none - ba_switch_s;
-        
-        
-        /// Summed up proportional contributions
-	      real ba_sum_rate = sum(ba_ko_none) / BA_sum;
-        
-	      sum_ko_1_prop_b     += (ba_ko_none ./ ba_ko_1_b) / ba_sum_rate;
-	      sum_ko_1_prop_b_c_b += (ba_ko_none ./ ba_ko_1_b_c_b) / ba_sum_rate;
-	      sum_ko_1_prop_c_a   += (ba_ko_none ./ ba_ko_1_c_a) / ba_sum_rate;
-	      sum_ko_1_prop_c_b   += (ba_ko_none ./ ba_ko_1_c_b) / ba_sum_rate;
-	      sum_ko_1_prop_c_j   += (ba_ko_none ./ ba_ko_1_c_j) / ba_sum_rate;
-	      sum_ko_1_prop_g     += (ba_ko_none ./ ba_ko_1_g) / ba_sum_rate;
-	      sum_ko_1_prop_h     += (ba_ko_none ./ ba_ko_1_h) / ba_sum_rate;
-	      sum_ko_1_prop_l     += (ba_ko_none ./ ba_ko_1_l) / ba_sum_rate;
-	      sum_ko_1_prop_r     += (ba_ko_none ./ ba_ko_1_r) / ba_sum_rate;
-	      sum_ko_1_prop_s     += (ba_ko_none ./ ba_ko_1_s) / ba_sum_rate;
-        
-	      sum_ko_2_prop_b     += (ba_ko_none ./ ba_ko_2_b) / ba_sum_rate;
-	      sum_ko_2_prop_b_c_b += (ba_ko_none ./ ba_ko_2_b_c_b) / ba_sum_rate;
-	      sum_ko_2_prop_c_a   += (ba_ko_none ./ ba_ko_2_c_a) / ba_sum_rate;
-	      sum_ko_2_prop_c_b   += (ba_ko_none ./ ba_ko_2_c_b) / ba_sum_rate;
-	      sum_ko_2_prop_c_j   += (ba_ko_none ./ ba_ko_2_c_j) / ba_sum_rate;
-	      sum_ko_2_prop_g     += (ba_ko_none ./ ba_ko_2_g) / ba_sum_rate;
-	      sum_ko_2_prop_h     += (ba_ko_none ./ ba_ko_2_h) / ba_sum_rate;
-	      sum_ko_2_prop_l     += (ba_ko_none ./ ba_ko_2_l) / ba_sum_rate;
-	      sum_ko_2_prop_r     += (ba_ko_none ./ ba_ko_2_r) / ba_sum_rate;
-	      sum_ko_2_prop_s     += (ba_ko_none ./ ba_ko_2_s) / ba_sum_rate;
-          
-        
       }  // end if i < fixiter_min
       
       
@@ -394,14 +299,7 @@ functions {
                                        //// when considering the whole period, use i, when considering only the first period use fixiter_min as a denominator here
                                        // indices 7–26
                                        sum_ko_1_b/fixiter_min, sum_ko_1_b_c_b/fixiter_min, sum_ko_1_c_a/fixiter_min, sum_ko_1_c_b/fixiter_min, sum_ko_1_c_j/fixiter_min, sum_ko_1_g/fixiter_min, sum_ko_1_h/fixiter_min, sum_ko_1_l/fixiter_min, sum_ko_1_r/fixiter_min, sum_ko_1_s/fixiter_min,
-                                       sum_ko_2_b/fixiter_min, sum_ko_2_b_c_b/fixiter_min, sum_ko_2_c_a/fixiter_min, sum_ko_2_c_b/fixiter_min, sum_ko_2_c_j/fixiter_min, sum_ko_2_g/fixiter_min, sum_ko_2_h/fixiter_min, sum_ko_2_l/fixiter_min, sum_ko_2_r/fixiter_min, sum_ko_2_s/fixiter_min,
-                                       
-                                       // indices 27–46
-                                       sum_ko_1_prop_b/fixiter_min, sum_ko_1_prop_b_c_b/fixiter_min, sum_ko_1_prop_c_a/fixiter_min, sum_ko_1_prop_c_b/fixiter_min, sum_ko_1_prop_c_j/fixiter_min, sum_ko_1_prop_g/fixiter_min, sum_ko_1_prop_h/fixiter_min, sum_ko_1_prop_l/fixiter_min, sum_ko_1_prop_r/fixiter_min, sum_ko_1_prop_s/fixiter_min,
-                                       sum_ko_2_prop_b/fixiter_min, sum_ko_2_prop_b_c_b/fixiter_min, sum_ko_2_prop_c_a/fixiter_min, sum_ko_2_prop_c_b/fixiter_min, sum_ko_2_prop_c_j/fixiter_min, sum_ko_2_prop_g/fixiter_min, sum_ko_2_prop_h/fixiter_min, sum_ko_2_prop_l/fixiter_min, sum_ko_2_prop_r/fixiter_min, sum_ko_2_prop_s/fixiter_min,
-                                       
-                                       // indices 47–56
-                                       sum_switch_b/fixiter_min, sum_switch_b_c_b/fixiter_min, sum_switch_c_a/fixiter_min, sum_switch_c_b/fixiter_min, sum_switch_c_j/fixiter_min, sum_switch_g/fixiter_min, sum_switch_h/fixiter_min, sum_switch_l/fixiter_min, sum_switch_r/fixiter_min, sum_switch_s/fixiter_min};
+                                       sum_ko_2_b/fixiter_min, sum_ko_2_b_c_b/fixiter_min, sum_ko_2_c_a/fixiter_min, sum_ko_2_c_b/fixiter_min, sum_ko_2_c_j/fixiter_min, sum_ko_2_g/fixiter_min, sum_ko_2_h/fixiter_min, sum_ko_2_l/fixiter_min, sum_ko_2_r/fixiter_min, sum_ko_2_s/fixiter_min};
                                     
     return fix;
   } 
@@ -489,7 +387,7 @@ transformed data {
   
   //// Data for generated quantities
   int N_fix = 6; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter}
-  int N_fix_contributions = 56; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter, x * 2 * (9+1) diff_ko_parameter }
+  int N_fix_contributions = 26; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter, 2 * (9+1) diff_ko_parameter }
   
 }
 
@@ -627,27 +525,27 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  // sigma_b ~ normal(0, 0.5);
-  // sigma_c_a ~ normal(0, 0.5);
-  // sigma_c_b ~ normal(0, 0.5);
-  sigma_c_j ~ normal(0, 0.5);
-  sigma_g ~ normal(0, 0.5);
-  // sigma_h ~ normal(0, 0.5);
-  // // sigma_l ~ normal(0, 0.5); ///**
-  sigma_r ~ normal(0, 0.5);
-  sigma_s ~ normal(0, 0.5);
+  // sigma_b ~ normal(0, 0.2);
+  // sigma_c_a ~ normal(0, 0.2);
+  // sigma_c_b ~ normal(0, 0.2);
+  sigma_c_j ~ normal(0, 0.2);
+  sigma_g ~ normal(0, 0.2);
+  // sigma_h ~ normal(0, 0.2);
+  // // sigma_l ~ normal(0, 0.2); ///**
+  sigma_r ~ normal(0, 0.2);
+  sigma_s ~ normal(0, 0.2);
   
-  alpha_b ~ exponential(10); // exponential(1/10)
-  alpha_c_a ~ exponential(10); // exponential(1/scale) == exponential(rate)
-  alpha_c_b ~ exponential(10);
-  // alpha_c_j ~ exponential(10);
-  // alpha_g ~ exponential(10);
-  alpha_h ~ exponential(10);
-  // //  alpha_l ~ exponential(10); ///**
-  // alpha_r ~ exponential(10);
-  // alpha_s ~ exponential(10);
+  alpha_b ~ exponential(50); // exponential(1/50)
+  alpha_c_a ~ exponential(50); // exponential(1/scale) == exponential(rate)
+  alpha_c_b ~ exponential(50);
+  // alpha_c_j ~ exponential(50);
+  // alpha_g ~ exponential(50);
+  alpha_h ~ exponential(50);
+  // //  alpha_l ~ exponential(50); ///**
+  // alpha_r ~ exponential(50);
+  // alpha_s ~ exponential(50);
   
-  phi_obs_inv ~ std_normal();
+  phi_obs_inv ~ normal(0, 10);
   
   //// Priors for Parameters  
   b_log ~ normal(prior_b_log[1], prior_b_log[2]);
@@ -785,40 +683,6 @@ generated quantities {
   array[N_locs] vector[N_species] sum_ko_2_r_fix = J_init;
   array[N_locs] vector[N_species] sum_ko_2_s_fix = J_init;
   
-  array[N_locs] vector[N_species] sum_ko_1_prop_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_b_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_c_a_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_c_j_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_g_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_h_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_l_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_r_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_prop_s_fix = J_init;
-  
-  array[N_locs] vector[N_species] sum_ko_2_prop_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_b_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_c_a_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_c_j_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_g_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_h_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_l_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_r_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_prop_s_fix = J_init;
-  
-  
-  array[N_locs] vector[N_species] sum_switch_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_switch_b_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_switch_c_a_fix = J_init;
-  array[N_locs] vector[N_species] sum_switch_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_switch_c_j_fix = J_init;
-  array[N_locs] vector[N_species] sum_switch_g_fix = J_init;
-  array[N_locs] vector[N_species] sum_switch_h_fix = J_init;
-  array[N_locs] vector[N_species] sum_switch_l_fix = J_init;
-  array[N_locs] vector[N_species] sum_switch_r_fix = J_init;
-  array[N_locs] vector[N_species] sum_switch_s_fix = J_init;
-
   int fixiter_max = 5000;
   int fixiter_min = 250;
 
@@ -906,41 +770,7 @@ generated quantities {
         sum_ko_2_r_fix[loc] = Fix[loc, 25];
         sum_ko_2_s_fix[loc] = Fix[loc, 26];
         
-        sum_ko_1_prop_b_fix[loc] = Fix[loc, 27];
-        sum_ko_1_prop_b_c_b_fix[loc] = Fix[loc, 28];
-        sum_ko_1_prop_c_a_fix[loc] = Fix[loc, 29];
-        sum_ko_1_prop_c_b_fix[loc] = Fix[loc, 30];
-        sum_ko_1_prop_c_j_fix[loc] = Fix[loc, 31];
-        sum_ko_1_prop_g_fix[loc] = Fix[loc, 32];
-        sum_ko_1_prop_h_fix[loc] = Fix[loc, 33];
-        sum_ko_1_prop_l_fix[loc] = Fix[loc, 34];
-        sum_ko_1_prop_r_fix[loc] = Fix[loc, 35];
-        sum_ko_1_prop_s_fix[loc] = Fix[loc, 36];
 
-        sum_ko_2_prop_b_fix[loc] = Fix[loc, 37];
-        sum_ko_2_prop_b_c_b_fix[loc] = Fix[loc, 38];
-        sum_ko_2_prop_c_a_fix[loc] = Fix[loc, 39];
-        sum_ko_2_prop_c_b_fix[loc] = Fix[loc, 40];
-        sum_ko_2_prop_c_j_fix[loc] = Fix[loc, 41];
-        sum_ko_2_prop_g_fix[loc] = Fix[loc, 42];
-        sum_ko_2_prop_h_fix[loc] = Fix[loc, 43];
-        sum_ko_2_prop_l_fix[loc] = Fix[loc, 44];
-        sum_ko_2_prop_r_fix[loc] = Fix[loc, 45];
-        sum_ko_2_prop_s_fix[loc] = Fix[loc, 46];
-        
-        
-        sum_switch_b_fix[loc] = Fix[loc, 47];
-        sum_switch_b_c_b_fix[loc] = Fix[loc, 48];
-        sum_switch_c_a_fix[loc] = Fix[loc, 49];
-        sum_switch_c_b_fix[loc] = Fix[loc, 50];
-        sum_switch_c_j_fix[loc] = Fix[loc, 51];
-        sum_switch_g_fix[loc] = Fix[loc, 52];
-        sum_switch_h_fix[loc] = Fix[loc, 53];
-        sum_switch_l_fix[loc] = Fix[loc, 54];
-        sum_switch_r_fix[loc] = Fix[loc, 55];
-        sum_switch_s_fix[loc] = Fix[loc, 56];
-        
-        
     	  //// Booleans at fixpoint
         dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
         major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%

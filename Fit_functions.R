@@ -625,14 +625,12 @@ selectOffset <- function(offsetname, data_stan_priors) {
 }
 
 
-
 ## fitModel --------------------------------
-# tar_make("data_stan")
 # data_stan <- tar_read("data_stan_priors_offset")
-# model <- testmodel <- tar_read("model_test")
+# model <- testmodel <- tar_read("model_test"); model <- tar_read("model_env")
 # fitpath  <- tar_read("dir_fit")
 fitModel <- function(model, data_stan, gpq = FALSE,
-                     method = c("mcmc", "chkptstanr","variational", "sim"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
+                     method = c("mcmc", "chkptstanr","variational", "sim", "diagnose"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
                      fitpath = dir_fit, ...) {
   
   require(cmdstanr)
@@ -702,6 +700,14 @@ fitModel <- function(model, data_stan, gpq = FALSE,
                         output_dir = fitpath,
                         # output_basename = ,
                         init = inits, iter_sampling = iter_sampling)
+  }
+  
+  else if (match.arg(method) == "diagnose") {
+    
+    fit <- model$diagnose(data = data_stan,
+                          output_dir = fitpath,
+                          # output_basename = ,
+                          init = inits)
   }
   
   basename <- fit$output_files()[1] %>%

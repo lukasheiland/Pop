@@ -829,11 +829,11 @@ plotStanfit <- function(stanfit, exclude, path, basename,
 
 
 ## plotParameters --------------------------------
-# stanfit  <- tar_read("stanfit_test")
+# stanfit  <- tar_read("stanfit_env")
 # exclude <- tar_read("exclude")
 # parname <- tar_read("parname_plotorder")
 # path  <- tar_read("dir_fit")
-# basename  <- tar_read("basename_fit_test")
+# basename  <- tar_read("basename_fit_env")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotParameters <- function(stanfit, parname, exclude, path, basename,
@@ -905,14 +905,15 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   parname <- c(parname, paste0(parname, "_prior"))
   
   bayesplot::color_scheme_set("gray")
-  areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
+  ## areas for all parameters (the exclude might not be complete)
+  # areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
   
   ridgedata <- parallel::mclapply(parnamestart, getRidgedata, mc.cores = getOption("mc.cores", 9L))
   ridgeplots <- lapply(ridgedata, plotRidges)
   ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots,  align = "v")
   legendplot <- plotRidges(ridgedata[[1]], plotlegend = TRUE)
   
-  plots <- list(ridgeplotgrid = ridgeplotgrid, areasplot = areasplot, ridge_legendplot = legendplot)
+  plots <- list(ridgeplotgrid = ridgeplotgrid, ridge_legendplot = legendplot) # areasplot = areasplot
   
   mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", height = 10, width = 12), plots, names(plots))
   message("Parameter plots complete.")
@@ -1791,6 +1792,74 @@ plotPredominant <- function(States, majorname,
          dev = "pdf", height = 8, width = 5)
   
   return(plot_predominant)
+}
+
+
+## plotBinary --------------------------------
+# parname  <- c(tar_read("parname_plotorder"), b_c_b = "b_c_b_log")
+# cmdstanfit  <- tar_read("fit_env")
+# path  <- tar_read("dir_publish")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+
+plotBinary <- function(cmdstanfit, parname, path,
+                       color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  
+  n_species <- 2 ## is also used in functions below
+  parorder <- names(parname)
+  varname <- c(parname, "major_fix")
+  # parname <- str_remove(setdiff(parname, "k_log"), "_log")
+  
+  C <- cmdstanfit$draws(variables = varname) %>%
+    as_draws_rvars()
+  
+  I <- bayesplot::mcmc_intervals_data(C, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
+    mutate(p = parameter,
+           d = major_fix,
+           parameter = str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
+           tax = tax,
+           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h", "b_c_b"),)
+    ) %>%
+    mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
+    mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
+    mutate(parameter = ordered(parameter, parorder)) %>%
+    
+    ##???
+    mutate(parameter = fct_reorder(parameter, as.numeric(stage))) %>%
+    
+    ## Letter Positions
+    group_by(tax) %>%
+    mutate(xletterpos_h = max(hh) * 0.85, ## for !plotprop
+           xletterpos_l = min(ll) * 1.01) %>% ## for plotprop
+    
+    arrange(stage, parameter)
+  
+  
+  pos <- position_nudge(y = (as.integer(I$tax) - 1.5) * 0.3)
+  
+  plot_binary <- ggplot(I, aes(x = d, y = parameter, yend = parameter,
+                               color = tax, group = stage)) + 
+    geom_linerange(aes(xmin = l, xmax = h), size = 2.6, position = pos) +
+    geom_segment(aes(x = ll, xend = hh), size = 1.2, lineend = "round", position = pos) +
+    geom_point(color = "black", position = pos, size = 1.7) +
+    coord_flip() +
+    # geom_vline(xintercept = if (plotprop) 1 else 0, linetype = 3, size = 0.6, col = "#222222") +
+    # geom_hline(yintercept = c(5, 7), linetype = 3, size = 0.6, col = "#222222") + ## lines through g/h
+    
+    facet_wrap(~tax,
+               # scales = "free",
+               labeller = labeller(tax = function(tax) paste(tax))) +
+    
+    themefun() +
+    scale_color_manual(values = color)
+  
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_binary", ".pdf"),
+         plot_binary, dev = "pdf", height = 8, width = 12)
+  
+  return(plot_binary)
 }
 
 
