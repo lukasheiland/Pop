@@ -100,15 +100,15 @@ targets_settings <- list(
   
   tar_target(weakpriors_env,
              list(
-               prior_b_log = c(-4, 1),
-               prior_c_a_log = c(-9, 1),
-               prior_c_b_log = c(-8, 1),
+               prior_b_log = c(-3, 1),
+               prior_c_a_log = c(-8, 1),
+               prior_c_b_log = c(-7, 1),
                prior_c_j_log = c(-10, 2),
-               prior_g_log = cbind(Fagus = c(-6, 1), others = c(-6, 1)),
+               prior_g_log = cbind(Fagus = c(-5, 1), others = c(-5, 1)),
                prior_h_log = cbind(Fagus = c(-3, 1), others = c(-3, 1)),
                prior_l_log = c(4, 1),
                prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-5, 1)
+               prior_s_log = c(-4, 1)
              )
   ),
   

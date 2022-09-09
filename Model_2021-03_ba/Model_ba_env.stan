@@ -545,7 +545,7 @@ model {
   // alpha_r ~ exponential(50);
   // alpha_s ~ exponential(50);
   
-  phi_obs_inv ~ normal(0, 10);
+  phi_obs_inv ~ normal(0, 20);
   
   //// Priors for Parameters  
   b_log ~ normal(prior_b_log[1], prior_b_log[2]);

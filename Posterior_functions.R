@@ -1811,8 +1811,7 @@ plotBinary <- function(cmdstanfit, parname, path,
   n_species <- 2 ## is also used in functions below
   parorder <- names(parname)
   varname <- c(parname, "major_fix")
-  # parname <- str_remove(setdiff(parname, "k_log"), "_log")
-  
+
   C <- cmdstanfit$draws(variables = varname) %>%
     as_draws_rvars()
   
