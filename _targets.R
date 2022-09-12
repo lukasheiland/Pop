@@ -100,7 +100,7 @@ targets_settings <- list(
   
   tar_target(weakpriors_env,
              list(
-               prior_b_log = c(-3, 1),
+               prior_b_log = c(-4, 1),
                prior_c_a_log = c(-8, 1),
                prior_c_b_log = c(-7, 1),
                prior_c_j_log = c(-10, 2),
@@ -708,7 +708,7 @@ targets_posterior_env <- list(
              generateResiduals(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
   tar_target(Trajectories_avg_env,
              generateTrajectories(cmdstanfit = fit_env, data_stan_priors_env, parname, locparname = parname_loc_env,
-                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "locsperdraws_all")),
+                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "drawsperloc_all")),
 
   
   ## Formatted posterior data stuctures
@@ -753,7 +753,12 @@ targets_posterior_env <- list(
              plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   tar_target(plot_contributions_env,
              plotContributions(cmdstanfit = fit_env, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T,
-                               color = twocolors, themefun = themefunction))
+                               color = twocolors, themefun = themefunction)),
+  tar_target(plots_states_env,
+             plotStates(States_env, allstatevars = c("ba_init", "ba_fix"),
+                        path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+  tar_target(plot_trajectories_avg_env,
+             plotTrajectories(Trajectories_avg_env, thicker = T, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction))
   
   # tar_target(plots_env,
   #            plotStanfit(stanfit = stanfit_env, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
@@ -765,11 +770,6 @@ targets_posterior_env <- list(
   #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, contribution = "sum_ko_prop", color = twocolors, themefun = themefunction)),
   # tar_target(plot_contributions_switch_env,
   #            plotContributions(cmdstanfit = fit_env, parname = parname_plotorder, plotlog = T, path = dir_publish, contribution = "sum_switch", color = twocolors, themefun = themefunction)),
-  # tar_target(plots_states_env,
-  #            plotStates(States_env, allstatevars = c("ba_init", "ba_fix"),
-  #                        path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
-  # tar_target(plot_trajectories_avg_env,
-  #            plotTrajectories(Trajectories_avg_env, thicker = T, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   # tar_target(animation_trajectories_avg_env,
   #            animateTrajectories(plot_trajectories_avg_env, path = dir_publish, basename = basename_fit_env))
 )

@@ -437,10 +437,10 @@ generatePredictiveChecks <- function(cmdstanfit, data_stan_priors_offset, path) 
 
 
 ## generateTrajectories --------------------------------
-# cmdstanfit <- tar_read("fit_test")
+# cmdstanfit <- tar_read("fit_env")
 # parname <- tar_read("parname")
-# data_stan_priors <- tar_read("data_stan_priors")
-# locparname <- tar_read("parname_loc")
+# data_stan_priors <- tar_read("data_stan_priors_env")
+# locparname <- tar_read("parname_loc_env")
 
 generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = c("state_init", "L_loc"),
                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1,
@@ -451,7 +451,8 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   parname <- setdiff(parname, c("phi_obs", "sigma_k_loc")) %>%
     intersect(varname_draws)
   parname_sans_log <- gsub("_log$", "", parname)
-  locparname_avg <- gsub("_log$", "", locparname) %>% paste0("avg_", .)
+  locparname_avg <- gsub("_log$", "", locparname) %>% paste0("avg_", .) %>%
+    intersect(varname_draws)
   
   ### iterateModel --------------------------------
   #
@@ -645,46 +646,49 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     }
     
     ## Assign local parameters to draws, adopt manually if necessary
-    pars <- lapply(1:length(pars), function(i) within(pars[[i]], l <- c(locpars$L_loc[i,])))
+    pars <- lapply(1:length(pars), function(i) within(pars[[i]], { l <- c(locpars$L_loc[i,])
+                                                                          ## HERE!
+                                                                          }
+                                                      ))
     
     return( lapply(1:length(pars), function(i) iterateModel(c(locpars$state_init[i,]), pars = pars[[i]], time)) )
+    }
+    
+    ### iterateLocs -------------------------
+    iterateLocs <- function(i, lp, p, t, avgperlocs) {
+      iterateModel_draws(locpars = lapply(lp, function(x) x[i,]), pars = p, time = t, averageperlocs = avgperlocs)
+    }
+    
+    
+    averageperlocs <- match.arg(average) == "drawsperlocs_all"
+    sims <- future_sapply(1:n_locs, iterateLocs,
+                          lp = draws_loc, p = pars, t = time, avg = averageperlocs, simplify = F) # a nested list[locs, draws] of matrices[times]
+    sims <- lapply(sims, bind_rows, .id = "draw")
+    Sims <- bind_rows(sims, .id = "loc")
+    
+    Quantiles_init <- Quantiles_init %>% 
+      mutate(pop = as.character(pop),
+             stage = fct_recode(pop, "J" = "1", "J" = "2", "A" = "3", "A" = "4", "B" = "5", "B" = "6"),
+             tax = as.integer(fct_recode(pop, "1" = "1", "2" = "2", "1" = "3", "2" = "4", "1" = "5", "2" = "6"))) %>%
+      rename(draw = ".draw") %>%
+      dplyr::select(-c(".chain", "pop", ".iteration"))
+    
+    Sims <- Sims %>%
+      group_by(loc, draw) %>%
+      mutate(diff = abundance - c(NA, abundance[1:(n()-1)]),
+             absdiff = abs(diff),
+             isconverged = replace_na(absdiff <= data_stan_priors$tolerance_fix, F),
+             isflat = replace_na(absdiff <= data_stan_priors$tolerance_fix * 10, F),
+             time_fix = first(time[isconverged]),
+             time_flat = first(time[isflat]),
+             state_fix = first(abundance[isconverged]),
+             state_flat = first(abundance[isflat])) %>%
+      ungroup() %>%
+      mutate(draw = as.integer(draw)) %>%
+      left_join(Quantiles_init, by = c("draw", "stage", "tax"))
+    
+    return(Sims)
   }
-  
-  ### iterateLocs -------------------------
-  iterateLocs <- function(i, lp, p, t, avgperlocs) {
-    iterateModel_draws(locpars = lapply(lp, function(x) x[i,]), pars = p, time = t, averageperlocs = avgperlocs)
-  }
-  
-  
-  averageperlocs <- match.arg(average) == "drawsperlocs_all"
-  sims <- future_sapply(1:n_locs, iterateLocs,
-                        lp = draws_loc, p = pars, t = time, avg = averageperlocs, simplify = F) # a nested list[locs, draws] of matrices[times]
-  sims <- lapply(sims, bind_rows, .id = "draw")
-  Sims <- bind_rows(sims, .id = "loc")
-  
-  Quantiles_init <- Quantiles_init %>% 
-    mutate(pop = as.character(pop),
-           stage = fct_recode(pop, "J" = "1", "J" = "2", "A" = "3", "A" = "4", "B" = "5", "B" = "6"),
-           tax = as.integer(fct_recode(pop, "1" = "1", "2" = "2", "1" = "3", "2" = "4", "1" = "5", "2" = "6"))) %>%
-    rename(draw = ".draw") %>%
-    dplyr::select(-c(".chain", "pop", ".iteration"))
-  
-  Sims <- Sims %>%
-    group_by(loc, draw) %>%
-    mutate(diff = abundance - c(NA, abundance[1:(n()-1)]),
-           absdiff = abs(diff),
-           isconverged = replace_na(absdiff <= data_stan_priors$tolerance_fix, F),
-           isflat = replace_na(absdiff <= data_stan_priors$tolerance_fix * 10, F),
-           time_fix = first(time[isconverged]),
-           time_flat = first(time[isflat]),
-           state_fix = first(abundance[isconverged]),
-           state_flat = first(abundance[isflat])) %>%
-    ungroup() %>%
-    mutate(draw = as.integer(draw)) %>%
-    left_join(Quantiles_init, by = c("draw", "stage", "tax"))
-  
-  return(Sims)
-}
 
 
 ## selectParnameEnvironmental --------------------------------

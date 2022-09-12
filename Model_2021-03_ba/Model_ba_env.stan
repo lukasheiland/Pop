@@ -421,22 +421,22 @@ parameters {
   array[N_locs] vector[N_species] S_log_raw;
 
   
-  // vector<lower=0>[N_species] sigma_b;
-  // vector<lower=0>[N_species] sigma_c_a;
-  // vector<lower=0>[N_species] sigma_c_b;
+  vector<lower=0>[N_species] sigma_b;
+  vector<lower=0>[N_species] sigma_c_a;
+  vector<lower=0>[N_species] sigma_c_b;
   vector<lower=0>[N_species] sigma_c_j;
   vector<lower=0>[N_species] sigma_g;
-  // vector<lower=0>[N_species] sigma_h;
+  vector<lower=0>[N_species] sigma_h;
   // // vector<lower=0>[N_species] sigma_l; ///**
   vector<lower=0>[N_species] sigma_r;
   vector<lower=0>[N_species] sigma_s;
   
-  vector<lower=0>[N_species] alpha_b;
-  vector<lower=0>[N_species] alpha_c_a;
-  vector<lower=0>[N_species] alpha_c_b;
+  // vector<lower=0>[N_species] alpha_b;
+  // vector<lower=0>[N_species] alpha_c_a;
+  // vector<lower=0>[N_species] alpha_c_b;
   // vector<lower=0>[N_species] alpha_c_j;
   // vector<lower=0>[N_species] alpha_g;
-  vector<lower=0>[N_species] alpha_h;
+  // vector<lower=0>[N_species] alpha_h;
   // vector<lower=0>[N_species] alpha_l; ///**
   // vector<lower=0>[N_species] alpha_r;
   // vector<lower=0>[N_species] alpha_s;
@@ -480,12 +480,12 @@ transformed parameters {
     // L_loc[loc, ] = exp(L_log[loc, ] + L_smooth_log[loc, ]); ///** version with random L
     
     //// Lasso with alpha_*, ridge with sigma_*
-    B_log[loc,] = b_log + B_log_raw[loc,] .* alpha_b;
-    C_a_log[loc,] = c_a_log + C_a_log_raw[loc,] .* alpha_c_a;
-    C_b_log[loc,] = c_b_log + C_b_log_raw[loc,] .* alpha_c_b;
+    B_log[loc,] = b_log + B_log_raw[loc,] .* sigma_b;
+    C_a_log[loc,] = c_a_log + C_a_log_raw[loc,] .* sigma_c_a; // .* alpha_c_a;
+    C_b_log[loc,] = c_b_log + C_b_log_raw[loc,] .* sigma_c_b; // .* alpha_c_b;
     C_j_log[loc,] = c_j_log + C_j_log_raw[loc,] .* sigma_c_j;
     G_log[loc,] = g_log + G_log_raw[loc,] .* sigma_g;
-    H_log[loc,] = h_log + H_log_raw[loc,] .* alpha_h;
+    H_log[loc,] = h_log + H_log_raw[loc,] .* sigma_h; // alpha_h
     // L_log[loc,] = l_log + L_log_raw[loc,] .* alpha_l; ///**
     R_log[loc,] = r_log + R_log_raw[loc,] .* sigma_r;
     S_log[loc,] = s_log + S_log_raw[loc,] .* sigma_s;
@@ -525,25 +525,25 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  // sigma_b ~ normal(0, 0.2);
-  // sigma_c_a ~ normal(0, 0.2);
-  // sigma_c_b ~ normal(0, 0.2);
+  sigma_b ~ normal(0, 0.2);
+  sigma_c_a ~ normal(0, 0.2);
+  sigma_c_b ~ normal(0, 0.2);
   sigma_c_j ~ normal(0, 0.2);
   sigma_g ~ normal(0, 0.2);
-  // sigma_h ~ normal(0, 0.2);
+  sigma_h ~ normal(0, 0.2);
   // // sigma_l ~ normal(0, 0.2); ///**
   sigma_r ~ normal(0, 0.2);
   sigma_s ~ normal(0, 0.2);
   
-  alpha_b ~ exponential(50); // exponential(1/50)
-  alpha_c_a ~ exponential(50); // exponential(1/scale) == exponential(rate)
-  alpha_c_b ~ exponential(50);
-  // alpha_c_j ~ exponential(50);
-  // alpha_g ~ exponential(50);
-  alpha_h ~ exponential(50);
-  // //  alpha_l ~ exponential(50); ///**
-  // alpha_r ~ exponential(50);
-  // alpha_s ~ exponential(50);
+  // alpha_b ~ exponential(100); // exponential(1/50)
+  // alpha_c_a ~ exponential(100); // exponential(1/scale) == exponential(rate)
+  // alpha_c_b ~ exponential(100);
+  // alpha_c_j ~ exponential(100);
+  // alpha_g ~ exponential(100);
+  // alpha_h ~ exponential(100);
+  // //  alpha_l ~ exponential(100); ///**
+  // alpha_r ~ exponential(100);
+  // alpha_s ~ exponential(100);
   
   phi_obs_inv ~ normal(0, 20);
   
