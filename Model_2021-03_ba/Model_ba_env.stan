@@ -365,14 +365,17 @@ data {
   vector[2] prior_c_a_log;
   vector[2] prior_c_b_log;
   vector[2] prior_c_j_log;
+  vector[2] prior_g_log;
+  vector[2] prior_h_log;
   vector[2] prior_l_log;
+  vector[2] prior_r_log;
   vector[2] prior_s_log;
 
-  // Specific priors
-  array[2] vector[N_species] prior_g_log;
-  array[2] vector[N_species] prior_h_log;
+  // Species pecific priors, e.g.
+  // array[2] vector[N_species] prior_g_log;
+  // array[2] vector[N_species] prior_h_log;
   // array[2] vector[N_species] prior_l_log;
-  array[2] vector[N_species] prior_r_log;
+  // array[2] vector[N_species] prior_r_log;
 
 }
 
@@ -508,7 +511,10 @@ transformed parameters {
                                 
   vector[L_y] y_hat_offset = y_hat .* offset_data;
   
-  vector<lower=0>[N_protocolTax] phi_obs = inv(phi_obs_inv);
+  vector<lower=0>[N_protocolTax] phi_obs = inv(phi_obs_inv .*
+                                               [1e-3, 1e-3, 1e1, 1e1, 1e1, 1e1, 1e-3, 1e-3, 1e-3, 1e-3, 1e-1, 1e-1, 1e-3, 1e-3]'
+                                             //[F.J.init, o.J.init, F.J.2, o.J.2, F.J.3, o.J.3, F.A.init, o.A.init, F.B.init, o.B.init, F.A.23, o.A.23, F.B.23, o.B.23]
+                                               );
   vector[L_y] phi_obs_rep = phi_obs[rep_protocolTax2y];
   
 }
@@ -525,37 +531,37 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  sigma_b ~ normal(0, 0.2);
-  sigma_c_a ~ normal(0, 0.2);
-  sigma_c_b ~ normal(0, 0.2);
-  sigma_c_j ~ normal(0, 0.2);
-  sigma_g ~ normal(0, 0.2);
-  sigma_h ~ normal(0, 0.2);
-  // // sigma_l ~ normal(0, 0.2); ///**
-  sigma_r ~ normal(0, 0.2);
-  sigma_s ~ normal(0, 0.2);
+  sigma_b ~ normal(0, 0.5);
+  sigma_c_a ~ normal(0, 0.5);
+  sigma_c_b ~ normal(0, 0.5);
+  sigma_c_j ~ normal(0, 0.5);
+  sigma_g ~ normal(0, 0.5);
+  sigma_h ~ normal(0, 0.5);
+  // // sigma_l ~ normal(0, 0.5); ///**
+  sigma_r ~ normal(0, 0.5);
+  sigma_s ~ normal(0, 0.5);
   
-  // alpha_b ~ exponential(100); // exponential(1/50)
-  // alpha_c_a ~ exponential(100); // exponential(1/scale) == exponential(rate)
-  // alpha_c_b ~ exponential(100);
-  // alpha_c_j ~ exponential(100);
-  // alpha_g ~ exponential(100);
-  // alpha_h ~ exponential(100);
-  // //  alpha_l ~ exponential(100); ///**
-  // alpha_r ~ exponential(100);
-  // alpha_s ~ exponential(100);
+  // alpha_b ~ exponential(10); // exponential(1/10)
+  // alpha_c_a ~ exponential(10); // exponential(1/scale) == exponential(rate)
+  // alpha_c_b ~ exponential(10);
+  // alpha_c_j ~ exponential(10);
+  // alpha_g ~ exponential(10);
+  // alpha_h ~ exponential(10);
+  // //  alpha_l ~ exponential(10); ///**
+  // alpha_r ~ exponential(10);
+  // alpha_s ~ exponential(10);
   
-  phi_obs_inv ~ normal(0, 20);
+  phi_obs_inv ~ std_normal();
   
   //// Priors for Parameters  
   b_log ~ normal(prior_b_log[1], prior_b_log[2]);
   c_a_log ~ normal(prior_c_a_log[1], prior_c_a_log[2]);
   c_b_log ~ normal(prior_c_b_log[1], prior_c_b_log[2]);
   c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]);
-  g_log ~ normal(prior_g_log[1], prior_g_log[2]); // species-specific! 
-  h_log ~ normal(prior_h_log[1], prior_h_log[2]); // species-specific!
+  g_log ~ normal(prior_g_log[1], prior_g_log[2]);
+  h_log ~ normal(prior_h_log[1], prior_h_log[2]);
   l_log ~ normal(prior_l_log[1], prior_l_log[2]);
-  r_log ~ normal(prior_r_log[1], prior_r_log[2]); // species-specific!
+  r_log ~ normal(prior_r_log[1], prior_r_log[2]);
   s_log ~ normal(prior_s_log[1], prior_s_log[2]);
   
   
@@ -619,11 +625,11 @@ generated quantities {
   real c_a_log_prior = normal_rng(prior_c_a_log[1], prior_c_a_log[2]);
   real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]);
   real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]);
-  vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
-  vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
+  real<upper=0> g_log_prior = -sqrt(square(normal_rng(prior_g_log[1], prior_g_log[2])));
+  real<upper=0> h_log_prior = -sqrt(square(normal_rng(prior_h_log[1], prior_h_log[2])));
   real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
   // vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
-  vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));  
+  real r_log_prior = normal_rng(prior_r_log[1], prior_r_log[2]);  
   real s_log_prior = normal_rng(prior_s_log[1], prior_s_log[2]);
   
   
