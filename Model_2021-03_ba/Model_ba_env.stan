@@ -404,7 +404,7 @@ parameters {
   vector[N_species] b_log;
   vector[N_species] c_a_log;
   vector[N_species] c_b_log;
-  vector[N_species] c_j_log;
+  vector[N_species] c_j_log_10;
   vector<upper=0>[N_species] g_log;
   vector<upper=0>[N_species] h_log;
   vector[N_species] l_log;
@@ -460,6 +460,9 @@ parameters {
 
 transformed parameters {
       
+  //// Transformed parametes
+  vector[N_species] c_j_log = c_j_log_10 * 10;
+  
   //// Local variables
   array[N_locs] vector<lower=0>[N_species] L_loc;
   array[N_locs] vector<lower=0>[N_pops] state_init;
@@ -531,15 +534,15 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  sigma_b ~ normal(0, 0.5);
-  sigma_c_a ~ normal(0, 0.5);
-  sigma_c_b ~ normal(0, 0.5);
-  sigma_c_j ~ normal(0, 0.5);
-  sigma_g ~ normal(0, 0.5);
-  sigma_h ~ normal(0, 0.5);
-  // // sigma_l ~ normal(0, 0.5); ///**
-  sigma_r ~ normal(0, 0.5);
-  sigma_s ~ normal(0, 0.5);
+  sigma_b ~ normal(0, 5);
+  sigma_c_a ~ normal(0, 5);
+  sigma_c_b ~ normal(0, 5);
+  sigma_c_j ~ normal(0, 5);
+  sigma_g ~ normal(0, 5);
+  sigma_h ~ normal(0, 5);
+  // // sigma_l ~ normal(0, 5); ///**
+  sigma_r ~ normal(0, 5);
+  sigma_s ~ normal(0, 5);
   
   // alpha_b ~ exponential(10); // exponential(1/10)
   // alpha_c_a ~ exponential(10); // exponential(1/scale) == exponential(rate)
@@ -551,7 +554,7 @@ model {
   // alpha_r ~ exponential(10);
   // alpha_s ~ exponential(10);
   
-  phi_obs_inv ~ std_normal();
+  phi_obs_inv ~ normal(0, 2);
   
   //// Priors for Parameters  
   b_log ~ normal(prior_b_log[1], prior_b_log[2]);
