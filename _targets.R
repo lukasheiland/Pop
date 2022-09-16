@@ -34,7 +34,7 @@ tar_option_set(error = "abridge")
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", "knitr", # "multidplyr" ## extended tidyverse
              "lubridate", "DescTools",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
-             "mgcv", "itsadug", "MASS",
+             "mgcv", "glmnet", "itsadug", "MASS",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
              "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate",
              "future.apply")
@@ -724,11 +724,11 @@ targets_posterior_env <- list(
   tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
   
   tar_target(fit_environmental_env_gaussian,
-             fitEnvironmental(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian"),
+             fitEnvironmental_glmnet(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian"),
              pattern = cross(parname_environmental_gaussian, taxon_s),
              iteration = "list"),
   tar_target(fit_environmental_env_binomial,
-             fitEnvironmental(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial"),
+             fitEnvironmental_glm(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial"),
              pattern = map(parname_environmental_binomial),
              iteration = "list"),
   tar_target(fit_environmental_env,
@@ -739,12 +739,15 @@ targets_posterior_env <- list(
                                   path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
              pattern = map(fit_environmental_env),
              iteration = "list"),
-  
 
   ## Plot
   tar_target(plot_environmental_env,
-             ggsave(filename = paste0(dir_publish, "/", basename_fit_env, "_plot_environmental", ".pdf"),
-                    plot = cowplot::plot_grid(plotlist = surface_environmental_env, ncol = 2), device = "pdf", width = 15, height = 90, limitsize = FALSE)),
+             plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix",
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plot_binary_env,
+             plotBinary(Environmental = Environmental_env,
+                        parname = setdiff(tar_read("parname_environmental"), c("L_loc", "major_fix", "major_init", "ba_init", "ba_fix")),
+                        path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
   tar_target(plots_trace_env,
              plotTrace(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plots_pairs_env,

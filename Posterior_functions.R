@@ -124,7 +124,7 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
     filter(!(.variable %in% c("major_fix", "ba_fix") & .value == 9))
   
   n_dropped <- n_row - nrow(Draws_env)
-  message("There were ", n_dropped ," draws*variables dropped, because not in all iterations the simulation has converged to the the fix point (equilibrium).")
+  warning("There were ", n_dropped ," draws*variables dropped, because not in all iterations the simulation has converged to the the fix point (equilibrium).")
   
   return(Draws_env)
 }
@@ -696,23 +696,33 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 selectParnameEnvironmental <- function(parname, Environmental_env) {
   
   parname_drawn <- unique(Environmental_env$.variable)
-  message("fitEnvironmental(): The variables ", paste(setdiff(parname, parname_drawn), collapse = ", "), " are not in the posterior to be regressed against the environmental variables!")
+  message("selectParnameEnvironmental(): The variables ", paste(setdiff(parname, parname_drawn), collapse = ", "), " are not in the posterior to be regressed against the environmental variables!")
   parname_environmental <- intersect(parname, parname_drawn)
   
-  return(parname_environmental)
+  ## reorder and concatenate objects that are unknown to the order
+  o <- c("L_loc", "L_log", "R_log", "C_j_log", "S_log",
+         "G_log", "C_a_log",
+         "H_log", "B_log", "C_b_log",
+         "ba_init", "ba_fix", "major_init", "major_fix")
+  i <- match(o, parname)
+  parname_o <- parname_environmental[i]
+  parname_environmental <- union(parname_o, parname_environmental)
+  names(parname_environmental) <- str_remove(parname_environmental, "_log")
+  
+  return(parname_environmental[!is.na(parname_environmental)])
 }
 
 
-## fitEnvironmental --------------------------------
+## fitEnvironmental_gam --------------------------------
 # Environmental <- tar_read("Environmental_env")
-# parname <- tar_read("parname_env")[1]
-# parname <- tar_read("parname_env_binomial")[1]
+# parname <- tar_read("parname_environmental")[1]
+# parname <- tar_read("parname_environmental_binomial")[1]
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
-# basename  <- tar_read("basename_fit_env")
-fitEnvironmental <- function(Environmental, parname = parname_env, envname = predictor_select, taxon = c(1:2, 0), fam = c("gaussian", "binomial")) {
+fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname = predictor_select,
+                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial")) {
   
-  taxon <- as.integer(taxon)
+  taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
   
   E <- Environmental %>% 
@@ -730,6 +740,73 @@ fitEnvironmental <- function(Environmental, parname = parname_env, envname = pre
   #   textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for the background basal area ...", label = paste0("tab:gam_", tax))
   #   cat(textext, file = file.path(path, paste0(tax, "_summary_gam.tex")), fill = T) %>% invisible()
   # }
+  
+  attr(fit, "tax") <- taxon
+  attr(fit, "par") <- parname
+  
+  return(fit)
+}
+
+
+## fitEnvironmental_glmnet --------------------------------
+# Environmental <- tar_read("Environmental_env")
+# parname <- tar_read("parname_environmental")[3]
+# parname <- tar_read("parname_environmental_binomial")[1]
+# envname <- tar_read("predictor_select")
+# path  <- tar_read("dir_fit")
+fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envname = predictor_select,
+                              taxon = c(1:2, 0), fam = c("gaussian", "binomial")) {
+  
+  taxon <- head(as.integer(taxon), 1)
+  fam <- match.arg(fam)
+  
+  E <- Environmental %>% 
+    filter(tax %in% taxon) %>%
+    filter(.variable == parname) %>%
+    rename(v = .value)
+  
+  if (fam == "binomial") {
+    E$v <- as.factor(round(E$v))
+  }
+  
+  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
+  M <- model.matrix(as.formula(formula), data = E)
+  
+  ### glmnet
+  fit <- cv.glmnet(x = M, y = E$v, family = fam, nlambda = 100, nfolds = 20, data = E,  parallel = TRUE) # plot(fit)
+  
+  attr(fit, "E") <- E
+  # attr(fit, "M") <- M
+  attr(fit, "tax") <- taxon
+  attr(fit, "par") <- parname
+  
+  return(fit)
+}
+
+
+## fitEnvironmental_glm --------------------------------
+# Environmental <- tar_read("Environmental_env")
+# parname <- tar_read("parname_environmental")[3]
+# parname <- tar_read("parname_environmental_binomial")[1]
+# envname <- tar_read("predictor_select")
+# path  <- tar_read("dir_fit")
+fitEnvironmental_glm <- function(Environmental, parname = parname_env, envname = predictor_select,
+                                    taxon = c(1:2, 0), fam = c("gaussian", "binomial")) {
+  
+  taxon <- head(as.integer(taxon), 1)
+  fam <- match.arg(fam)
+  
+  E <- Environmental %>% 
+    filter(tax %in% taxon) %>%
+    filter(.variable == parname) %>%
+    rename(v = .value)
+  
+
+  formula <- paste0("v ~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
+  
+  ### glm
+  ## glm, compared to unregularized glmnet, has the advantage to predict continuosly on [0, 1] when binomial
+  fit <- glm(as.formula(formula), family = fam, data = E) # plot(fit)
   
   attr(fit, "tax") <- taxon
   attr(fit, "par") <- parname
@@ -757,13 +834,31 @@ predictEnvironmental <- function(fit, envname,
   res <- 500
   name_x <- envname[1]
   name_y <- envname[2]
-  O <- cbind(x = fit$model[[name_x]], y = fit$model[[name_y]])
+  
+  if (is(fit, "cv.glmnet")) {
+    
+    E <- attr(fit, "E")
+    O <- cbind(x = E[[name_x]], y = E[[name_y]])
+    range_x <- range(E[[name_x]], na.rm = T)
+    range_y <- range(E[[name_y]], na.rm = T)
+  
+  } else if (is(fit, "glm")) {
+    
+    O <- cbind(x = fit$data[[name_x]], y = fit$data[[name_y]])
+    range_x <- range(fit$data[[name_x]], na.rm = T)
+    range_y <- range(fit$data[[name_y]], na.rm = T)
+  
+  } else {
+    
+    O <- cbind(x = fit$model[[name_x]], y = fit$model[[name_y]])
+    range_x <- range(fit$model[[name_x]], na.rm = T)
+    range_y <- range(fit$model[[name_y]], na.rm = T)
+  }
+  
   ch <- chull(O)
   Hullpoint <- O[c(ch, ch[1]),] ## close the polygon
   poly <- st_sfc(st_polygon(list(Hullpoint)))
   
-  range_x <- range(fit$model[[name_x]], na.rm = T)
-  range_y <- range(fit$model[[name_y]], na.rm = T)
   x <- seq(range_x[1], range_x[2], length.out = res)
   y <- seq(range_y[1], range_y[2], length.out = res)
   P <- expand.grid(x, y) %>% setNames(c(name_x, name_y))
@@ -772,19 +867,24 @@ predictEnvironmental <- function(fit, envname,
   iscovered <- st_covered_by(points, poly, sparse = F)
   P_covered <- P[iscovered,]
   
-  p <- predict(fit, newdata = P_covered, type = "response") %>% c() # %>% matrix(nrow = res, ncol = res)
+  if (is(fit, "cv.glmnet")) {
+    
+    formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = TRUE)" , collapse = " + "))
+    X <- model.matrix(as.formula(formula), data = P_covered)
+    p <- predict(fit, newx = X, type = "response", s = fit$lambda.min) %>% c() # lambda.1se
+  
+  } else {
+    p <- predict(fit, newdata = P_covered, type = "response") %>% c() # %>% matrix(nrow = res, ncol = res)
+  }
+  
   D <- cbind(P_covered, z = p)
   
-  plot <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
-    geom_raster(aes(fill = z)) +
-    geom_contour(col = "white") +
-    scale_color_manual(values = color) +
-    scale_fill_viridis_c() +
-    themefun() +
-    ggtitle(paste(parname, taxon)) +
-    scale_y_reverse() ## invert water level scale, consistent with Ökogramm.
+  attr(D, "name_x") <- name_x
+  attr(D, "name_y") <- name_y
+  attr(D, "taxon") <- taxon
+  attr(D, "parname") <- parname
   
-  return(plot)
+  return(D)
 }
 
 
@@ -1799,54 +1899,112 @@ plotPredominant <- function(States, majorname,
 }
 
 
+## plotEnvironmental --------------------------------
+# surfaces <- tar_read(surface_environmental_env)
+# basename <- tar_read(basename_fit_env)
+# path = tar_read(dir_publish)
+plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname = "major_fix",
+                              basename = basename_fit_env, path = dir_publish, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  i_binary <- which(binaryname == sapply(surfaces, function(s) attr(s, "parname")))
+  Binary <- surfaces[[i_binary]]
+  Binary$z <- round(Binary$z)
+  
+  
+  plotE <- function(D, B) {
+    
+    name_x <- attr(D, "name_x")
+    name_y <- attr(D, "name_y")
+    parname <- attr(D, "parname")
+    taxon <- attr(D, "taxon")
+    
+    Binary_1 <- filter(B, z == 1) %>% ## is ordered, so that slicing should return some central location
+      slice(round(nrow(.)*0.5)) %>%
+      bind_cols(label = "Fagus predominant")
+    
+    plot <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
+      geom_raster(aes(fill = z)) +
+      geom_contour(col = "white") +
+      scale_color_manual(values = color) +
+      scale_fill_viridis_c() +
+      geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
+                   data = B, bins = 2, col = "black", linetype = 2, size = 1.1, inherit.aes = F) +
+      geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") +
+      themefun() +
+      ggtitle(paste(parname, taxon)) +
+      scale_y_reverse() ## invert water level scale, consistent with Ökogramm.
+    
+    return(plot)
+  }
+
+  plots <- lapply(surfaces, plotE, B = Binary)
+  plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 2)
+  
+  ggsave(filename = paste0(path, "/", basename, "_plot_environmental", ".pdf"),
+         plot = plotgrid, device = "pdf", width = 15, height = 90, limitsize = FALSE)
+
+  return(plots)
+}
+
+
 ## plotBinary --------------------------------
-# parname  <- c(tar_read("parname_plotorder"), b_c_b = "b_c_b_log")
-# cmdstanfit  <- tar_read("fit_env")
+# Environmental <- tar_read("Environmental_env")
+# parname <- setdiff(tar_read("parname_environmental"), c("major_fix", "major_init", "ba_init", "ba_fix"))
+# basename  <- tar_read("basename_fit_env")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-
-plotBinary <- function(cmdstanfit, parname, path,
+plotBinary <- function(Environmental, parname, path, basename,
                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
-  
-  basename_cmdstanfit <- attr(cmdstanfit, "basename")
-  
-  n_species <- 2 ## is also used in functions below
-  parorder <- names(parname)
-  varname <- c(parname, "major_fix")
+  binaryname <- "major_fix"
 
-  C <- cmdstanfit$draws(variables = varname) %>%
-    as_draws_rvars()
+  B <- Environmental %>%
+    ungroup() %>%
+    dplyr::filter(.variable == binaryname) %>%
+    rename(binary = .value) %>%
+    dplyr::select(binary, loc, .draw)
   
-  I <- bayesplot::mcmc_intervals_data(C, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
-    mutate(p = parameter,
-           d = major_fix,
-           parameter = str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
-           tax = tax,
-           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h", "b_c_b"),)
+  Environmental %<>%
+    ungroup() %>%
+    dplyr::filter(.variable != binaryname) %>%
+    dplyr::filter(.variable %in% parname) %>%
+    # rename(chain = .chain, iteration = .iteration, draw = .draw, variable = .variable, value = .value) %>%
+    left_join(B, by = c("loc", ".draw")) %>%
+    dplyr::filter(!is.na(binary))
+    
+  
+  E <- Environmental %>%
+    rename(value = .value) %>%
+    mutate(binary = as.logical(binary)) %>%
+    
+    ## aggregate by draws by loc first, to reduce the variation to the variation
+    group_by(tax, .variable, binary, loc) %>%
+    summarize(value = mean(value, na.rm = T)) %>%
+    ungroup() %>%
+    
+    group_by(tax, .variable, binary) %>%
+    summarize(ll = quantile(value, 0.1), l = quantile(value, 0.25),
+              m = median(value),
+              u = quantile(value, 0.75), uu = quantile(value, 0.9)) %>%
+    ungroup() %>%
+    
+    mutate(stage = fct_collapse(.variable,
+                                "J" = c("L_loc", "R_log", "S_log", "C_j_log"),
+                                "A" = c("G_log", "C_a_log"),
+                                "B" = c("H_log", "B_log", "C_b_log"))
     ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
-    mutate(parameter = ordered(parameter, parorder)) %>%
-    
-    ##???
-    mutate(parameter = fct_reorder(parameter, as.numeric(stage))) %>%
-    
-    ## Letter Positions
-    group_by(tax) %>%
-    mutate(xletterpos_h = max(hh) * 0.85, ## for !plotprop
-           xletterpos_l = min(ll) * 1.01) %>% ## for plotprop
-    
-    arrange(stage, parameter)
+    mutate(tax = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>% 
+    mutate(parameter = factor(.variable, levels = parname))
   
   
-  pos <- position_nudge(y = (as.integer(I$tax) - 1.5) * 0.3)
+  pos <- position_dodge(width = 1)
   
-  plot_binary <- ggplot(I, aes(x = d, y = parameter, yend = parameter,
-                               color = tax, group = stage)) + 
-    geom_linerange(aes(xmin = l, xmax = h), size = 2.6, position = pos) +
-    geom_segment(aes(x = ll, xend = hh), size = 1.2, lineend = "round", position = pos) +
+  plot_binary <- ggplot(E, aes(y = parameter, x = m, color = tax, group = binary)) + 
+    geom_linerange(aes(xmin = l, xmax = u), size = 2.6, position = pos) +
+    geom_linerange(aes(xmin = ll, xmax = uu), size = 1.2, position = pos) +
     geom_point(color = "black", position = pos, size = 1.7) +
     coord_flip() +
     # geom_vline(xintercept = if (plotprop) 1 else 0, linetype = 3, size = 0.6, col = "#222222") +
@@ -1859,8 +2017,8 @@ plotBinary <- function(cmdstanfit, parname, path,
     themefun() +
     scale_color_manual(values = color)
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_binary", ".pdf"),
-         plot_binary, dev = "pdf", height = 8, width = 12)
+  ggsave(paste0(path, "/", basename, "_plot_binary", ".pdf"),
+         plot_binary, dev = "pdf", height = 6, width = 10)
   
   return(plot_binary)
 }
