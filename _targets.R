@@ -179,6 +179,7 @@ targets_parname <- list(
                "phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "avg_state_init", "avg_L_loc",
                "fixiter_max", "fixiter_min", "eps_ba_fix",
+               "c_j_log_10",
                "log_prior", "log_lik", "lp__", "state_init_log_raw", "state_2", "state_2_raw", "state_3", "state_3_raw")),
   
   tar_target(rep_exclude,
