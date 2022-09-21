@@ -638,7 +638,7 @@ selectLocs <- function(Stages_s, predictor_select,
         else if (n_x < n) return(X)
       }
       
-      n_bin2d <- n_locations/(nbins_sqrt^2)
+      n_bin2d <- ceiling(n_locations/(nbins_sqrt^2))
       
       Samples_strata <- Stages_strata %>%
         split(.$bin2d) %>%
