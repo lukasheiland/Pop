@@ -625,6 +625,7 @@ selectLocs <- function(Stages_s, predictor_select,
         st_drop_geometry() %>%
         filter(stage == "B") %>%
         filter(obsid == "DE_BWI_1987") %>%
+        filter(!duplicated(plotid)) %>%
         mutate_at(predictor_select, cut, breaks = nbins_sqrt) %>%
         mutate(bin2d = interaction(get(predictor_select[1]), get(predictor_select[2])))
       
@@ -637,22 +638,22 @@ selectLocs <- function(Stages_s, predictor_select,
         else if (n_x < n) return(X)
       }
       
-      ##!!!
       n_bin2d <- n_locations/(nbins_sqrt^2)
       
       Samples_strata <- Stages_strata %>%
         split(.$bin2d) %>%
         lapply(sampleAtMost, n = n_bin2d) %>%
         bind_rows()
-
+      
+      ##!!!
       plotid_subset <- Samples_strata$plotid
       
-      Summary_strata <- Samples_strata %>%
-        group_by(bin2d) %>%
-        summarize(n = n_distinct(plotid), n_FagusInB = sum(anyFagus)) %>%
-        ungroup()
+      Strata_sampled <- table(Samples_strata[,predictor_select[1], drop = T], Samples_strata[,predictor_select[2], drop = T])
+      write.csv(Strata_sampled, file.path(tablepath, "Strata_env_DE_sampled.csv"))
       
-      write.csv(Summary_strata, file.path(tablepath, "Strata_env_DE_nplots.csv"))
+      Samples_strata_anyFagus <- filter(Samples_strata, anyFagus)
+      Strata_sampled_anyFagus <- table(Samples_strata_anyFagus[,predictor_select[1], drop = T], Samples_strata_anyFagus[,predictor_select[2], drop = T])
+      write.csv(Strata_sampled_anyFagus, file.path(tablepath, "Strata_env_DE_sampled_anyFagus.csv"))
       
     } else { ## case: !(stratpred & selectpred)
       
