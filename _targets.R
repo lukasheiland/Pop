@@ -34,7 +34,7 @@ tar_option_set(error = "abridge")
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", "knitr", # "multidplyr" ## extended tidyverse
              "lubridate", "DescTools",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
-             "mgcv", "glmnet", "itsadug", "MASS",
+             "MASS", "mgcv", "glmnet", "itsadug", "stargazer",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
              "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate",
              "future.apply")
@@ -724,11 +724,11 @@ targets_posterior_env <- list(
   tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
   
   tar_target(fit_environmental_env_gaussian,
-             fitEnvironmental_glmnet(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian"),
+             fitEnvironmental_glmnet(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
              pattern = cross(parname_environmental_gaussian, taxon_s),
              iteration = "list"),
   tar_target(fit_environmental_env_binomial,
-             fitEnvironmental_glm(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial"),
+             fitEnvironmental_glm(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial", path = dir_publish),
              pattern = map(parname_environmental_binomial),
              iteration = "list"),
   tar_target(fit_environmental_env,

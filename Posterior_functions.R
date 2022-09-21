@@ -720,9 +720,9 @@ selectParnameEnvironmental <- function(parname, Environmental_env) {
 # parname <- tar_read("parname_environmental")[1]
 # parname <- tar_read("parname_environmental_binomial")[1]
 # envname <- tar_read("predictor_select")
-# path  <- tar_read("dir_fit")
+# path  <- tar_read("dir_publish")
 fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname = predictor_select,
-                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial")) {
+                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = dir_publish) {
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -737,11 +737,11 @@ fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname =
   ### mgcv
   fit <- gam(as.formula(splineformula), family = fam, data = E)
   
-  # if(!is.null(path)) {
-  #   s <- summary(fit)
-  #   textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for the background basal area ...", label = paste0("tab:gam_", tax))
-  #   cat(textext, file = file.path(path, paste0(tax, "_summary_gam.tex")), fill = T) %>% invisible()
-  # }
+  if(!is.null(path)) {
+    s <- summary(fit)
+    textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for environmental ...", label = paste("tab:gam", parname, taxon, sep = "_"))
+    cat(textext, file = file.path(path, paste0("Environmental", "_", parname, "_", taxon, "_summary_gam.tex")), fill = T) %>% invisible()
+  }
   
   attr(fit, "tax") <- taxon
   attr(fit, "par") <- parname
@@ -757,7 +757,7 @@ fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname =
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
 fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envname = predictor_select,
-                              taxon = c(1:2, 0), fam = c("gaussian", "binomial")) {
+                                    taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = dir_publish) {
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -777,6 +777,14 @@ fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envnam
   ### glmnet
   fit <- cv.glmnet(x = M, y = E$v, family = fam, nlambda = 100, nfolds = 20, data = E,  parallel = TRUE) # plot(fit)
   
+  
+  if(!is.null(path)) {
+    
+    S <- coef(fit, s = fit$lambda.min) %>% as.matrix()
+    write.csv(S, file = file.path(path, paste0("Environmental", "_", parname, "_", taxon, "_summary_glmnet.csv")))
+    
+  }
+  
   attr(fit, "E") <- E
   # attr(fit, "M") <- M
   attr(fit, "tax") <- taxon
@@ -793,7 +801,7 @@ fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envnam
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
 fitEnvironmental_glm <- function(Environmental, parname = parname_env, envname = predictor_select,
-                                    taxon = c(1:2, 0), fam = c("gaussian", "binomial")) {
+                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = dir_publish) {
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -803,12 +811,16 @@ fitEnvironmental_glm <- function(Environmental, parname = parname_env, envname =
     filter(.variable == parname) %>%
     rename(v = .value)
   
-
+  
   formula <- paste0("v ~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
   
   ### glm
   ## glm, compared to unregularized glmnet, has the advantage to predict continuosly on [0, 1] when binomial
   fit <- glm(as.formula(formula), family = fam, data = E) # plot(fit)
+  
+  if(!is.null(path)) {
+    stargazer(fit, out = file.path(path, paste0("Environmental", "_", parname, "_", taxon, "_summary_glm.tex"))) %>% invisible()
+  }
   
   attr(fit, "tax") <- taxon
   attr(fit, "par") <- parname
@@ -1915,10 +1927,19 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
   
   plotE <- function(D, B) {
     
+
     name_x <- attr(D, "name_x")
     name_y <- attr(D, "name_y")
     parname <- attr(D, "parname")
     taxon <- attr(D, "taxon")
+    
+    parstart_reverse <- c("S_", "C_j_", "C_a_", "C_b_",
+                          "sum_ko_1_s_fix", "sum_ko_2_s_fix",
+                          "sum_ko_1_c_j_fix", "sum_ko_2_c_j_fix",
+                          "sum_ko_1_c_a_fix", "sum_ko_2_c_a_fix",
+                          "sum_ko_1_c_b_fix", "sum_ko_2_c_b_fix")
+    
+    direction <- if ( str_starts(D$parname, fixed(parstart_reverse)) ) 1 else -1
     
     Binary_1 <- filter(B, z == 1) %>% ## is ordered, so that slicing should return some central location
       slice(round(nrow(.)*0.5)) %>%
@@ -1928,7 +1949,7 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
       geom_raster(aes(fill = z)) +
       geom_contour(col = "white") +
       scale_color_manual(values = color) +
-      scale_fill_viridis_c() +
+      scale_fill_viridis_c(direction = direction) +
       geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
                    data = B, bins = 2, col = "black", linetype = 2, size = 1.1, inherit.aes = F) +
       geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") +

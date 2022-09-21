@@ -66,7 +66,7 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(array[] vector state_init, array[] int time_max, array[] int times,    //* vector unpack(array[] vector state_init_log, array[] int time_max, array[] int times,
-                vector b_log, array[] vector C_a_log, array[] vector C_b_log, array[] vector C_j_log, array[] vector G_log, array[] vector H_log, array[] vector L_loc, array[] vector R_log, array[] vector S_log, //@@
+                array[] vector B_log, array[] vector C_a_log, array[] vector C_b_log, array[] vector C_j_log, array[] vector G_log, array[] vector H_log, array[] vector L_loc, array[] vector R_log, array[] vector S_log, //@@
                 vector ba_a_avg, real ba_a_upper,
                 array[] int n_obs, array[] int n_yhat,
                 int N_species, int N_pops, int L_y, int N_locs,
@@ -85,8 +85,8 @@ functions {
       matrix[N_pops, time_max[loc]] States =
                         
                         simulate(state_init[loc],
-                                 time_max[loc], //@@ exp(B_log[loc,])
-                                 exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
+                                 time_max[loc],
+                                 exp(B_log[loc,]), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
                                  i_j, i_a, i_b);
@@ -506,8 +506,8 @@ transformed parameters {
     
   }
   
-  vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times, //@@ B_log
-                                b_log,  C_a_log, C_b_log, C_j_log, G_log, H_log, L_loc, R_log, S_log,
+  vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times,
+                                B_log,  C_a_log, C_b_log, C_j_log, G_log, H_log, L_loc, R_log, S_log,
                                 ba_a_avg, ba_a_upper,
                                 n_obs, n_yhat,
                                 N_species, N_pops, L_y, N_locs, // fixed numbers
@@ -740,8 +740,8 @@ generated quantities {
       
 
       //// Simulate fix point, given parameters
-      Fix[loc] = iterateFix_contributions(state_init[loc], //@@ exp(B_log[loc,])
-                                          exp(b_log), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
+      Fix[loc] = iterateFix_contributions(state_init[loc],
+                                          exp(B_log[loc,]), exp(C_a_log[loc,]), exp(C_b_log[loc,]), exp(C_j_log[loc,]), exp(G_log[loc,]), exp(H_log[loc,]), L_loc[loc, ], exp(R_log[loc,]), exp(S_log[loc,]),
                                           ba_a_avg, ba_a_upper,
                                           N_species, i_j, i_a, i_b,
                                           tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);
