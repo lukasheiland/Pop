@@ -597,6 +597,10 @@ formatPriors <- function(data_stan, weakpriors,
     
     data_stan_priors <- c(data_stan, priors)
   
+  } else {
+    
+    data_stan_priors <- data_stan
+  
   }
   
   ## ANY CASE
