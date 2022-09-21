@@ -618,29 +618,41 @@ selectLocs <- function(Stages_s, predictor_select,
     
     if (stratpred & selectpred) {
       
+      nbins_sqrt <- 7
+      
       Stages_strata <- Stages_select %>%
         ungroup() %>% 
         st_drop_geometry() %>%
         filter(stage == "B") %>%
         filter(obsid == "DE_BWI_1987") %>%
-        mutate_at(predictor_select, cut, breaks = 7) %>%
+        mutate_at(predictor_select, cut, breaks = nbins_sqrt) %>%
         mutate(bin2d = interaction(get(predictor_select[1]), get(predictor_select[2])))
       
       Strata <- table(Stages_strata[,predictor_select[1], drop = T], Stages_strata[,predictor_select[2], drop = T])
-      write.csv(Strata, file.path(tablepath, "Strata_plots_DE.csv"))
+      write.csv(Strata, file.path(tablepath, "Strata_env_DE.csv"))
       
-      sampleAtMost <- function(X, n = 25) {
+      sampleAtMost <- function(X, n) {
         n_x <- nrow(X)
         if(n_x >= n) slice_sample(X, n = n, replace = F)
         else if (n_x < n) return(X)
       }
       
       ##!!!
-      plotid_subset <- Stages_strata %>%
+      n_bin2d <- n_locations/(nbins_sqrt^2)
+      
+      Samples_strata <- Stages_strata %>%
         split(.$bin2d) %>%
-        lapply(sampleAtMost, n = 25) %>%
-        bind_rows() %>%
-        pull(plotid)
+        lapply(sampleAtMost, n = n_bin2d) %>%
+        bind_rows()
+
+      plotid_subset <- Samples_strata$plotid
+      
+      Summary_strata <- Samples_strata %>%
+        group_by(bin2d) %>%
+        summarize(n = n_distinct(plotid), n_FagusInB = sum(anyFagus)) %>%
+        ungroup()
+      
+      write.csv(Summary_strata, file.path(tablepath, "Strata_env_DE_nplots.csv"))
       
     } else { ## case: !(stratpred & selectpred)
       

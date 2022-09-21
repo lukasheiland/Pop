@@ -204,12 +204,14 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   allpar <- cmdstanfit$metadata()$stan_variables
   includepar <- setdiff(allpar, exclude)
   phipar <- includepar[str_starts(includepar, "phi")]
+  sigmapar <- includepar[str_starts(includepar, "sigma_")]
   publishpar_prior <- c(publishpar, paste0(publishpar, "_prior"))
+  publishpar <- intersect(c(sigmapar, publishpar_prior), allpar)
   
   summary <- cmdstanfit$summary(includepar)
   write.csv(summary, paste0(path, "/", basename_cmdstanfit, "_summary.csv"))
   
-  summary_publish <- cmdstanfit$summary(publishpar_prior) %>%
+  summary_publish <- cmdstanfit$summary(publishpar) %>%
     mutate(p = if_else(str_detect(variable, "_prior"), "prior", "posterior")) %>%
     mutate(tax = if_else(str_detect(variable, "[2]"), "other", "Fagus")) %>%
     mutate(var = str_extract(variable, ".*_log")) %>%

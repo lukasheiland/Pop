@@ -469,7 +469,7 @@ targets_fit_env <- list(
   ## Prepare data
   tar_target(Stages_select_env,
              selectLocs(Stages_s, predictor_select,
-                        selectspec = T, selectpred = T, stratpred = T, n_locations = n_locations, loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
+                        selectspec = F, selectpred = T, stratpred = T, n_locations = n_locations, loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
   
   tar_target(Stages_scaled_env,
              scaleData(Stages_select_env, predictor_select)), # After selection, so that scaling includes selected plots 
@@ -497,8 +497,7 @@ targets_fit_env <- list(
              fitTransition(data_stan_transitions_env, which = "h", model_transitions, fitpath = dir_fit)),
   
   tar_target(data_stan_priors_env,
-             formatPriors(data_stan_env, weakpriors_env, fit_g_env, fit_h_env, fit_Seedlings,
-                          widthfactor_trans = 4, widthfactor_reg = 2)),
+             formatPriors(data_stan_env, weakpriors_env)),
 
   tar_target(data_stan_priors_offset_env,
              selectOffset(offsetname_select, data_stan_priors_env)),
