@@ -23,7 +23,7 @@ sapply(package, require, character.only = TRUE) ## package is a vector of all pa
 ## Wrangling pipeline
 tar_make_future(c("data_stan_priors_offset_env"), workers = if(onserver) 12 else 3, reporter = "verbose_positives")
 
-## Fitting, parallelized internally
+## Fitting parallelized internally
 tar_make(c("fit_env"))
 
 ## Posterior
@@ -37,9 +37,11 @@ tar_make_future(c("summary_env",
                   "plot_contributions_env",
                   "plots_states_env",
                   "plot_binary_env",
-                  # "plot_trajectories_avg_env",
                   "plots_conditional_env"),
                 workers = if(onserver) 24 else 3, reporter = "verbose_positives")
+
+## Simulations parallelized internally
+tar_make(c("plot_trajectories_avg_env"))
 
 ## Publishing
 tar_make_future(c("Summary_taxa",

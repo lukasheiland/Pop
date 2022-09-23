@@ -708,7 +708,7 @@ targets_posterior_env <- list(
              generateResiduals(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
   tar_target(Trajectories_avg_env,
              generateTrajectories(cmdstanfit = fit_env, data_stan_priors_env, parname, locparname = parname_loc_env,
-                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "drawsperloc_all")),
+                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "drawsperlocs_all")),
 
   
   ## Formatted posterior data stuctures
