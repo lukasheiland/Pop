@@ -193,7 +193,7 @@ formatNumber <- function(x, signif.digits = 4) {
 # ————————————————————————————————————————————————————————————————————————————————— #
 
 ## summarizeFit --------------------------------
-# cmdstanfit <- tar_read("fit_test")
+# cmdstanfit <- tar_read("fit_env")
 # publishpar <- tar_read(parname_plotorder)
 # exclude <- tar_read(exclude)
 # path <- tar_read("dir_publish")
@@ -223,7 +223,8 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
     mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
     dplyr::select(var = variable, value, ess_bulk)
   
-  summary_publish %<>% bind_rows(summary_phipar)
+  summary_publish  <-  dplyr::bind_rows(summary_phipar, summary_phipar) %>%
+    as.data.frame()
   write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
   
   
@@ -450,13 +451,151 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   
   varname_draws <- cmdstanfit$metadata()$stan_variables
   
-  parname <- setdiff(parname, c("phi_obs", "sigma_k_loc")) %>%
-    intersect(varname_draws)
+  ## Global parameters
+  parname <- intersect(parname, varname_draws)
   parname_sans_log <- gsub("_log$", "", parname)
-  locparname_avg <- gsub("_log$", "", locparname) %>% paste0("avg_", .) %>%
-    intersect(varname_draws)
   
-  ### iterateModel --------------------------------
+  ## Local variables
+  locparname <- intersect(locparname, varname_draws)
+  locparname_avg <- paste0("avg_", locparname) %>%
+    intersect(varname_draws)
+  # locparname_unavg <- setdiff(locparname, paste0(gsub("avg_", "", locparname_avg))) ## pars that were never averaged. currently not used
+  locparname_all <- c(locparname_avg, locparname)
+  
+  
+  Draws <- cmdstanfit$draws(variables = c(parname, locparname_all), format = "draws_list") %>%
+    thin_draws(thin = thinstep)
+  
+  
+  #### The goal of the following wrangling:
+  ## to makes pars a nested list[draws[parameters[n_locs,n_species]] (list might be a data frame),
+  ## where _log variables are exped and renamed!
+  ## List will be structured in two steps: 1. for global variables "p_log", 2. for local variables "P_log"/"P_loc".
+  ## Later, when the simulation is applied over the nested parameter list, the structure will be unpacked, and parameters selected (local or global parameter?).
+  ## In particular, the averaging at the loc-level over draws ("drawsperloc") will be done in the nested process.
+  
+  ## 1. Distinction between when to average for global variables
+  if(match.arg(average) == "drawsperlocs_all") {
+    
+    ## averaging the draws of non-local parameters ("within 1 loc")!
+    
+    M <- cmdstanfit$summary(variables = parname) %>%
+      dplyr::select(variable, mean)
+    parmeans <- sapply(parname, function(n) M$mean[str_starts(M$variable, n)], USE.NAMES = T, simplify = F)
+    pars <- sapply(parname, function(n) { if(str_ends(n, "_log")) exp(parmeans[[n]]) else parmeans[[n]] }, USE.NAMES = T, simplify = F)
+    names(pars) <- parname_sans_log
+    pars <- list(pars) ## nested list[1 draw[parameter[vector_2species]]]
+    
+  } else if (match.arg(average) %in% c("none", "locsperdraws_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
+    
+    ## no averaging of the non-local parameters!
+    
+    D <- subset_draws(Draws, variable = c(parname)) %>%
+      as_draws_matrix() %>%
+      as.data.frame() %>%
+      dplyr::mutate(across(contains("_log["), exp))
+    pars <- split(D, 1:nrow(D))
+    pars <- lapply(pars, function(p) matrix(c(as.matrix(p)), byrow = F, nrow = data_stan_priors$N_species, dimnames = list(NULL, parname_sans_log)))
+    pars <- lapply(pars, as.data.frame) ## nested list[draws[parameter[vector_2species]]]
+    
+  }
+  
+  
+  ## 2. Distinction between when to average for local variables
+  if (match.arg(average) %in% c("none", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
+    
+    draws_loc <- subset_draws(Draws, variable = locparname) %>% # locparname important, because will get iterated over locs
+      as_draws_rvars()
+    
+    ## exping
+    name_draws_loc <- names(draws_loc)
+    draws_loc <- lapply(name_draws_loc, function(n) { if(str_ends(n, "_log")) exp(draws_loc[[n]]) else draws_loc[[n]] })
+    names(draws_loc) <- str_remove(name_draws_loc, "_log")
+    
+    n_locs <- data_stan_priors$N_locs
+    
+  }
+  
+  if (match.arg(average) %in% c("locsperdraws_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
+    
+    warning("Averaging over locs has not been implemented for variables other than ('*_avg'), i.e. variables that were already averaged in the model.")
+    
+    draws_loc_avg <- subset_draws(Draws, variable = locparname_avg) %>%
+      as_draws_rvars() %>%
+      lapply(as.matrix) %>%
+      lapply(t) ## make this a list of 1-rowed matrices
+    names(draws_loc_avg) <- gsub("^avg_", "", locparname_avg)
+    
+    n_locs_avg <- 1
+    
+  }
+  
+  ## Generate quantiles in any case!
+  draws_loc_q <- subset_draws(Draws, variable = locparname) %>% # c("state_init", "L_loc")
+    posterior::as_draws()
+  
+  Quantiles_init <- draws_loc_q %>%
+    tidybayes::gather_draws(state_init[loc,pop]) %>%
+    group_by(pop, .draw, .iteration, .chain) %>%
+    summarize(pop = first(pop),
+              p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
+              median = quantile(.value, prob = 0.5, type = 1, na.rm = T),
+              p90 = quantile(.value, prob = 0.9, type = 1, na.rm = T),
+              loc_p10 = first(loc[.value == p10]),
+              loc_median = first(loc[.value == median]),
+              loc_p90 = first(loc[.value == p90]),
+              loc_p10_b = replace(loc_p10, pop < 5, NA),
+              loc_median_b = replace(loc_median, pop < 5, NA),
+              loc_p90_b = replace(loc_p90, pop < 5, NA)) %>%
+    ungroup()
+  
+  if (match.arg(average) == "locsperdraws_avgL_qInit") {
+    
+    ## Here 3 quantiles will be dealt with, as if they were locs
+    
+    L_loc_q <- draws_loc_q %>%
+      tidybayes::gather_draws(L_loc[loc,tax]) %>% # state_init[loc,pop]
+      group_by(tax, .draw, .iteration, .chain) %>%
+      summarize(p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
+                median = quantile(.value, prob = 0.5, type = 1, na.rm = T),
+                p90 = quantile(.value, prob = 0.9, type = 1, na.rm = T)) %>%
+      pivot_longer(any_of(c("p10", "median", "p90")), names_to = "quantile", values_to = "L_loc") %>%
+      mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
+      pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "tax"), values_from = "L_loc", names_glue = "L_loc[{loc},{tax}]") %>% 
+      as_draws_rvars()
+    
+    state_init_q <- Quantiles_init %>%
+      pivot_longer(any_of(c("p10", "median", "p90")), names_to = "quantile", values_to = "state_init") %>%
+      mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
+      # mutate(state_init = exp(state_init_log)) %>% ## !!!
+      pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "pop"), values_from = "state_init", names_glue = "state_init[{loc},{pop}]") %>% 
+      as_draws_rvars()
+    
+    draws_loc_q <- list(state_init = state_init_q$state_init, L_loc = L_loc_q$L_loc)
+    n_locs_q <- 3
+  }
+  
+  if (match.arg(average) == "locsperdraws_all") {
+    draws_loc <- draws_loc_avg
+    n_locs <- n_locs_avg
+  } else if (match.arg(average) == "locsperdraws_avgL") {
+    L_loc_avg_rep <- draws_loc_avg$L_loc[rep(1, n_locs),]
+    draws_loc$L_loc <- L_loc_avg_rep
+  } else if (match.arg(average) == "locsperdraws_avgL_qInit") {
+    L_loc_avg_rep <- draws_loc_avg$L_loc[rep(1, n_locs_q),]
+    draws_loc <- draws_loc_q
+    n_locs <- n_locs_q
+  }
+  
+  
+  ######-----------------------------------------------------
+  ### Nested simulations: locs/draws
+  ######-----------------------------------------------------
+  
+  ### Functions ---------------------------------------
+  ## (ordered inner to outer)
+  
+  ##### iterateModel -------------------------
   #
   iterateModel <- function(initialstate,
                            pars,
@@ -529,168 +668,70 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   }
   
   
-  Draws <- cmdstanfit$draws(variables = c(parname, locparname, locparname_avg), format = "draws_list") %>%
-    thin_draws(thin = thinstep)
-  
-  ## Makes pars to be a nested list/data.frame[[parameters]][[draws]]
-  ## Distinction between when to average for local variables
-  if(match.arg(average) == "drawsperlocs_all") {
-    
-    M <- cmdstanfit$summary(variables = parname) %>%
-      dplyr::select(variable, mean)
-    parmeans <- sapply(parname, function(n) M$mean[str_starts(M$variable, n)], USE.NAMES = T, simplify = F)
-    pars <- sapply(parname, function(n) { if(str_ends(n, "_log")) exp(parmeans[[n]]) else parmeans[[n]] }, USE.NAMES = T, simplify = F)
-    names(pars) <- parname_sans_log
-    pars <- list(pars)
-    
-  } else if (match.arg(average) %in% c("none", "locsperdraws_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
-    
-    D <- subset_draws(Draws, variable = c(parname)) %>%
-      as_draws_matrix() %>%
-      as.data.frame() %>%
-      dplyr::mutate(across(contains("_log["), exp))
-    pars <- split(D, 1:nrow(D))
-    pars <- lapply(pars, function(p) matrix(c(as.matrix(p)), byrow = F, nrow = data_stan_priors$N_species, dimnames = list(NULL, parname_sans_log)))
-    pars <- lapply(pars, as.data.frame)
-    
-  }
-  
-  
-  ## Distinction between when to average for local variables
-  if (match.arg(average) %in% c("none", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
-    
-    draws_loc <- subset_draws(Draws, variable = locparname) %>% # c("state_init", "L_loc")
-      as_draws_rvars()
-    # draws_loc$state_init <- exp(draws_loc$state_init_log)
-    n_locs <- data_stan_priors$N_locs
-    
-  }
-  
-  if (match.arg(average) %in% c("locsperdraws_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
-    
-    draws_loc_avg <- subset_draws(Draws, variable = locparname_avg) %>%
-      as_draws_rvars() %>%
-      lapply(as.matrix) %>%
-      lapply(t) ## make this a list of 1-rowed matrices
-    names(draws_loc_avg) <- gsub("^avg_", "", locparname_avg)
-    
-    n_locs_avg <- 1
-    
-  }
-  
-  ## Generate quantiles in any case!
-  draws_loc_q <- subset_draws(Draws, variable = locparname) %>% # c("state_init", "L_loc")
-    posterior::as_draws()
-  
-  Quantiles_init <- draws_loc_q %>%
-    tidybayes::gather_draws(state_init[loc,pop]) %>%
-    group_by(pop, .draw, .iteration, .chain) %>%
-    summarize(pop = first(pop),
-              p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
-              median = quantile(.value, prob = 0.5, type = 1, na.rm = T),
-              p90 = quantile(.value, prob = 0.9, type = 1, na.rm = T),
-              loc_p10 = first(loc[.value == p10]),
-              loc_median = first(loc[.value == median]),
-              loc_p90 = first(loc[.value == p90]),
-              loc_p10_b = replace(loc_p10, pop < 5, NA),
-              loc_median_b = replace(loc_median, pop < 5, NA),
-              loc_p90_b = replace(loc_p90, pop < 5, NA)) %>%
-    ungroup()
-  
-  if (match.arg(average) == "locsperdraws_avgL_qInit") {
-    
-    ## Here 3 quantiles will be dealt with, as if they were locs
-    
-    L_loc_q <- draws_loc_q %>%
-      tidybayes::gather_draws(L_loc[loc,tax]) %>% # state_init[loc,pop]
-      group_by(tax, .draw, .iteration, .chain) %>%
-      summarize(p10 = quantile(.value, prob = 0.1, type = 1, na.rm = T),
-                median = quantile(.value, prob = 0.5, type = 1, na.rm = T),
-                p90 = quantile(.value, prob = 0.9, type = 1, na.rm = T)) %>%
-      pivot_longer(any_of(c("p10", "median", "p90")), names_to = "quantile", values_to = "L_loc") %>%
-      mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
-      pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "tax"), values_from = "L_loc", names_glue = "L_loc[{loc},{tax}]") %>% 
-      as_draws_rvars()
-    
-    state_init_q <- Quantiles_init %>%
-      pivot_longer(any_of(c("p10", "median", "p90")), names_to = "quantile", values_to = "state_init") %>%
-      mutate(loc = as.integer(factor(quantile, levels = c("p10", "median", "p90")))) %>%
-      # mutate(state_init = exp(state_init_log)) %>% ## !!!
-      pivot_wider(id_cols = c(".draw", ".iteration", ".chain"), names_from = c("loc", "pop"), values_from = "state_init", names_glue = "state_init[{loc},{pop}]") %>% 
-      as_draws_rvars()
-    
-    draws_loc_q <- list(state_init = state_init_q$state_init, L_loc = L_loc_q$L_loc)
-    n_locs_q <- 3
-  }
-  
-  if (match.arg(average) == "locsperdraws_all") {
-    draws_loc <- draws_loc_avg
-    n_locs <- n_locs_avg
-  } else if (match.arg(average) == "locsperdraws_avgL") {
-    L_loc_avg_rep <- draws_loc_avg$L_loc[rep(1, n_locs),]
-    draws_loc$L_loc <- L_loc_avg_rep
-  } else if (match.arg(average) == "locsperdraws_avgL_qInit") {
-    L_loc_avg_rep <- draws_loc_avg$L_loc[rep(1, n_locs_q),]
-    draws_loc <- draws_loc_q
-    n_locs <- n_locs_q
-  }
-  
-  
-  ### Nested simulations: locs/draws
-  
-  ### iterateModel_draws() --------------------------------
+  ##### iterateModel_draws() ------------------
   iterateModel_draws <- function(locpars, pars, time, averageperlocs) {
     
     if (averageperlocs) {
-      locpars <- lapply(locpars, mean, na.omit = T)
+      locpars <- lapply(locpars, mean, na.omit = T) ## will work with rvars, while retaining the data structure of a matrix, e.g.
     } else {
       locpars <- lapply(locpars, as_draws_matrix)
     }
     
     ## Assign local parameters to draws, adopt manually if necessary
-    pars <- lapply(1:length(pars), function(i) within(pars[[i]], { l <- c(locpars$L_loc[i,])
-                                                                          ## HERE!
-                                                                          }
+    pars <- lapply(1:length(pars), function(i) within(pars[[i]], { if("L_loc" %in% locparname) l <- c(locpars$L_loc[i,])
+                                                                   if("B_log" %in% locparname) b <- c(locpars$B[i,])
+                                                                   if("C_a_log" %in% locparname) b <- c(locpars$C_a[i,])
+                                                                   if("C_b_log" %in% locparname) b <- c(locpars$C_b[i,])
+                                                                   if("C_j_log" %in% locparname) b <- c(locpars$C_j[i,])
+                                                                   if("G_log" %in% locparname) b <- c(locpars$G[i,])
+                                                                   if("H_log" %in% locparname) b <- c(locpars$H[i,])
+                                                                   if("R_log" %in% locparname) b <- c(locpars$R[i,])
+                                                                   if("S_log" %in% locparname) b <- c(locpars$S[i,])
+                                                                 }
                                                       ))
     
     return( lapply(1:length(pars), function(i) iterateModel(c(locpars$state_init[i,]), pars = pars[[i]], time)) )
-    }
     
-    ### iterateLocs -------------------------
-    iterateLocs <- function(i, lp, p, t, avgperlocs) {
-      iterateModel_draws(locpars = lapply(lp, function(x) x[i,]), pars = p, time = t, averageperlocs = avgperlocs)
-    }
-    
-    
-    averageperlocs <- match.arg(average) == "drawsperlocs_all"
-    sims <- future_sapply(1:n_locs, iterateLocs,
-                          lp = draws_loc, p = pars, t = time, avg = averageperlocs, simplify = F) # a nested list[locs, draws] of matrices[times]
-    sims <- lapply(sims, bind_rows, .id = "draw")
-    Sims <- bind_rows(sims, .id = "loc")
-    
-    Quantiles_init <- Quantiles_init %>% 
-      mutate(pop = as.character(pop),
-             stage = fct_recode(pop, "J" = "1", "J" = "2", "A" = "3", "A" = "4", "B" = "5", "B" = "6"),
-             tax = as.integer(fct_recode(pop, "1" = "1", "2" = "2", "1" = "3", "2" = "4", "1" = "5", "2" = "6"))) %>%
-      rename(draw = ".draw") %>%
-      dplyr::select(-c(".chain", "pop", ".iteration"))
-    
-    Sims <- Sims %>%
-      group_by(loc, draw) %>%
-      mutate(diff = abundance - c(NA, abundance[1:(n()-1)]),
-             absdiff = abs(diff),
-             isconverged = replace_na(absdiff <= data_stan_priors$tolerance_fix, F),
-             isflat = replace_na(absdiff <= data_stan_priors$tolerance_fix * 10, F),
-             time_fix = first(time[isconverged]),
-             time_flat = first(time[isflat]),
-             state_fix = first(abundance[isconverged]),
-             state_flat = first(abundance[isflat])) %>%
-      ungroup() %>%
-      mutate(draw = as.integer(draw)) %>%
-      left_join(Quantiles_init, by = c("draw", "stage", "tax"))
-    
-    return(Sims)
   }
+    
+  ##### iterateLocs -------------------
+  iterateLocs <- function(i, lp, p, t, avgperlocs) {
+    iterateModel_draws(locpars = lapply(lp, function(x) x[i,]), pars = p, time = t, averageperlocs = avgperlocs)
+  }
+  
+  
+  ### Apply functions over par structure -------------------
+  
+  averageperlocs <- match.arg(average) == "drawsperlocs_all"
+  
+  sims <- future_sapply(1:n_locs, iterateLocs,
+                        lp = draws_loc, p = pars, t = time, avg = averageperlocs, simplify = F) ## returns a nested list[locs, draws] of matrices[times]
+  sims <- lapply(sims, bind_rows, .id = "draw")
+  Sims <- bind_rows(sims, .id = "loc")
+  
+  Quantiles_init <- Quantiles_init %>% 
+    mutate(pop = as.character(pop),
+           stage = fct_recode(pop, "J" = "1", "J" = "2", "A" = "3", "A" = "4", "B" = "5", "B" = "6"),
+           tax = as.integer(fct_recode(pop, "1" = "1", "2" = "2", "1" = "3", "2" = "4", "1" = "5", "2" = "6"))) %>%
+    rename(draw = ".draw") %>%
+    dplyr::select(-c(".chain", "pop", ".iteration"))
+  
+  Sims <- Sims %>%
+    group_by(loc, draw) %>%
+    mutate(diff = abundance - c(NA, abundance[1:(n()-1)]),
+           absdiff = abs(diff),
+           isconverged = replace_na(absdiff <= data_stan_priors$tolerance_fix, F),
+           isflat = replace_na(absdiff <= data_stan_priors$tolerance_fix * 10, F),
+           time_fix = first(time[isconverged]),
+           time_flat = first(time[isflat]),
+           state_fix = first(abundance[isconverged]),
+           state_flat = first(abundance[isflat])) %>%
+    ungroup() %>%
+    mutate(draw = as.integer(draw)) %>%
+    left_join(Quantiles_init, by = c("draw", "stage", "tax"))
+  
+  return(Sims)
+}
 
 
 ## selectParnameEnvironmental --------------------------------
@@ -780,7 +821,7 @@ fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envnam
   
   if(!is.null(path)) {
     
-    S <- coef(fit, s = fit$lambda.min) %>% as.matrix()
+    S <- coef(fit, s = fit$lambda.1se) %>% as.matrix()
     write.csv(S, file = file.path(path, paste0("Environmental", "_", parname, "_", taxon, "_summary_glmnet.csv")))
     
   }
@@ -885,7 +926,7 @@ predictEnvironmental <- function(fit, envname,
     
     formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = TRUE)" , collapse = " + "))
     X <- model.matrix(as.formula(formula), data = P_covered)
-    p <- predict(fit, newx = X, type = "response", s = fit$lambda.min) %>% c() # lambda.1se
+    p <- predict(fit, newx = X, type = "response", s = fit$lambda.1se) %>% c() # minimal lambda with the best prediction: lambda.min
   
   } else {
     p <- predict(fit, newdata = P_covered, type = "response") %>% c() # %>% matrix(nrow = res, ncol = res)
@@ -1916,7 +1957,7 @@ plotPredominant <- function(States, majorname,
 ## plotEnvironmental --------------------------------
 # surfaces <- tar_read(surface_environmental_env)
 # basename <- tar_read(basename_fit_env)
-# path = tar_read(dir_publish)
+# path <-  tar_read(dir_publish)
 plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname = "major_fix",
                               basename = basename_fit_env, path = dir_publish, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
@@ -1927,7 +1968,6 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
   
   plotE <- function(D, B) {
     
-
     name_x <- attr(D, "name_x")
     name_y <- attr(D, "name_y")
     parname <- attr(D, "parname")
@@ -1939,7 +1979,9 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
                           "sum_ko_1_c_a_fix", "sum_ko_2_c_a_fix",
                           "sum_ko_1_c_b_fix", "sum_ko_2_c_b_fix")
     
-    direction <- if ( str_starts(D$parname, fixed(parstart_reverse)) ) 1 else -1
+    isanyreversepar <- str_starts(parname, fixed(parstart_reverse)) %>% any()
+    
+    direction <- if (isanyreversepar) 1 else -1
     
     Binary_1 <- filter(B, z == 1) %>% ## is ordered, so that slicing should return some central location
       slice(round(nrow(.)*0.5)) %>%
