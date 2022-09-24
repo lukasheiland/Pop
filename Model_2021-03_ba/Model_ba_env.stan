@@ -541,15 +541,15 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  sigma_b ~ std_normal();
-  sigma_c_a ~ std_normal();
-  sigma_c_b ~ std_normal();
-  sigma_c_j ~ std_normal();
-  sigma_g ~ std_normal();
-  sigma_h ~ std_normal();
-  // // sigma_l ~ std_normal(); ///**
-  sigma_r ~ std_normal();
-  sigma_s ~ std_normal();
+  sigma_b ~ normal(0, 0.2);
+  sigma_c_a ~ normal(0, 0.2);
+  sigma_c_b ~ normal(0, 0.2);
+  sigma_c_j ~ normal(0, 0.2);
+  sigma_g ~ normal(0, 0.2);
+  sigma_h ~ normal(0, 0.2);
+  // // sigma_l ~ normal(0, 0.2); ///**
+  sigma_r ~ normal(0, 0.2);
+  sigma_s ~ normal(0, 0.2);
   
   // alpha_b ~ exponential(10); // exponential(1/10)
   // alpha_c_a ~ exponential(10); // exponential(1/scale) == exponential(rate)

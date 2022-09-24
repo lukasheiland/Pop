@@ -223,7 +223,7 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
     mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
     dplyr::select(var = variable, value, ess_bulk)
   
-  summary_publish  <-  dplyr::bind_rows(summary_phipar, summary_phipar) %>%
+  summary_publish  <-  dplyr::bind_rows(summary_publish, summary_phipar) %>%
     as.data.frame()
   write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
   
