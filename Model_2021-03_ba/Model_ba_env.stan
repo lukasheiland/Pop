@@ -447,7 +447,7 @@ parameters {
 
   //// Dispersion
   //? vector<lower=0>[N_protocolTax] phi_obs_inv; // error in neg_binomial per tax and stage
-  vector<lower=0>[N_protocolTax] phi_obs_inv_sqrt;
+  //! vector<lower=0>[N_protocolTax] phi_obs_inv_sqrt;
   
   //// Initial state
   array[N_locs] vector<lower=0, upper=1>[N_pops] state_init_raw;
@@ -520,12 +520,12 @@ transformed parameters {
   //?                                            //[F.J.init, o.J.init, F.J.2, o.J.2, F.J.3, o.J.3, F.A.init, o.A.init, F.B.init, o.B.init, F.A.23, o.A.23, F.B.23, o.B.23]
   //?                                              );
   
-  vector<lower=0>[N_protocolTax] phi_obs = inv_square(phi_obs_inv_sqrt .*
-                                                     [1e-3, 1e-3, 1e1, 1e1, 1e1, 1e1, 1e-3, 1e-3, 1e-3, 1e-3, 1e-1, 1e-1, 1e-3, 1e-3]'
-                                                     //[F.J.init, o.J.init, F.J.2, o.J.2, F.J.3, o.J.3, F.A.init, o.A.init, F.B.init, o.B.init, F.A.23, o.A.23, F.B.23, o.B.23]
-                                                     );
-  
-  vector[L_y] phi_obs_rep = phi_obs[rep_protocolTax2y];
+  //! vector<lower=0>[N_protocolTax] phi_obs = inv_square(phi_obs_inv_sqrt .*
+  //!                                                    [1e-3, 1e-3, 1e1, 1e1, 1e1, 1e1, 1e-3, 1e-3, 1e-3, 1e-3, 1e-1, 1e-1, 1e-3, 1e-3]'
+  //!                                                    //[F.J.init, o.J.init, F.J.2, o.J.2, F.J.3, o.J.3, F.A.init, o.A.init, F.B.init, o.B.init, F.A.23, o.A.23, F.B.23, o.B.23]
+  //!                                                    );
+
+  //! vector[L_y] phi_obs_rep = phi_obs[rep_protocolTax2y];
   
 }
 
@@ -562,7 +562,7 @@ model {
   // alpha_s ~ exponential(10);
   
   //? phi_obs_inv ~ std_normal();
-  phi_obs_inv_sqrt ~ std_normal();
+  //! phi_obs_inv_sqrt ~ std_normal();
   
   //// Priors for Parameters  
   b_log ~ normal(prior_b_log[1], prior_b_log[2]);
@@ -598,7 +598,8 @@ model {
   // Model       -------------------------------------------------------//
   //———————————————————————————————————————————————————————————————————//    
   
-  y ~ neg_binomial_2(y_hat_offset, phi_obs_rep);
+  //! y ~ neg_binomial_2(y_hat_offset, phi_obs_rep);
+  y ~ poisson(y_hat_offset);
 
 }
 
@@ -614,7 +615,8 @@ generated quantities {
   //———————————————————————————————————————————————————————————————————//    
 
   array[L_y] real<lower=0> y_sim;
-  y_sim = neg_binomial_2_rng(y_hat_offset, phi_obs_rep);
+  //! y_sim = neg_binomial_2_rng(y_hat_offset, phi_obs_rep);
+  y_sim = poisson_rng(y_hat_offset);
 
 
   //—————————————————————————————————————————————————————————————————————//
