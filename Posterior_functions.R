@@ -224,9 +224,9 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
     dplyr::select(var = variable, value, ess_bulk)
   
   summary_publish  <-  dplyr::bind_rows(summary_publish, summary_phipar) %>%
-    as.data.frame()
+    as.data.frame() %>%
+    apply(2, as.character) ## Flattens list columns, that seem to emerge invisibly
   write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
-  
   
   ## Number of years until equilibrium
   Iter <- cmdstanfit$draws("iterations_fix") %>%
