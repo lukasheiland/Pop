@@ -469,10 +469,12 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   
   #### The goal of the following wrangling:
   ## to makes pars a nested list[draws[parameters[n_locs,n_species]] (list might be a data frame),
-  ## where _log variables are exped and renamed!
-  ## List will be structured in two steps: 1. for global variables "p_log", 2. for local variables "P_log"/"P_loc".
+  ## The list will be structured here in two steps:
+  ##     1. for global variables "p_log", which are exped to "p" here,
+  ##     2. for local variables "P_log"/"P_loc" (which are exped later, see below).
   ## Later, when the simulation is applied over the nested parameter list, the structure will be unpacked, and parameters selected (local or global parameter?).
   ## In particular, the averaging at the loc-level over draws ("drawsperloc") will be done in the nested process.
+  ## Note that exping (and renaming) must always happen after averaging! This is why the local variables get exped later.
   
   ## 1. Distinction between when to average for global variables
   if(match.arg(average) == "drawsperlocs_all") {
@@ -506,11 +508,6 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     
     draws_loc <- subset_draws(Draws, variable = locparname) %>% # locparname important, because will get iterated over locs
       as_draws_rvars()
-    
-    ## exping
-    name_draws_loc <- names(draws_loc)
-    draws_loc <- lapply(name_draws_loc, function(n) { if(str_ends(n, "_log")) exp(draws_loc[[n]]) else draws_loc[[n]] })
-    names(draws_loc) <- str_remove(name_draws_loc, "_log")
     
     n_locs <- data_stan_priors$N_locs
     
@@ -673,20 +670,26 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     
     if (averageperlocs) {
       locpars <- lapply(locpars, mean, na.omit = T) ## will work with rvars, while retaining the data structure of a matrix, e.g.
+      
     } else {
       locpars <- lapply(locpars, as_draws_matrix)
     }
     
+    ## Exping in any case, but after averaging!
+    name_locpars <- names(locpars)
+    locpars <- lapply(name_locpars, function(n) { if(str_ends(n, "_log")) exp(locpars[[n]]) else locpars[[n]] })
+    names(locpars) <- str_remove(name_locpars, "_log")
+    
     ## Assign local parameters to draws, adopt manually if necessary
     pars <- lapply(1:length(pars), function(i) within(pars[[i]], { if("L_loc" %in% locparname) l <- c(locpars$L_loc[i,])
                                                                    if("B_log" %in% locparname) b <- c(locpars$B[i,])
-                                                                   if("C_a_log" %in% locparname) b <- c(locpars$C_a[i,])
-                                                                   if("C_b_log" %in% locparname) b <- c(locpars$C_b[i,])
-                                                                   if("C_j_log" %in% locparname) b <- c(locpars$C_j[i,])
-                                                                   if("G_log" %in% locparname) b <- c(locpars$G[i,])
-                                                                   if("H_log" %in% locparname) b <- c(locpars$H[i,])
-                                                                   if("R_log" %in% locparname) b <- c(locpars$R[i,])
-                                                                   if("S_log" %in% locparname) b <- c(locpars$S[i,])
+                                                                   if("C_a_log" %in% locparname) c_a <- c(locpars$C_a[i,])
+                                                                   if("C_b_log" %in% locparname) c_b <- c(locpars$C_b[i,])
+                                                                   if("C_j_log" %in% locparname) c_j <- c(locpars$C_j[i,])
+                                                                   if("G_log" %in% locparname) g <- c(locpars$G[i,])
+                                                                   if("H_log" %in% locparname) h <- c(locpars$H[i,])
+                                                                   if("R_log" %in% locparname) r <- c(locpars$R[i,])
+                                                                   if("S_log" %in% locparname) s <- c(locpars$S[i,])
                                                                  }
                                                       ))
     
