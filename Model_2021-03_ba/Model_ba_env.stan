@@ -521,7 +521,7 @@ transformed parameters {
   //?                                              );
   
   vector<lower=0>[N_protocolTax] phi_obs = inv_square(phi_obs_inv_sqrt .*
-                                                     [1e-3, 1e-3, 1e1, 1e1, 1e1, 1e1, 1e-3, 1e-3, 1e-3, 1e-3, 1e-1, 1e-1, 1e-3, 1e-3]'
+                                                     [1, 1, 1e1, 1e1, 1e1, 1e1, 1, 1, 1, 1, 1, 1, 1, 1]'
                                                      //[F.J.init, o.J.init, F.J.2, o.J.2, F.J.3, o.J.3, F.A.init, o.A.init, F.B.init, o.B.init, F.A.23, o.A.23, F.B.23, o.B.23]
                                                      );
   
@@ -562,7 +562,7 @@ model {
   // alpha_s ~ exponential(10);
   
   //? phi_obs_inv ~ std_normal();
-  phi_obs_inv_sqrt ~ std_normal();
+  phi_obs_inv_sqrt ~ normal(0, 0.2);
   
   //// Priors for Parameters  
   b_log ~ normal(prior_b_log[1], prior_b_log[2]);

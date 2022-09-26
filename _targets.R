@@ -102,13 +102,13 @@ targets_settings <- list(
              list(
                prior_b_log = c(-3, 1),
                prior_c_a_log = c(-8, 1),
-               prior_c_b_log = c(-7, 1),
+               prior_c_b_log = c(-6, 1),
                prior_c_j_log = c(-10, 2),
                prior_g_log = c(-6, 1),
-               prior_h_log = c(-3, 1),
+               prior_h_log = c(-2, 1),
                prior_l_log = c(4, 1),
                prior_r_log = c(4, 1),
-               prior_s_log = c(-5, 1)
+               prior_s_log = c(-6, 1)
              )
   ),
   
@@ -728,7 +728,7 @@ targets_posterior_env <- list(
              pattern = cross(parname_environmental_gaussian, taxon_s),
              iteration = "list"),
   tar_target(fit_environmental_env_binomial,
-             fitEnvironmental_glm(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial", path = dir_publish),
+             fitEnvironmental_gam(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial", path = dir_publish),
              pattern = map(parname_environmental_binomial),
              iteration = "list"),
   tar_target(fit_environmental_env,
