@@ -876,10 +876,10 @@ fitEnvironmental_glm <- function(Environmental, parname = parname_env, envname =
 ## predictEnvironmental --------------------------------
 # fit <- tar_read("fit_environmental_env")[[1]]
 # envname <- tar_read("predictor_select")
-# path  <- tar_read("dir_publish")
-# basename  <- tar_read("basename_fit_test")
+# path  <- dir_fit <- tar_read("dir_publish")
+# basename  <- basename_fit_env <-  tar_read("basename_fit_env")
 # color  <- tar_read("twocolors")
-# themefun  <- tar_read("themefunction")
+# themefun  <- theme_fagus <-  tar_read("themefunction")
 predictEnvironmental <- function(fit, envname,
                                  path = dir_fit, basename = basename_fit_env,
                                  color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
@@ -900,6 +900,12 @@ predictEnvironmental <- function(fit, envname,
     range_x <- range(E[[name_x]], na.rm = T)
     range_y <- range(E[[name_y]], na.rm = T)
   
+  } else if (is(fit, "gam")) { ## gams are also glms!
+    
+    O <- cbind(x = fit$model[[name_x]], y = fit$model[[name_y]])
+    range_x <- range(fit$model[[name_x]], na.rm = T)
+    range_y <- range(fit$model[[name_y]], na.rm = T)
+  
   } else if (is(fit, "glm")) {
     
     O <- cbind(x = fit$data[[name_x]], y = fit$data[[name_y]])
@@ -908,9 +914,9 @@ predictEnvironmental <- function(fit, envname,
   
   } else {
     
-    O <- cbind(x = fit$model[[name_x]], y = fit$model[[name_y]])
-    range_x <- range(fit$model[[name_x]], na.rm = T)
-    range_y <- range(fit$model[[name_y]], na.rm = T)
+    warning("fitEnvironmental(): unknown class of fit for ", paste(parname, taxon), "!")
+    return(NULL)
+  
   }
   
   ch <- chull(O)
@@ -936,6 +942,7 @@ predictEnvironmental <- function(fit, envname,
   }
   
   D <- cbind(P_covered, z = p)
+  
   
   attr(D, "name_x") <- name_x
   attr(D, "name_y") <- name_y
