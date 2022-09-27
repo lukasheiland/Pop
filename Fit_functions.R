@@ -384,6 +384,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
     N_species = N_species,
     N_pops = length(unique(S$pop)),
     N_beta = ncol(X),
+    N_env = length(predictor_select_s),
     N_obsmethod = length(unique(S$obsmethod)),
     N_protocol = length(unique(S$protocol)), ## different sampling area levels for J even in 2002 and 2012
     N_protocolTax = length(unique(S$protocolTax)), ## different sampling area levels for J even in 2002 and 2012
