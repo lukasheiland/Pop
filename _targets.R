@@ -229,9 +229,6 @@ targets_parname <- list(
   tar_target(parname_loc,
              c("state_init", "L_loc")),
   
-  tar_target(parname_loc_env,
-             c(parname_loc, "B_log", "C_a_log", "C_b_log", "C_j_log", "G_log", "H_log", "L_log", "R_log", "S_log")),
-  
   tar_target(parname_sigma,
              c(l = "sigma_l", r = "sigma_r", c_j = "sigma_c_j", s = "sigma_s", g = "sigma_g", c_a = "sigma_c_a", h = "sigma_h", b = "sigma_b", c_b = "sigma_c_b" )),
   
@@ -506,8 +503,11 @@ targets_fit_env <- list(
   tar_target(file_model_env,
              "Model_2021-03_ba/Model_ba_env.stan",
              format = "file"),
+  tar_target(file_model_env_vertex,
+             "Model_2021-03_ba/Model_ba_env_vertex.stan",
+             format = "file"),
   tar_target(model_env,
-             cmdstan_model(file_model_env, stanc_options = list("O1"))),
+             cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
                       method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 700, fitpath = dir_fit,
@@ -684,9 +684,29 @@ targets_posterior <- list(
 #### posterior_env -----------
 targets_posterior_env <- list(
   
+  ## Parameter names (in addition to the general ones above)
   tar_target(parname_env, c(setdiff(parname_loc_env, "state_init"),
                             "ba_init", "ba_fix", "major_fix", "major_init")),
+  
   tar_target(parname_environmental, selectParnameEnvironmental(parname_env, Environmental_env)), ## selects the variables, that are actually in the fit
+  
+  tar_target(parname_loc_env,
+             c(parname_loc, "B_log", "C_a_log", "C_b_log", "C_j_log", "G_log", "H_log", "L_log", "R_log", "S_log")),
+  
+  tar_target(parname_env_vertex,
+             sort(c(apply(expand.grid(paste0(setdiff(parname_plotorder, "l_log"), "_spread_env"),
+                                      1:2),
+                          1, paste0, collapse = ""),
+                    apply(expand.grid(paste0(setdiff(parname_plotorder, "l_log"), "_center_env"),
+                                      1:2),
+                          1, paste0, collapse = "")
+             ))
+  ),
+  
+  tar_target(parname_Beta,
+             paste0("Beta_", setdiff(parname_plotorder, "l_log"))),
+  
+  
   
   ## Extract
   tar_target(stanfit_env,
@@ -697,7 +717,7 @@ targets_posterior_env <- list(
   ## Summarize
   tar_target(summary_env,
              summarizeFit(cmdstanfit = fit_env, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, parname_loc_env),
-                          publishpar = parname_plotorder, path = dir_publish)),
+                          publishpar = c(parname_plotorder, parname_env_vertex), path = dir_publish)),
   tar_target(summary_states_env,
            summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
   tar_target(Freq_converged_env,
