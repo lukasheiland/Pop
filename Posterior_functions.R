@@ -1013,14 +1013,14 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   prioralpha <- c(1, 0.3)
   
   
-  getRidgedata <- function(startswith, fit = stanfit) {
+  getRidgedata <- function(name, fit = stanfit) {
     R <- bayesplot::mcmc_areas_data(fit,
-                                    pars = vars(starts_with(startswith, ignore.case = F)),
+                                    pars = vars(any_of(paste0(name, c("[1]", "[2]", "_prior", "_prior[1]", "_prior[2]")))), # vars(starts_with(name, ignore.case = F)))
                                     point_est = c("median"),
                                     prob = 0.8)
     
     M <- bayesplot::mcmc_intervals_data(fit,
-                                        pars = vars(starts_with(startswith, ignore.case = F)))
+                                        pars = vars(any_of(paste0(name, c("[1]", "[2]", "_prior", "_prior[1]", "_prior[2]"))))) # vars(starts_with(name, ignore.case = F)))
     
     R %<>%
       mutate(tax = str_extract(parameter, '\\[[12]\\]$')) %>%
@@ -1070,14 +1070,14 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   # }
   
   parname_sansprior <- parname # parname[!grepl("prior$", parname)]
-  parnamestart <- na.omit(unique(str_extract(parname_sansprior, "^[a-z]_[ljab]"))) ## For later use in starts_with: Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
-  parname <- c(parname, paste0(parname, "_prior"))
+  ## parnamestart <- na.omit(unique(str_extract(parname_sansprior, "^[a-z]_[ljab]"))) ## Not used. Instead, full parname is used as matching character since it excludes vertex form parameters. Originally intended for later use in starts_with: Everything that starts with a small letter, and has the right index after that to be a meaningful parameter. (Small letter is important!)
+  ## parname <- c(parname, paste0(parname, "_prior"))
   
   bayesplot::color_scheme_set("gray")
   ## areas for all parameters (the exclude might not be complete)
   # areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
   
-  ridgedata <- parallel::mclapply(parnamestart, getRidgedata, mc.cores = getOption("mc.cores", 9L))
+  ridgedata <- parallel::mclapply(parname_sansprior, getRidgedata, mc.cores = getOption("mc.cores", 18L))
   ridgeplots <- lapply(ridgedata, plotRidges)
   ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots,  align = "v")
   legendplot <- plotRidges(ridgedata[[1]], plotlegend = TRUE)
@@ -1088,6 +1088,39 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   message("Parameter plots complete.")
   
   return(plots)
+}
+
+## plotPosterior --------------------------------
+# varname  <- tar_read("parname_env_vertex_spread")
+# cmdstanfit  <- tar_read("fit_env")
+# path  <- tar_read("dir_publish")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotPosterior <- function(cmdstanfit, varname, path = tar_read(dir_publish),
+                      color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+  
+  basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  varname_draws <- cmdstanfit$metadata()$stan_variables
+  varname <- intersect(varname, varname_draws)
+  
+  if(length(varname) == 0) {
+    warning("plotPosterior(): None of the provided names are variables in the fit.")
+    return(NULL)
+  }
+  
+  d <- cmdstanfit$draws(variables = varname)
+  n_vars <- length(unique(attr(d, "dimnames")$variable))
+  
+  rhat <- rhat(cmdstanfit, pars = varname)
+  # nutsparam <- nuts_params(d)
+  
+  # color_scheme_set("viridis")
+  # plot <- mcmc_dens_chains(d, bw = "SJ") + theme_fagus()
+  plot <- mcmc_areas(d, bw = "SJ", rhat = rhat, area_method = "equal height") + theme_fagus()
+  
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_varname.", varname[1], ".pdf"), plot, device = "pdf", height = n_vars * 1.2, width = 6)
+  
+  return(plot)
 }
 
 

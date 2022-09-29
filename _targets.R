@@ -693,15 +693,22 @@ targets_posterior_env <- list(
   tar_target(parname_loc_env,
              c(parname_loc, "B_log", "C_a_log", "C_b_log", "C_j_log", "G_log", "H_log", "L_log", "R_log", "S_log")),
   
-  tar_target(parname_env_vertex,
-             sort(c(apply(expand.grid(paste0(setdiff(parname_plotorder, "l_log"), "_spread_env"),
-                                      1:2),
-                          1, paste0, collapse = ""),
-                    apply(expand.grid(paste0(setdiff(parname_plotorder, "l_log"), "_center_env"),
+  tar_target(parname_env_vertex_center,
+             sort(apply(expand.grid(paste0(setdiff(parname_plotorder, "l_log"), "_center_env"),
+                                    1:2),
+                        1, paste0, collapse = "")
+                  )
+             ),
+  
+  tar_target(parname_env_vertex_spread,
+             sort(apply(expand.grid(paste0(setdiff(parname_plotorder, "l_log"), "_spread_env"),
                                       1:2),
                           1, paste0, collapse = "")
-             ))
-  ),
+                  )
+             ),
+  
+  tar_target(parname_env_vertex,
+             sort(c(parname_env_vertex_center, parname_env_vertex_spread))),
   
   tar_target(parname_Beta,
              paste0("Beta_", setdiff(parname_plotorder, "l_log"))),
@@ -774,6 +781,12 @@ targets_posterior_env <- list(
              plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plots_parameters_env,
              plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+  tar_target(plot_posterior_center_env,
+             plotPosterior(cmdstanfit = fit_env, varname = parname_env_vertex_center)),
+  tar_target(plot_posterior_spread_env,
+             plotPosterior(cmdstanfit = fit_env, varname = parname_env_vertex_spread)),
+  tar_target(plot_posterior_phi_env,
+             plotPosterior(cmdstanfit = fit_env, varname = "phi_obs_inv_sqrt")),
   tar_target(plot_contributions_env,
              plotContributions(cmdstanfit = fit_env, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T,
                                color = twocolors, themefun = themefunction)),
