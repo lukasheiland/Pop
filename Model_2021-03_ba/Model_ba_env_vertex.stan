@@ -658,7 +658,7 @@ model {
   // alpha_s ~ exponential(10);
   
   //? phi_obs_inv ~ std_normal();
-  phi_obs_inv_sqrt ~ std_normal(0);
+  phi_obs_inv_sqrt ~ std_normal();
   
   //// Priors for Parameters  
   b_log   ~ normal(prior_b_log[1], prior_b_log[2]);
