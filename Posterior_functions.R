@@ -195,6 +195,7 @@ formatNumber <- function(x, signif.digits = 4) {
 ## summarizeFit --------------------------------
 # cmdstanfit <- tar_read("fit_env")
 # publishpar <- tar_read(parname_plotorder)
+# publishpar <- c(tar_read(parname_plotorder), tar_read(parname_env_vertex))
 # exclude <- tar_read(exclude)
 # path <- tar_read("dir_publish")
 summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
@@ -213,19 +214,23 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   
   summary_publish <- cmdstanfit$summary(publishpar) %>%
     mutate(p = if_else(str_detect(variable, "_prior"), "prior", "posterior")) %>%
-    mutate(tax = if_else(str_detect(variable, "[2]"), "other", "Fagus")) %>%
-    mutate(var = str_extract(variable, ".*_log")) %>%
+    mutate(tax = if_else(str_detect(variable, "\\[2\\]"), "other", "Fagus")) %>%
+    mutate(var = str_extract(variable, ".*_log(_center_env[1-2]|_spread_env[1-2])?")) %>% # ".*_log" and optionally one of the terms in braces
     mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
     dplyr::select(var, p, tax, value, ess_bulk) %>%
-    pivot_wider(values_from = c("value", "ess_bulk"), names_from = c("p", "tax"), id_cols = "var")
+    pivot_wider(values_from = c("value", "ess_bulk"), names_from = c("p", "tax"), id_cols = "var") %>%
+    dplyr::select(-starts_with("ess_bulk_prior"))
+  # write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
   
   summary_phipar <- cmdstanfit$summary(phipar) %>%
     mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
     dplyr::select(var = variable, value, ess_bulk)
+  # write.csv(summary_phipar, paste0(path, "/", basename_cmdstanfit, "_summary_phi.csv"))
   
   summary_publish  <-  dplyr::bind_rows(summary_publish, summary_phipar) %>%
     as.data.frame() %>%
     apply(2, as.character) ## Flattens list columns, that seem to emerge invisibly
+  
   write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
   
   ## Number of years until equilibrium
@@ -253,7 +258,7 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   summary_publish %>%
     as.data.frame() %>%
     print()
-
+  
   return(summary)
 }
 
@@ -330,7 +335,7 @@ summarizeErrors <- function(cmdstanfit, data_stan_priors, path) {
   #   as_draws_rvars()
   
   S <- cmdstanfit$summary(errorvar)
-
+  
   write.csv(S, paste0(path, "/", basename_cmdstanfit, "_summary_errors.csv"))
   return(S)
 }
@@ -696,7 +701,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
     return( lapply(1:length(pars), function(i) iterateModel(c(locpars$state_init[i,]), pars = pars[[i]], time)) )
     
   }
-    
+  
   ##### iterateLocs -------------------
   iterateLocs <- function(i, lp, p, t, avgperlocs) {
     iterateModel_draws(locpars = lapply(lp, function(x) x[i,]), pars = p, time = t, averageperlocs = avgperlocs)
@@ -766,7 +771,7 @@ selectParnameEnvironmental <- function(parname, Environmental_env) {
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_publish")
 fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname = predictor_select,
-                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = dir_publish) {
+                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -784,7 +789,8 @@ fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname =
   if(!is.null(path)) {
     s <- summary(fit)
     textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for environmental ...", label = paste("tab:gam", parname, taxon, sep = "_"))
-    cat(textext, file = file.path(path, paste0("Environmental", "_", parname, "_", taxon, "_summary_gam.tex")), fill = T) %>% invisible()
+    dir.create(file.path(path, "fits_Environmental"), showWarnings = FALSE)
+    cat(textext, file = file.path(path, "fits_Environmental", paste0("Environmental", "_", parname, "_", taxon, "_summary_gam.tex")), fill = T) %>% invisible()
   }
   
   attr(fit, "tax") <- taxon
@@ -801,7 +807,7 @@ fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname =
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
 fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envname = predictor_select,
-                                    taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = dir_publish) {
+                                    taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -825,7 +831,8 @@ fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envnam
   if(!is.null(path)) {
     
     S <- coef(fit, s = fit$lambda.1se) %>% as.matrix()
-    write.csv(S, file = file.path(path, paste0("Environmental", "_", parname, "_", taxon, "_summary_glmnet.csv")))
+    dir.create(file.path(path, "fits_Environmental"), showWarnings = FALSE)
+    write.csv(S, file = file.path(path, "fits_Environmental", paste0("Environmental", "_", parname, "_", taxon, "_summary_glmnet.csv")))
     
   }
   
@@ -845,7 +852,7 @@ fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envnam
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
 fitEnvironmental_glm <- function(Environmental, parname = parname_env, envname = predictor_select,
-                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = dir_publish) {
+                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -863,7 +870,8 @@ fitEnvironmental_glm <- function(Environmental, parname = parname_env, envname =
   fit <- glm(as.formula(formula), family = fam, data = E) # plot(fit)
   
   if(!is.null(path)) {
-    stargazer(fit, out = file.path(path, paste0("Environmental", "_", parname, "_", taxon, "_summary_glm.tex"))) %>% invisible()
+    dir.create(file.path(path, "fits_Environmental"), showWarnings = FALSE)
+    stargazer(fit, out = file.path(path, "fits_Environmental", paste0("Environmental", "_", parname, "_", taxon, "_summary_glm.tex"))) %>% invisible()
   }
   
   attr(fit, "tax") <- taxon
@@ -899,24 +907,24 @@ predictEnvironmental <- function(fit, envname,
     O <- cbind(x = E[[name_x]], y = E[[name_y]])
     range_x <- range(E[[name_x]], na.rm = T)
     range_y <- range(E[[name_y]], na.rm = T)
-  
+    
   } else if (is(fit, "gam")) { ## gams are also glms!
     
     O <- cbind(x = fit$model[[name_x]], y = fit$model[[name_y]])
     range_x <- range(fit$model[[name_x]], na.rm = T)
     range_y <- range(fit$model[[name_y]], na.rm = T)
-  
+    
   } else if (is(fit, "glm")) {
     
     O <- cbind(x = fit$data[[name_x]], y = fit$data[[name_y]])
     range_x <- range(fit$data[[name_x]], na.rm = T)
     range_y <- range(fit$data[[name_y]], na.rm = T)
-  
+    
   } else {
     
-    warning("fitEnvironmental(): unknown class of fit for ", paste(parname, taxon), "!")
+    warning("predictEnvironmental(): unknown class of fit for ", paste(parname, taxon), "!")
     return(NULL)
-  
+    
   }
   
   ch <- chull(O)
@@ -936,7 +944,7 @@ predictEnvironmental <- function(fit, envname,
     formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = TRUE)" , collapse = " + "))
     X <- model.matrix(as.formula(formula), data = P_covered)
     p <- predict(fit, newx = X, type = "response", s = fit$lambda.1se) %>% c() # minimal lambda with the best prediction: lambda.min
-  
+    
   } else {
     p <- predict(fit, newdata = P_covered, type = "response") %>% c() # %>% matrix(nrow = res, ncol = res)
   }
@@ -1096,8 +1104,8 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotPosterior <- function(cmdstanfit, varname, path = tar_read(dir_publish),
-                      color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotPosterior <- function(cmdstanfit, varname,
+                          path = tar_read("dir_publish"), color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   varname_draws <- cmdstanfit$metadata()$stan_variables
@@ -1261,8 +1269,7 @@ plotStates <- function(States,
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))
-                  ) +
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
     theme(axis.title.x = element_blank()) +
@@ -1271,7 +1278,7 @@ plotStates <- function(States,
     ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color)
-    # geom_jitter(position = position_jitter(0.2))
+  # geom_jitter(position = position_jitter(0.2))
   
   #### When
   # whenvar <- c("ba_init", "ba_fix")
@@ -1358,30 +1365,29 @@ plotStates <- function(States,
     group_by(when, loc, draw) %>%
     mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
     ungroup()
-
+  
   plot_main <- ggplot(T_main, aes(x = tax, y = value, col = tax, fill = tax)) +
     geom_violin(trim = T, col = "black", scale = "width") +
-
+    
     # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 4, fill = "transparent", scale = "width", data = T_main[T_main$is_loc_p10_draw,]) +
     geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 3, fill = "transparent", scale = "width", data = T_main[T_main$is_loc_median_draw,]) +
     # geom_violin(aes(x = tax, y = value), trim = T, col = "black", linetype = 2, fill = "transparent", scale = "width", data = T_main[T_main$is_loc_p90_draw,]) +
-
+    
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))
-                  ) +
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
     theme(axis.title.x = element_blank()) +
     theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
-
+    
     facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
-
+    
     labs(y = "basal area [m^2 ha^-1]") +
-
+    
     scale_color_manual(values = color) +
     scale_fill_manual(values = color)
-
+  
   Scatter_main <- States %>%
     filter(var %in% threevar) %>% # filter(States, str_starts(var, "ba")) %>%
     filter(!is.na(value)) %>%
@@ -1389,7 +1395,7 @@ plotStates <- function(States,
     mutate(when = factor(when, levels = threevar)) %>%
     dplyr::select(tax, loc, value, when, draw) %>%
     pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
-
+  
   plot_scatter_main <- ggplot(Scatter_main, aes(x = ba_other, y = ba_Fagus)) +
     geom_hex(bins = 100) +
     scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
@@ -1397,11 +1403,9 @@ plotStates <- function(States,
     facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
     labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))
-                  ) +
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
     scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))
-                  ) +
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
     annotation_logticks(base = 10, sides = "lb", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
     theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
@@ -1481,8 +1485,7 @@ plotStates <- function(States,
     
     ## scale_y_continuous(trans = "log10", n.breaks = 25) + # ggallin::pseudolog10_trans
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 10),
-                  labels = scales::trans_format("log10", scales::math_format(10^.x))
-                  ) +
+                  labels = scales::trans_format("log10", scales::math_format(10^.x))) +
     annotation_logticks(base = 10, sides = "l", scaled = T, short = unit(1, "mm"), mid = unit(2, "mm"), long = unit(2.5, "mm"), colour = "black", size = 0.25) +
     themefun() +
     theme(panel.grid.minor = element_blank())## !!! remove the minor gridlines
@@ -1630,8 +1633,7 @@ plotConditional_resampling <- function(cmdstanfit, parname, path,
                        columns = match(paste0(rep(parname, each = 2), c("_Fagus", "_other")), colnames(D)),
                        diag = list(continuous = plotDensity),
                        upper = list(continuous = wrap("cor", size = 3.3)),
-                       lower = list(continuous = wrap("points", alpha = 0.1, size = 0.6))
-                       ) +
+                       lower = list(continuous = wrap("points", alpha = 0.1, size = 0.6))) +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color) +
     themefun() +
@@ -1747,10 +1749,13 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotPairs <- function(cmdstanfit, parname, path,
-                      color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+plotPairs <- function(cmdstanfit, parname,
+                      path = tar_read("dir_publish"), color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
+  
+  varname_draws <- cmdstanfit$metadata()$stan_variables
+  parname <- intersect(parname, varname_draws)
   
   d <- cmdstanfit$draws(variables = parname)
   
@@ -1785,11 +1790,10 @@ plotPairs <- function(cmdstanfit, parname, path,
                                                     td_color = "yellow2",
                                                     td_shape = 3,
                                                     td_size = 1,
-                                                    td_alpha = 1)
-                          ) # + theme_fagus()
+                                                    td_alpha = 1)) # + theme_fagus()
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs", ".png"), pairsplot, device = "png", height = 28, width = 28)
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs", ".pdf"), pairsplot, device = "pdf", height = 28, width = 28)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".png"), pairsplot, device = "png", height = 28, width = 28)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".pdf"), pairsplot, device = "pdf", height = 28, width = 28)
   
   return(list('pairs' = pairsplot))
 }
@@ -1840,8 +1844,8 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   if (plotprop & plotlog) warning("Log-scale option was discarded because it does not make sense with proportions.")
   
   contribname <- if (match.arg(contribution) == "sum_ko_prop") { paste("sum_ko", rep(1:n_species, each = length(parname)), "prop", parname, "fix", sep = "_") }
-                    else if (match.arg(contribution) == "sum_ko") { paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_") }
-                    else if (match.arg(contribution) == "sum_switch") { paste("sum_switch", parname, "fix", sep = "_") }
+  else if (match.arg(contribution) == "sum_ko") { paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_") }
+  else if (match.arg(contribution) == "sum_switch") { paste("sum_switch", parname, "fix", sep = "_") }
   
   
   C <- cmdstanfit$draws(variables = contribname) %>%
@@ -1929,7 +1933,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotPredominant <- function(States, majorname,
-                            path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                            path = tar_read("dir_publish"), basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   States <- States[!is.na(States$value),]
   
@@ -2002,7 +2006,7 @@ plotPredominant <- function(States, majorname,
 # basename <- tar_read(basename_fit_env)
 # path <-  tar_read(dir_publish)
 plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname = "major_fix",
-                              basename = basename_fit_env, path = dir_publish, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                              basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"), color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   i_binary <- which(binaryname == sapply(surfaces, function(s) attr(s, "parname")))
   Binary <- surfaces[[i_binary]]
@@ -2044,13 +2048,13 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
     
     return(plot)
   }
-
+  
   plots <- lapply(surfaces, plotE, B = Binary)
   plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 2)
   
   ggsave(filename = paste0(path, "/", basename, "_plot_environmental", ".pdf"),
          plot = plotgrid, device = "pdf", width = 15, height = 90, limitsize = FALSE)
-
+  
   return(plots)
 }
 
@@ -2062,11 +2066,11 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotBinary <- function(Environmental, parname, path, basename,
+plotBinary <- function(Environmental, parname, path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   binaryname <- "major_fix"
-
+  
   B <- Environmental %>%
     ungroup() %>%
     dplyr::filter(.variable == binaryname) %>%
@@ -2080,7 +2084,7 @@ plotBinary <- function(Environmental, parname, path, basename,
     # rename(chain = .chain, iteration = .iteration, draw = .draw, variable = .variable, value = .value) %>%
     left_join(B, by = c("loc", ".draw")) %>%
     dplyr::filter(!is.na(binary))
-    
+  
   
   E <- Environmental %>%
     rename(value = .value) %>%
