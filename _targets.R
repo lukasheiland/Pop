@@ -777,8 +777,16 @@ targets_posterior_env <- list(
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
   tar_target(plots_trace_env,
              plotTrace(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  
   tar_target(plots_pairs_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plots_pairs_center_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_env_vertex_center)),
+  tar_target(plots_pairs_spread_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_env_vertex_spread)),
+  tar_target(plots_pairs_phi_env,
+             plotPairs(cmdstanfit = fit_env, parname = "phi_obs_inv_sqrt")),
+  
   tar_target(plots_parameters_env,
              plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   tar_target(plot_posterior_center_env,
@@ -787,6 +795,7 @@ targets_posterior_env <- list(
              plotPosterior(cmdstanfit = fit_env, varname = parname_env_vertex_spread)),
   tar_target(plot_posterior_phi_env,
              plotPosterior(cmdstanfit = fit_env, varname = "phi_obs_inv_sqrt")),
+  
   tar_target(plot_contributions_env,
              plotContributions(cmdstanfit = fit_env, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T,
                                color = twocolors, themefun = themefunction)),

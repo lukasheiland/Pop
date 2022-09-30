@@ -32,11 +32,18 @@ tar_make_future(c("summary_env",
                   "residuals_env",
                   "plot_environmental_env",
                   "plots_trace_env",
+                  
                   "plots_pairs_env",
+                  "plots_pairs_center_env",
+                  "plots_pairs_spread_env",
+                  "plots_pairs_phi_env",
+                  
+                  "plots_parameters_env",
                   "plot_posterior_center_env",
                   "plot_posterior_spread_env",
                   "plot_posterior_phi_env",
-                  "plots_parameters_env",
+                  
+                  
                   "plot_contributions_env",
                   "plots_states_env",
                   "plot_binary_env",
