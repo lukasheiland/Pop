@@ -404,7 +404,7 @@ parameters {
   vector[N_species] b_log;
   vector[N_species] c_a_log;
   vector[N_species] c_b_log;
-  vector[N_species] c_j_log_10;
+  vector[N_species] c_j_log;
   vector<upper=0>[N_species] g_log;
   vector<upper=0>[N_species] h_log;
   vector[N_species] l_log;
@@ -462,7 +462,7 @@ parameters {
 transformed parameters {
       
   //// Transformed parametes
-  vector[N_species] c_j_log = c_j_log_10 * 10;
+  // vector[N_species] c_j_log = c_j_log_10 * 10;
   
   //// Local variables
   array[N_locs] vector<lower=0>[N_species] L_loc;

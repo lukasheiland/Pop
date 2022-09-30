@@ -615,7 +615,7 @@ transformed parameters {
   //?                                              );
   
   vector<lower=0>[N_protocolTax] phi_obs = inv_square(phi_obs_inv_sqrt .*
-                                                     [1, 1, 1e1, 1e1, 1e1, 1e1, 1, 1, 1, 1, 1, 1, 1, 1]'
+                                                     [1e-2, 1e-2, 1e1, 1e1, 1e1, 1e1, 1e-1, 1e-1, 1e-1, 1e-1, 1, 1, 1, 1]'
                                                      //[F.J.init, o.J.init, F.J.2, o.J.2, F.J.3, o.J.3, F.A.init, o.A.init, F.B.init, o.B.init, F.A.23, o.A.23, F.B.23, o.B.23]
                                                      );
   
@@ -658,7 +658,7 @@ model {
   // alpha_s ~ exponential(10);
   
   //? phi_obs_inv ~ std_normal();
-  phi_obs_inv_sqrt ~ normal(0, 0.2);
+  phi_obs_inv_sqrt ~ std_normal(0);
   
   //// Priors for Parameters  
   b_log   ~ normal(prior_b_log[1], prior_b_log[2]);
@@ -671,14 +671,13 @@ model {
   r_log   ~ normal(prior_r_log[1], prior_r_log[2]);
   s_log   ~ normal(prior_s_log[1], prior_s_log[2]);
   
-  
+  // note that there are no vertex parameters for l in the following, because for l we fit an intercept only:
   b_log_center_env1   ~ std_normal();
   c_a_log_center_env1 ~ std_normal();
   c_b_log_center_env1 ~ std_normal();
   c_j_log_center_env1 ~ std_normal();
   g_log_center_env1   ~ std_normal();
   h_log_center_env1   ~ std_normal();
-  // no l!
   r_log_center_env1   ~ std_normal();
   s_log_center_env1   ~ std_normal();
   
@@ -688,30 +687,27 @@ model {
   c_j_log_center_env2 ~ std_normal();
   g_log_center_env2   ~ std_normal();
   h_log_center_env2   ~ std_normal();
-  // no l!
   r_log_center_env2   ~ std_normal();
   s_log_center_env2   ~ std_normal();
 
 
-  b_log_spread_env1   ~ double_exponential(0, 0.1);
-  c_a_log_spread_env1 ~ double_exponential(0, 0.1);
-  c_b_log_spread_env1 ~ double_exponential(0, 0.1);
-  c_j_log_spread_env1 ~ double_exponential(0, 0.1);
-  g_log_spread_env1   ~ double_exponential(0, 0.1);
-  h_log_spread_env1   ~ double_exponential(0, 0.1);
-  // no l!
-  r_log_spread_env1   ~ double_exponential(0, 0.1);
-  s_log_spread_env1   ~ double_exponential(0, 0.1);
+  b_log_spread_env1   ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  c_a_log_spread_env1 ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  c_b_log_spread_env1 ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  c_j_log_spread_env1 ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  g_log_spread_env1   ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  h_log_spread_env1   ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  r_log_spread_env1   ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  s_log_spread_env1   ~ normal(0. 0.5); // double_exponential(0, 0.5);
   
-  b_log_spread_env2   ~ double_exponential(0, 0.1);
-  c_a_log_spread_env2 ~ double_exponential(0, 0.1);
-  c_b_log_spread_env2 ~ double_exponential(0, 0.1);
-  c_j_log_spread_env2 ~ double_exponential(0, 0.1);
-  g_log_spread_env2   ~ double_exponential(0, 0.1);
-  h_log_spread_env2   ~ double_exponential(0, 0.1);
-  // no l!
-  r_log_spread_env2   ~ double_exponential(0, 0.1);
-  s_log_spread_env2   ~ double_exponential(0, 0.1);
+  b_log_spread_env2   ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  c_a_log_spread_env2 ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  c_b_log_spread_env2 ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  c_j_log_spread_env2 ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  g_log_spread_env2   ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  h_log_spread_env2   ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  r_log_spread_env2   ~ normal(0. 0.5); // double_exponential(0, 0.5);
+  s_log_spread_env2   ~ normal(0. 0.5); // double_exponential(0, 0.5);
   
   
   for(l in 1:N_locs) { 
