@@ -706,23 +706,23 @@ model {
   s_log_center_env2   ~ std_normal();
 
 
-  b_log_spread_env1_100   ~  double_exponential(0, 0.5);
-  c_a_log_spread_env1_100 ~  double_exponential(0, 0.5);
-  c_b_log_spread_env1_100 ~  double_exponential(0, 0.5);
-  c_j_log_spread_env1_100 ~  double_exponential(0, 0.5);
-  g_log_spread_env1_100   ~  double_exponential(0, 0.5);
-  h_log_spread_env1_100   ~  double_exponential(0, 0.5);
-  r_log_spread_env1_100   ~  double_exponential(0, 0.5);
-  s_log_spread_env1_100   ~  double_exponential(0, 0.5);
+  b_log_spread_env1_100   ~  double_exponential(0, 1);
+  c_a_log_spread_env1_100 ~  double_exponential(0, 1);
+  c_b_log_spread_env1_100 ~  double_exponential(0, 1);
+  c_j_log_spread_env1_100 ~  double_exponential(0, 1);
+  g_log_spread_env1_100   ~  double_exponential(0, 1);
+  h_log_spread_env1_100   ~  double_exponential(0, 1);
+  r_log_spread_env1_100   ~  double_exponential(0, 1);
+  s_log_spread_env1_100   ~  double_exponential(0, 1);
   
-  b_log_spread_env2_100   ~  double_exponential(0, 0.5);
-  c_a_log_spread_env2_100 ~  double_exponential(0, 0.5);
-  c_b_log_spread_env2_100 ~  double_exponential(0, 0.5);
-  c_j_log_spread_env2_100 ~  double_exponential(0, 0.5);
-  g_log_spread_env2_100   ~  double_exponential(0, 0.5);
-  h_log_spread_env2_100   ~  double_exponential(0, 0.5);
-  r_log_spread_env2_100   ~  double_exponential(0, 0.5);
-  s_log_spread_env2_100   ~  double_exponential(0, 0.5);
+  b_log_spread_env2_100   ~  double_exponential(0, 1);
+  c_a_log_spread_env2_100 ~  double_exponential(0, 1);
+  c_b_log_spread_env2_100 ~  double_exponential(0, 1);
+  c_j_log_spread_env2_100 ~  double_exponential(0, 1);
+  g_log_spread_env2_100   ~  double_exponential(0, 1);
+  h_log_spread_env2_100   ~  double_exponential(0, 1);
+  r_log_spread_env2_100   ~  double_exponential(0, 1);
+  s_log_spread_env2_100   ~  double_exponential(0, 1);
   
   
   for(l in 1:N_locs) { 
