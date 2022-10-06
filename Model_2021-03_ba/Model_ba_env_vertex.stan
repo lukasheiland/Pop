@@ -533,23 +533,23 @@ transformed parameters {
   array[N_locs] vector<lower=0>[N_pops] state_init;
   
   // Spread of the parameters along environmental axes
-  vector<upper=0>[N_species] b_log_spread_env1 = b_log_spread_env1_100; // bell-shaped
-  vector<lower=0>[N_species] c_a_log_spread_env1 = c_a_log_spread_env1_100;  // inverse bell-shaped
-  vector<lower=0>[N_species] c_b_log_spread_env1 = c_b_log_spread_env1_100; // inverse bell-shaped
-  vector<lower=0>[N_species] c_j_log_spread_env1 = c_j_log_spread_env1_100; // inverse bell-shaped
-  vector<upper=0>[N_species] g_log_spread_env1 = g_log_spread_env1_100; // bell-shaped
-  vector<upper=0>[N_species] h_log_spread_env1 = h_log_spread_env1_100; // bell-shaped
-  vector[N_species] r_log_spread_env1 = r_log_spread_env1_100; // (inverse?) bell-shaped
-  vector[N_species] s_log_spread_env1 = s_log_spread_env1_100; // (inverse?) bell-shaped
+  vector<upper=0>[N_species] b_log_spread_env1 = b_log_spread_env1_100 * 1e-2; // bell-shaped
+  vector<lower=0>[N_species] c_a_log_spread_env1 = c_a_log_spread_env1_100 * 1e-2;  // inverse bell-shaped
+  vector<lower=0>[N_species] c_b_log_spread_env1 = c_b_log_spread_env1_100 * 1e-2; // inverse bell-shaped
+  vector<lower=0>[N_species] c_j_log_spread_env1 = c_j_log_spread_env1_100 * 1e-2; // inverse bell-shaped
+  vector<upper=0>[N_species] g_log_spread_env1 = g_log_spread_env1_100 * 1e-2; // bell-shaped
+  vector<upper=0>[N_species] h_log_spread_env1 = h_log_spread_env1_100 * 1e-2; // bell-shaped
+  vector[N_species] r_log_spread_env1 = r_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
+  vector[N_species] s_log_spread_env1 = s_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
   
-  vector<upper=0>[N_species] b_log_spread_env2 = b_log_spread_env2_100;
-  vector<lower=0>[N_species] c_a_log_spread_env2  = c_a_log_spread_env2_100;
-  vector<lower=0>[N_species] c_b_log_spread_env2 = c_b_log_spread_env2_100;
-  vector<lower=0>[N_species] c_j_log_spread_env2 = c_j_log_spread_env2_100;
-  vector<upper=0>[N_species] g_log_spread_env2 = g_log_spread_env2_100;
-  vector<upper=0>[N_species] h_log_spread_env2 = h_log_spread_env2_100;
-  vector[N_species] r_log_spread_env2 = r_log_spread_env2_100;
-  vector[N_species] s_log_spread_env2 = s_log_spread_env2_100;
+  vector<upper=0>[N_species] b_log_spread_env2 = b_log_spread_env2_100 * 1e-2;
+  vector<lower=0>[N_species] c_a_log_spread_env2  = c_a_log_spread_env2_100 * 1e-2;
+  vector<lower=0>[N_species] c_b_log_spread_env2 = c_b_log_spread_env2_100 * 1e-2;
+  vector<lower=0>[N_species] c_j_log_spread_env2 = c_j_log_spread_env2_100 * 1e-2;
+  vector<upper=0>[N_species] g_log_spread_env2 = g_log_spread_env2_100 * 1e-2;
+  vector<upper=0>[N_species] h_log_spread_env2 = h_log_spread_env2_100 * 1e-2;
+  vector[N_species] r_log_spread_env2 = r_log_spread_env2_100 * 1e-2;
+  vector[N_species] s_log_spread_env2 = s_log_spread_env2_100 * 1e-2;
   
   //// Environmental effects
   matrix[N_beta, N_species] Beta_b_log = transformToNormal(b_log, b_log_center_env1, b_log_center_env2, b_log_spread_env1, b_log_spread_env2);
