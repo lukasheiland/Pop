@@ -685,7 +685,7 @@ fitModel <- function(model, data_stan, gpq = FALSE,
                         iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                         # opencl_ids = openclid,
                         # adapt_delta = 0.99,
-                        # max_treedepth = 16,
+                        max_treedepth = 16,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains),
                         ...)
     
