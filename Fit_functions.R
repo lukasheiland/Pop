@@ -650,7 +650,7 @@ fitModel <- function(model, data_stan, gpq = FALSE,
   
   data_stan$generateposteriorq <- as.integer(gpq)
   
-  inits <- 0.01
+  inits <- 0.1
   # inits <- list(state_init_raw = apply(data_stan$state_init_data, 2, function(x) scales::rescale(x, to = c(1e-12, 0.7))),
   #               b_log = data_stan$prior_b_log[1], c_a_log = data_stan$prior_c_a_log[1], c_b_log = data_stan$prior_c_b_log[1], c_j_log = data_stan$prior_c_j_log[1],
   #               g_log = unlist(data_stan$prior_g_log[1,], use.names = F), h_log = unlist(data_stan$prior_h_log[1,], use.names = F), l_log = data_stan$prior_l_log[1], r_log = unlist(data_stan$prior_r_log[1,], use.names = F), s_log = data_stan$prior_s_log[1], 
@@ -685,7 +685,7 @@ fitModel <- function(model, data_stan, gpq = FALSE,
                         iter_warmup = iter_warmup, iter_sampling = iter_sampling,
                         # opencl_ids = openclid,
                         # adapt_delta = 0.99,
-                        max_treedepth = 16,
+                        max_treedepth = 12,
                         chains = n_chains, parallel_chains = getOption("mc.cores", n_chains),
                         ...)
     
