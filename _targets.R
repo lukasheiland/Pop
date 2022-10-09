@@ -101,14 +101,14 @@ targets_settings <- list(
   tar_target(weakpriors_env,
              list(
                prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-8, 1),
+               prior_c_a_log = c(-7, 1),
                prior_c_b_log = c(-6, 1),
                prior_c_j_log = c(-10, 2),
-               prior_g_log = c(-6, 1),
+               prior_g_log = c(-5, 1),
                prior_h_log = c(-2, 1),
                prior_l_log = c(4, 1),
-               prior_r_log = c(4, 1),
-               prior_s_log = c(-6, 1)
+               prior_r_log = c(5, 1),
+               prior_s_log = c(-6, 2)
              )
   ),
   
@@ -182,6 +182,8 @@ targets_parname <- list(
                "c_j_log_10",
                "log_prior", "log_lik", "lp__", "state_init_log_raw", "state_2", "state_2_raw", "state_3", "state_3_raw")),
   
+  ## do not exclude: sort(apply(expand.grid(paste0(setdiff(parname_plotorder, "l_log"), "_spread_env"), 1:2, "_100"), 1, paste0, collapse = ""))
+
   tar_target(rep_exclude,
              c("phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "y_hat_rep", "y_hat_prior_rep", "y_hat_offset", "y_hat_rep_offset", "y_hat_prior_rep_offset")),
@@ -751,7 +753,7 @@ targets_posterior_env <- list(
   tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
   
   tar_target(fit_environmental_env_gaussian,
-             fitEnvironmental_glmnet(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
+             fitEnvironmental_glm(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
              pattern = cross(parname_environmental_gaussian, taxon_s),
              iteration = "list"),
   tar_target(fit_environmental_env_binomial,
