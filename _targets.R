@@ -689,8 +689,12 @@ targets_posterior_env <- list(
   ## Parameter names (in addition to the general ones above)
   tar_target(parname_env, c(setdiff(parname_loc_env, "state_init"),
                             "ba_init", "ba_fix", "major_fix", "major_init")),
+  tar_target(contribname_env, paste("sum_ko",
+                                    rep(1:2, each = length(parname_plotorder)),
+                                    names(parname_plotorder), "fix", sep = "_")),
   
   tar_target(parname_environmental, selectParnameEnvironmental(parname_env, Environmental_env)), ## selects the variables, that are actually in the fit
+  tar_target(contribname_environmental, selectParnameEnvironmental(contribname_env, Environmental_env)), ## selects the variables, that are actually in the fit
   
   tar_target(parname_loc_env,
              c(parname_loc, "B_log", "C_a_log", "C_b_log", "C_j_log", "G_log", "H_log", "L_log", "R_log", "S_log")),
@@ -744,35 +748,69 @@ targets_posterior_env <- list(
   tar_target(States_env,
              formatStates(cmdstanfit = fit_env, statename = statename, data_stan_priors = data_stan_priors_env)),
   tar_target(Environmental_env,
-             formatEnvironmental(cmdstanfit = fit_env, parname = parname_env,
+             formatEnvironmental(cmdstanfit = fit_env, parname = c(parname_env, contribname_env),
                                  data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),
   
   
   ## Post-hoc inference
-  tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c("major_init", "major_fix"))),
+  tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c("major_init", "major_fix", "ba_init", "ba_fix"))),
+  tar_target(parname_environmental_ba, c(contribname_environmental, "ba_init", "ba_fix")),
   tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
   
   tar_target(fit_environmental_env_gaussian,
              fitEnvironmental_glm(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
              pattern = cross(parname_environmental_gaussian, taxon_s),
              iteration = "list"),
+  tar_target(fit_environmental_env_ba,
+             fitEnvironmental_gam(Environmental_env, parname = parname_environmental_ba, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
+             pattern = cross(parname_environmental_ba, taxon_s),
+             iteration = "list"),
   tar_target(fit_environmental_env_binomial,
              fitEnvironmental_gam(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial", path = dir_publish),
              pattern = map(parname_environmental_binomial),
              iteration = "list"),
   tar_target(fit_environmental_env,
-             c(fit_environmental_env_gaussian, fit_environmental_env_binomial),
+             c(fit_environmental_env_ba, fit_environmental_env_binomial), # excluded: fit_environmental_env_gaussian, i.e. all the pure parameters
              iteration = "list"),  
+  
+  
   tar_target(surface_environmental_env,
              predictEnvironmental(fit_environmental_env, envname = predictor_select,
                                   path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
              pattern = map(fit_environmental_env),
              iteration = "list"),
+  tar_target(surface_environmental_env_gaussian,
+             predictEnvironmental(fit_environmental_env_gaussian, envname = predictor_select,
+                                  path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
+             pattern = map(fit_environmental_env_gaussian),
+             iteration = "list"),
+  tar_target(surface_environmental_env_ba,
+             predictEnvironmental(fit_environmental_env_ba, envname = predictor_select,
+                                  path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
+             pattern = map(fit_environmental_env_ba),
+             iteration = "list"),
+  tar_target(surface_environmental_env_binomial,
+             predictEnvironmental(fit_environmental_env_binomial, envname = predictor_select,
+                                  path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
+             pattern = map(fit_environmental_env_binomial),
+             iteration = "list"),
 
+  
   ## Plot
   tar_target(plot_environmental_env,
              plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix",
                                basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plot_environmental_env_gaussian,
+             plotEnvironmental(surfaces = surface_environmental_env_gaussian, binaryname = "major_fix",
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plot_environmental_env_ba,
+             plotEnvironmental(surfaces = surface_environmental_env_ba, binaryname = "major_fix",
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plot_environmental_env_binomial,
+             plotEnvironmental(surfaces = surface_environmental_env_binomial, binaryname = "major_fix",
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  
+  
   tar_target(plot_binary_env,
              plotBinary(Environmental = Environmental_env,
                         parname = setdiff(tar_read("parname_environmental"), c("L_loc", "major_fix", "major_init", "ba_init", "ba_fix")),

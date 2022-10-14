@@ -30,8 +30,12 @@ tar_make(c("fit_env"))
 tar_make_future(c("summary_env",
                   "summary_states_env",
                   "residuals_env",
-                  "plot_environmental_env",
                   "plots_trace_env",
+                  
+                  # "plot_environmental_env_gaussian",
+                  # "plot_environmental_env_ba",
+                  # "plot_environmental_env_binomial",
+                  "plot_environmental_env", ## currently, plot_environmental_env_ba + binomial
                   
                   "plots_pairs_env",
                   "plots_pairs_center_env",
@@ -42,7 +46,6 @@ tar_make_future(c("summary_env",
                   "plot_posterior_center_env",
                   "plot_posterior_spread_env",
                   "plot_posterior_phi_env",
-                  
                   
                   "plot_contributions_env",
                   "plots_states_env",

@@ -655,6 +655,9 @@ selectLocs <- function(Stages_s, predictor_select,
       Strata_sampled_anyFagus <- table(Samples_strata_anyFagus[,predictor_select[1], drop = T], Samples_strata_anyFagus[,predictor_select[2], drop = T])
       write.csv(Strata_sampled_anyFagus, file.path(tablepath, "Strata_env_DE_sampled_anyFagus.csv"))
       
+      Strata_sampled_relative <- Strata_sampled_anyFagus/Strata_sampled
+      write.csv(Strata_sampled_relative, file.path(tablepath, "Strata_env_DE_sampled_relative.csv"))
+      
     } else { ## case: !(stratpred & selectpred)
       
       if(FALSE) { ## case !(stratpred & selectpred & stratspat)

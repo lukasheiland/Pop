@@ -747,7 +747,8 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 selectParnameEnvironmental <- function(parname, Environmental_env) {
   
   parname_drawn <- unique(Environmental_env$.variable)
-  message("selectParnameEnvironmental(): The variables ", paste(setdiff(parname, parname_drawn), collapse = ", "), " are not in the posterior to be regressed against the environmental variables!")
+  notdrawn <- paste(setdiff(parname, parname_drawn), collapse = ", ")
+  if (length(notdrawn < 1)) message("selectParnameEnvironmental(): The variables ", notdrawn, " are not in the posterior to be regressed against the environmental variables!")
   parname_environmental <- intersect(parname, parname_drawn)
   
   ## reorder and concatenate objects that are unknown to the order
@@ -2009,9 +2010,9 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
                               basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"), color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   i_binary <- which(binaryname == sapply(surfaces, function(s) attr(s, "parname")))
-  Binary <- surfaces[[i_binary]]
-  Binary$z <- round(Binary$z)
-  
+  Binary <- if(isTRUE(i_binary >= 1)) surfaces[[i_binary]] else NULL
+  Binary$z <- if(!is.null(Binary)) round(Binary$z) else NULL
+  if(is.null(Binary)) warning("plotEnvironmental(): surface with binaryname is not in provided surfaces.")
   
   plotE <- function(D, B) {
     
@@ -2030,18 +2031,25 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
     
     direction <- if (isanyreversepar) 1 else -1
     
-    Binary_1 <- filter(B, z == 1) %>% ## is ordered, so that slicing should return some central location
-      slice(round(nrow(.)*0.5)) %>%
-      bind_cols(label = "Fagus predominant")
+    bnotnull <- !is.null(B)
+    
+    if(bnotnull) {
+      
+      Binary_1 <- dplyr::filter(B, z == 1) %>% ## is ordered, so that slicing should return some central location
+        slice(round(nrow(.)*0.5)) %>%
+        bind_cols(label = "Fagus predominant")
+    }
     
     plot <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
       geom_raster(aes(fill = z)) +
       geom_contour(col = "white") +
       scale_color_manual(values = color) +
       scale_fill_viridis_c(direction = direction) +
-      geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
-                   data = B, bins = 2, col = "black", linetype = 2, size = 1.1, inherit.aes = F) +
-      geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") +
+      
+      { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
+                                  data = B, bins = 2, col = "black", linetype = 2, size = 1.1, inherit.aes = F) } + 
+      { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") } +
+      
       themefun() +
       ggtitle(paste(parname, taxon)) +
       scale_y_reverse() ## invert water level scale, consistent with Ökogramm.
@@ -2052,8 +2060,8 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
   plots <- lapply(surfaces, plotE, B = Binary)
   plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 2)
   
-  ggsave(filename = paste0(path, "/", basename, "_plot_environmental", ".pdf"),
-         plot = plotgrid, device = "pdf", width = 15, height = 90, limitsize = FALSE)
+  ggsave(filename = paste0(path, "/", basename, "_plot_environmental_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
+         plot = plotgrid, device = "pdf", width = 15, height = 4 * ceiling(length(plots)), limitsize = FALSE)
   
   return(plots)
 }
