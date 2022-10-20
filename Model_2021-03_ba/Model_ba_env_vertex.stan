@@ -445,8 +445,8 @@ parameters {
   vector[N_species] c_a_log_center_env1;
   vector[N_species] c_b_log_center_env1;
   vector[N_species] c_j_log_center_env1;
-  vector<upper=0>[N_species] g_log_center_env1;
-  vector<upper=0>[N_species] h_log_center_env1;
+  vector[N_species] g_log_center_env1;
+  vector[N_species] h_log_center_env1;
   vector[N_species] r_log_center_env1;
   vector[N_species] s_log_center_env1;
   
@@ -454,8 +454,8 @@ parameters {
   vector[N_species] c_a_log_center_env2;
   vector[N_species] c_b_log_center_env2;
   vector[N_species] c_j_log_center_env2;
-  vector<upper=0>[N_species] g_log_center_env2;
-  vector<upper=0>[N_species] h_log_center_env2;
+  vector[N_species] g_log_center_env2;
+  vector[N_species] h_log_center_env2;
   vector[N_species] r_log_center_env2;
   vector[N_species] s_log_center_env2;
   
@@ -537,8 +537,8 @@ transformed parameters {
   vector<lower=0>[N_species] c_a_log_spread_env1 = c_a_log_spread_env1_100 * 1e-2;  // inverse bell-shaped
   vector<lower=0>[N_species] c_b_log_spread_env1 = c_b_log_spread_env1_100 * 1e-2; // inverse bell-shaped
   vector<lower=0>[N_species] c_j_log_spread_env1 = c_j_log_spread_env1_100 * 1e-2; // inverse bell-shaped
-  vector<upper=0>[N_species] g_log_spread_env1 = g_log_spread_env1_100 * 1e-2; // bell-shaped
-  vector<upper=0>[N_species] h_log_spread_env1 = h_log_spread_env1_100 * 1e-2; // bell-shaped
+  vector[N_species] g_log_spread_env1 = g_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
+  vector[N_species] h_log_spread_env1 = h_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
   vector[N_species] r_log_spread_env1 = r_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
   vector[N_species] s_log_spread_env1 = s_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
   
@@ -546,8 +546,8 @@ transformed parameters {
   vector<lower=0>[N_species] c_a_log_spread_env2  = c_a_log_spread_env2_100 * 1e-2;
   vector<lower=0>[N_species] c_b_log_spread_env2 = c_b_log_spread_env2_100 * 1e-2;
   vector<lower=0>[N_species] c_j_log_spread_env2 = c_j_log_spread_env2_100 * 1e-2;
-  vector<upper=0>[N_species] g_log_spread_env2 = g_log_spread_env2_100 * 1e-2;
-  vector<upper=0>[N_species] h_log_spread_env2 = h_log_spread_env2_100 * 1e-2;
+  vector[N_species] g_log_spread_env2 = g_log_spread_env2_100 * 1e-2;
+  vector[N_species] h_log_spread_env2 = h_log_spread_env2_100 * 1e-2;
   vector[N_species] r_log_spread_env2 = r_log_spread_env2_100 * 1e-2;
   vector[N_species] s_log_spread_env2 = s_log_spread_env2_100 * 1e-2;
   
