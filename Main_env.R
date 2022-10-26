@@ -35,7 +35,9 @@ tar_make_future(c("summary_env",
                   # "plot_environmental_env_gaussian",
                   # "plot_environmental_env_ba",
                   # "plot_environmental_env_binomial",
-                  "plot_environmental_env", ## currently, plot_environmental_env_ba + binomial
+                  "plot_environmental_env", ## currently includes *_ba and *_binomial (both init and fix)
+                  
+                  "plot_poly_env",
                   
                   "plots_pairs_env",
                   "plots_pairs_center_env",
@@ -61,7 +63,7 @@ tar_make_future(c("Summary_taxa",
                   "Summary_NFIs"),
                 workers = if(onserver) 12 else 3, reporter = "verbose_positives")
 
-tar_make(c("map_select", "surfaceplots_s")) ## For some reason, future does not work with rasterVis and ggplot addition (some problem with correct overloading of `+`)
+# tar_make(c("map_select", "surfaceplots_s")) ## For some reason, future does not work with rasterVis and ggplot addition (some problem with correct overloading of `+`)
 
 
 

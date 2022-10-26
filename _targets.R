@@ -36,7 +36,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "MASS", "mgcv", "glmnet", "itsadug", "stargazer",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
-             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate",
+             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate", "metR",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -719,6 +719,9 @@ targets_posterior_env <- list(
   tar_target(parname_Beta,
              paste0("Beta_", setdiff(parname_plotorder, "l_log"))),
   
+  tar_target(vertexname_env_vertex,
+             sort(c(setdiff(parname_plotorder, "l_log"), parname_env_vertex_center, parname_env_vertex_spread))),
+  
   
   
   ## Extract
@@ -750,12 +753,17 @@ targets_posterior_env <- list(
   tar_target(Environmental_env,
              formatEnvironmental(cmdstanfit = fit_env, parname = c(parname_env, contribname_env),
                                  data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),
+  tar_target(Envgrid_env, formatEnvgrid(data_stan_priors_offset_env, envname = predictor_select, res = 500)),
   
   
   ## Post-hoc inference
   tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c("major_init", "major_fix", "ba_init", "ba_fix"))),
-  tar_target(parname_environmental_ba, c(contribname_environmental, "ba_init", "ba_fix")),
+  tar_target(parname_environmental_ba, c("ba_init", "ba_fix")), # contribname_environmental
   tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
+  
+  tar_target(Surfaces_poly_env, predictPoly(cmdstanfit = fit_env, parname_Beta = parname_Beta, Envgrid = Envgrid_env)),
+  tar_target(plot_poly_env, plotPoly(Surfaces_poly_env, Environmental = Environmental_env,
+                                     basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = theme_fagus)),
   
   tar_target(fit_environmental_env_gaussian,
              fitEnvironmental_glm(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),

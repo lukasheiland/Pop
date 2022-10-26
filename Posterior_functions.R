@@ -113,18 +113,21 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
       summarize(.value = mean(.value, na.rm = T))
   }
   
+  envname_all <- c(envname, paste0(envname, "_s"))
+  
   ## Add environmental values by loc
   Env <- attr(data_stan, "Long") %>% ## use "Long_BA" for an sf with point coordinates
     group_by(loc) %>%
-    summarize_at(envname, function(x) first(x[!is.na(x)])) %>%
+    summarize_at(envname_all, function(x) first(x[!is.na(x)])) %>%
     ungroup()
   
   n_row <- nrow(Draws_env)
-  Draws_env <- bind_cols(Draws_env, Env[match(Draws_env$loc, Env$loc), envname]) %>%
-    filter(!(.variable %in% c("major_fix", "ba_fix") & .value == 9))
+  Draws_env <- bind_cols(Draws_env, Env[match(Draws_env$loc, Env$loc), envname_all]) %>%
+    filter(!(.variable %in% c("major_fix", "ba_fix") & .value == 9)) %>%
+    ungroup()
   
   n_dropped <- n_row - nrow(Draws_env)
-  warning("There were ", n_dropped ," draws*variables dropped, because not in all iterations the simulation has converged to the the fix point (equilibrium).")
+  if (n_dropped > 0) warning("There were ", n_dropped ," draws*variables dropped, because not in all iterations the simulation has converged to the the fix point (equilibrium).")
   
   return(Draws_env)
 }
@@ -181,12 +184,106 @@ formatStates <- function(cmdstanfit, statename, data_stan_priors) {
   return(States)
 }
 
+
+## predictPoly --------------------------------
+# cmdstanfit <- tar_read("fit_env")
+# parname_Beta <- tar_read("parname_Beta")
+# Envgrid <- tar_read("Envgrid_env")
+# data_stan_priors <- tar_read("data_stan_priors")
+predictPoly <- function(cmdstanfit, parname_Beta, Envgrid) {
+  
+  varname_draws <- cmdstanfit$metadata()$stan_variables
+  varname <- intersect(parname_Beta, varname_draws)
+  
+  draws <- cmdstanfit$draws(variables = parname_Beta) %>%
+    as_draws_rvars()
+  
+  envname <- names(Envgrid)
+  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
+  Matrix <- model.matrix(as.formula(formula), data = Envgrid)
+  dimnames(Matrix) <- NULL ## character dimnames were fatal for %**%
+
+  predictGrid <- function(M, Beta) {
+    
+    Beta1 <- as_draws_matrix(Beta[, 1, drop = T])
+    Beta2 <- as_draws_matrix(Beta[, 2, drop = T])
+    
+    ## %**% matrix multiplication from rvars does not seem to work with the called function tensorA::mul.tensor()
+    mult <- function(A, b) {
+      return(A %*% b)
+    }
+    
+    p1 <- apply(Beta1, MARGIN = 1, mult, A = M)
+    p1_mean <- apply(p1, MARGIN = 1, mean)
+    p1_sd <- apply(p1, MARGIN = 1, sd)
+    
+    p2 <- apply(Beta2, MARGIN = 1, mult, A = M)
+    p2_mean <- apply(p2, MARGIN = 1, mean)
+    p2_sd <- apply(p2, MARGIN = 1, sd)
+    
+    ## uncertainties could also be carried on, to ggplot
+    P1 <- data.frame(Envgrid, z = p1_mean, sd_z = p1_sd, taxon = "Fagus")
+    P2 <- data.frame(Envgrid, z = p2_mean, sd_z = p2_sd, taxon = "others")
+    
+    P <- bind_rows(P1, P2)
+
+    return(P)
+  }
+
+  predictions <- mclapply(draws, predictGrid, M = Matrix, mc.cores = length(draws))
+  names(predictions) <- str_remove(names(draws), "Beta_")
+  Predictions <- bind_rows(predictions, .id = "parname")
+  
+  attr(Predictions, "name_x") <- attr(Envgrid, "name_x")
+  attr(Predictions, "name_y") <- attr(Envgrid, "name_y")
+
+  return(Predictions)
+}
+
+
 ## formatNumber --------------------------------
 # x <- 34364343.24324
 # signif.digits <- 4
 formatNumber <- function(x, signif.digits = 4) {
   formatC(signif(x, digits = signif.digits), digits = signif.digits,format="fg", flag="#")
 }
+
+
+## formatEnvgrid --------------------------------
+# envname <- tar_read("predictor_select")
+# data_stan <- tar_read("data_stan_priors_offset_env")
+formatEnvgrid <- function(data_stan, envname, res = 500) {
+  
+  if(length(envname) != 2) stop("There are more or fewer than 2 environmental gradients.")
+  
+  L <- attr(data_stan, "Long")
+  
+  envname_s <- paste0(envname, "_s")
+  name_x <- envname_s[1]
+  name_y <- envname_s[2]
+  
+  O <- cbind(x = L[[name_x]], y = L[[name_y]])
+  range_x <- range(L[[name_x]], na.rm = T)
+  range_y <- range(L[[name_y]], na.rm = T)
+  
+  ch <- chull(O)
+  Hullpoint <- O[c(ch, ch[1]),] ## close the polygon
+  poly <- st_sfc(st_polygon(list(Hullpoint)))
+  
+  x <- seq(range_x[1], range_x[2], length.out = res)
+  y <- seq(range_y[1], range_y[2], length.out = res)
+  P <- expand.grid(x, y) %>% setNames(c(name_x, name_y))
+  points <- st_sfc(lapply(1:nrow(P), function(i) st_point(c(as.matrix(P[i,])))))
+  
+  iscovered <- st_covered_by(points, poly, sparse = F)
+  P_covered <- P[iscovered,]
+  
+  attr(P_covered, "name_x") <- name_x
+  attr(P_covered, "name_y") <- name_y
+  
+  return(P_covered)
+}
+
 
 # ————————————————————————————————————————————————————————————————————————————————— #
 # Summarize posterior         -----------------------------------------------------
@@ -2064,6 +2161,56 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
          plot = plotgrid, device = "pdf", width = 15, height = 4 * ceiling(length(plots)), limitsize = FALSE)
   
   return(plots)
+}
+
+
+## plotPoly --------------------------------
+# Surfaces <- tar_read(Surfaces_poly_env)
+# Environmental <- tar_read(Environmental_env)
+# basename <- tar_read(basename_fit_env)
+# path <-  tar_read(dir_publish)
+plotPoly <- function(Surfaces, Environmental = NULL,
+                     basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
+                     color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+
+  name_x <- attr(Surfaces, "name_x")
+  name_y <- attr(Surfaces, "name_y")
+  
+  if (!is.null(Environmental)) {
+    
+    E <- Environmental %>%
+      dplyr::filter(str_starts(.variable, "sum_ko_")) %>% 
+      rename(parname = .variable) %>%
+      group_by_at(c("tax", "parname", "loc", name_x, name_y)) %>%
+      dplyr::summarize(value = mean(.value, na.rm = T), .groups = "drop") %>%
+      mutate(isdirectcontribution = str_extract(parname, "[1-2]") == tax) %>%
+      filter(isdirectcontribution) %>%
+      mutate(taxon = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>%
+      mutate(parname = str_extract(parname, "(c_[jab]|[a-z])(?=_fix$)")) %>%
+      mutate(parname = paste0(parname, "_log"))
+    
+    }
+  
+  plot <- ggplot(Surfaces, aes_string(x = name_x, y = name_y)) +
+    # geom_raster(aes(fill = z)) +
+    
+    { if (!is.null(Environmental)) geom_jitter(data = E, mapping = aes(color = value)) } + # width = 0.3, height = 0.3, size = 0.5
+    { if (!is.null(Environmental)) scale_color_viridis_c() } +
+    
+    metR::geom_contour2(mapping = aes(z = z, label = ..level..),
+                        colour = "gray50", global.breaks = F, label.placer = label_placer_flattest(), lineend = "round", skip = 2) +
+    
+
+    
+    facet_grid(rows = vars(parname), cols = vars(taxon)) +
+    themefun() +
+    
+    scale_y_reverse()
+
+  ggsave(filename = paste0(path, "/", basename, "_plot_poly", ".pdf"),
+         plot = plot, device = "pdf", width = 10, height = 40, limitsize = FALSE)
+  
+  return(plot)
 }
 
 
