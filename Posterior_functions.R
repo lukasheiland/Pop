@@ -2194,11 +2194,11 @@ plotPoly <- function(Surfaces, Environmental = NULL,
   plot <- ggplot(Surfaces, aes_string(x = name_x, y = name_y)) +
     # geom_raster(aes(fill = z)) +
     
-    { if (!is.null(Environmental)) geom_jitter(data = E, mapping = aes(color = value)) } + # width = 0.3, height = 0.3, size = 0.5
-    { if (!is.null(Environmental)) scale_color_viridis_c() } +
+    { if (!is.null(Environmental)) geom_jitter(data = E, mapping = aes(color = value), width = 0.1, height = 0.2, alpha = 0.6) } + # width = 0.3, height = 0.3, size = 0.5
+    { if (!is.null(Environmental)) scale_color_viridis_c() } + # scale_colour_divergent()
     
-    metR::geom_contour2(mapping = aes(z = z, label = ..level..),
-                        colour = "gray50", global.breaks = F, label.placer = label_placer_flattest(), lineend = "round", skip = 2) +
+    metR::geom_contour2(data = Surfaces, mapping = aes(z = z, label = round(..level.., 3)), # 
+                        colour = "gray30", global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) +
     
 
     
