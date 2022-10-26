@@ -754,7 +754,9 @@ targets_posterior_env <- list(
              formatEnvironmental(cmdstanfit = fit_env, parname = c(parname_env, contribname_env),
                                  data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),
   tar_target(Envgrid_env, formatEnvgrid(data_stan_priors_offset_env, envname = predictor_select, res = 500)),
-  
+  tar_target(Marginal_env,
+             formatMarginal(Environmental_env)),
+
   
   ## Post-hoc inference
   tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c("major_init", "major_fix", "ba_init", "ba_fix"))),
@@ -844,12 +846,18 @@ targets_posterior_env <- list(
   tar_target(plot_posterior_phi_env,
              plotPosterior(cmdstanfit = fit_env, varname = "phi_obs_inv_sqrt")),
   
+  tar_target(plot_marginal_env,
+             plotMarginal(Marginal = Marginal_env, parname = str_to_sentence(parname_plotorder),
+                          path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = theme_fagus)),
+  
   tar_target(plot_contributions_env,
              plotContributions(cmdstanfit = fit_env, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T,
                                color = twocolors, themefun = themefunction)),
+  
   tar_target(plots_states_env,
              plotStates(States_env, allstatevars = c("ba_init", "ba_fix"),
                         path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+  
   tar_target(plot_trajectories_avg_env,
              plotTrajectories(Trajectories_avg_env, thicker = T, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction))
   

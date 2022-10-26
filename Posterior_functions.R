@@ -133,6 +133,24 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
 }
 
 
+## formatMarginal --------------------------------
+# Environmental <- tar_read("Environmental_env")
+formatMarginal <- function(Environmental) {
+  
+  D <- Environmental %>%
+    group_by(.chain, .iteration, .draw, .variable, tax) %>%
+    summarize(.value = mean(.value, na.rm = T), median = median(.value, na.rm = T), .groups = "drop")
+  
+  L <- dplyr::filter(D, .variable == "L_loc") %>%
+    group_by(tax) %>%
+    mutate(.value = log(.value)) %>%
+    mutate(median = median(.value)) %>%
+    mutate(.variable = "L_log")
+  
+  return(bind_rows(D, L))
+}
+
+
 
 ## formatStates --------------------------------
 # cmdstanfit <- tar_read("fit_test")
@@ -2096,6 +2114,38 @@ plotPredominant <- function(States, majorname,
          dev = "pdf", height = 8, width = 5)
   
   return(plot_predominant)
+}
+
+
+## plotMarginal --------------------------------
+# Marginal <- tar_read(Marginal_env)
+# parname <- str_to_sentence(tar_read(parname_plotorder))
+# basename  <- tar_read("basename_fit_env")
+# path  <- tar_read("dir_publish")
+# color  <- tar_read("twocolors")
+# themefun  <- tar_read("themefunction")
+plotMarginal <- function(Marginal, parname,
+                         path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+
+  M <- Marginal %>%
+    filter(.variable %in% parname) %>%
+    mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "other" = "2")) %>%
+    group_by(.variable, tax) %>%
+    mutate(medianofmedians = median(median))
+  
+  plot <- ggplot(M, aes(x = .value, group = interaction(.variable, tax), fill = tax)) + 
+    geom_density(trim = T, alpha = 0.8) +
+    scale_fill_manual(values = color) +
+    geom_vline(aes(xintercept = medianofmedians, color = tax)) +
+    scale_color_manual(values = color) +
+    facet_grid(rows = vars(.variable), scales = "free") + # cols = vars(tax)
+    themefun() +
+    theme(axis.title.x = element_blank())
+
+  ggsave(paste0(path, "/", basename, "_plot_marginal", ".pdf"),
+         plot, dev = "pdf", height = 14, width = 6)
+  
+  return(plot)
 }
 
 

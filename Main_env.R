@@ -44,6 +44,7 @@ tar_make_future(c("summary_env",
                   "plots_pairs_spread_env",
                   "plots_pairs_phi_env",
                   
+                  "plot_marginal_env",
                   "plots_parameters_env",
                   "plot_posterior_center_env",
                   "plot_posterior_spread_env",
