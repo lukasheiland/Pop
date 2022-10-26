@@ -823,7 +823,7 @@ targets_posterior_env <- list(
   
   tar_target(plot_binary_env,
              plotBinary(Environmental = Environmental_env,
-                        parname = setdiff(tar_read("parname_environmental"), c("L_loc", "major_fix", "major_init", "ba_init", "ba_fix")),
+                        parname = str_to_sentence(parname_plotorder),
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
   tar_target(plots_trace_env,
              plotTrace(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),

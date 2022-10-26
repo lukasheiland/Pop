@@ -107,6 +107,12 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
     suppressWarnings() %>% ## package tidyr warns about using deprecated gather_()
     bind_rows(Draws_env_bin)
   
+  Draws_env_l <- dplyr::filter(Draws_env, .variable == "L_loc") %>%
+    mutate(.value = log(.value)) %>%
+    mutate(.variable = "L_log")
+  
+  Draws_env %<>% bind_rows(Draws_env_l)
+  
   if (locmeans) {
     Draws_env %<>%
       group_by(tax, loc, .variable) %>%
@@ -141,13 +147,7 @@ formatMarginal <- function(Environmental) {
     group_by(.chain, .iteration, .draw, .variable, tax) %>%
     summarize(.value = mean(.value, na.rm = T), median = median(.value, na.rm = T), .groups = "drop")
   
-  L <- dplyr::filter(D, .variable == "L_loc") %>%
-    group_by(tax) %>%
-    mutate(.value = log(.value)) %>%
-    mutate(median = median(.value)) %>%
-    mutate(.variable = "L_log")
-  
-  return(bind_rows(D, L))
+  return(D)
 }
 
 
@@ -2266,7 +2266,7 @@ plotPoly <- function(Surfaces, Environmental = NULL,
 
 ## plotBinary --------------------------------
 # Environmental <- tar_read("Environmental_env")
-# parname <- setdiff(tar_read("parname_environmental"), c("major_fix", "major_init", "ba_init", "ba_fix"))
+# parname <- str_to_sentence(tar_read(parname_plotorder))
 # basename  <- tar_read("basename_fit_env")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
@@ -2294,6 +2294,7 @@ plotBinary <- function(Environmental, parname, path = tar_read("dir_publish"), b
   E <- Environmental %>%
     rename(value = .value) %>%
     mutate(binary = as.logical(binary)) %>%
+    mutate(binary = if_else(tax == 1, binary, !binary)) %>%
     
     ## aggregate by draws by loc first, to reduce the variation to the variation
     group_by(tax, .variable, binary, loc) %>%
@@ -2307,7 +2308,7 @@ plotBinary <- function(Environmental, parname, path = tar_read("dir_publish"), b
     ungroup() %>%
     
     mutate(stage = fct_collapse(.variable,
-                                "J" = c("L_loc", "R_log", "S_log", "C_j_log"),
+                                "J" = c("L_log", "R_log", "S_log", "C_j_log"),
                                 "A" = c("G_log", "C_a_log"),
                                 "B" = c("H_log", "B_log", "C_b_log"))
     ) %>%
@@ -2319,23 +2320,22 @@ plotBinary <- function(Environmental, parname, path = tar_read("dir_publish"), b
   
   pos <- position_dodge(width = 1)
   
-  plot_binary <- ggplot(E, aes(y = parameter, x = m, color = tax, group = binary)) + 
+  plot_binary <- ggplot(E, aes(x = m, y = tax, color = tax, group = binary)) +  # y = parameter, 
     geom_linerange(aes(xmin = l, xmax = u), size = 2.6, position = pos) +
     geom_linerange(aes(xmin = ll, xmax = uu), size = 1.2, position = pos) +
-    geom_point(color = "black", position = pos, size = 1.7) +
+    geom_point(color = "black", position = pos, size = 0.8) +
     coord_flip() +
     # geom_vline(xintercept = if (plotprop) 1 else 0, linetype = 3, size = 0.6, col = "#222222") +
     # geom_hline(yintercept = c(5, 7), linetype = 3, size = 0.6, col = "#222222") + ## lines through g/h
     
-    facet_wrap(~tax,
-               # scales = "free",
+    facet_wrap(~parameter, scales = "free",
                labeller = labeller(tax = function(tax) paste(tax))) +
     
     themefun() +
     scale_color_manual(values = color)
   
   ggsave(paste0(path, "/", basename, "_plot_binary", ".pdf"),
-         plot_binary, dev = "pdf", height = 6, width = 10)
+         plot_binary, dev = "pdf", height = 10, width = 10)
   
   return(plot_binary)
 }
