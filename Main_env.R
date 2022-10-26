@@ -30,7 +30,7 @@ tar_make(c("fit_env"))
 tar_make_future(c("summary_env",
                   "summary_states_env",
                   "residuals_env",
-                  "plots_trace_env",
+                  # "plots_trace_env",
                   
                   # "plot_environmental_env_gaussian",
                   # "plot_environmental_env_ba",
@@ -42,9 +42,10 @@ tar_make_future(c("summary_env",
                   "plots_pairs_env",
                   "plots_pairs_center_env",
                   "plots_pairs_spread_env",
-                  "plots_pairs_phi_env",
+                  # "plots_pairs_phi_env",
                   
                   "plot_marginal_env",
+                  "plot_binary_env",
                   "plots_parameters_env",
                   "plot_posterior_center_env",
                   "plot_posterior_spread_env",
@@ -52,9 +53,8 @@ tar_make_future(c("summary_env",
                   
                   "plot_contributions_env",
                   "plots_states_env",
-                  "plot_binary_env",
                   "plots_conditional_env"),
-                workers = if(onserver) 24 else 3, reporter = "verbose_positives")
+                workers = if(onserver) 32 else 3, reporter = "verbose_positives")
 
 ## Simulations parallelized internally
 tar_make(c("plot_trajectories_avg_env"))
