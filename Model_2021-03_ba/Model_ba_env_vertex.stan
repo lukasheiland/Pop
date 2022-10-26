@@ -255,7 +255,7 @@ functions {
       eps_ba = fabs((BA_1 - BA) ./ BA_1);
       
       //// This is here to only calculate the contributions for an earlier period
-      if (i < fixiter_min) {
+      // if (i < fixiter_min) {
       
         vector[N_spec] ba_ko_none = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
 
@@ -306,7 +306,7 @@ functions {
         sum_ko_2_s += ba_ko_none - ba_ko_2_s;
         
 
-      }  // end if i < fixiter_min
+      // }  // end if i < fixiter_min
       
       
       /// !
@@ -324,8 +324,11 @@ functions {
                                        
                                        //// when considering the whole period, use i, when considering only the first period use fixiter_min as a denominator here
                                        // indices 7–26
-                                       sum_ko_1_b/fixiter_min, sum_ko_1_b_c_b/fixiter_min, sum_ko_1_c_a/fixiter_min, sum_ko_1_c_b/fixiter_min, sum_ko_1_c_j/fixiter_min, sum_ko_1_g/fixiter_min, sum_ko_1_h/fixiter_min, sum_ko_1_l/fixiter_min, sum_ko_1_r/fixiter_min, sum_ko_1_s/fixiter_min,
-                                       sum_ko_2_b/fixiter_min, sum_ko_2_b_c_b/fixiter_min, sum_ko_2_c_a/fixiter_min, sum_ko_2_c_b/fixiter_min, sum_ko_2_c_j/fixiter_min, sum_ko_2_g/fixiter_min, sum_ko_2_h/fixiter_min, sum_ko_2_l/fixiter_min, sum_ko_2_r/fixiter_min, sum_ko_2_s/fixiter_min};
+                                       sum_ko_1_b/i, sum_ko_1_b_c_b/i, sum_ko_1_c_a/i, sum_ko_1_c_b/i, sum_ko_1_c_j/i, sum_ko_1_g/i, sum_ko_1_h/i, sum_ko_1_l/i, sum_ko_1_r/i, sum_ko_1_s/i,
+                                       sum_ko_2_b/i, sum_ko_2_b_c_b/i, sum_ko_2_c_a/i, sum_ko_2_c_b/i, sum_ko_2_c_j/i, sum_ko_2_g/i, sum_ko_2_h/i, sum_ko_2_l/i, sum_ko_2_r/i, sum_ko_2_s/i};
+                                       
+                                       // sum_ko_1_b/fixiter_min, sum_ko_1_b_c_b/fixiter_min, sum_ko_1_c_a/fixiter_min, sum_ko_1_c_b/fixiter_min, sum_ko_1_c_j/fixiter_min, sum_ko_1_g/fixiter_min, sum_ko_1_h/fixiter_min, sum_ko_1_l/fixiter_min, sum_ko_1_r/fixiter_min, sum_ko_1_s/fixiter_min,
+                                       // sum_ko_2_b/fixiter_min, sum_ko_2_b_c_b/fixiter_min, sum_ko_2_c_a/fixiter_min, sum_ko_2_c_b/fixiter_min, sum_ko_2_c_j/fixiter_min, sum_ko_2_g/fixiter_min, sum_ko_2_h/fixiter_min, sum_ko_2_l/fixiter_min, sum_ko_2_r/fixiter_min, sum_ko_2_s/fixiter_min};
                                     
     return fix;
   } 
@@ -464,8 +467,8 @@ parameters {
   vector<lower=0>[N_species] c_a_log_spread_env1_100;  // inverse bell-shaped
   vector<lower=0>[N_species] c_b_log_spread_env1_100; // inverse bell-shaped
   vector<lower=0>[N_species] c_j_log_spread_env1_100; // inverse bell-shaped
-  vector<upper=0>[N_species] g_log_spread_env1_100; // bell-shaped
-  vector<upper=0>[N_species] h_log_spread_env1_100; // bell-shaped
+  vector[N_species] g_log_spread_env1_100; // bell-shaped
+  vector[N_species] h_log_spread_env1_100; // bell-shaped
   vector[N_species] r_log_spread_env1_100; // (inverse?) bell-shaped
   vector[N_species] s_log_spread_env1_100; // (inverse?) bell-shaped
   
@@ -473,8 +476,8 @@ parameters {
   vector<lower=0>[N_species] c_a_log_spread_env2_100;
   vector<lower=0>[N_species] c_b_log_spread_env2_100;
   vector<lower=0>[N_species] c_j_log_spread_env2_100;
-  vector<upper=0>[N_species] g_log_spread_env2_100;
-  vector<upper=0>[N_species] h_log_spread_env2_100;
+  vector[N_species] g_log_spread_env2_100;
+  vector[N_species] h_log_spread_env2_100;
   vector[N_species] r_log_spread_env2_100;
   vector[N_species] s_log_spread_env2_100;
   
