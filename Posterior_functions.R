@@ -129,7 +129,7 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
   
   n_row <- nrow(Draws_env)
   Draws_env <- bind_cols(Draws_env, Env[match(Draws_env$loc, Env$loc), envname_all]) %>%
-    filter(!(.variable %in% c("major_fix", "ba_fix") & .value == 9)) %>%
+    filter(!(.variable %in% c("major_fix") & .value == 9)) %>%
     ungroup()
   
   n_dropped <- n_row - nrow(Draws_env)
@@ -870,7 +870,7 @@ selectParnameEnvironmental <- function(parname, Environmental_env) {
   o <- c("L_loc", "L_log", "R_log", "C_j_log", "S_log",
          "G_log", "C_a_log",
          "H_log", "B_log", "C_b_log",
-         "ba_init", "ba_fix", "major_init", "major_fix")
+         "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix", "major_init", "major_fix")
   i <- match(o, parname)
   parname_o <- parname_environmental[i]
   parname_environmental <- union(parname_o, parname_environmental)
@@ -1355,6 +1355,8 @@ plotStates <- function(States,
   
   statelabel <- c(ba_init = "Initial state",
                   ba_fix = "Equilibrium state",
+                  ba_frac_init = "Initial fraction of the total basal area",
+                  ba_frac_fix = "Equilibrium fraction of the total basal area",
                   
                   ba_fix_ko_b = "Equilibrium without b",
                   ba_fix_ko_s = "Equilibrium without s",

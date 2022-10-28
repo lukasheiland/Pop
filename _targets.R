@@ -193,6 +193,7 @@ targets_parname <- list(
   
   tar_target(statename,
              c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix",
+               "ba_tot_init", "ba_tot_fix", "ba_frac_init", "ba_frac_fix",
                "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
                "major_init", "major_fix", "dominant_init", "dominant_fix",
                "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
@@ -688,7 +689,7 @@ targets_posterior_env <- list(
   
   ## Parameter names (in addition to the general ones above)
   tar_target(parname_env, c(setdiff(parname_loc_env, "state_init"),
-                            "ba_init", "ba_fix", "major_fix", "major_init")),
+                            "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix", "major_fix", "major_init")),
   tar_target(contribname_env, paste("sum_ko",
                                     rep(1:2, each = length(parname_plotorder)),
                                     names(parname_plotorder), "fix", sep = "_")),
@@ -759,8 +760,8 @@ targets_posterior_env <- list(
 
   
   ## Post-hoc inference
-  tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c("major_init", "major_fix", "ba_init", "ba_fix"))),
-  tar_target(parname_environmental_ba, c("ba_init", "ba_fix")), # contribname_environmental
+  tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c("major_init", "major_fix", "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix"))),
+  tar_target(parname_environmental_ba, c("ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix")), # contribname_environmental
   tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
   
   tar_target(Surfaces_poly_env, predictPoly(cmdstanfit = fit_env, parname_Beta = parname_Beta, Envgrid = Envgrid_env)),
@@ -789,21 +790,22 @@ targets_posterior_env <- list(
                                   path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
              pattern = map(fit_environmental_env),
              iteration = "list"),
-  tar_target(surface_environmental_env_gaussian,
-             predictEnvironmental(fit_environmental_env_gaussian, envname = predictor_select,
-                                  path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
-             pattern = map(fit_environmental_env_gaussian),
-             iteration = "list"),
-  tar_target(surface_environmental_env_ba,
-             predictEnvironmental(fit_environmental_env_ba, envname = predictor_select,
-                                  path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
-             pattern = map(fit_environmental_env_ba),
-             iteration = "list"),
-  tar_target(surface_environmental_env_binomial,
-             predictEnvironmental(fit_environmental_env_binomial, envname = predictor_select,
-                                  path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
-             pattern = map(fit_environmental_env_binomial),
-             iteration = "list"),
+  
+  # tar_target(surface_environmental_env_gaussian,
+  #            predictEnvironmental(fit_environmental_env_gaussian, envname = predictor_select,
+  #                                 path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
+  #            pattern = map(fit_environmental_env_gaussian),
+  #            iteration = "list"),
+  # tar_target(surface_environmental_env_ba,
+  #            predictEnvironmental(fit_environmental_env_ba, envname = predictor_select,
+  #                                 path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
+  #            pattern = map(fit_environmental_env_ba),
+  #            iteration = "list"),
+  # tar_target(surface_environmental_env_binomial,
+  #            predictEnvironmental(fit_environmental_env_binomial, envname = predictor_select,
+  #                                 path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
+  #            pattern = map(fit_environmental_env_binomial),
+  #            iteration = "list"),
 
   
   ## Plot

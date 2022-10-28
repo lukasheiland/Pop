@@ -828,8 +828,13 @@ generated quantities {
   array[N_locs] vector[N_species] ba_init = J_init;
   array[N_locs] vector[N_species] ba_fix = J_init;
   
+  array[N_locs] real ba_tot_init = rep_array(0.0, N_locs);
+  array[N_locs] real ba_tot_fix = ba_tot_init;
+  array[N_locs] vector[N_species] ba_frac_init = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix = J_init;
+  
   array[N_locs] vector[N_species] eps_ba_fix = J_init;
-  array[N_locs] real iterations_fix = rep_array(0.0, N_locs);
+  array[N_locs] real iterations_fix = ba_tot_init;
 
   array[N_locs] vector[N_species] sum_ko_1_b_fix = J_init;
   array[N_locs] vector[N_species] sum_ko_1_b_c_b_fix = J_init;
@@ -859,8 +864,8 @@ generated quantities {
   
   array[N_locs] int converged_fix = rep_array(9, N_locs); // tolerance has been reached
 
-  array[N_locs] int dominant_init = converged_fix;
-  array[N_locs] int dominant_fix = converged_fix;
+  // array[N_locs] int dominant_init = converged_fix;
+  // array[N_locs] int dominant_fix = converged_fix;
   array[N_locs] int major_init = converged_fix;
   array[N_locs] int major_fix = converged_fix;
   
@@ -885,10 +890,12 @@ generated quantities {
       
       ba_init[loc] = state_init[loc, (N_pops-N_species+1):N_pops] + // State B
                      ba_a_avg .* state_init[loc, (N_species+1):(N_species+N_species)]; // State A * ba
-
+      
+      ba_tot_init[loc] = sum(ba_init[loc]);
+      ba_frac_init[loc] = ba_init[loc] / ba_tot_init[loc];
       
       //// Booleans at init
-      dominant_init[loc] = (ba_init[loc, 1]/ba_init[loc, 2]) > 3; // ba_1 > 75%
+      // dominant_init[loc] = (ba_init[loc, 1]/ba_init[loc, 2]) > 3; // ba_1 > 75%
       major_init[loc] = ba_init[loc, 1] > ba_init[loc, 2]; // ba_1 > 50%
       
 
@@ -910,12 +917,8 @@ generated quantities {
         B_fix[loc] = Fix[loc, 3];
         ba_fix[loc] = Fix[loc, 4];
         eps_ba_fix[loc] = Fix[loc, 5];        
+        
         // Fix[loc, 6] is unpacked before
-        
-        //// Booleans at fixpoint
-        dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
-        major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
-        
         
         //// Unpack the cumulative contributions into variables
         sum_ko_1_b_fix[loc] = Fix[loc, 7];
@@ -940,11 +943,15 @@ generated quantities {
         sum_ko_2_r_fix[loc] = Fix[loc, 25];
         sum_ko_2_s_fix[loc] = Fix[loc, 26];
         
-
-    	  //// Booleans at fixpoint
-        dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
+        
+        //// ba calculations
+        ba_tot_fix[loc] = sum(ba_fix[loc]);
+        ba_frac_fix[loc] = ba_fix[loc] / ba_tot_fix[loc];
+        
+        //// Booleans at fixpoint
+        // dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
         major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
-
+        
  
         //// Counterfactual fix point iteration
         // …
