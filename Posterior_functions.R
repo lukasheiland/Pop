@@ -2269,28 +2269,40 @@ plotPoly <- function(Surfaces, Environmental = NULL,
 ## plotBinary --------------------------------
 # Environmental <- tar_read("Environmental_env")
 # parname <- str_to_sentence(tar_read(parname_plotorder))
+# fit_bin <- fit_environmental_env_binomial
 # basename  <- tar_read("basename_fit_env")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotBinary <- function(Environmental, parname, path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
+plotBinary <- function(Environmental, parname, fit_bin = NULL, path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
-  binaryname <- "major_fix"
+  if (is.null(fit_bin)) {
+    binaryname <- "major_fix"
+    
+    B <- Environmental %>%
+      ungroup() %>%
+      dplyr::filter(.variable == binaryname) %>%
+      rename(binary = .value) %>%
+      dplyr::select(binary, loc, .draw)
+  } else {
+    binaryname <- ""
+    # B <- fit_bin$frame
+    # does it have loc?
+    # cbind predict with unique loc, B, drop everything but loc
+    # rename to binary
+  }
   
-  B <- Environmental %>%
-    ungroup() %>%
-    dplyr::filter(.variable == binaryname) %>%
-    rename(binary = .value) %>%
-    dplyr::select(binary, loc, .draw)
-  
+
   Environmental %<>%
     ungroup() %>%
-    dplyr::filter(.variable != binaryname) %>%
     dplyr::filter(.variable %in% parname) %>%
-    # rename(chain = .chain, iteration = .iteration, draw = .draw, variable = .variable, value = .value) %>%
-    left_join(B, by = c("loc", ".draw")) %>%
+    
+    dplyr::filter(.variable != binaryname) %>%
+    
+    { if (is.null(fit_bin)) left_join(B, by = c("loc", ".draw")) else left_join(B, by = "loc")  } %>%
     dplyr::filter(!is.na(binary))
+    # rename(chain = .chain, iteration = .iteration, draw = .draw, variable = .variable, value = .value) %>%
   
   
   E <- Environmental %>%
