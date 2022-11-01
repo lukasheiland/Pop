@@ -1988,7 +1988,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
            tax = suppressWarnings( fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2") ), # the last number in the string
            reciprocal = as.character(kotax) != as.character(tax), # there might be different level sets
            stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h", "b_c_b"),)
-    ) %>%
+           ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
     mutate(parameter = ordered(parameter, parorder)) %>%
@@ -2269,30 +2269,44 @@ plotPoly <- function(Surfaces, Environmental = NULL,
 ## plotBinary --------------------------------
 # Environmental <- tar_read("Environmental_env")
 # parname <- str_to_sentence(tar_read(parname_plotorder))
-# fit_bin <- fit_environmental_env_binomial
+# parname <- tar_read(contribname_env)
+# fit_bin <- fit_environmental_env_binomial[[sapply(fit_environmental_env_binomial, function(x) attr(x, "par") == "major_fix") %>% which()]]
 # basename  <- tar_read("basename_fit_env")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotBinary <- function(Environmental, parname, fit_bin = NULL, path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
+plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold = 0.9, path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
-  if (is.null(fit_bin)) {
-    binaryname <- "major_fix"
-    
-    B <- Environmental %>%
-      ungroup() %>%
-      dplyr::filter(.variable == binaryname) %>%
-      rename(binary = .value) %>%
-      dplyr::select(binary, loc, .draw)
-  } else {
-    binaryname <- ""
-    # B <- fit_bin$frame
-    # does it have loc?
-    # cbind predict with unique loc, B, drop everything but loc
-    # rename to binary
-  }
   
+  binaryname <- if (is.null(fit_bin)) "major_fix" else attr(fit_bin, "par")
+  
+  B <- Environmental %>%
+    ungroup() %>%
+    dplyr::filter(.variable == binaryname) %>%
+    rename(binary = .value)
+    
+  if (is.null(fit_bin)) {
+    
+    B %<>% dplyr::select(binary, loc, .draw, )
+  
+  } else {
+    
+    ## replace the drawn variable with an environmental prediction, but make locs unique first
+    B %<>% distinct(loc, .keep_all = T)
+    
+    if (is(fit_bin, "cv.glmnet")) {
+     error("plotBinary(): fit of type cv.glmnet not implemented.") ## see above how to predict with cv.glmnet
+    } else {
+      p <- predict(fit_bin, newdata = B, type = "response") %>% c()
+    }
+    
+    t <- as.integer(p > binarythreshold)
+    
+    B %<>%
+      dplyr::select(loc) %>%
+      bind_cols(binary = t, binary_pred = p)
+  }
 
   Environmental %<>%
     ungroup() %>%
@@ -2300,7 +2314,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, path = tar_read("
     
     dplyr::filter(.variable != binaryname) %>%
     
-    { if (is.null(fit_bin)) left_join(B, by = c("loc", ".draw")) else left_join(B, by = "loc")  } %>%
+    { if (is.null(fit_bin)) left_join(., B, by = c("loc", ".draw")) else left_join(., B, by = "loc")  } %>%
     dplyr::filter(!is.na(binary))
     # rename(chain = .chain, iteration = .iteration, draw = .draw, variable = .variable, value = .value) %>%
   
@@ -2310,6 +2324,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, path = tar_read("
     mutate(binary = as.logical(binary)) %>%
     mutate(binary = if_else(tax == 1, binary, !binary)) %>%
     
+
     ## aggregate by draws by loc first, to reduce the variation to the variation
     group_by(tax, .variable, binary, loc) %>%
     summarize(value = mean(value, na.rm = T)) %>%
@@ -2324,12 +2339,20 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, path = tar_read("
     mutate(stage = fct_collapse(.variable,
                                 "J" = c("L_log", "R_log", "S_log", "C_j_log"),
                                 "A" = c("G_log", "C_a_log"),
-                                "B" = c("H_log", "B_log", "C_b_log"))
-    ) %>%
+                                "B" = c("H_log", "B_log", "C_b_log"),
+                                other_level = "JAB")
+           ) %>%
+    
+    mutate(tax = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>% 
+    mutate(p = .variable,
+           parameter = str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
+           kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "others" = "2") ),
+           reciprocal = as.character(kotax) != as.character(tax)) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
-    mutate(tax = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>% 
-    mutate(parameter = factor(.variable, levels = parname))
+    
+    mutate(parameter = factor(.variable, levels = parname)) %>%
+    filter(!isTRUE(reciprocal)) ## not filtering out NAs when reciprocal has no meaning
   
   
   pos <- position_dodge(width = 1)
@@ -2348,7 +2371,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, path = tar_read("
     themefun() +
     scale_color_manual(values = color)
   
-  ggsave(paste0(path, "/", basename, "_plot_binary", ".pdf"),
+  ggsave(paste0(path, "/", basename, "_plot_binary_", parname[1], ".pdf"),
          plot_binary, dev = "pdf", height = 10, width = 10)
   
   return(plot_binary)
