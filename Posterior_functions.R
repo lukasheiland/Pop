@@ -378,6 +378,24 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
 }
 
 
+## summarizeMarginal --------------------------------
+# Marginal <- tar_read("Marginal_env")
+# basename <- tar_read("basename_fit_env")
+# path <- tar_read("dir_publish")
+summarizeMarginal <- function(Marginal, basename, path) {
+  
+  M <- Marginal %>%
+    group_by(tax, .variable) %>%
+    summarize(m = mean(.value), sd = sd(.value)) %>%
+    mutate(value = paste0(formatNumber(m), " ± ", formatNumber(sd))) %>%
+    pivot_wider(values_from = "value", names_from = "tax", id_cols = ".variable")
+  
+  write.csv(M, paste0(path, "/", basename, "_summary_marginal.csv"))
+  
+  return(M)
+}
+
+
 ## summarizeStates --------------------------------
 # States <- tar_read("States")[[1]]
 # data_stan <- tar_read("data_stan")
@@ -429,30 +447,6 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
   
   message(sum(Freq_converged$value != 1), " of ", n_locs, " locations have not always converged to fixpoint.")
   return(Freq_converged)
-}
-
-## summarizeErrors --------------------------------
-# cmdstanfit <- tar_read("fit_test")
-# data_stan_priors <- tar_read("data_stan_priors")
-# path <- tar_read("dir_publish")
-summarizeErrors <- function(cmdstanfit, data_stan_priors, path) {
-  
-  basename_cmdstanfit <- attr(cmdstanfit, "basename")
-  
-  # n_locs <- data_stan_priors$N_locs
-  # Freq_converged <- formatLoc("converged_fix", locmeans = T, cmdstanfit_ = cmdstanfit, data_stan_priors_ = data_stan_priors)
-  
-  errorvar <- c("m")
-  predvar <- c("b")
-  
-  ## TODO: Plot variables
-  # D <- cmdstanfit$draws(variables = c(errorvar, predvar)) %>%
-  #   as_draws_rvars()
-  
-  S <- cmdstanfit$summary(errorvar)
-  
-  write.csv(S, paste0(path, "/", basename_cmdstanfit, "_summary_errors.csv"))
-  return(S)
 }
 
 
@@ -2346,12 +2340,14 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
     mutate(tax = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>% 
     mutate(p = .variable,
            parameter = str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
+           parameter = if_else(is.na(parameter), .variable, parameter),
+           parameter = factor(parameter, levels = c(parname, unique(parameter))), # for the order
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "others" = "2") ),
            reciprocal = as.character(kotax) != as.character(tax)) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
     
-    mutate(parameter = factor(.variable, levels = parname)) %>%
+    mutate(parameter = ) %>%
     filter(!isTRUE(reciprocal)) ## not filtering out NAs when reciprocal has no meaning
   
   

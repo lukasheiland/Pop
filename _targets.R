@@ -737,6 +737,8 @@ targets_posterior_env <- list(
                           publishpar = c(parname_plotorder, parname_env_vertex), path = dir_publish)),
   tar_target(summary_states_env,
            summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
+  tar_target(summary_marginal_env,
+             summarizeMarginal(Marginal = Marginal_env, basename = basename_fit_env, path = dir_publish)),
   tar_target(Freq_converged_env,
            summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
 

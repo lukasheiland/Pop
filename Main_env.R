@@ -29,6 +29,7 @@ tar_make(c("fit_env"))
 ## Posterior
 tar_make_future(c("summary_env",
                   "summary_states_env",
+                  "summary_marginal_env"
                   "residuals_env",
                   # "plots_trace_env",
                   
