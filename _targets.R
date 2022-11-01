@@ -172,7 +172,7 @@ targets_parname <- list(
              c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_raw", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt", "m")),
   
   tar_target(helper_exclude,
-             c("Fix", "Fix_ko_s",
+             c("Fix", "Fix_ko_s", "Fix_ko_1_b_l_r", "Fix_ko_2_b_l_r",
                paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                "B_log_raw", "C_a_log_raw", "C_b_log_raw", "C_j_log_raw", "G_log_raw", "H_log_raw", "L_log_raw", "R_log_raw", "S_log_raw",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
@@ -195,6 +195,7 @@ targets_parname <- list(
              c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix",
                "ba_tot_init", "ba_tot_fix", "ba_frac_init", "ba_frac_fix",
                "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
+               "ba_fix_ko_b_l_r", "ba_fix_ko_b_l_r_ko",
                "major_init", "major_fix", "dominant_init", "dominant_fix",
                "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
                paste0("major_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
@@ -689,7 +690,8 @@ targets_posterior_env <- list(
   
   ## Parameter names (in addition to the general ones above)
   tar_target(parname_env, c(setdiff(parname_loc_env, "state_init"),
-                            "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix", "major_fix", "major_init")),
+                            "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix", "major_fix", "major_init",
+                            "ba_fix_ko_b_l_r", "ba_fix_ko_b_l_r_ko")),
   tar_target(contribname_env, paste("sum_ko",
                                     rep(1:2, each = length(parname_plotorder)),
                                     names(parname_plotorder), "fix", sep = "_")),
@@ -762,9 +764,10 @@ targets_posterior_env <- list(
 
   
   ## Post-hoc inference
-  tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c("major_init", "major_fix", "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix"))),
-  tar_target(parname_environmental_ba, c("ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix")), # contribname_environmental
+  tar_target(parname_environmental_ba, c("ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix", "ba_fix_ko_b_l_r")), # contribname_environmental
   tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
+  tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c(parname_environmental_ba, parname_environmental_binomial))),
+  
   
   tar_target(Surfaces_poly_env, predictPoly(cmdstanfit = fit_env, parname_Beta = parname_Beta, Envgrid = Envgrid_env)),
   tar_target(plot_poly_env, plotPoly(Surfaces_poly_env, Environmental = Environmental_env,
@@ -814,15 +817,15 @@ targets_posterior_env <- list(
   tar_target(plot_environmental_env,
              plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix",
                                basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plot_environmental_env_gaussian,
-             plotEnvironmental(surfaces = surface_environmental_env_gaussian, binaryname = "major_fix",
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plot_environmental_env_ba,
-             plotEnvironmental(surfaces = surface_environmental_env_ba, binaryname = "major_fix",
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plot_environmental_env_binomial,
-             plotEnvironmental(surfaces = surface_environmental_env_binomial, binaryname = "major_fix",
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  # tar_target(plot_environmental_env_gaussian,
+  #            plotEnvironmental(surfaces = surface_environmental_env_gaussian, binaryname = "major_fix",
+  #                              basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  # tar_target(plot_environmental_env_ba,
+  #            plotEnvironmental(surfaces = surface_environmental_env_ba, binaryname = "major_fix",
+  #                              basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  # tar_target(plot_environmental_env_binomial,
+  #            plotEnvironmental(surfaces = surface_environmental_env_binomial, binaryname = "major_fix",
+  #                              basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
   
   
   tar_target(plot_binary_par_env,
@@ -869,7 +872,7 @@ targets_posterior_env <- list(
                                color = twocolors, themefun = themefunction)),
   
   tar_target(plots_states_env,
-             plotStates(States_env, allstatevars = c("ba_init", "ba_fix"),
+             plotStates(States_env, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_b_l_r"),
                         path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   
   tar_target(plot_trajectories_avg_env,

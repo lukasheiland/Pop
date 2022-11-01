@@ -871,8 +871,10 @@ generated quantities {
   
   
   //// Declarations of counterfactual posterior quantities
-  // …
-
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_b_l_r = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_b_l_r = Fix;
+  array[N_locs] vector[N_species] ba_fix_ko_b_l_r = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_b_l_r_ko = J_init;
 
   //———————————————————————————————————————————————————————————————————//
   // Generate Posterior quantities conditioned on setting  -----------//
@@ -954,7 +956,25 @@ generated quantities {
         
  
         //// Counterfactual fix point iteration
-        // …
+        vector[N_species] ko_1_b = [0, exp(B_log[loc, 2])]';
+        vector[N_species] ko_2_b = [exp(B_log[loc,1]), 0]';
+        vector[N_species] ko_1_r = [0, exp(R_log[loc, 2])]';
+        vector[N_species] ko_2_r = [exp(R_log[loc,1]), 0]';
+        vector[N_species] ko_1_l = [0, L_loc[loc,2]]';
+        vector[N_species] ko_2_l = [L_loc[loc,1], 0]';
+        
+        vector[N_species] ko_2_s = [exp(s_log[1]), 0]';
+        
+        
+        Fix_ko_1_b_l_r[loc] = iterateFix(state_init[loc],
+                            ko_1_b, exp(C_a_log[loc,]'), exp(C_b_log[loc,]'), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(H_log[loc,]'), ko_1_l, ko_1_r, exp(S_log[loc,]'),
+                            ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_2_b_l_r[loc] = iterateFix(state_init[loc],
+                            ko_2_b, exp(C_a_log[loc,]'), exp(C_b_log[loc,]'), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(H_log[loc,]'), ko_2_l, ko_2_r, exp(S_log[loc,]'),
+                            ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        
+        ba_fix_ko_b_l_r[loc] = [Fix_ko_2_b_l_r[loc, 4, 1], Fix_ko_1_b_l_r[loc, 4, 2]]'; // basal area of the species that is not knocked out, respectively [1,2]
+        ba_fix_ko_b_l_r_ko[loc] = [Fix_ko_1_b_l_r[loc, 4, 1], Fix_ko_2_b_l_r[loc, 4, 2]]'; // basal area of the species that is knocked out, respectively [1,2]
 
       }
   
