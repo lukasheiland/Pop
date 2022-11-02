@@ -470,7 +470,7 @@ parameters {
   vector[N_species] g_log_spread_env1_100; // bell-shaped
   vector[N_species] h_log_spread_env1_100; // bell-shaped
   vector[N_species] r_log_spread_env1_100; // (inverse?) bell-shaped
-  vector[N_species] s_log_spread_env1_100; // (inverse?) bell-shaped
+  vector<lower=0>[N_species] s_log_spread_env1_100; // (inverse?) bell-shaped
   
   vector<upper=0>[N_species] b_log_spread_env2_100;
   vector<lower=0>[N_species] c_a_log_spread_env2_100;
@@ -479,7 +479,7 @@ parameters {
   vector[N_species] g_log_spread_env2_100;
   vector[N_species] h_log_spread_env2_100;
   vector[N_species] r_log_spread_env2_100;
-  vector[N_species] s_log_spread_env2_100;
+  vector<lower=0>[N_species] s_log_spread_env2_100;
   
 
   ////$ Model parameters at loc level
