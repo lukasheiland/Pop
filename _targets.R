@@ -101,14 +101,14 @@ targets_settings <- list(
   tar_target(weakpriors_env,
              list(
                prior_b_log = c(-3.5, 1),
-               prior_c_a_log = c(-7, 2),
-               prior_c_b_log = c(-7, 2),
-               prior_c_j_log = c(-12, 3),
-               prior_g_log = c(-6, 2),
+               prior_c_a_log = c(-7, 1),
+               prior_c_b_log = c(-6, 1),
+               prior_c_j_log = c(-13, 2),
+               prior_g_log = c(-5, 1),
                prior_h_log = c(-3, 2),
-               prior_l_log = c(4, 2),
-               prior_r_log = c(4, 2),
-               prior_s_log = c(-5, 2)
+               prior_l_log = c(4, 1),
+               prior_r_log = c(4, 1),
+               prior_s_log = c(-5, 1)
              )
   ),
   
@@ -847,10 +847,10 @@ targets_posterior_env <- list(
   
   tar_target(plots_pairs_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plots_pairs_center_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_env_vertex_center)),
-  tar_target(plots_pairs_spread_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_env_vertex_spread)),
+  tar_target(plots_pairs_env1_env,
+             plotPairs(cmdstanfit = fit_env, parname = stringr::str_ends(c(parname_env_vertex_center, parname_env_vertex_spread), "env1"))),
+  tar_target(plots_pairs_env2_env,
+             plotPairs(cmdstanfit = fit_env, parname = stringr::str_ends(c(parname_env_vertex_center, parname_env_vertex_spread), "env2"))),
   tar_target(plots_pairs_phi_env,
              plotPairs(cmdstanfit = fit_env, parname = "phi_obs_inv_sqrt")),
   

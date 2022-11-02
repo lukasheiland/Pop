@@ -217,7 +217,7 @@ predictPoly <- function(cmdstanfit, parname_Beta, Envgrid) {
     as_draws_rvars()
   
   envname <- names(Envgrid)
-  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
+  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2)" , collapse = " + "))
   Matrix <- model.matrix(as.formula(formula), data = Envgrid)
   dimnames(Matrix) <- NULL ## character dimnames were fatal for %**%
 
@@ -931,7 +931,7 @@ fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envnam
     E$v <- as.factor(round(E$v))
   }
   
-  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
+  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2)" , collapse = " + "))
   M <- model.matrix(as.formula(formula), data = E)
   
   ### glmnet
@@ -973,7 +973,7 @@ fitEnvironmental_glm <- function(Environmental, parname = parname_env, envname =
     rename(v = .value)
   
   
-  formula <- paste0("v ~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
+  formula <- paste0("v ~ 1 + ", paste0("poly(", envname, ", 2)" , collapse = " + "))
   
   ### glm
   ## glm, compared to unregularized glmnet, has the advantage to predict continuosly on [0, 1] when binomial
@@ -1051,7 +1051,7 @@ predictEnvironmental <- function(fit, envname,
   
   if (is(fit, "cv.glmnet")) {
     
-    formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = TRUE)" , collapse = " + "))
+    formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2)" , collapse = " + "))
     X <- model.matrix(as.formula(formula), data = P_covered)
     p <- predict(fit, newx = X, type = "response", s = fit$lambda.1se) %>% c() # minimal lambda with the best prediction: lambda.min
     
@@ -1899,7 +1899,7 @@ plotPairs <- function(cmdstanfit, parname,
                                                     div_shape = 4,
                                                     div_size = 1,
                                                     div_alpha = 1,
-                                                    td_color = "yellow2",
+                                                    td_color = "black",
                                                     td_shape = 3,
                                                     td_size = 1,
                                                     td_alpha = 1)) # + theme_fagus()

@@ -543,7 +543,7 @@ transformed parameters {
   vector[N_species] g_log_spread_env1 = g_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
   vector[N_species] h_log_spread_env1 = h_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
   vector[N_species] r_log_spread_env1 = r_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
-  vector[N_species] s_log_spread_env1 = s_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
+  vector<lower=0>[N_species] s_log_spread_env1 = s_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
   
   vector<upper=0>[N_species] b_log_spread_env2 = b_log_spread_env2_100 * 1e-2;
   vector<lower=0>[N_species] c_a_log_spread_env2  = c_a_log_spread_env2_100 * 1e-2;
@@ -552,7 +552,7 @@ transformed parameters {
   vector[N_species] g_log_spread_env2 = g_log_spread_env2_100 * 1e-2;
   vector[N_species] h_log_spread_env2 = h_log_spread_env2_100 * 1e-2;
   vector[N_species] r_log_spread_env2 = r_log_spread_env2_100 * 1e-2;
-  vector[N_species] s_log_spread_env2 = s_log_spread_env2_100 * 1e-2;
+  vector<lower=0>[N_species] s_log_spread_env2 = s_log_spread_env2_100 * 1e-2;
   
   //// Environmental effects
   matrix[N_beta, N_species] Beta_b_log = transformToNormal(b_log, b_log_center_env1, b_log_center_env2, b_log_spread_env1, b_log_spread_env2);
@@ -690,42 +690,42 @@ model {
   s_log   ~ normal(prior_s_log[1], prior_s_log[2]);
   
   // note that there are no vertex parameters for l in the following, because for l we fit an intercept only:
-  b_log_center_env1   ~ normal(0, 2); // std_normal();
-  c_a_log_center_env1 ~ normal(0, 2); // std_normal();
-  c_b_log_center_env1 ~ normal(0, 2); // std_normal();
-  c_j_log_center_env1 ~ normal(0, 2); // std_normal();
-  g_log_center_env1   ~ normal(0, 2); // std_normal();
-  h_log_center_env1   ~ normal(0, 2); // std_normal();
-  r_log_center_env1   ~ normal(0, 2); // std_normal();
-  s_log_center_env1   ~ normal(0, 2); // std_normal();
+  b_log_center_env1   ~ normal(0, 1.5); // std_normal();
+  c_a_log_center_env1 ~ normal(0, 1.5); // std_normal();
+  c_b_log_center_env1 ~ normal(0, 1.5); // std_normal();
+  c_j_log_center_env1 ~ normal(0, 1.5); // std_normal();
+  g_log_center_env1   ~ normal(0, 1.5); // std_normal();
+  h_log_center_env1   ~ normal(0, 1.5); // std_normal();
+  r_log_center_env1   ~ normal(0, 1.5); // std_normal();
+  s_log_center_env1   ~ normal(0, 1.5); // std_normal();
 
-  b_log_center_env2   ~ normal(0, 2); // std_normal();
-  c_a_log_center_env2 ~ normal(0, 2); // std_normal();
-  c_b_log_center_env2 ~ normal(0, 2); // std_normal();
-  c_j_log_center_env2 ~ normal(0, 2); // std_normal();
-  g_log_center_env2   ~ normal(0, 2); // std_normal();
-  h_log_center_env2   ~ normal(0, 2); // std_normal();
-  r_log_center_env2   ~ normal(0, 2); // std_normal();
-  s_log_center_env2   ~ normal(0, 2); // std_normal();
+  b_log_center_env2   ~ normal(0, 1.5); // std_normal();
+  c_a_log_center_env2 ~ normal(0, 1.5); // std_normal();
+  c_b_log_center_env2 ~ normal(0, 1.5); // std_normal();
+  c_j_log_center_env2 ~ normal(0, 1.5); // std_normal();
+  g_log_center_env2   ~ normal(0, 1.5); // std_normal();
+  h_log_center_env2   ~ normal(0, 1.5); // std_normal();
+  r_log_center_env2   ~ normal(0, 1.5); // std_normal();
+  s_log_center_env2   ~ normal(0, 1.5); // std_normal();
 
 
-  b_log_spread_env1   ~  normal(0, 0.5); // double_exponential(0, 1);
-  c_a_log_spread_env1 ~  normal(0, 0.5); // double_exponential(0, 1);
-  c_b_log_spread_env1 ~  normal(0, 0.5); // double_exponential(0, 1);
-  c_j_log_spread_env1 ~  normal(0, 0.5); // double_exponential(0, 1);
-  g_log_spread_env1   ~  normal(0, 0.5); // double_exponential(0, 1);
-  h_log_spread_env1   ~  normal(0, 0.5); // double_exponential(0, 1);
-  r_log_spread_env1   ~  normal(0, 0.5); // double_exponential(0, 1);
-  s_log_spread_env1   ~  normal(0, 0.5); // double_exponential(0, 1);
+  -b_log_spread_env1   ~  exponential(0.2); // negative!
+  c_a_log_spread_env1 ~  exponential(0.2);
+  c_b_log_spread_env1 ~  exponential(0.2);
+  c_j_log_spread_env1 ~  exponential(0.2);
+  g_log_spread_env1   ~  double_exponential(0, 0.2);
+  h_log_spread_env1   ~  double_exponential(0, 0.2);
+  r_log_spread_env1   ~  double_exponential(0, 0.2);
+  s_log_spread_env1   ~  exponential(0.2);
   
-  b_log_spread_env2   ~  normal(0, 0.5); // double_exponential(0, 1);
-  c_a_log_spread_env2 ~  normal(0, 0.5); // double_exponential(0, 1);
-  c_b_log_spread_env2 ~  normal(0, 0.5); // double_exponential(0, 1);
-  c_j_log_spread_env2 ~  normal(0, 0.5); // double_exponential(0, 1);
-  g_log_spread_env2   ~  normal(0, 0.5); // double_exponential(0, 1);
-  h_log_spread_env2   ~  normal(0, 0.5); // double_exponential(0, 1);
-  r_log_spread_env2   ~  normal(0, 0.5); // double_exponential(0, 1);
-  s_log_spread_env2   ~  normal(0, 0.5); // double_exponential(0, 1);
+  -b_log_spread_env2   ~  exponential(0.2); // negative!
+  c_a_log_spread_env2 ~  exponential(0.2);
+  c_b_log_spread_env2 ~  exponential(0.2);
+  c_j_log_spread_env2 ~  exponential(0.2);
+  g_log_spread_env2   ~  double_exponential(0, 0.2);
+  h_log_spread_env2   ~  double_exponential(0, 0.2);
+  r_log_spread_env2   ~  double_exponential(0, 0.2);
+  s_log_spread_env2   ~  exponential(0.2);
   
   
   for(l in 1:N_locs) { 
