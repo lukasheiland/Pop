@@ -848,9 +848,9 @@ targets_posterior_env <- list(
   tar_target(plots_pairs_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plots_pairs_env1_env,
-             plotPairs(cmdstanfit = fit_env, parname = stringr::str_ends(c(parname_env_vertex_center, parname_env_vertex_spread), "env1"))),
+             plotPairs(cmdstanfit = fit_env, parname = parname_env_vertex[stringr::str_ends(parname_env_vertex, "env1")])),
   tar_target(plots_pairs_env2_env,
-             plotPairs(cmdstanfit = fit_env, parname = stringr::str_ends(c(parname_env_vertex_center, parname_env_vertex_spread), "env2"))),
+             plotPairs(cmdstanfit = fit_env, parname = parname_env_vertex[stringr::str_ends(parname_env_vertex, "env2")])),
   tar_target(plots_pairs_phi_env,
              plotPairs(cmdstanfit = fit_env, parname = "phi_obs_inv_sqrt")),
   
