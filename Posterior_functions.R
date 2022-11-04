@@ -2264,6 +2264,7 @@ plotPoly <- function(Surfaces, Environmental = NULL,
 # Environmental <- tar_read("Environmental_env")
 # parname <- str_to_sentence(tar_read(parname_plotorder))
 # parname <- tar_read(contribname_env)
+# tar_load(fit_environmental_env_binomial)
 # fit_bin <- fit_environmental_env_binomial[[sapply(fit_environmental_env_binomial, function(x) attr(x, "par") == "major_fix") %>% which()]]
 # basename  <- tar_read("basename_fit_env")
 # path  <- tar_read("dir_publish")
@@ -2282,7 +2283,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
     
   if (is.null(fit_bin)) {
     
-    B %<>% dplyr::select(binary, loc, .draw, )
+    B %<>% dplyr::select(binary, loc, .draw)
   
   } else {
     
@@ -2330,25 +2331,24 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
               u = quantile(value, 0.75), uu = quantile(value, 0.9)) %>%
     ungroup() %>%
     
-    mutate(stage = fct_collapse(.variable,
-                                "J" = c("L_log", "R_log", "S_log", "C_j_log"),
-                                "A" = c("G_log", "C_a_log"),
-                                "B" = c("H_log", "B_log", "C_b_log"),
-                                other_level = "JAB")
+    mutate(stage = suppressWarnings( fct_collapse(.variable,
+                                                  "J" = c("L_log", "R_log", "S_log", "C_j_log"),
+                                                  "A" = c("G_log", "C_a_log"),
+                                                  "B" = c("H_log", "B_log", "C_b_log"),
+                                                  other_level = "JAB")
+                                   )
            ) %>%
     
     mutate(tax = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>% 
     mutate(p = .variable,
            parameter = str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
            parameter = if_else(is.na(parameter), .variable, parameter),
-           parameter = factor(parameter, levels = c(parname, unique(parameter))), # for the order
+           parameter = factor(parameter, levels = unique(c(parname, parameter))), # for the order
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "others" = "2") ),
            reciprocal = as.character(kotax) != as.character(tax)) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
-    mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
+    mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B"))))
     
-    mutate(parameter = ) %>%
-    filter(!isTRUE(reciprocal)) ## not filtering out NAs when reciprocal has no meaning
   
   
   pos <- position_dodge(width = 1)
