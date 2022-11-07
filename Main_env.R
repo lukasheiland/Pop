@@ -63,8 +63,12 @@ tar_make(c("plot_trajectories_avg_env"))
 
 ## Publishing
 tar_make_future(c("Summary_taxa",
-                  "Summary_NFIs"),
+                  "Summary_NFIs",
+                  "Summary_range",
+                  "plot_range"),
                 workers = if(onserver) 12 else 3, reporter = "verbose_positives")
+
+
 
 # tar_make(c("map_select", "surfaceplots_s")) ## For some reason, future does not work with rasterVis and ggplot addition (some problem with correct overloading of `+`)
 

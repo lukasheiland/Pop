@@ -21,6 +21,7 @@ plan(callr) ## "It is crucial that future::plan() is called in the target script
 ### Source the functions
 source("Wrangling_functions.R")
 source("Map_functions.R")
+source("Range_functions.R")
 source("Fit_seedlings_functions.R")
 source("Fit_functions.R")
 source("Posterior_functions.R")
@@ -377,6 +378,53 @@ targets_wrangling <- list(
                mapLocations(Stages_select, path = dir_publish, themefun = themefunction),
                packages = c(package, "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist"))
     
+  )
+)
+
+
+
+## Range pipeline ------------------------------------------------------
+targets_range <- list(
+  
+  ## Read data files
+  list(
+    tar_target(file_EAFTS_range,
+               "Range.nosync/EAFTS/Fagus-sylvatica_rpp.tif",
+               format = "file"),
+    tar_target(file_env_range,
+               "Inventory.nosync/DE BWI/Data/DE_BWI_big_2-3_status.rds",
+               format = "file")
+  ),
+  list(
+    tar_target(predictor_range, c("cwbYear_aclim" = "Range.nosync/Climate aclim/Climatologies/CWB_YEAR.tif",
+                                  "phCaCl_esdacc" = "Range.nosync/Soil esdacc ESDAC topsoil chemical properties/pH_CaCl/pH_CaCl.tif")),
+    
+    tar_target(Raster_EAFTS_range, raster(file_EAFTS_range)),
+    tar_target(rasters_env_range, lapply(predictor_range, raster))
+  ),
+  
+  
+  ## Compare ranges
+  list(
+    tar_target(Stages_select_range,
+               selectRange(Stages_select_env, taxon = "Fagus.sylvatica")),
+               
+    tar_target(Stages_env_range,
+              joinEnv(Stages_select_range,
+                      st_drop_geometry(Data_env[ ,c("plotid", "clusterid", names(predictor_range))]))
+              ),
+    
+    tar_target(EAFTS_range,
+               extractRange(Raster_EAFTS_range, rasters_env = rasters_env_range)),
+    
+    tar_target(Ranges_range,
+               bind_rows("DE" = st_drop_geometry(Stages_env_range), "EAFTS" = EAFTS_range, .id = "origin")),
+    
+    tar_target(Summary_range,
+               summarizeRange(Ranges_range, predictor = names(predictor_range), path = dir_publish)),
+    
+    tar_target(plot_range,
+               plotRange(Ranges_range, predictor = names(predictor_range), path = dir_publish, color = twocolors, themefun = themefunction))
   )
 )
 
@@ -924,6 +972,7 @@ list(
   targets_settings,
   targets_paths,
   targets_wrangling,
+  targets_range,
   targets_parname,
   targets_fit_general,
   targets_fit_test,
