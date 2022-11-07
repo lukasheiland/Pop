@@ -832,14 +832,14 @@ targets_posterior_env <- list(
              plotBinary(Environmental = Environmental_env,
                         parname = str_to_sentence(parname_plotorder),
                         fit_bin = fit_environmental_env_binomial[[sapply(fit_environmental_env_binomial, function(x) attr(x, "par") == "major_fix") %>% which()]],
-                        binarythreshold = 0.9,
+                        binarythreshold = 0.5,
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
   
   tar_target(plot_binary_contrib_env,
              plotBinary(Environmental = Environmental_env,
                         parname = contribname_env,
                         fit_bin = fit_environmental_env_binomial[[sapply(fit_environmental_env_binomial, function(x) attr(x, "par") == "major_fix") %>% which()]],
-                        binarythreshold = 0.9,
+                        binarythreshold = 0.5,
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
 
   tar_target(plots_trace_env,

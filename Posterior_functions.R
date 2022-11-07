@@ -1356,6 +1356,8 @@ plotStates <- function(States,
                   ba_fix_ko_s = "Equilibrium without s",
                   ba_fix_ko_2_b = "Equilibrium without b of others",
                   ba_fix_ko_2_s = "Equilibrium without s effect on others",
+                  ba_fix_ko_b_l_r = "Equilibrium without the respective other",
+                  ba_fix_ko_b_l_r_ko = "K.O. state",
                   
                   ba_fix_switch_b = "Equilibrium with switched b",
                   ba_fix_switch_c_a = "Equilibrium with switched c_A",
@@ -2270,7 +2272,7 @@ plotPoly <- function(Surfaces, Environmental = NULL,
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold = 0.9, path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
+plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold = 0.5, path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   
@@ -2320,7 +2322,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
     mutate(binary = if_else(tax == 1, binary, !binary)) %>%
     
 
-    ## aggregate by draws by loc first, to reduce the variation to the variation
+    ## aggregate by draws by loc first, to reduce the variation to the environmental variation
     group_by(tax, .variable, binary, loc) %>%
     summarize(value = mean(value, na.rm = T)) %>%
     ungroup() %>%
@@ -2340,15 +2342,16 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
            ) %>%
     
     mutate(tax = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>% 
-    mutate(p = .variable,
-           parameter = str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
-           parameter = if_else(is.na(parameter), .variable, parameter),
-           parameter = factor(parameter, levels = unique(c(parname, parameter))), # for the order
+    rename(p = .variable) %>% 
+    mutate(parameter = if_else(str_starts(p, "sum_"),
+                               str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
+                               p), ## distinguish whether contribution or parameter
+           parameter = factor(parameter, levels = unique(c(parname, parameter, p))), # for the order
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "others" = "2") ),
            reciprocal = as.character(kotax) != as.character(tax)) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
-    mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B"))))
-    
+    mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
+    filter(!Vectorize(isTRUE)(reciprocal)) ## removes indirect effect!
   
   
   pos <- position_dodge(width = 1)
