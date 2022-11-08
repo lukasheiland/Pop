@@ -173,7 +173,7 @@ targets_parname <- list(
              c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_raw", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt", "m")),
   
   tar_target(helper_exclude,
-             c("Fix", "Fix_ko_s", "Fix_ko_1_b_l_r", "Fix_ko_2_b_l_r",
+             c("Fix", "Fix_avg", "Fix_ko_s", "Fix_ko_1_b_l_r", "Fix_ko_2_b_l_r",
                paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                "B_log_raw", "C_a_log_raw", "C_b_log_raw", "C_j_log_raw", "G_log_raw", "H_log_raw", "L_log_raw", "R_log_raw", "S_log_raw",
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
@@ -212,16 +212,16 @@ targets_parname <- list(
              c(statename,
                paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                
+               paste0("sum_ko_", 1:2, "_", rep(c(names(parname_plotorder), "b_c_b"), each = 2), "_fix"),
+               paste0("sum_ko_", 1:2, "_", rep(c(names(parname_plotorder), "b_c_b"), each = 2), "_fix_avg"),
+               paste0("sum_ko_", 1:2, "_prop_", rep(c(names(parname_plotorder), "b_c_b"), each = 2), "_fix"),
+               
+               paste0("sum_switch_", c(names(parname_plotorder), "b_c_b"), "_fix"),
+               
+               paste0("greater_", names(parname_plotorder)),
                "converged_fix", "iterations_fix", "fixiter_max", "fixiter_min", "eps_ba_fix",
-               "sum_ko_1_b_fix", "sum_ko_1_b_c_b_fix", "sum_ko_1_c_a_fix", "sum_ko_1_c_b_fix", "sum_ko_1_c_j_fix", "sum_ko_1_g_fix", "sum_ko_1_h_fix", "sum_ko_1_l_fix", "sum_ko_1_r_fix", "sum_ko_1_s_fix",
-               "sum_ko_2_b_fix", "sum_ko_2_b_c_b_fix", "sum_ko_2_c_a_fix", "sum_ko_2_c_b_fix", "sum_ko_2_c_j_fix", "sum_ko_2_g_fix", "sum_ko_2_h_fix", "sum_ko_2_l_fix", "sum_ko_2_r_fix", "sum_ko_2_s_fix",
+               "converged_fix_avg", "iterations_fix_avg", "eps_ba_fix_avg")
                
-               "sum_switch_b_fix", "sum_switch_b_c_b_fix", "sum_switch_c_a_fix", "sum_switch_c_b_fix", "sum_switch_c_j_fix", "sum_switch_g_fix", "sum_switch_h_fix", "sum_switch_l_fix", "sum_switch_r_fix", "sum_switch_s_fix",
-               
-               "sum_ko_1_prop_b_fix", "sum_ko_1_prop_b_c_b_fix", "sum_ko_1_prop_c_a_fix", "sum_ko_1_prop_c_b_fix", "sum_ko_1_prop_c_j_fix", "sum_ko_1_prop_g_fix", "sum_ko_1_prop_h_fix", "sum_ko_1_prop_l_fix", "sum_ko_1_prop_r_fix", "sum_ko_1_prop_s_fix",
-               "sum_ko_2_prop_b_fix", "sum_ko_2_prop_b_c_b_fix", "sum_ko_2_prop_c_a_fix", "sum_ko_2_prop_c_b_fix", "sum_ko_2_prop_c_j_fix", "sum_ko_2_prop_g_fix", "sum_ko_2_prop_h_fix", "sum_ko_2_prop_l_fix", "sum_ko_2_prop_r_fix", "sum_ko_2_prop_s_fix",
-               
-               "greater_b", "greater_c_a", "greater_c_b", "greater_c_j", "greater_g", "greater_h", "greater_l", "greater_k", "greater_r", "greater_s")
              ),
   
   tar_target(parname,
@@ -562,7 +562,7 @@ targets_fit_env <- list(
              cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 6, iter_warmup = 800, iter_sampling = 600, fitpath = dir_fit,
+                      method = "mcmc", n_chains = 20, iter_warmup = 800, iter_sampling = 200, fitpath = dir_fit,
                       adapt_delta = 0.95)
              ),
   tar_target(basename_fit_env,
@@ -740,9 +740,16 @@ targets_posterior_env <- list(
   tar_target(parname_env, c(setdiff(parname_loc_env, "state_init"),
                             "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix", "major_fix", "major_init",
                             "ba_fix_ko_b_l_r", "ba_fix_ko_b_l_r_ko")),
-  tar_target(contribname_env, paste("sum_ko",
-                                    rep(1:2, each = length(parname_plotorder)),
-                                    names(parname_plotorder), "fix", sep = "_")),
+  
+  tar_target(contribname_init_env, paste("sum_ko",
+                                        rep(1:2, each = length(parname_plotorder)),
+                                        names(parname_plotorder), "fix", sep = "_")),
+  
+  tar_target(contribname_avg_env, paste("sum_ko",
+                                        rep(1:2, each = length(parname_plotorder)),
+                                        names(parname_plotorder), "fix_avg", sep = "_")),
+
+  tar_target(contribname_env, c(contribname_init_env, contribname_avg_env)),
   
   tar_target(parname_environmental, selectParnameEnvironmental(parname_env, Environmental_env)), ## selects the variables, that are actually in the fit
   tar_target(contribname_environmental, selectParnameEnvironmental(contribname_env, Environmental_env)), ## selects the variables, that are actually in the fit
@@ -886,6 +893,13 @@ targets_posterior_env <- list(
   tar_target(plot_binary_contrib_env,
              plotBinary(Environmental = Environmental_env,
                         parname = contribname_env,
+                        fit_bin = fit_environmental_env_binomial[[sapply(fit_environmental_env_binomial, function(x) attr(x, "par") == "major_fix") %>% which()]],
+                        binarythreshold = 0.5,
+                        path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
+  
+  tar_target(plot_binary_contrib_avg_env,
+             plotBinary(Environmental = Environmental_env,
+                        parname = contribname_avg_env,
                         fit_bin = fit_environmental_env_binomial[[sapply(fit_environmental_env_binomial, function(x) attr(x, "par") == "major_fix") %>% which()]],
                         binarythreshold = 0.5,
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),

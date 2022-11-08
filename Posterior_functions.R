@@ -217,7 +217,7 @@ predictPoly <- function(cmdstanfit, parname_Beta, Envgrid) {
     as_draws_rvars()
   
   envname <- names(Envgrid)
-  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2)" , collapse = " + "))
+  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
   Matrix <- model.matrix(as.formula(formula), data = Envgrid)
   dimnames(Matrix) <- NULL ## character dimnames were fatal for %**%
 
@@ -931,7 +931,7 @@ fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envnam
     E$v <- as.factor(round(E$v))
   }
   
-  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2)" , collapse = " + "))
+  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
   M <- model.matrix(as.formula(formula), data = E)
   
   ### glmnet
@@ -973,7 +973,7 @@ fitEnvironmental_glm <- function(Environmental, parname = parname_env, envname =
     rename(v = .value)
   
   
-  formula <- paste0("v ~ 1 + ", paste0("poly(", envname, ", 2)" , collapse = " + "))
+  formula <- paste0("v ~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
   
   ### glm
   ## glm, compared to unregularized glmnet, has the advantage to predict continuosly on [0, 1] when binomial
@@ -1051,7 +1051,7 @@ predictEnvironmental <- function(fit, envname,
   
   if (is(fit, "cv.glmnet")) {
     
-    formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2)" , collapse = " + "))
+    formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
     X <- model.matrix(as.formula(formula), data = P_covered)
     p <- predict(fit, newx = X, type = "response", s = fit$lambda.1se) %>% c() # minimal lambda with the best prediction: lambda.min
     
@@ -1945,7 +1945,7 @@ plotTrace <- function(cmdstanfit, parname, path,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 
-plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_ko", "sum_ko_prop", "sum_switch"), plotlog = FALSE,
+plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_ko", "sum_ko_avg", "sum_ko_prop", "sum_switch"), plotlog = FALSE,
                               color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   
@@ -1959,6 +1959,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   
   contribname <- if (match.arg(contribution) == "sum_ko_prop") { paste("sum_ko", rep(1:n_species, each = length(parname)), "prop", parname, "fix", sep = "_") }
   else if (match.arg(contribution) == "sum_ko") { paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_") }
+  else if (match.arg(contribution) == "sum_ko_avg") { paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix_avg", sep = "_") }
   else if (match.arg(contribution) == "sum_switch") { paste("sum_switch", parname, "fix", sep = "_") }
   
   
@@ -2227,14 +2228,14 @@ plotPoly <- function(Surfaces, Environmental = NULL,
   if (!is.null(Environmental)) {
     
     E <- Environmental %>%
-      dplyr::filter(str_starts(.variable, "sum_ko_")) %>% 
+      dplyr::filter(str_starts(.variable, "sum_ko_") & str_ends(.variable, "fix_avg")) %>% 
       rename(parname = .variable) %>%
       group_by_at(c("tax", "parname", "loc", name_x, name_y)) %>%
       dplyr::summarize(value = mean(.value, na.rm = T), .groups = "drop") %>%
       mutate(isdirectcontribution = str_extract(parname, "[1-2]") == tax) %>%
       filter(isdirectcontribution) %>%
       mutate(taxon = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>%
-      mutate(parname = str_extract(parname, "(c_[jab]|[a-z])(?=_fix$)")) %>%
+      mutate(parname = str_extract(parname, "(c_[jab]|[a-z])(?=_fix)")) %>%
       mutate(parname = paste0(parname, "_log"))
     
     }

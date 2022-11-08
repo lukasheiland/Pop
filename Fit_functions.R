@@ -232,7 +232,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
     X <- matrix(0, nrow = nrow(Env), ncol = ncol(Env))
     message("With Env having NAs, an empty design matrix was produced, assuming that it will not be used.")
   } else {
-    polyformula <- as.formula(paste("~", paste("poly(", colnames(as.data.frame(Env)), ", 2)", collapse = "+")))
+    polyformula <- as.formula(paste("~", paste("poly(", colnames(as.data.frame(Env)), ", 2, raw = T)", collapse = "+")))
     X <- model.matrix(polyformula, data = as.data.frame(Env))
   }
   
