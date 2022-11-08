@@ -60,7 +60,7 @@ targets_settings <- list(
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")
-  tar_target(n_locations, 1000),
+  tar_target(n_locations, 2000),
   
   ## Threshold to discriminate A and B [mm]
   ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile
@@ -101,12 +101,12 @@ targets_settings <- list(
   
   tar_target(weakpriors_env,
              list(
-               prior_b_log = c(-3.5, 1),
+               prior_b_log = c(-4, 1),
                prior_c_a_log = c(-7, 1),
                prior_c_b_log = c(-6, 1),
-               prior_c_j_log = c(-13, 2),
+               prior_c_j_log = c(-10, 2),
                prior_g_log = c(-5, 1),
-               prior_h_log = c(-3, 2),
+               prior_h_log = c(-3, 1),
                prior_l_log = c(4, 1),
                prior_r_log = c(4, 1),
                prior_s_log = c(-5, 1)
