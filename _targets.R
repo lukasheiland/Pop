@@ -60,7 +60,7 @@ targets_settings <- list(
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")
-  tar_target(n_locations, 2000),
+  tar_target(n_locations, 1500),
   
   ## Threshold to discriminate A and B [mm]
   ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile
@@ -174,11 +174,14 @@ targets_parname <- list(
   
   tar_target(helper_exclude,
              c("Fix", "Fix_avg", "Fix_ko_s", "Fix_ko_1_b_l_r", "Fix_ko_2_b_l_r",
+               paste0("Fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
                paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                "B_log_raw", "C_a_log_raw", "C_b_log_raw", "C_j_log_raw", "G_log_raw", "H_log_raw", "L_log_raw", "R_log_raw", "S_log_raw",
+               str_to_sentence(names(parname_plotorder)),
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
                "phi_obs_rep", "phi_obs_rep_prior", "theta_rep",
                "avg_state_init", "avg_L_loc",
+               paste0("avg_", names(parname_plotorder)),
                "fixiter_max", "fixiter_min", "eps_ba_fix",
                "c_j_log_10",
                "log_prior", "log_lik", "lp__", "state_init_log_raw", "state_2", "state_2_raw", "state_3", "state_3_raw")),
@@ -201,6 +204,9 @@ targets_parname <- list(
                "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
                paste0("major_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
                "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
+               paste0("ba_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
+               paste0("major_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
+               paste0("ba_frac_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
                paste0("ba_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")))
              ),
   
@@ -562,7 +568,7 @@ targets_fit_env <- list(
              cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 20, iter_warmup = 800, iter_sampling = 200, fitpath = dir_fit,
+                      method = "mcmc", n_chains = 10, iter_warmup = 800, iter_sampling = 200, fitpath = dir_fit,
                       adapt_delta = 0.95)
              ),
   tar_target(basename_fit_env,

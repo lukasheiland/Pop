@@ -92,7 +92,7 @@ functions {
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(array[] vector state_init, array[] int time_max, array[] int times,    //* vector unpack(array[] vector state_init_log, array[] int time_max, array[] int times,
-                matrix B_log, matrix C_a_log, matrix C_b_log, matrix C_j_log, matrix G_log, matrix H_log, array[] vector L_loc, matrix R_log, matrix S_log,
+                array[] vector B, array[] vector C_a, array[] vector C_b, array[] vector C_j, array[] vector G, array[] vector H, array[] vector L_loc, array[] vector R, array[] vector S,
                 vector ba_a_avg, real ba_a_upper,
                 array[] int n_obs, array[] int n_yhat,
                 int N_species, int N_pops, int L_y, int N_locs,
@@ -112,7 +112,7 @@ functions {
                         
                         simulate(state_init[loc],
                                  time_max[loc],
-                                 exp(B_log[loc,]'), exp(C_a_log[loc,]'), exp(C_b_log[loc,]'), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(H_log[loc,]'), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                 B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc], R[loc], S[loc],
                                  ba_a_avg, ba_a_upper,
                                  N_species, N_pops,
                                  i_j, i_a, i_b);
@@ -480,40 +480,7 @@ parameters {
   vector[N_species] h_log_spread_env2_100;
   vector[N_species] r_log_spread_env2_100;
   vector<lower=0>[N_species] s_log_spread_env2_100;
-  
 
-  ////$ Model parameters at loc level
-  // array[N_locs] vector[N_species] B_log_raw;
-  // array[N_locs] vector[N_species] C_a_log_raw;
-  // array[N_locs] vector[N_species] C_b_log_raw;
-  // array[N_locs] vector[N_species] C_j_log_raw;
-  // array[N_locs] vector[N_species] G_log_raw; // <upper=-g_log ./ sigma_g>
-  // array[N_locs] vector[N_species] H_log_raw; // <upper=-h_log ./ sigma_h>
-  // // array[N_locs] vector[N_species] L_log_raw; ///**
-  // array[N_locs] vector[N_species] R_log_raw;
-  // array[N_locs] vector[N_species] S_log_raw;
-  // 
-  // 
-  // vector<lower=0>[N_species] sigma_b;
-  // vector<lower=0>[N_species] sigma_c_a;
-  // vector<lower=0>[N_species] sigma_c_b;
-  // vector<lower=0>[N_species] sigma_c_j;
-  // vector<lower=0>[N_species] sigma_g;
-  // vector<lower=0>[N_species] sigma_h;
-  // // // vector<lower=0>[N_species] sigma_l; ///**
-  // vector<lower=0>[N_species] sigma_r;
-  // vector<lower=0>[N_species] sigma_s;
-  
-  // vector<lower=0>[N_species] alpha_b;
-  // vector<lower=0>[N_species] alpha_c_a;
-  // vector<lower=0>[N_species] alpha_c_b;
-  // vector<lower=0>[N_species] alpha_c_j;
-  // vector<lower=0>[N_species] alpha_g;
-  // vector<lower=0>[N_species] alpha_h;
-  // vector<lower=0>[N_species] alpha_l; ///**
-  // vector<lower=0>[N_species] alpha_r;
-  // vector<lower=0>[N_species] alpha_s;
-  
 
   //// Dispersion
   //? vector<lower=0>[N_protocolTax] phi_obs_inv; // error in neg_binomial per tax and stage
@@ -576,16 +543,14 @@ transformed parameters {
   matrix[N_locs, N_species] R_log = X * Beta_r_log;
   matrix[N_locs, N_species] S_log = X * Beta_s_log;
   
-  ////$ Model parameters at loc level
-  // array[N_locs] vector[N_species] B_log;
-  // array[N_locs] vector[N_species] C_a_log;
-  // array[N_locs] vector[N_species] C_b_log;
-  // array[N_locs] vector[N_species] C_j_log;
-  // array[N_locs] vector[N_species] G_log;
-  // array[N_locs] vector[N_species] H_log;
-  // // array[N_locs] vector[N_species] L_log; ///**
-  // array[N_locs] vector[N_species] R_log;
-  // array[N_locs] vector[N_species] S_log;
+  array[N_locs] vector[N_species] B;
+  array[N_locs] vector[N_species] C_a;
+  array[N_locs] vector[N_species] C_b;
+  array[N_locs] vector[N_species] C_j;
+  array[N_locs] vector[N_species] G;
+  array[N_locs] vector[N_species] H;
+  array[N_locs] vector[N_species] R;
+  array[N_locs] vector[N_species] S;
 
   for(loc in 1:N_locs) {
     
@@ -594,36 +559,23 @@ transformed parameters {
     L_loc[loc, ] = exp(l_log + L_smooth_log[loc, ]); /// l * L_smooth == exp(l_log + L_smooth_log)
     // L_loc[loc, ] = exp(L_log[loc, ] + L_smooth_log[loc, ]); ///** version with random L
     
-    
-    
-    
-    
-    ////$ Lasso with alpha_*, ridge with sigma_*
-    // B_log[loc,] = b_log + B_log_raw[loc,] .* sigma_b;
-    // C_a_log[loc,] = c_a_log + C_a_log_raw[loc,] .* sigma_c_a; // .* alpha_c_a;
-    // C_b_log[loc,] = c_b_log + C_b_log_raw[loc,] .* sigma_c_b; // .* alpha_c_b;
-    // C_j_log[loc,] = c_j_log + C_j_log_raw[loc,] .* sigma_c_j;
-    // G_log[loc,] = g_log + G_log_raw[loc,] .* sigma_g;
-    // H_log[loc,] = h_log + H_log_raw[loc,] .* sigma_h; // alpha_h
-    // // L_log[loc,] = l_log + L_log_raw[loc,] .* alpha_l; ///**
-    // R_log[loc,] = r_log + R_log_raw[loc,] .* sigma_r;
-    // S_log[loc,] = s_log + S_log_raw[loc,] .* sigma_s;
-    
-    //// Non-centered parameterization of Parameter p_log
-    // P_log ~ p_log + P_log_raw * alpha_p
-    // with P_log_raw ~ normal(0, 1)
-    // and alpha_p ~ exponential(1/lambda)
-    // is equivalent to
-    // P_log ~ double_exponential(p_log, lambda) // with the scale parameter lambda
+    B[loc] = exp(B_log[loc]');
+    C_a[loc] = exp(C_a_log[loc]');
+    C_b[loc] = exp(C_b_log[loc]');
+    C_j[loc] = exp(C_j_log[loc]');
+    G[loc] = exp(G_log[loc]');
+    H[loc] = exp(H_log[loc]');
+    R[loc] = exp(R_log[loc]');
+    S[loc] = exp(S_log[loc]');
     
   }
   
   vector<lower=0>[L_y] y_hat = unpack(state_init, time_max, times,
-                                B_log,  C_a_log, C_b_log, C_j_log, G_log, H_log, L_loc, R_log, S_log,
-                                ba_a_avg, ba_a_upper,
-                                n_obs, n_yhat,
-                                N_species, N_pops, L_y, N_locs, // fixed numbers
-                                i_j, i_a, i_b);
+                                      B,  C_a, C_b, C_j, G, H, L_loc, R, S,
+                                      ba_a_avg, ba_a_upper,
+                                      n_obs, n_yhat,
+                                      N_species, N_pops, L_y, N_locs, // fixed numbers
+                                      i_j, i_a, i_b);
                                 
   vector[L_y] y_hat_offset = y_hat .* offset_data;
   
@@ -653,28 +605,6 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Hyperpriors
-  
-  //$
-  // sigma_b ~ normal(0, 0.2);
-  // sigma_c_a ~ normal(0, 0.2);
-  // sigma_c_b ~ normal(0, 0.2);
-  // sigma_c_j ~ normal(0, 0.2);
-  // sigma_g ~ normal(0, 0.2);
-  // sigma_h ~ normal(0, 0.2);
-  // // // sigma_l ~ normal(0, 0.2); ///**
-  // sigma_r ~ normal(0, 0.2);
-  // sigma_s ~ normal(0, 0.2);
-  
-  // alpha_b ~ exponential(10); // exponential(1/10)
-  // alpha_c_a ~ exponential(10); // exponential(1/scale) == exponential(rate)
-  // alpha_c_b ~ exponential(10);
-  // alpha_c_j ~ exponential(10);
-  // alpha_g ~ exponential(10);
-  // alpha_h ~ exponential(10);
-  // //  alpha_l ~ exponential(10); ///**
-  // alpha_r ~ exponential(10);
-  // alpha_s ~ exponential(10);
-  
   //? phi_obs_inv ~ std_normal();
   phi_obs_inv_sqrt ~ std_normal();
   
@@ -736,17 +666,6 @@ model {
     //// Prior for initial state
     state_init[l] ~ gamma(alpha_init[l], beta_init[l]); // state_init is just a linear transform. -> No Jacobian correction necessary.
     
-    //// Hierarchical distribution of parameters
-    //$
-    // B_log_raw[l] ~ std_normal();
-    // C_a_log_raw[l] ~ std_normal();
-    // C_b_log_raw[l] ~ std_normal();
-    // C_j_log_raw[l] ~ std_normal();
-    // G_log_raw[l] ~ std_normal();
-    // H_log_raw[l] ~ std_normal();
-    // // L_log_raw[l] ~ std_normal(); ///**
-    // R_log_raw[l] ~ std_normal();
-    // S_log_raw[l] ~ std_normal();
   }
 
   
@@ -780,7 +699,29 @@ generated quantities {
   for (p in 1:N_pops) avg_state_init[p] = mean(state_init[, p]);
   
   vector[N_species] avg_L_loc;
-  for (s in 1:N_species) avg_L_loc[s] = mean(L_loc[, s]);
+
+  vector[N_pops] avg_b;
+  vector[N_pops] avg_c_a;
+  vector[N_pops] avg_c_b;
+  vector[N_pops] avg_c_j;
+  vector[N_pops] avg_g;
+  vector[N_pops] avg_h;
+  vector[N_pops] avg_r;
+  vector[N_pops] avg_s;
+
+  for (s in 1:N_species) {
+    
+    avg_L_loc[s] = mean(L_loc[, s]);
+    
+    avg_b[s] = mean(B[, s]);
+    avg_c_a[s] = mean(C_a[, s]);
+    avg_c_b[s] = mean(C_b[, s]);
+    avg_c_j[s] = mean(C_j[, s]);
+    avg_g[s] = mean(G[, s]);
+    avg_h[s] = mean(H[, s]);
+    avg_r[s] = mean(R[, s]);
+    avg_s[s] = mean(S[, s]);
+  }
 
 
   //—————————————————————————————————————————————————————————————————————//
@@ -904,10 +845,96 @@ generated quantities {
   
   
   //// Declarations of counterfactual posterior quantities
+  
+  // 1. K.O. of all regeneration
   array[N_locs, N_fix] vector[N_species] Fix_ko_1_b_l_r = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_ko_2_b_l_r = Fix;
+  
   array[N_locs] vector[N_species] ba_fix_ko_b_l_r = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_b_l_r_ko = J_init;
+  
+  // 2. K.O. of all environmental variation
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_b     = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_b_c_b = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_c_a   = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_c_b   = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_c_j   = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_g     = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_h     = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_r     = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_s     = Fix;
+  
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_b     = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_b_c_b = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_c_a   = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_c_b   = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_c_j   = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_g     = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_h     = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_r     = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_s     = Fix;
+
+  
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_b     = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_b_c_b = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_c_a   = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_c_b   = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_c_j   = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_g     = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_h     = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_r     = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_s     = J_init;
+  
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_b     = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_b_c_b = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_c_a   = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_c_b   = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_c_j   = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_g     = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_h     = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_r     = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_s     = J_init;
+  
+  
+  array[N_locs] vector[N_species] ba_frac_fix_ko_1_env_b     = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_1_env_b_c_b = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_1_env_c_a   = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_1_env_c_b   = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_1_env_c_j   = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_1_env_g     = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_1_env_h     = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_1_env_r     = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_1_env_s     = J_init;
+
+  array[N_locs] vector[N_species] ba_frac_fix_ko_2_env_b     = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_2_env_b_c_b = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_2_env_c_a   = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_2_env_c_b   = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_2_env_c_j   = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_2_env_g     = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_2_env_h     = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_2_env_r     = J_init;
+  array[N_locs] vector[N_species] ba_frac_fix_ko_2_env_s     = J_init;
+  
+  array[N_locs] int major_fix_ko_1_env_b     = converged_fix;
+  array[N_locs] int major_fix_ko_1_env_b_c_b = converged_fix;
+  array[N_locs] int major_fix_ko_1_env_c_a   = converged_fix;
+  array[N_locs] int major_fix_ko_1_env_c_b   = converged_fix;
+  array[N_locs] int major_fix_ko_1_env_c_j   = converged_fix;
+  array[N_locs] int major_fix_ko_1_env_g     = converged_fix;
+  array[N_locs] int major_fix_ko_1_env_h     = converged_fix;
+  array[N_locs] int major_fix_ko_1_env_r     = converged_fix;
+  array[N_locs] int major_fix_ko_1_env_s     = converged_fix;
+  
+  array[N_locs] int major_fix_ko_2_env_b     = converged_fix;
+  array[N_locs] int major_fix_ko_2_env_b_c_b = converged_fix;
+  array[N_locs] int major_fix_ko_2_env_c_a   = converged_fix;
+  array[N_locs] int major_fix_ko_2_env_c_b   = converged_fix;
+  array[N_locs] int major_fix_ko_2_env_c_j   = converged_fix;
+  array[N_locs] int major_fix_ko_2_env_g     = converged_fix;
+  array[N_locs] int major_fix_ko_2_env_h     = converged_fix;
+  array[N_locs] int major_fix_ko_2_env_r     = converged_fix;
+  array[N_locs] int major_fix_ko_2_env_s     = converged_fix;
 
   //———————————————————————————————————————————————————————————————————//
   // Generate Posterior quantities conditioned on setting  -----------//
@@ -936,7 +963,7 @@ generated quantities {
 
       //// Simulate fix point, given parameters
       Fix[loc] = iterateFix_contributions(state_init[loc],
-                                          exp(B_log[loc,]'), exp(C_a_log[loc,]'), exp(C_b_log[loc,]'), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(H_log[loc,]'), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                          B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
                                           ba_a_avg, ba_a_upper,
                                           N_species, i_j, i_a, i_b,
                                           tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);
@@ -990,32 +1017,116 @@ generated quantities {
         
  
         //// Counterfactual fix point iteration
-        vector[N_species] ko_1_b = [0, exp(B_log[loc, 2])]';
-        vector[N_species] ko_2_b = [exp(B_log[loc,1]), 0]';
-        vector[N_species] ko_1_r = [0, exp(R_log[loc, 2])]';
-        vector[N_species] ko_2_r = [exp(R_log[loc,1]), 0]';
-        vector[N_species] ko_1_l = [0, L_loc[loc,2]]';
-        vector[N_species] ko_2_l = [L_loc[loc,1], 0]';
         
-        vector[N_species] ko_2_s = [exp(s_log[1]), 0]';
+        // 1. K.O. of all regeneration
+        vector[N_species] ko_1_b = [0, B[loc, 2]]';
+        vector[N_species] ko_2_b = [B[loc, 1], 0]';
+        vector[N_species] ko_1_r = [0, R[loc, 2]]';
+        vector[N_species] ko_2_r = [R[loc, 1], 0]';
+        vector[N_species] ko_1_l = [0, L_loc[loc, 2]]';
+        vector[N_species] ko_2_l = [L_loc[loc, 1], 0]';
         
         
         Fix_ko_1_b_l_r[loc] = iterateFix(state_init[loc],
-                            ko_1_b, exp(C_a_log[loc,]'), exp(C_b_log[loc,]'), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(H_log[loc,]'), ko_1_l, ko_1_r, exp(S_log[loc,]'),
-                            ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+                                         ko_1_b, C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], ko_1_l, ko_1_r, S[loc],
+                                         ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         Fix_ko_2_b_l_r[loc] = iterateFix(state_init[loc],
-                            ko_2_b, exp(C_a_log[loc,]'), exp(C_b_log[loc,]'), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(H_log[loc,]'), ko_2_l, ko_2_r, exp(S_log[loc,]'),
-                            ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+                                         ko_2_b, C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], ko_2_l, ko_2_r, S[loc],
+                                         ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         
         ba_fix_ko_b_l_r[loc] = [Fix_ko_2_b_l_r[loc, 4, 1], Fix_ko_1_b_l_r[loc, 4, 2]]'; // basal area of the species that is not knocked out, respectively [1,2]
         ba_fix_ko_b_l_r_ko[loc] = [Fix_ko_1_b_l_r[loc, 4, 1], Fix_ko_2_b_l_r[loc, 4, 2]]'; // basal area of the species that is knocked out, respectively [1,2]
+        
+        
+        
+        // 2. K.O. of environmental variation
+        Fix_ko_1_env_b[loc] = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_1_env_b_c_b[loc] = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);;
+        Fix_ko_1_env_c_a[loc] = iterateFix(state_init[loc], B[loc], [ avg_c_a[1], C_a[loc, 2] ]', C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_1_env_c_b[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_1_env_c_j[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], [ avg_c_j[1], C_j[loc, 2] ]', G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_1_env_g[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], [ avg_g[1], G[loc, 2] ]', H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_1_env_h[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], [ avg_h[1], H[loc, 2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);        
+        Fix_ko_1_env_r[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], [ avg_r[1], R[loc, 2] ]', S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_1_env_s[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ avg_s[1], S[loc, 2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        
+        Fix_ko_2_env_b[loc] = iterateFix(state_init[loc], [ B[loc, 1], avg_b[2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_2_env_b_c_b[loc] = iterateFix(state_init[loc], [ B[loc, 1], avg_b[2] ]', C_a[loc], [ C_b[loc, 1], avg_c_b[2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);;
+        Fix_ko_2_env_c_a[loc] = iterateFix(state_init[loc], B[loc], [ C_a[loc, 1], avg_c_a[2] ]', C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_2_env_c_b[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], [ C_b[loc, 1], avg_c_b[2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_2_env_c_j[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], [ C_j[loc, 1], avg_c_j[2] ]', G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_2_env_g[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], [ G[loc, 1], avg_g[2] ]', H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_2_env_h[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], [ H[loc, 1], avg_h[2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);        
+        Fix_ko_2_env_r[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], [ R[loc, 1], avg_r[2] ]', S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_2_env_s[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ S[loc, 1], avg_s[2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        
+        ba_fix_ko_1_env_b[loc]     = Fix_ko_1_env_b[loc, 4];
+        ba_fix_ko_1_env_b_c_b[loc] = Fix_ko_1_env_b_c_b[loc, 4];
+        ba_fix_ko_1_env_c_a[loc]   = Fix_ko_1_env_c_a[loc, 4];
+        ba_fix_ko_1_env_c_b[loc]   = Fix_ko_1_env_c_b[loc, 4];
+        ba_fix_ko_1_env_c_j[loc]   = Fix_ko_1_env_c_j[loc, 4];
+        ba_fix_ko_1_env_g[loc]     = Fix_ko_1_env_g[loc, 4];
+        ba_fix_ko_1_env_h[loc]     = Fix_ko_1_env_h[loc, 4];
+        ba_fix_ko_1_env_r[loc]     = Fix_ko_1_env_r[loc, 4];
+        ba_fix_ko_1_env_s[loc]     = Fix_ko_1_env_s[loc, 4];
+        
+        ba_fix_ko_2_env_b[loc]     = Fix_ko_2_env_b[loc, 4];
+        ba_fix_ko_2_env_b_c_b[loc] = Fix_ko_2_env_b_c_b[loc, 4];
+        ba_fix_ko_2_env_c_a[loc]   = Fix_ko_2_env_c_a[loc, 4];
+        ba_fix_ko_2_env_c_b[loc]   = Fix_ko_2_env_c_b[loc, 4];
+        ba_fix_ko_2_env_c_j[loc]   = Fix_ko_2_env_c_j[loc, 4];
+        ba_fix_ko_2_env_g[loc]     = Fix_ko_2_env_g[loc, 4];
+        ba_fix_ko_2_env_h[loc]     = Fix_ko_2_env_h[loc, 4];
+        ba_fix_ko_2_env_r[loc]     = Fix_ko_2_env_r[loc, 4];
+        ba_fix_ko_2_env_s[loc]     = Fix_ko_2_env_s[loc, 4];
+        
+        ba_frac_fix_ko_1_env_b[loc]     = ba_fix_ko_1_env_b[loc]     / sum(ba_fix_ko_1_env_b[loc]);
+        ba_frac_fix_ko_1_env_b_c_b[loc] = ba_fix_ko_1_env_b_c_b[loc] / sum(ba_fix_ko_1_env_b_c_b[loc]);
+        ba_frac_fix_ko_1_env_c_a[loc]   = ba_fix_ko_1_env_c_a[loc]   / sum(ba_fix_ko_1_env_c_a[loc]);
+        ba_frac_fix_ko_1_env_c_b[loc]   = ba_fix_ko_1_env_c_b[loc]   / sum(ba_fix_ko_1_env_c_b[loc]);
+        ba_frac_fix_ko_1_env_c_j[loc]   = ba_fix_ko_1_env_c_j[loc]   / sum(ba_fix_ko_1_env_c_j[loc]);
+        ba_frac_fix_ko_1_env_g[loc]     = ba_fix_ko_1_env_g[loc]     / sum(ba_fix_ko_1_env_g[loc]);
+        ba_frac_fix_ko_1_env_h[loc]     = ba_fix_ko_1_env_h[loc]     / sum(ba_fix_ko_1_env_h[loc]);
+        ba_frac_fix_ko_1_env_r[loc]     = ba_fix_ko_1_env_r[loc]     / sum(ba_fix_ko_1_env_r[loc]);
+        ba_frac_fix_ko_1_env_s[loc]     = ba_fix_ko_1_env_s[loc]     / sum(ba_fix_ko_1_env_s[loc]);
+
+        ba_frac_fix_ko_2_env_b[loc]     = ba_fix_ko_2_env_b[loc]     / sum(ba_fix_ko_2_env_b[loc]);
+        ba_frac_fix_ko_2_env_b_c_b[loc] = ba_fix_ko_2_env_b_c_b[loc] / sum(ba_fix_ko_2_env_b_c_b[loc]);
+        ba_frac_fix_ko_2_env_c_a[loc]   = ba_fix_ko_2_env_c_a[loc]   / sum(ba_fix_ko_2_env_c_a[loc]);
+        ba_frac_fix_ko_2_env_c_b[loc]   = ba_fix_ko_2_env_c_b[loc]   / sum(ba_fix_ko_2_env_c_b[loc]);
+        ba_frac_fix_ko_2_env_c_j[loc]   = ba_fix_ko_2_env_c_j[loc]   / sum(ba_fix_ko_2_env_c_j[loc]);
+        ba_frac_fix_ko_2_env_g[loc]     = ba_fix_ko_2_env_g[loc]     / sum(ba_fix_ko_2_env_g[loc]);
+        ba_frac_fix_ko_2_env_h[loc]     = ba_fix_ko_2_env_h[loc]     / sum(ba_fix_ko_2_env_h[loc]);
+        ba_frac_fix_ko_2_env_r[loc]     = ba_fix_ko_2_env_r[loc]     / sum(ba_fix_ko_2_env_r[loc]);
+        ba_frac_fix_ko_2_env_s[loc]     = ba_fix_ko_2_env_s[loc]     / sum(ba_fix_ko_2_env_s[loc]);
+
+        
+        major_fix_ko_1_env_b[loc]     = ba_fix_ko_1_env_b[loc,1]     > ba_fix_ko_1_env_b[loc,2];
+        major_fix_ko_1_env_b_c_b[loc] = ba_fix_ko_1_env_b_c_b[loc,1] > ba_fix_ko_1_env_b_c_b[loc,2];
+        major_fix_ko_1_env_c_a[loc]   = ba_fix_ko_1_env_c_a[loc,1]   > ba_fix_ko_1_env_c_a[loc,2];
+        major_fix_ko_1_env_c_b[loc]   = ba_fix_ko_1_env_c_b[loc,1]   > ba_fix_ko_1_env_c_b[loc,2];
+        major_fix_ko_1_env_c_j[loc]   = ba_fix_ko_1_env_c_j[loc,1]   > ba_fix_ko_1_env_c_j[loc,2];
+        major_fix_ko_1_env_g[loc]     = ba_fix_ko_1_env_g[loc,1]     > ba_fix_ko_1_env_g[loc,2];
+        major_fix_ko_1_env_h[loc]     = ba_fix_ko_1_env_h[loc,1]     > ba_fix_ko_1_env_h[loc,2];
+        major_fix_ko_1_env_r[loc]     = ba_fix_ko_1_env_r[loc,1]     > ba_fix_ko_1_env_r[loc,2];
+        major_fix_ko_1_env_s[loc]     = ba_fix_ko_1_env_s[loc,1]     > ba_fix_ko_1_env_s[loc,2];
+        
+        major_fix_ko_2_env_b[loc]     = ba_fix_ko_2_env_b[loc,1]     > ba_fix_ko_2_env_b[loc,2];
+        major_fix_ko_2_env_b_c_b[loc] = ba_fix_ko_2_env_b_c_b[loc,1] > ba_fix_ko_2_env_b_c_b[loc,2];
+        major_fix_ko_2_env_c_a[loc]   = ba_fix_ko_2_env_c_a[loc,1]   > ba_fix_ko_2_env_c_a[loc,2];
+        major_fix_ko_2_env_c_b[loc]   = ba_fix_ko_2_env_c_b[loc,1]   > ba_fix_ko_2_env_c_b[loc,2];
+        major_fix_ko_2_env_c_j[loc]   = ba_fix_ko_2_env_c_j[loc,1]   > ba_fix_ko_2_env_c_j[loc,2];
+        major_fix_ko_2_env_g[loc]     = ba_fix_ko_2_env_g[loc,1]     > ba_fix_ko_2_env_g[loc,2];
+        major_fix_ko_2_env_h[loc]     = ba_fix_ko_2_env_h[loc,1]     > ba_fix_ko_2_env_h[loc,2];
+        major_fix_ko_2_env_r[loc]     = ba_fix_ko_2_env_r[loc,1]     > ba_fix_ko_2_env_r[loc,2];
+        major_fix_ko_2_env_s[loc]     = ba_fix_ko_2_env_s[loc,1]     > ba_fix_ko_2_env_s[loc,2];
 
       }
       
       
       //// Simulate marginal fix point with average population starts
       Fix_avg[loc] = iterateFix_contributions(avg_state_init, // !!!
-                                              exp(B_log[loc,]'), exp(C_a_log[loc,]'), exp(C_b_log[loc,]'), exp(C_j_log[loc,]'), exp(G_log[loc,]'), exp(H_log[loc,]'), L_loc[loc, ], exp(R_log[loc,]'), exp(S_log[loc,]'),
+                                              B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
                                               ba_a_avg, ba_a_upper,
                                               N_species, i_j, i_a, i_b,
                                               tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);
