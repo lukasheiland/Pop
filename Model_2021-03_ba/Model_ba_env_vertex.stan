@@ -646,18 +646,18 @@ model {
   c_a_log_spread_env1 ~  exponential(1.0);
   c_b_log_spread_env1 ~  exponential(1.0);
   c_j_log_spread_env1 ~  exponential(1.0);
-  g_log_spread_env1   ~  double_exponential(0, 2.0);
-  h_log_spread_env1   ~  double_exponential(0, 2.0);
-  r_log_spread_env1   ~  double_exponential(0, 2.0);
+  g_log_spread_env1   ~  double_exponential(0, 0.5);
+  h_log_spread_env1   ~  double_exponential(0, 0.5);
+  r_log_spread_env1   ~  double_exponential(0, 0.5);
   s_log_spread_env1   ~  exponential(1.0);
   
   -b_log_spread_env2   ~  exponential(1.0); // negative!
   c_a_log_spread_env2 ~  exponential(1.0);
   c_b_log_spread_env2 ~  exponential(1.0);
   c_j_log_spread_env2 ~  exponential(1.0);
-  g_log_spread_env2   ~  double_exponential(0, 2.0);
-  h_log_spread_env2   ~  double_exponential(0, 2.0);
-  r_log_spread_env2   ~  double_exponential(0, 2.0);
+  g_log_spread_env2   ~  double_exponential(0, 0.5);
+  h_log_spread_env2   ~  double_exponential(0, 0.5);
+  r_log_spread_env2   ~  double_exponential(0, 0.5);
   s_log_spread_env2   ~  exponential(1.0);
   
   
