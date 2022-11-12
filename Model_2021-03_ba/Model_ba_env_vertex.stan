@@ -628,7 +628,7 @@ model {
   c_j_log_center_env1 ~ normal(0, 1.5); // std_normal();
   g_log_center_env1   ~ normal(0, 1.5); // std_normal();
   h_log_center_env1   ~ normal(0, 1.5); // std_normal();
-  r_log_center_env1   ~ normal(0, 1.5); // std_normal();
+  r_log_center_env1   ~ normal(0, 1); // std_normal();
   s_log_center_env1   ~ normal(0, 1.5); // std_normal();
 
   b_log_center_env2   ~ normal(0, 1.5); // std_normal();
@@ -637,7 +637,7 @@ model {
   c_j_log_center_env2 ~ normal(0, 1.5); // std_normal();
   g_log_center_env2   ~ normal(0, 1.5); // std_normal();
   h_log_center_env2   ~ normal(0, 1.5); // std_normal();
-  r_log_center_env2   ~ normal(0, 1.5); // std_normal();
+  r_log_center_env2   ~ normal(0, 1); // std_normal();
   s_log_center_env2   ~ normal(0, 1.5); // std_normal();
 
   //// Priors for spread of parameters
@@ -646,8 +646,8 @@ model {
   c_a_log_spread_env1 ~  exponential(1.0);
   c_b_log_spread_env1 ~  exponential(1.0);
   c_j_log_spread_env1 ~  exponential(1.0);
-  g_log_spread_env1   ~  double_exponential(0, 0.5);
-  h_log_spread_env1   ~  double_exponential(0, 0.5);
+  g_log_spread_env1   ~  exponential(1.0);
+  h_log_spread_env1   ~  exponential(1.0);
   r_log_spread_env1   ~  double_exponential(0, 0.5);
   s_log_spread_env1   ~  exponential(1.0);
   
@@ -655,8 +655,8 @@ model {
   c_a_log_spread_env2 ~  exponential(1.0);
   c_b_log_spread_env2 ~  exponential(1.0);
   c_j_log_spread_env2 ~  exponential(1.0);
-  g_log_spread_env2   ~  double_exponential(0, 0.5);
-  h_log_spread_env2   ~  double_exponential(0, 0.5);
+  g_log_spread_env2   ~  exponential(1.0);
+  h_log_spread_env2   ~  exponential(1.0);
   r_log_spread_env2   ~  double_exponential(0, 0.5);
   s_log_spread_env2   ~  exponential(1.0);
   
