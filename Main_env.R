@@ -29,7 +29,7 @@ tar_make(c("fit_env"))
 ## Posterior
 tar_make_future(c("summary_env",
                   "summary_states_env",
-                  "summary_marginal_env",
+                  # "summary_marginal_env",
                   "residuals_env",
                   # "plots_trace_env",
                   
@@ -37,26 +37,31 @@ tar_make_future(c("summary_env",
                   # "plot_environmental_env_ba",
                   # "plot_environmental_env_binomial",
                   "plot_environmental_env", ## currently includes *_ba and *_binomial (both init and fix)
+                  "plot_diff_env",
+                  "plot_diff_interp_env",
                   
                   "plot_poly_env",
                   
-                  "plots_pairs_env",
-                  "plots_pairs_env1_env",
-                  "plots_pairs_env2_env",
+                  # "plots_pairs_env", ## includes parname_plotorder
+                  "plots_pairs_J_env",
+                  "plots_pairs_A_env",
+                  "plots_pairs_B_env",
                   # "plots_pairs_phi_env",
                   
-                  "plot_marginal_env",
-                  "plot_binary_par_env",
+                  # "plot_marginal_env",
+                  # "plot_binary_par_env",
                   "plot_binary_contrib_env",
                   "plot_binary_contrib_avg_env",
                   "plots_parameters_env",
-                  "plot_posterior_center_env",
-                  "plot_posterior_spread_env",
-                  "plot_posterior_phi_env",
                   
-                  "plot_contributions_env",
-                  "plots_states_env",
-                  "plots_conditional_env"),
+                  # "plot_posterior_center_env",
+                  # "plot_posterior_spread_env",
+                  # "plot_posterior_phi_env",
+                  
+                  "plot_contributions_env"
+                  # "plots_conditional_env",
+                  # "plots_states_env"
+                  ),
                 workers = if(onserver) 32 else 3, reporter = "verbose_positives")
 
 ## Simulations parallelized internally

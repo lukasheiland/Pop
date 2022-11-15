@@ -94,12 +94,13 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
                                 envname = predictor_select, locmeans = F) {
   
   varname_draws <- cmdstanfit$metadata()$stan_variables
+  parname <- unique(c(parname, "major_fix")) ## explicitly include major fix, because it is assumed later
   parname <- intersect(parname, varname_draws)
   
   draws_env <- cmdstanfit$draws(parname) %>%
     posterior::as_draws()
   
-  Draws_env_bin <- tidybayes::gather_draws(draws_env, major_fix[loc], major_init[loc]) %>%
+  Draws_env_bin <- tidybayes::gather_draws(draws_env, `major_.+`[loc], `ba_frac_.*fix_ko_.+`[loc], regex = T) %>% 
     bind_cols(tax = 0) %>%
     suppressWarnings() ## package tidyr warns about using deprecated gather_()
   
@@ -107,16 +108,27 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
     suppressWarnings() %>% ## package tidyr warns about using deprecated gather_()
     bind_rows(Draws_env_bin)
   
-  Draws_env_l <- dplyr::filter(Draws_env, .variable == "L_loc") %>%
-    mutate(.value = log(.value)) %>%
-    mutate(.variable = "L_log")
+  if("L_loc" %in% parname) {
+    
+    Draws_env_l <- dplyr::filter(Draws_env, .variable == "L_loc") %>%
+      mutate(.value = log(.value)) %>%
+      mutate(.variable = "L_log")
+    
+    Draws_env %<>% bind_rows(Draws_env_l)
+    
+  }
   
-  Draws_env %<>% bind_rows(Draws_env_l)
-  
-  if (locmeans) {
+  if (isTRUE(locmeans)) {
     Draws_env %<>%
       group_by(tax, loc, .variable) %>%
-      summarize(.value = mean(.value, na.rm = T))
+      summarize(.value = mean(.value, na.rm = T),
+                sd = sd(.value, na.rm = T),
+                p10 = quantile(.value, probs = 0.1, na.rm = T),
+                p25 = quantile(.value, probs = 0.25, na.rm = T),
+                median = median(.value, na.rm = T),
+                p75 = quantile(.value, probs = 0.75, na.rm = T),
+                p90 = quantile(.value, probs = 0.9, na.rm = T)) %>%
+      ungroup()
   }
   
   envname_all <- c(envname, paste0(envname, "_s"))
@@ -256,6 +268,69 @@ predictPoly <- function(cmdstanfit, parname_Beta, Envgrid) {
   attr(Predictions, "name_y") <- attr(Envgrid, "name_y")
 
   return(Predictions)
+}
+
+
+## interpolateSurface --------------------------------
+# Environmental <- tar_read(Diff_envko_env)
+# envname <-  tar_read(predictor_select)
+# varname <-  NULL
+interpolateSurface <- function(Environmental, envname = tar_read(predictor_select), varname = NULL, avg = c("env", "loc")) {
+  
+  if(!is.null(varname)) {
+    varname <- intersect(unique(Environmental$.variable), varname)
+    Environmental %<>%  dplyr::filter(.variable %in% varname)
+  } else {
+    varname <- unique(Environmental$.variable)
+  }
+  
+  # koname <- varname[str_detect(varname, "_ko_")]
+  # koname_ba <- koname[str_detect(koname, "ba_fix_")]
+  # koname_frac <- koname[str_detect(koname, "ba_frac_fix_")]
+  
+  E <- distinct(Environmental, loc, .keep_all = T) ## to make the interaction() faster, will be joined to Environmental
+  if(match.arg(avg) == "env") grp <- interaction(E[envname], drop = T) else grp <- E$loc ## interaction works with lists!
+  E <- bind_cols(E, grp = grp) %>%
+    dplyr::select(grp, loc)
+  
+  Environmental %<>%
+    left_join(E, by = "loc") %>%
+    group_by_at(c("grp", ".variable", "tax", envname)) %>%
+    summarize(.value = mean(.value, na.rm = T),
+              # sd = sd(.value, na.rm = T),
+              # p10 = quantile(.value, probs = 0.1, na.rm = T),
+              # p25 = quantile(.value, probs = 0.25, na.rm = T),
+              # median = median(.value, na.rm = T),
+              # p75 = quantile(.value, probs = 0.75, na.rm = T),
+              # p90 = quantile(.value, probs = 0.9, na.rm = T),
+              .groups = "drop")
+  
+  interpolateVar <- function(v, t) {
+    E <- filter(Environmental, .variable == v & tax == t)
+    
+    ## use akima?
+    I <- interp::interp(x = E[[envname[1]]], y = E[[envname[2]]], z = E$.value, nx = 500, ny = 500, method = "linear") ## duplicate = "mean" would also work
+    I <- data.frame(expand.grid(I[1:2]), c(I$z)) %>%
+      setNames(c(envname[1:2], 'z'))
+    
+    ## Check
+    # ggplot(data = I, aes_string(x = envname[1], y = envname[2], z = "z")) + geom_contour_filled() + scale_y_reverse()
+    # print(paste(t, v))
+
+    
+    attr(I, "name_x") <- envname[1]
+    attr(I, "name_y") <- envname[2]
+    attr(I, "taxon") <- t
+    attr(I, "parname") <- v
+    
+    
+    return(I)
+  }
+  
+  Comb <- distinct(Environmental[c(".variable", "tax")], .variable, tax)
+  surfaces <- mapply(interpolateVar, Comb$.variable, Comb$tax, SIMPLIFY = F) # mc.cores = ceiling(nrow(Comb)/3)
+  
+  return(surfaces)
 }
 
 
@@ -876,22 +951,24 @@ selectParnameEnvironmental <- function(parname, Environmental_env) {
 
 ## fitEnvironmental_gam --------------------------------
 # Environmental <- tar_read("Environmental_env")
+# Environmental <- tar_read("Diff_envko_env")
 # parname <- tar_read("parname_environmental")[1]
 # parname <- tar_read("parname_environmental_binomial")[1]
+# parname <- tar_read("parname_environmental_diff")[1]
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_publish")
 fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname = predictor_select,
                                  taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
-  taxon <- head(as.integer(taxon), 1)
+  taxon <- head(as.integer(taxon))
   fam <- match.arg(fam)
   
   E <- Environmental %>% 
-    filter(tax %in% taxon) %>%
+    filter(tax == taxon) %>%
     filter(.variable == parname) %>%
     rename(v = .value)
   
-  splineformula <- paste0("v ~ ", "te(", paste(envname, collapse = ", "), ", k = c(3, 3))")
+  splineformula <- paste0("v ~ ", "te(", paste(envname, collapse = ", "), ", k = c(5, 5))")
   
   ### mgcv
   fit <- gam(as.formula(splineformula), family = fam, data = E)
@@ -2152,62 +2229,105 @@ plotMarginal <- function(Marginal, parname,
 # surfaces <- tar_read(surface_environmental_env)
 # basename <- tar_read(basename_fit_env)
 # path <-  tar_read(dir_publish)
-plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname = "major_fix",
+plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname = "major_fix", commonscale = FALSE, removevar = NULL,
                               basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"), color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
+  
+  #### Handling of the binary border
   i_binary <- which(binaryname == sapply(surfaces, function(s) attr(s, "parname")))
   Binary <- if(isTRUE(i_binary >= 1)) surfaces[[i_binary]] else NULL
   Binary$z <- if(!is.null(Binary)) round(Binary$z) else NULL
-  if(is.null(Binary)) warning("plotEnvironmental(): surface with binaryname is not in provided surfaces.")
+  bnotnull <- !is.null(Binary)
   
-  plotE <- function(D, B) {
+  if(bnotnull) {
     
-    name_x <- attr(D, "name_x")
-    name_y <- attr(D, "name_y")
-    parname <- attr(D, "parname")
-    taxon <- attr(D, "taxon")
+    Binary_1 <- dplyr::filter(Binary, z == 1) %>% ## is ordered, so that slicing should return some central location
+      slice(round(nrow(.)*0.5)) %>%
+      bind_cols(label = "Fagus predominant")
+  
+  } else{
     
-    parstart_reverse <- c("S_", "C_j_", "C_a_", "C_b_",
-                          "sum_ko_1_s_fix", "sum_ko_2_s_fix",
-                          "sum_ko_1_c_j_fix", "sum_ko_2_c_j_fix",
-                          "sum_ko_1_c_a_fix", "sum_ko_2_c_a_fix",
-                          "sum_ko_1_c_b_fix", "sum_ko_2_c_b_fix")
+    warning("plotEnvironmental(): surface with binaryname is not in provided surfaces.")
+  }
+  
+  
+  if (!isTRUE(commonscale)) {
     
-    isanyreversepar <- str_starts(parname, fixed(parstart_reverse)) %>% any()
+    #### 1. CASE: !commonscale, i.e. differernt plots per variable on a plotgrid
     
-    direction <- if (isanyreversepar) 1 else -1
-    
-    bnotnull <- !is.null(B)
-    
-    if(bnotnull) {
+    plotE <- function(D) {
       
-      Binary_1 <- dplyr::filter(B, z == 1) %>% ## is ordered, so that slicing should return some central location
-        slice(round(nrow(.)*0.5)) %>%
-        bind_cols(label = "Fagus predominant")
+      name_x <- attr(D, "name_x")
+      name_y <- attr(D, "name_y")
+      parname <- attr(D, "parname")
+      taxon <- attr(D, "taxon")
+      
+      parstart_reverse <- c("S_", "C_j_", "C_a_", "C_b_",
+                            "sum_ko_1_s_fix", "sum_ko_2_s_fix",
+                            "sum_ko_1_c_j_fix", "sum_ko_2_c_j_fix",
+                            "sum_ko_1_c_a_fix", "sum_ko_2_c_a_fix",
+                            "sum_ko_1_c_b_fix", "sum_ko_2_c_b_fix")
+      
+      isanyreversepar <- str_starts(parname, fixed(parstart_reverse)) %>% any()
+      
+      direction <- if (isanyreversepar) 1 else -1
+      
+      plot <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
+        geom_raster(aes(fill = z)) +
+        metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
+        # scale_color_manual(values = color) +
+        scale_fill_viridis_c(direction = direction) +
+        
+        { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
+                                    data = Binary, bins = 2, col = "black", linetype = 2, size = 1.1, inherit.aes = F) } + 
+        { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") } +
+        
+        themefun() +
+        ggtitle(paste(parname, taxon)) +
+        scale_y_reverse() ## invert water level scale, consistent with Ökogramm.
+      
+      return(plot)
     }
     
-    plot <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
+    plots <- lapply(surfaces, plotE)
+    plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 2)
+    
+    ggsave(filename = paste0(path, "/", basename, "_plot_environmental_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
+           plot = plotgrid, device = "pdf", width = 15, height = 4 * length(plots), limitsize = FALSE)
+    
+  } else {
+    
+    #### 2. CASE: commonscale, i.e. common plot with facets
+    
+    name_x <- attr(surfaces[[1]], "name_x")
+    name_y <- attr(surfaces[[2]], "name_y")
+    
+    surfaces <- lapply(surfaces, function(S) bind_cols(S, tax = attr(S, "taxon"), variable = attr(S, "parname")))
+    
+    D <- bind_rows(surfaces, .id = "bindingid") %>%
+      suppressMessages( mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "others" = "2", "both" = "0")) ) %>%
+      dplyr::filter(!variable %in% removevar)
+    
+    scale_fill_div <- function(...) scale_fill_gradient2(low = color[2], mid = "white", high = color[1], midpoint = 0, ...)
+    
+    plots <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
       geom_raster(aes(fill = z)) +
-      geom_contour(col = "white") +
-      scale_color_manual(values = color) +
-      scale_fill_viridis_c(direction = direction) +
+      metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
+      scale_fill_div() +
       
       { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
-                                  data = B, bins = 2, col = "black", linetype = 2, size = 1.1, inherit.aes = F) } + 
+                                  data = Binary, bins = 2, col = "black", linetype = 2, size = 1.1, inherit.aes = F) } + 
       { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") } +
       
       themefun() +
-      ggtitle(paste(parname, taxon)) +
-      scale_y_reverse() ## invert water level scale, consistent with Ökogramm.
+      scale_y_reverse() + ## invert water level scale, consistent with Ökogramm.
+      { if( length(unique(D$tax)) > 1 ) facet_wrap(~ variable + tax, ncol = 2) else facet_wrap(~ variable, ncol = 2) }
+
     
-    return(plot)
+    ggsave(filename = paste0(path, "/", basename, "_plot_environmental_commonscale_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
+           plot = plots, device = "pdf", width = 10, height = 2.2 * length(surfaces), limitsize = FALSE)
+    
   }
-  
-  plots <- lapply(surfaces, plotE, B = Binary)
-  plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 2)
-  
-  ggsave(filename = paste0(path, "/", basename, "_plot_environmental_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
-         plot = plotgrid, device = "pdf", width = 15, height = 4 * ceiling(length(plots)), limitsize = FALSE)
   
   return(plots)
 }

@@ -35,9 +35,9 @@ tar_option_set(error = "abridge")
 package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs", "tibble", "stringr", "knitr", # "multidplyr" ## extended tidyverse
              "lubridate", "DescTools",
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
-             "MASS", "mgcv", "glmnet", "itsadug", "stargazer",
+             "MASS", "mgcv", "glmnet", "itsadug", "interp",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
-             "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate", "metR",
+             "stargazer", "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate", "metR",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -195,11 +195,11 @@ targets_parname <- list(
   tar_target(simname_prior,
              c("y_hat_prior", "y_hat_prior_rep", "y_hat_prior_offset", "y_hat_prior_rep_offset", "y_prior_sim")),
   
+  #### simname_posterior
   tar_target(statename,
              c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix",
                "ba_tot_init", "ba_tot_fix", "ba_frac_init", "ba_frac_fix",
-               "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
-               "ba_fix_ko_b_l_r", "ba_fix_ko_b_l_r_ko",
+               "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s", "ba_fix_ko_b_l_r",
                "major_init", "major_fix", "dominant_init", "dominant_fix",
                "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
                paste0("major_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
@@ -207,12 +207,23 @@ targets_parname <- list(
                paste0("ba_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
                paste0("major_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
                paste0("ba_frac_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
+               paste0("ba_frac_diff_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
                paste0("ba_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")))
              ),
   
   tar_target(basalareaname, statename[str_starts(statename, "ba_")]),
   
   tar_target(majorname, statename[str_starts(statename, "major_")]),
+  
+  tar_target(contribname_init_env, paste("sum_ko",
+                                         rep(1:2, each = length(parname_plotorder)),
+                                         names(parname_plotorder), "fix", sep = "_")),
+  
+  tar_target(contribname_avg_env, paste("sum_ko",
+                                        rep(1:2, each = length(parname_plotorder)),
+                                        names(parname_plotorder), "fix_avg", sep = "_")),
+  
+  tar_target(contribname_env, c(contribname_init_env, contribname_avg_env)),
 
   tar_target(simname_posterior,
              c(statename,
@@ -592,7 +603,7 @@ targets_posterior_test <- list(
   
   ## Summarize
   tar_target(summary_test,
-             summarizeFit(cmdstanfit = fit_test, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, parname_loc),
+             summarizeFit(cmdstanfit = fit_test, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, simname_posterior, parname_loc),
                           publishpar = parname_plotorder, path = dir_publish)),
   tar_target(summary_states_test,
              summarizeStates(States = States_test, data_stan = data_stan, basename = basename_fit_test, path = dir_publish)),
@@ -621,7 +632,8 @@ targets_posterior_test <- list(
   
   ## Formatted posterior data stuctures
   tar_target(States_test,
-             formatStates(cmdstanfit = fit_test, statename = statename, data_stan_priors = data_stan_priors)),
+             formatStates(cmdstanfit = fit_test, statename = statename[!str_detect(statename, "_env_")], ## exclude env_ko
+                          data_stan_priors = data_stan_priors)),
   
   ## Plot
   tar_target(plots_test,
@@ -671,7 +683,7 @@ targets_posterior <- list(
   
   ## Summarize
   tar_target(summary,
-             summarizeFit(cmdstanfit = fit, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, parname_loc),
+             summarizeFit(cmdstanfit = fit, exclude = exclude,
                           publishpar = parname_plotorder, path = dir_publish),
              pattern = map(fit), iteration = "list"),
   tar_target(summary_states,
@@ -745,17 +757,13 @@ targets_posterior_env <- list(
   ## Parameter names (in addition to the general ones above)
   tar_target(parname_env, c(setdiff(parname_loc_env, "state_init"),
                             "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix", "major_fix", "major_init",
-                            "ba_fix_ko_b_l_r", "ba_fix_ko_b_l_r_ko")),
+                            "ba_fix_ko_b_l_r")),
   
-  tar_target(contribname_init_env, paste("sum_ko",
-                                        rep(1:2, each = length(parname_plotorder)),
-                                        names(parname_plotorder), "fix", sep = "_")),
-  
-  tar_target(contribname_avg_env, paste("sum_ko",
-                                        rep(1:2, each = length(parname_plotorder)),
-                                        names(parname_plotorder), "fix_avg", sep = "_")),
-
-  tar_target(contribname_env, c(contribname_init_env, contribname_avg_env)),
+  tar_target(envkoname_env, c(paste0("ba_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
+                              paste0("major_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
+                              paste0("ba_frac_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
+                              paste0("ba_frac_diff_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)))
+             ),
   
   tar_target(parname_environmental, selectParnameEnvironmental(parname_env, Environmental_env)), ## selects the variables, that are actually in the fit
   tar_target(contribname_environmental, selectParnameEnvironmental(contribname_env, Environmental_env)), ## selects the variables, that are actually in the fit
@@ -780,6 +788,19 @@ targets_posterior_env <- list(
   tar_target(parname_env_vertex,
              sort(c(parname_env_vertex_center, parname_env_vertex_spread))),
   
+  tar_target(parname_J,
+             sort(c(parname_plotorder[1:4],
+                    sapply(parname_plotorder[1:4], function(x) parname_env_vertex[str_detect(parname_env_vertex, x)]) %>% unlist()
+                    ))),
+  tar_target(parname_A,
+             sort(c(parname_plotorder[5:6],
+                    sapply(parname_plotorder[5:6], function(x) parname_env_vertex[str_detect(parname_env_vertex, x)]) %>% unlist()
+                   ))),
+  tar_target(parname_B,
+             sort(c(parname_plotorder[7:9],
+                    sapply(parname_plotorder[7:9], function(x) parname_env_vertex[str_detect(parname_env_vertex, x)]) %>% unlist()
+                   ))),
+  
   tar_target(parname_Beta,
              paste0("Beta_", setdiff(parname_plotorder, "l_log"))),
   
@@ -796,10 +817,10 @@ targets_posterior_env <- list(
   
   ## Summarize
   tar_target(summary_env,
-             summarizeFit(cmdstanfit = fit_env, exclude = c(helper_exclude, rep_exclude, par_exclude, simname_prior, parname_loc_env),
+             summarizeFit(cmdstanfit = fit_env, exclude = c(exclude, parname_loc_env),
                           publishpar = c(parname_plotorder, parname_env_vertex), path = dir_publish)),
   tar_target(summary_states_env,
-           summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
+             summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
   tar_target(summary_marginal_env,
              summarizeMarginal(Marginal = Marginal_env, basename = basename_fit_env, path = dir_publish)),
   tar_target(Freq_converged_env,
@@ -816,10 +837,16 @@ targets_posterior_env <- list(
   ## Formatted posterior data stuctures
   tar_target(States_env,
              formatStates(cmdstanfit = fit_env, statename = statename, data_stan_priors = data_stan_priors_env)),
+  
   tar_target(Environmental_env,
-             formatEnvironmental(cmdstanfit = fit_env, parname = c(parname_env, contribname_env),
+             formatEnvironmental(cmdstanfit = fit_env, parname = c(parname_env, contribname_env), ## formatEnvironmental() always includes major_fix in the output variables, regardless of parname!
                                  data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),
-  tar_target(Envgrid_env, formatEnvgrid(data_stan_priors_offset_env, envname = predictor_select, res = 500)),
+  tar_target(Diff_envko_env,
+             formatEnvironmental(cmdstanfit = fit_env, parname = c(paste0("ba_frac_diff_fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
+                                                                   "ba_frac_fix"),
+                                 data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),
+  tar_target(Envgrid_env,
+             formatEnvgrid(data_stan_priors_offset_env, envname = predictor_select, res = 500)),
   tar_target(Marginal_env,
              formatMarginal(Environmental_env)),
 
@@ -828,11 +855,12 @@ targets_posterior_env <- list(
   tar_target(parname_environmental_ba, c("ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix", "ba_fix_ko_b_l_r")), # contribname_environmental
   tar_target(parname_environmental_binomial, c("major_init", "major_fix")),
   tar_target(parname_environmental_gaussian, setdiff(parname_environmental, c(parname_environmental_ba, parname_environmental_binomial))),
+  tar_target(parname_environmental_diff, c(paste0("ba_frac_diff_fix_ko_", 1:2,"_env_", rep(c(setdiff(names(parname_plotorder), "l"), "b_c_b"), each = 2)),
+                                         "ba_frac_fix")),
   
+  tar_target(Surfaces_poly_env,
+             predictPoly(cmdstanfit = fit_env, parname_Beta = parname_Beta, Envgrid = Envgrid_env)),
   
-  tar_target(Surfaces_poly_env, predictPoly(cmdstanfit = fit_env, parname_Beta = parname_Beta, Envgrid = Envgrid_env)),
-  tar_target(plot_poly_env, plotPoly(Surfaces_poly_env, Environmental = Environmental_env,
-                                     basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = theme_fagus)),
   
   tar_target(fit_environmental_env_gaussian,
              fitEnvironmental_glm(Environmental_env, parname = parname_environmental_gaussian, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
@@ -841,6 +869,11 @@ targets_posterior_env <- list(
   tar_target(fit_environmental_env_ba,
              fitEnvironmental_gam(Environmental_env, parname = parname_environmental_ba, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
              pattern = cross(parname_environmental_ba, taxon_s),
+             iteration = "list"),
+  tar_target(fit_environmental_env_diff,
+             fitEnvironmental_gam(Diff_envko_env, parname = parname_environmental_diff,
+                                  envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
+             pattern = cross(parname_environmental_diff, taxon_s),
              iteration = "list"),
   tar_target(fit_environmental_env_binomial,
              fitEnvironmental_gam(Environmental_env, parname = parname_environmental_binomial, envname = predictor_select, taxon = 0, fam = "binomial", path = dir_publish),
@@ -856,6 +889,15 @@ targets_posterior_env <- list(
                                   path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
              pattern = map(fit_environmental_env),
              iteration = "list"),
+  tar_target(surface_diff_env,
+             predictEnvironmental(fit_environmental_env_diff, envname = predictor_select,
+                                  path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
+             pattern = map(fit_environmental_env_diff),
+             iteration = "list"),
+  tar_target(surface_diff_interp_env,
+             interpolateSurface(Diff_envko_env, envname = predictor_select, varname = NULL, avg = c("env", "loc"))),
+  tar_target(surface_diff_binomial_env, c(surface_diff_env,
+                                          surface_environmental_env[sapply(surface_environmental_env, attr, which = "parname") == "major_fix"])),
   
   # tar_target(surface_environmental_env_gaussian,
   #            predictEnvironmental(fit_environmental_env_gaussian, envname = predictor_select,
@@ -875,9 +917,27 @@ targets_posterior_env <- list(
 
   
   ## Plot
+  
+  # tar_target(plot_diff_envko_env,
+  #            plotDiff(surfaces = Surfaces_diff_env, Binary = NULL,
+  #                     basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  
+  tar_target(plot_poly_env,
+             plotPoly(Surfaces_poly_env, Environmental = Environmental_env,
+                      basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = theme_fagus)),
+  
+  
   tar_target(plot_environmental_env,
-             plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix",
+             plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix", commonscale = F, removevar = NULL,
                                basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plot_diff_env,
+             plotEnvironmental(surfaces = surface_diff_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix"),
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  tar_target(plot_diff_interp_env,
+             plotEnvironmental(surfaces = surface_diff_interp_env, binaryname = "major_fix", commonscale = T, removevar = "ba_frac_fix",
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+  
+  
   # tar_target(plot_environmental_env_gaussian,
   #            plotEnvironmental(surfaces = surface_environmental_env_gaussian, binaryname = "major_fix",
   #                              basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
@@ -915,12 +975,12 @@ targets_posterior_env <- list(
   
   tar_target(plots_pairs_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plots_pairs_env1_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_env_vertex[stringr::str_ends(parname_env_vertex, "env1")])),
-  tar_target(plots_pairs_env2_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_env_vertex[stringr::str_ends(parname_env_vertex, "env2")])),
-  tar_target(plots_pairs_phi_env,
-             plotPairs(cmdstanfit = fit_env, parname = "phi_obs_inv_sqrt")),
+  tar_target(plots_pairs_J_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_J)),
+  tar_target(plots_pairs_A_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_A)),
+  tar_target(plots_pairs_B_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_B)),
   
   tar_target(plots_parameters_env,
              plotParameters(stanfit = stanfit_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
