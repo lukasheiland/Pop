@@ -44,12 +44,21 @@ extractStanfit <- function(cmdstanfit, purge = FALSE) {
 
 
 ## extractDraws --------------------------------
-# stanfit  <- tar_read("stanfit")
-# stanfit  <- tar_read("stanfit_test")
-# helpers_exclude  <- tar_read("helpers_exclude")
-extractDraws <- function(stanfit, exclude = helper_exclude) {
+# fit <- tar_read(fit_env)
+# fit  <- tar_read("stanfit_test")
+# exclude  <- tar_read(exclude)
+extractDraws <- function(fit, exclude = tar_read(exclude)) {
   
-  draws <- rstan::extract(stanfit, pars = exclude, include = F)
+  if(is(fit, "CmdStanMCMC")) {
+    
+    varname <- fit$metadata()$stan_variables
+    include <- setdiff(varname, exclude)
+    draws <- fit$draws(variables = varname)
+    
+  } else if(is(fit, "stanfit")) {
+    
+    draws <- rstan::extract(fit, pars = exclude, include = F)
+  }
   
   return(draws)
 }
@@ -87,7 +96,7 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 
 ## formatEnvironmental --------------------------------
 # cmdstanfit <- tar_read("fit_env")
-# parname <- tar_read("parname_env")
+# parname <- tar_read("parname_environmental_env")
 # envname <- tar_read("predictor_select")
 # data_stan <- tar_read("data_stan_priors_offset_env")
 formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = data_stan_priors_offset,
@@ -97,16 +106,25 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
   parname <- unique(c(parname, "major_fix")) ## explicitly include major fix, because it is assumed later
   parname <- intersect(parname, varname_draws)
   
+  onlyreals <- all(str_detect(parname, "(ba_frac_.*fix_ko_.+)|(major_.+)"))
+  anyenvdiff <- any(str_detect(parname, "ba_frac_.*fix_ko_.+"))
+  
   draws_env <- cmdstanfit$draws(parname) %>%
     posterior::as_draws()
   
-  Draws_env_bin <- tidybayes::gather_draws(draws_env, `major_.+`[loc], `ba_frac_.*fix_ko_.+`[loc], regex = T) %>% 
+  Draws_env_bin <- tidybayes::gather_draws(draws_env, `major_.+`[loc], regex = T) %>% 
+    { if(anyenvdiff) bind_rows(., tidybayes::gather_draws(draws_env, `ba_frac_.*fix_ko_.+`[loc], regex = T)) else . } %>% 
     bind_cols(tax = 0) %>%
     suppressWarnings() ## package tidyr warns about using deprecated gather_()
   
-  Draws_env <- tidybayes::gather_draws(draws_env, `.*`[loc,tax], regex = T) %>%
-    suppressWarnings() %>% ## package tidyr warns about using deprecated gather_()
-    bind_rows(Draws_env_bin)
+  if(onlyreals) {
+    Draws_env <- Draws_env_bin
+  } else {
+    Draws_env <- tidybayes::gather_draws(draws_env, `.*`[loc,tax], regex = T) %>%
+      suppressWarnings() %>% ## package tidyr warns about using deprecated gather_()
+      bind_rows(Draws_env_bin)
+  }
+
   
   if("L_loc" %in% parname) {
     
@@ -274,17 +292,21 @@ predictPoly <- function(cmdstanfit, parname_Beta, Envgrid) {
 ## interpolateSurface --------------------------------
 # Environmental <- tar_read(Diff_envko_env)
 # envname <-  tar_read(predictor_select)
-# varname <-  NULL
-interpolateSurface <- function(Environmental, envname = tar_read(predictor_select), varname = NULL, avg = c("env", "loc")) {
+# parname <- tar_read(parname_environmental_diff_env)
+# parname <-  NULL
+interpolateSurface <- function(Environmental, parname = NULL, aggr = c("mean", "sd", "p10", "p25", "median", "p75", "p90"),
+                               envname = tar_read(predictor_select), avg = c("env", "loc")) {
   
-  if(!is.null(varname)) {
-    varname <- intersect(unique(Environmental$.variable), varname)
-    Environmental %<>%  dplyr::filter(.variable %in% varname)
+  aggr <- first(match.arg(aggr))
+  
+  if(!is.null(parname)) {
+    parname <- selectParnameEnvironmental(parname, Environmental)
+    Environmental %<>%  dplyr::filter(.variable %in% parname)
   } else {
-    varname <- unique(Environmental$.variable)
+    parname <- unique(Environmental$.variable)
   }
   
-  # koname <- varname[str_detect(varname, "_ko_")]
+  # koname <- parname[str_detect(parname, "_ko_")]
   # koname_ba <- koname[str_detect(koname, "ba_fix_")]
   # koname_frac <- koname[str_detect(koname, "ba_frac_fix_")]
   
@@ -296,14 +318,15 @@ interpolateSurface <- function(Environmental, envname = tar_read(predictor_selec
   Environmental %<>%
     left_join(E, by = "loc") %>%
     group_by_at(c("grp", ".variable", "tax", envname)) %>%
-    summarize(.value = mean(.value, na.rm = T),
-              # sd = sd(.value, na.rm = T),
-              # p10 = quantile(.value, probs = 0.1, na.rm = T),
-              # p25 = quantile(.value, probs = 0.25, na.rm = T),
-              # median = median(.value, na.rm = T),
-              # p75 = quantile(.value, probs = 0.75, na.rm = T),
-              # p90 = quantile(.value, probs = 0.9, na.rm = T),
-              .groups = "drop")
+    summarize(mean = mean(.value, na.rm = T),
+                     sd = sd(.value, na.rm = T),
+                     p10 = quantile(.value, probs = 0.1, na.rm = T),
+                     p25 = quantile(.value, probs = 0.25, na.rm = T),
+                     median = median(.value, na.rm = T),
+                     p75 = quantile(.value, probs = 0.75, na.rm = T),
+                     p90 = quantile(.value, probs = 0.9, na.rm = T),
+                     .groups = "drop") %>%
+    dplyr::mutate(.value = !!ensym(aggr), .aggr = aggr) ## just rename based on arg aggr
   
   interpolateVar <- function(v, t) {
     E <- filter(Environmental, .variable == v & tax == t)
@@ -632,7 +655,7 @@ generatePredictiveChecks <- function(cmdstanfit, data_stan_priors_offset, path) 
 # cmdstanfit <- tar_read("fit_env")
 # parname <- tar_read("parname")
 # data_stan_priors <- tar_read("data_stan_priors_env")
-# locparname <- tar_read("parname_loc_env")
+# locparname <- tar_read("parname_trajectories_env")
 
 generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = c("state_init", "L_loc"),
                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1,
@@ -928,11 +951,11 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
 
 ## selectParnameEnvironmental --------------------------------
 ## Helper for excluding variables that are not in the fit.
-selectParnameEnvironmental <- function(parname, Environmental_env) {
+selectParnameEnvironmental <- function(parname, Environmental) {
   
-  parname_drawn <- unique(Environmental_env$.variable)
+  parname_drawn <- unique(Environmental$.variable)
   notdrawn <- paste(setdiff(parname, parname_drawn), collapse = ", ")
-  if (length(notdrawn < 1)) message("selectParnameEnvironmental(): The variables ", notdrawn, " are not in the posterior to be regressed against the environmental variables!")
+  if (length(notdrawn) > 1) message("selectParnameEnvironmental(): The variables ", notdrawn, " are not in the posterior to be regressed against the environmental variables!")
   parname_environmental <- intersect(parname, parname_drawn)
   
   ## reorder and concatenate objects that are unknown to the order
@@ -952,13 +975,13 @@ selectParnameEnvironmental <- function(parname, Environmental_env) {
 ## fitEnvironmental_gam --------------------------------
 # Environmental <- tar_read("Environmental_env")
 # Environmental <- tar_read("Diff_envko_env")
-# parname <- tar_read("parname_environmental")[1]
-# parname <- tar_read("parname_environmental_binomial")[1]
-# parname <- tar_read("parname_environmental_diff")[1]
+# parname <- tar_read("parname_environmental_ba_env")[4]
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_publish")
-fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname = predictor_select,
+fitEnvironmental_gam <- function(Environmental, parname, envname = tar_read(predictor_select),
                                  taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
+  
+  parname <- selectParnameEnvironmental(parname, Environmental)
   
   taxon <- head(as.integer(taxon))
   fam <- match.arg(fam)
@@ -993,8 +1016,10 @@ fitEnvironmental_gam <- function(Environmental, parname = parname_env, envname =
 # parname <- tar_read("parname_environmental_binomial")[1]
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
-fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envname = predictor_select,
+fitEnvironmental_glmnet <- function(Environmental, parname, envname = tar_read(predictor_select),
                                     taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
+  
+  parname <- selectParnameEnvironmental(parname, Environmental)
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -1038,8 +1063,10 @@ fitEnvironmental_glmnet <- function(Environmental, parname = parname_env, envnam
 # parname <- tar_read("parname_environmental_binomial")[1]
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
-fitEnvironmental_glm <- function(Environmental, parname = parname_env, envname = predictor_select,
+fitEnvironmental_glm <- function(Environmental, parname, envname = tar_read(predictor_select),
                                  taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
+  
+  parname <- selectParnameEnvironmental(parname, Environmental)
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -1084,7 +1111,7 @@ predictEnvironmental <- function(fit, envname,
   taxon <- attr(fit, "tax")
   parname <- attr(fit, "par")
   
-  res <- 500
+  res <- 400
   name_x <- envname[1]
   name_y <- envname[2]
   
@@ -1188,19 +1215,19 @@ plotStanfit <- function(stanfit, exclude, path, basename,
     
   }
   
-  return(plots)
+  return(NULL) # return(plots)
 }
 
 
 ## plotParameters --------------------------------
-# stanfit  <- tar_read("stanfit_env")
+# draws  <- tar_read("draws_env")
 # exclude <- tar_read("exclude")
 # parname <- tar_read("parname_plotorder")
 # path  <- tar_read("dir_fit")
 # basename  <- tar_read("basename_fit_env")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotParameters <- function(stanfit, parname, exclude, path, basename,
+plotParameters <- function(draws, parname, exclude = tar_read("exclude"), path, basename,
                            color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   extendedcolor <- c(color, "#555555") # add a third neutral colour for inspecific priors
@@ -1208,13 +1235,13 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   prioralpha <- c(1, 0.3)
   
   
-  getRidgedata <- function(name, fit = stanfit) {
-    R <- bayesplot::mcmc_areas_data(fit,
+  getRidgedata <- function(name, d = draws) {
+    R <- bayesplot::mcmc_areas_data(d,
                                     pars = vars(any_of(paste0(name, c("[1]", "[2]", "_prior", "_prior[1]", "_prior[2]")))), # vars(starts_with(name, ignore.case = F)))
                                     point_est = c("median"),
                                     prob = 0.8)
     
-    M <- bayesplot::mcmc_intervals_data(fit,
+    M <- bayesplot::mcmc_intervals_data(d,
                                         pars = vars(any_of(paste0(name, c("[1]", "[2]", "_prior", "_prior[1]", "_prior[2]"))))) # vars(starts_with(name, ignore.case = F)))
     
     R %<>%
@@ -1259,8 +1286,8 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
     
   }
   
-  # plotRidges <- function(startswith, fit = stanfit) {
-  #   bayesplot::mcmc_areas_ridges(fit, pars = vars(starts_with(startswith, ignore.case = F))) +
+  # plotRidges <- function(startswith, d = draws) {
+  #   bayesplot::mcmc_areas_ridges(d, pars = vars(starts_with(startswith, ignore.case = F))) +
   #     themefun()
   # }
   
@@ -1270,7 +1297,7 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   
   bayesplot::color_scheme_set("gray")
   ## areas for all parameters (the exclude might not be complete)
-  # areasplot <- bayesplot::mcmc_areas(stanfit, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
+  # areasplot <- bayesplot::mcmc_areas(draws, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
   
   ridgedata <- parallel::mclapply(parname_sansprior, getRidgedata, mc.cores = getOption("mc.cores", 18L))
   ridgeplots <- lapply(ridgedata, plotRidges)
@@ -1282,8 +1309,9 @@ plotParameters <- function(stanfit, parname, exclude, path, basename,
   mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", height = 10, width = 12), plots, names(plots))
   message("Parameter plots complete.")
   
-  return(plots)
+  return(NULL) # return(plots)
 }
+
 
 ## plotPosterior --------------------------------
 # varname  <- tar_read("parname_env_vertex_spread")
@@ -1711,7 +1739,7 @@ plotStates <- function(States,
   ggsave(paste0(path, "/", basename, "_plot_states_supp", ".png"), stateplotgrid_supp, device = "png", width = 14, height = 8)
   ggsave(paste0(path, "/", basename, "_plot_states_supp", ".pdf"), stateplotgrid_supp, device = "pdf", width = 14, height = 8)
   
-  return(plots)
+  return(NULL) # return(plots)
 }
 
 
@@ -2113,7 +2141,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions_", contribution, if(plotlog) "_log_" else "_", length(contribname), ".pdf"),
          plot_contributions, dev = "pdf", height = 8, width = 12)
   
-  return(plot_contributions)
+  return(NULL) # return(plot_contributions)
 }
 
 
@@ -2221,7 +2249,7 @@ plotMarginal <- function(Marginal, parname,
   ggsave(paste0(path, "/", basename, "_plot_marginal", ".pdf"),
          plot, dev = "pdf", height = 14, width = 6)
   
-  return(plot)
+  return(NULL) # return(plot)
 }
 
 
@@ -2286,7 +2314,7 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
         ggtitle(paste(parname, taxon)) +
         scale_y_reverse() ## invert water level scale, consistent with Ökogramm.
       
-      return(plot)
+      return(NULL) # return(plot)
     }
     
     plots <- lapply(surfaces, plotE)
@@ -2329,7 +2357,7 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
     
   }
   
-  return(plots)
+  return(NULL) # return(plots)
 }
 
 
@@ -2379,7 +2407,7 @@ plotPoly <- function(Surfaces, Environmental = NULL,
   ggsave(filename = paste0(path, "/", basename, "_plot_poly", ".pdf"),
          plot = plot, device = "pdf", width = 10, height = 40, limitsize = FALSE)
   
-  return(plot)
+  return(NULL) # return(plot)
 }
 
 
@@ -2389,15 +2417,18 @@ plotPoly <- function(Surfaces, Environmental = NULL,
 # parname <- tar_read(contribname_env)
 # tar_load(fit_environmental_env_binomial)
 # fit_bin <- fit_environmental_env_binomial[[sapply(fit_environmental_env_binomial, function(x) attr(x, "par") == "major_fix") %>% which()]]
+# themefun  <- tar_read("themefunction")
+# color  <- tar_read("twocolors")
 # basename  <- tar_read("basename_fit_env")
 # path  <- tar_read("dir_publish")
-# color  <- tar_read("twocolors")
-# themefun  <- tar_read("themefunction")
-plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold = 0.5, path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
+plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold = 0.5,
+                       facetscale = c("free", "free_x", "free_y"), plotlog = F,
+                       path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
   
   
   binaryname <- if (is.null(fit_bin)) "major_fix" else attr(fit_bin, "par")
+  facetscale <- match.arg(facetscale)
   
   B <- Environmental %>%
     ungroup() %>%
@@ -2469,24 +2500,31 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
                                p), ## distinguish whether contribution or parameter
            parameter = factor(parameter, levels = unique(c(parname, parameter, p))), # for the order
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "others" = "2") ),
+           # avg = str_detect(p, "_avg"),
+           predominance = as.factor(if_else(binary, "wins", "looses")),
            reciprocal = as.character(kotax) != as.character(tax)) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
+    mutate(labelxpos = if_else(m > 0, ll - 0.2, uu + 0.2)) %>%
     filter(!Vectorize(isTRUE)(reciprocal)) ## removes indirect effect!
   
   
-  pos <- position_dodge(width = 1)
+  pos <- position_dodge(width = 0.8)
   
-  plot_binary <- ggplot(E, aes(x = m, y = tax, color = tax, group = binary)) +  # y = parameter, 
+  plot_binary <- ggplot(E, aes(x = m, y = tax, color = tax, group = predominance)) +  # y = parameter, 
+    
     geom_linerange(aes(xmin = l, xmax = u), size = 2.6, position = pos) +
     geom_linerange(aes(xmin = ll, xmax = uu), size = 1.2, position = pos) +
     geom_point(color = "black", position = pos, size = 0.8) +
+    geom_text(aes(x = labelxpos, label = predominance), position = pos) +
     coord_flip() +
     # geom_vline(xintercept = if (plotprop) 1 else 0, linetype = 3, size = 0.6, col = "#222222") +
     # geom_hline(yintercept = c(5, 7), linetype = 3, size = 0.6, col = "#222222") + ## lines through g/h
     
-    facet_wrap(~parameter, scales = "free",
+    facet_wrap(~parameter, scales = facetscale,
                labeller = labeller(tax = function(tax) paste(tax))) +
+    
+    { if (plotlog) scale_x_continuous(trans = pseudo_log_trans(sigma = 0.1, base = 10)) } +
     
     themefun() +
     scale_color_manual(values = color)
@@ -2539,7 +2577,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename, plot
   ggsave(paste0(path, "/", basename, "_trajectories", ".png"), plot, device = "png", height = 5.2, width = 12)
   if(plotpdf) ggsave(paste0(path, "/", basename, "_trajectories", ".pdf"), plot, device = "pdf", height = 5.2, width = 12)
   
-  return(plot)
+  return(NULL) # return(plot)
 }
 
 
@@ -2556,7 +2594,7 @@ animateTrajectories <- function(plot_trajectories, path, basename) {
   gganimate::animate(animation, duration = 8, fps = 15, width = 1100, height = 500, renderer = ffmpeg_renderer(format = "mp4"))
   anim_save(paste0(path, "/", basename, "_trajectories_animation", ".mp4"))
   
-  return(animation)
+  return(NULL) # return(animation)
 }
 
 
