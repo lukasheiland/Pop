@@ -622,23 +622,23 @@ model {
   
   //// Priors for optimum value of parameters
   // note that there are no vertex parameters for l in the following, because for l we fit an intercept only:
-  b_log_center_env1   ~ normal(0, 1); // std_normal();
-  c_a_log_center_env1 ~ normal(0, 1); // std_normal();
-  c_b_log_center_env1 ~ normal(0, 1); // std_normal();
-  c_j_log_center_env1 ~ normal(0, 1); // std_normal();
-  g_log_center_env1   ~ normal(0, 1); // std_normal();
-  h_log_center_env1   ~ normal(0, 1); // std_normal();
-  r_log_center_env1   ~ normal(0, 1); // std_normal();
-  s_log_center_env1   ~ normal(0, 1); // std_normal();
+  b_log_center_env1   ~ normal(0, 1.5); // std_normal();
+  c_a_log_center_env1 ~ normal(0, 1.5); // std_normal();
+  c_b_log_center_env1 ~ normal(0, 1.5); // std_normal();
+  c_j_log_center_env1 ~ normal(0, 1.5); // std_normal();
+  g_log_center_env1   ~ normal(0, 1.5); // std_normal();
+  h_log_center_env1   ~ normal(0, 1.5); // std_normal();
+  r_log_center_env1   ~ normal(0, 1.5); // std_normal();
+  s_log_center_env1   ~ normal(0, 1.5); // std_normal();
 
-  b_log_center_env2   ~ normal(0, 1); // std_normal();
-  c_a_log_center_env2 ~ normal(0, 1); // std_normal();
-  c_b_log_center_env2 ~ normal(0, 1); // std_normal();
-  c_j_log_center_env2 ~ normal(0, 1); // std_normal();
-  g_log_center_env2   ~ normal(0, 1); // std_normal();
-  h_log_center_env2   ~ normal(0, 1); // std_normal();
-  r_log_center_env2   ~ normal(0, 1); // std_normal();
-  s_log_center_env2   ~ normal(0, 1); // std_normal();
+  b_log_center_env2   ~ normal(0, 1.5); // std_normal();
+  c_a_log_center_env2 ~ normal(0, 1.5); // std_normal();
+  c_b_log_center_env2 ~ normal(0, 1.5); // std_normal();
+  c_j_log_center_env2 ~ normal(0, 1.5); // std_normal();
+  g_log_center_env2   ~ normal(0, 1.5); // std_normal();
+  h_log_center_env2   ~ normal(0, 1.5); // std_normal();
+  r_log_center_env2   ~ normal(0, 1.5); // std_normal();
+  s_log_center_env2   ~ normal(0, 1.5); // std_normal();
 
   //// Priors for spread of parameters
   // Caution: exponential(rate) while double_exponential(mean, scale == 1/rate)
@@ -758,12 +758,10 @@ generated quantities {
   // int greater_s = s_log[1] > s_log[2];
   
   
-  //// Declarations of posterior quantites (as global variables).
-  // … are directly initiated with zeroes or 9, so that there are never NaNs in generated quantities.
-  
-  array[N_locs, N_fix_contributions] vector[N_species] Fix = rep_array(rep_vector(0, N_species), N_locs, N_fix_contributions); // N_locs arrays of vectors[N_specices] { J, A, B, BA, eps, n_iter, 2 * 9 * diff_ko_parameter }
-  array[N_locs, N_fix_contributions] vector[N_species] Fix_avg = Fix;
-  
+  //// Declarations of posterior quantites --------------------------
+  // - as global variables (local variables in blocks won't be saved)
+  // - directly initiated with zeroes or 9, so that there are never NaNs in generated quantities.
+
   array[N_locs] vector[N_species] J_init = rep_array(rep_vector(0.0, N_species), N_locs);
   array[N_locs] vector[N_species] A_init = J_init;
   array[N_locs] vector[N_species] B_init = J_init;
@@ -780,9 +778,6 @@ generated quantities {
   
   array[N_locs] vector[N_species] eps_ba_fix = J_init;
   array[N_locs] real iterations_fix = ba_tot_init;
-  
-  array[N_locs] vector[N_species] eps_ba_fix_avg = J_init;
-  array[N_locs] real iterations_fix_avg = ba_tot_init;
 
   array[N_locs] vector[N_species] sum_ko_1_b_fix = J_init;
   array[N_locs] vector[N_species] sum_ko_1_b_c_b_fix = J_init;
@@ -806,37 +801,13 @@ generated quantities {
   array[N_locs] vector[N_species] sum_ko_2_r_fix = J_init;
   array[N_locs] vector[N_species] sum_ko_2_s_fix = J_init;
   
-  
-  array[N_locs] vector[N_species] sum_ko_1_b_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_b_c_b_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_c_a_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_c_b_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_c_j_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_g_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_h_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_l_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_r_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_s_fix_avg = J_init;
-  
-  array[N_locs] vector[N_species] sum_ko_2_b_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_b_c_b_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_c_a_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_c_b_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_c_j_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_g_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_h_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_l_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_r_fix_avg = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_s_fix_avg = J_init;
-  
-  
+
   int fixiter_max = 6000;
   int fixiter_min = 250;
 
   
   array[N_locs] int converged_fix = rep_array(9, N_locs); // tolerance has been reached
-  array[N_locs] int converged_fix_avg = converged_fix; // tolerance has been reached
-
+  
 
   // array[N_locs] int dominant_init = converged_fix;
   // array[N_locs] int dominant_fix = converged_fix;
@@ -844,37 +815,44 @@ generated quantities {
   array[N_locs] int major_fix = converged_fix;
   
   
-  //// Declarations of counterfactual posterior quantities
+  //// Contributions with average initial value --------------------------
+  //
+  // array[N_locs] vector[N_species] eps_ba_fix_avg = J_init;
+  // array[N_locs] real iterations_fix_avg = ba_tot_init;
+  //
+  // array[N_locs] vector[N_species] sum_ko_1_b_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_1_b_c_b_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_1_c_a_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_1_c_b_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_1_c_j_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_1_g_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_1_h_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_1_l_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_1_r_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_1_s_fix_avg = J_init;
+  // 
+  // array[N_locs] vector[N_species] sum_ko_2_b_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_2_b_c_b_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_2_c_a_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_2_c_b_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_2_c_j_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_2_g_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_2_h_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_2_l_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_2_r_fix_avg = J_init;
+  // array[N_locs] vector[N_species] sum_ko_2_s_fix_avg = J_init;
+  //
+  // array[N_locs] int converged_fix_avg = converged_fix; // tolerance has been reached
+  
+  
+  
+  //// Declarations of counterfactual posterior quantities --------------------------
   
   // 1. K.O. of all regeneration
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_b_l_r = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_b_l_r = Fix;
-  
   array[N_locs] vector[N_species] ba_fix_ko_b_l_r = J_init;
   // array[N_locs] vector[N_species] ba_fix_ko_b_l_r_ko = J_init;
   
   // 2. K.O. of all environmental variation
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_b     = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_b_c_b = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_c_a   = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_c_b   = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_c_j   = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_g     = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_h     = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_r     = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_1_env_s     = Fix;
-  
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_b     = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_b_c_b = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_c_a   = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_c_b   = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_c_j   = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_g     = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_h     = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_r     = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_ko_2_env_s     = Fix;
-
-  
   array[N_locs] vector[N_species] ba_fix_ko_1_env_b     = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_b_c_b = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_c_a   = J_init;
@@ -982,51 +960,52 @@ generated quantities {
       // dominant_init[loc] = (ba_init[loc, 1]/ba_init[loc, 2]) > 3; // ba_1 > 75%
       major_init[loc] = ba_init[loc, 1] > ba_init[loc, 2]; // ba_1 > 50%
       
-
+      
       //// Simulate fix point, given parameters
-      Fix[loc] = iterateFix_contributions(state_init[loc],
-                                          B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
-                                          ba_a_avg, ba_a_upper,
-                                          N_species, i_j, i_a, i_b,
-                                          tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);
+      array[N_fix_contributions] vector[N_species] Fix; // N_locs arrays of vectors[N_specices] { J, A, B, BA, eps, n_iter, 2 * 9 * diff_ko_parameter }
+      Fix = iterateFix_contributions(state_init[loc],
+                                     B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
+                                     ba_a_avg, ba_a_upper,
+                                     N_species, i_j, i_a, i_b,
+                                     tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);
                                           
                                      
-      iterations_fix[loc] = Fix[loc, 6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
+      iterations_fix[loc] = Fix[6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
       converged_fix[loc] = iterations_fix[loc] < fixiter_max; // (i starts at 0), when fixiter_max is reached the model ran 5001 times
       
       if (converged_fix[loc]) { // && convergent[loc]
       
         //// unpack Fix
-        J_fix[loc] = Fix[loc, 1];
-        A_fix[loc] = Fix[loc, 2];
-        B_fix[loc] = Fix[loc, 3];
-        ba_fix[loc] = Fix[loc, 4];
-        eps_ba_fix[loc] = Fix[loc, 5];        
+        J_fix[loc] = Fix[1];
+        A_fix[loc] = Fix[2];
+        B_fix[loc] = Fix[3];
+        ba_fix[loc] = Fix[4];
+        eps_ba_fix[loc] = Fix[5];        
         
-        // Fix[loc, 6] is unpacked before
+        // Fix[6] is unpacked before
         
         //// Unpack the cumulative contributions into variables
-        sum_ko_1_b_fix[loc] = Fix[loc, 7];
-        sum_ko_1_b_c_b_fix[loc] = Fix[loc, 8];
-        sum_ko_1_c_a_fix[loc] = Fix[loc, 9];
-        sum_ko_1_c_b_fix[loc] = Fix[loc, 10];
-        sum_ko_1_c_j_fix[loc] = Fix[loc, 11];
-        sum_ko_1_g_fix[loc] = Fix[loc, 12];
-        sum_ko_1_h_fix[loc] = Fix[loc, 13];
-        sum_ko_1_l_fix[loc] = Fix[loc, 14];
-        sum_ko_1_r_fix[loc] = Fix[loc, 15];
-        sum_ko_1_s_fix[loc] = Fix[loc, 16];
+        sum_ko_1_b_fix[loc] = Fix[7];
+        sum_ko_1_b_c_b_fix[loc] = Fix[8];
+        sum_ko_1_c_a_fix[loc] = Fix[9];
+        sum_ko_1_c_b_fix[loc] = Fix[10];
+        sum_ko_1_c_j_fix[loc] = Fix[11];
+        sum_ko_1_g_fix[loc] = Fix[12];
+        sum_ko_1_h_fix[loc] = Fix[13];
+        sum_ko_1_l_fix[loc] = Fix[14];
+        sum_ko_1_r_fix[loc] = Fix[15];
+        sum_ko_1_s_fix[loc] = Fix[16];
         
-        sum_ko_2_b_fix[loc] = Fix[loc, 17];
-        sum_ko_2_b_c_b_fix[loc] = Fix[loc, 18];
-        sum_ko_2_c_a_fix[loc] = Fix[loc, 19];
-        sum_ko_2_c_b_fix[loc] = Fix[loc, 20];
-        sum_ko_2_c_j_fix[loc] = Fix[loc, 21];
-        sum_ko_2_g_fix[loc] = Fix[loc, 22];
-        sum_ko_2_h_fix[loc] = Fix[loc, 23];
-        sum_ko_2_l_fix[loc] = Fix[loc, 24];
-        sum_ko_2_r_fix[loc] = Fix[loc, 25];
-        sum_ko_2_s_fix[loc] = Fix[loc, 26];
+        sum_ko_2_b_fix[loc] = Fix[17];
+        sum_ko_2_b_c_b_fix[loc] = Fix[18];
+        sum_ko_2_c_a_fix[loc] = Fix[19];
+        sum_ko_2_c_b_fix[loc] = Fix[20];
+        sum_ko_2_c_j_fix[loc] = Fix[21];
+        sum_ko_2_g_fix[loc] = Fix[22];
+        sum_ko_2_h_fix[loc] = Fix[23];
+        sum_ko_2_l_fix[loc] = Fix[24];
+        sum_ko_2_r_fix[loc] = Fix[25];
+        sum_ko_2_s_fix[loc] = Fix[26];
         
         
         //// ba calculations
@@ -1038,8 +1017,9 @@ generated quantities {
         major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
         
  
-        //// Counterfactual fix point iteration
         
+        //// Counterfactual fix point iteration --------------------------
+        //
         // 1. K.O. of all regeneration
         vector[N_species] ko_1_b = [0, B[loc, 2]]';
         vector[N_species] ko_2_b = [B[loc, 1], 0]';
@@ -1048,59 +1028,62 @@ generated quantities {
         vector[N_species] ko_1_l = [0, L_loc[loc, 2]]';
         vector[N_species] ko_2_l = [L_loc[loc, 1], 0]';
         
+        array[N_fix] vector[N_species] Fix_ko_1_b_l_r;
+        array[N_fix] vector[N_species] Fix_ko_2_b_l_r;
         
-        Fix_ko_1_b_l_r[loc] = iterateFix(state_init[loc],
-                                         ko_1_b, C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], ko_1_l, ko_1_r, S[loc],
-                                         ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_2_b_l_r[loc] = iterateFix(state_init[loc],
-                                         ko_2_b, C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], ko_2_l, ko_2_r, S[loc],
-                                         ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         
-        ba_fix_ko_b_l_r[loc] = [Fix_ko_2_b_l_r[loc, 4, 1], Fix_ko_1_b_l_r[loc, 4, 2]]'; // basal area of the species that is not knocked out, respectively [1,2]
-        // ba_fix_ko_b_l_r_ko[loc] = [Fix_ko_1_b_l_r[loc, 4, 1], Fix_ko_2_b_l_r[loc, 4, 2]]'; // basal area of the species that is knocked out, respectively [1,2]
+        Fix_ko_1_b_l_r = iterateFix(state_init[loc],
+                                    ko_1_b, C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], ko_1_l, ko_1_r, S[loc],
+                                    ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        Fix_ko_2_b_l_r = iterateFix(state_init[loc],
+                                    ko_2_b, C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], ko_2_l, ko_2_r, S[loc],
+                                    ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        
+        ba_fix_ko_b_l_r[loc] = [Fix_ko_2_b_l_r[4, 1], Fix_ko_1_b_l_r[4, 2]]'; // basal area of the species that is not knocked out, respectively [1,2]
+        // ba_fix_ko_b_l_r_ko[loc] = [Fix_ko_1_b_l_r[4, 1], Fix_ko_2_b_l_r[4, 2]]'; // basal area of the species that is knocked out, respectively [1,2]
         
         
         
         // 2. K.O. of environmental variation
-        Fix_ko_1_env_b[loc] = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_1_env_b_c_b[loc] = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);;
-        Fix_ko_1_env_c_a[loc] = iterateFix(state_init[loc], B[loc], [ avg_c_a[1], C_a[loc, 2] ]', C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_1_env_c_b[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_1_env_c_j[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], [ avg_c_j[1], C_j[loc, 2] ]', G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_1_env_g[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], [ avg_g[1], G[loc, 2] ]', H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_1_env_h[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], [ avg_h[1], H[loc, 2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);        
-        Fix_ko_1_env_r[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], [ avg_r[1], R[loc, 2] ]', S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_1_env_s[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ avg_s[1], S[loc, 2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_1_env_b = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_1_env_b_c_b = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);;
+        array[N_fix] vector[N_species] Fix_ko_1_env_c_a = iterateFix(state_init[loc], B[loc], [ avg_c_a[1], C_a[loc, 2] ]', C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_1_env_c_b = iterateFix(state_init[loc], B[loc], C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_1_env_c_j = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], [ avg_c_j[1], C_j[loc, 2] ]', G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_1_env_g = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], [ avg_g[1], G[loc, 2] ]', H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_1_env_h = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], [ avg_h[1], H[loc, 2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);        
+        array[N_fix] vector[N_species] Fix_ko_1_env_r = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], [ avg_r[1], R[loc, 2] ]', S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_1_env_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ avg_s[1], S[loc, 2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         
-        Fix_ko_2_env_b[loc] = iterateFix(state_init[loc], [ B[loc, 1], avg_b[2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_2_env_b_c_b[loc] = iterateFix(state_init[loc], [ B[loc, 1], avg_b[2] ]', C_a[loc], [ C_b[loc, 1], avg_c_b[2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);;
-        Fix_ko_2_env_c_a[loc] = iterateFix(state_init[loc], B[loc], [ C_a[loc, 1], avg_c_a[2] ]', C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_2_env_c_b[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], [ C_b[loc, 1], avg_c_b[2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_2_env_c_j[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], [ C_j[loc, 1], avg_c_j[2] ]', G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_2_env_g[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], [ G[loc, 1], avg_g[2] ]', H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_2_env_h[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], [ H[loc, 1], avg_h[2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);        
-        Fix_ko_2_env_r[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], [ R[loc, 1], avg_r[2] ]', S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        Fix_ko_2_env_s[loc] = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ S[loc, 1], avg_s[2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_2_env_b = iterateFix(state_init[loc], [ B[loc, 1], avg_b[2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_2_env_b_c_b = iterateFix(state_init[loc], [ B[loc, 1], avg_b[2] ]', C_a[loc], [ C_b[loc, 1], avg_c_b[2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);;
+        array[N_fix] vector[N_species] Fix_ko_2_env_c_a = iterateFix(state_init[loc], B[loc], [ C_a[loc, 1], avg_c_a[2] ]', C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_2_env_c_b = iterateFix(state_init[loc], B[loc], C_a[loc], [ C_b[loc, 1], avg_c_b[2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_2_env_c_j = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], [ C_j[loc, 1], avg_c_j[2] ]', G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_2_env_g = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], [ G[loc, 1], avg_g[2] ]', H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_2_env_h = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], [ H[loc, 1], avg_h[2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);        
+        array[N_fix] vector[N_species] Fix_ko_2_env_r = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], [ R[loc, 1], avg_r[2] ]', S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_2_env_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ S[loc, 1], avg_s[2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         
-        ba_fix_ko_1_env_b[loc]     = Fix_ko_1_env_b[loc, 4];
-        ba_fix_ko_1_env_b_c_b[loc] = Fix_ko_1_env_b_c_b[loc, 4];
-        ba_fix_ko_1_env_c_a[loc]   = Fix_ko_1_env_c_a[loc, 4];
-        ba_fix_ko_1_env_c_b[loc]   = Fix_ko_1_env_c_b[loc, 4];
-        ba_fix_ko_1_env_c_j[loc]   = Fix_ko_1_env_c_j[loc, 4];
-        ba_fix_ko_1_env_g[loc]     = Fix_ko_1_env_g[loc, 4];
-        ba_fix_ko_1_env_h[loc]     = Fix_ko_1_env_h[loc, 4];
-        ba_fix_ko_1_env_r[loc]     = Fix_ko_1_env_r[loc, 4];
-        ba_fix_ko_1_env_s[loc]     = Fix_ko_1_env_s[loc, 4];
+        ba_fix_ko_1_env_b[loc]     = Fix_ko_1_env_b[4];
+        ba_fix_ko_1_env_b_c_b[loc] = Fix_ko_1_env_b_c_b[4];
+        ba_fix_ko_1_env_c_a[loc]   = Fix_ko_1_env_c_a[4];
+        ba_fix_ko_1_env_c_b[loc]   = Fix_ko_1_env_c_b[4];
+        ba_fix_ko_1_env_c_j[loc]   = Fix_ko_1_env_c_j[ 4];
+        ba_fix_ko_1_env_g[loc]     = Fix_ko_1_env_g[4];
+        ba_fix_ko_1_env_h[loc]     = Fix_ko_1_env_h[4];
+        ba_fix_ko_1_env_r[loc]     = Fix_ko_1_env_r[4];
+        ba_fix_ko_1_env_s[loc]     = Fix_ko_1_env_s[4];
         
-        ba_fix_ko_2_env_b[loc]     = Fix_ko_2_env_b[loc, 4];
-        ba_fix_ko_2_env_b_c_b[loc] = Fix_ko_2_env_b_c_b[loc, 4];
-        ba_fix_ko_2_env_c_a[loc]   = Fix_ko_2_env_c_a[loc, 4];
-        ba_fix_ko_2_env_c_b[loc]   = Fix_ko_2_env_c_b[loc, 4];
-        ba_fix_ko_2_env_c_j[loc]   = Fix_ko_2_env_c_j[loc, 4];
-        ba_fix_ko_2_env_g[loc]     = Fix_ko_2_env_g[loc, 4];
-        ba_fix_ko_2_env_h[loc]     = Fix_ko_2_env_h[loc, 4];
-        ba_fix_ko_2_env_r[loc]     = Fix_ko_2_env_r[loc, 4];
-        ba_fix_ko_2_env_s[loc]     = Fix_ko_2_env_s[loc, 4];
+        ba_fix_ko_2_env_b[loc]     = Fix_ko_2_env_b[4];
+        ba_fix_ko_2_env_b_c_b[loc] = Fix_ko_2_env_b_c_b[4];
+        ba_fix_ko_2_env_c_a[loc]   = Fix_ko_2_env_c_a[4];
+        ba_fix_ko_2_env_c_b[loc]   = Fix_ko_2_env_c_b[4];
+        ba_fix_ko_2_env_c_j[loc]   = Fix_ko_2_env_c_j[4];
+        ba_fix_ko_2_env_g[loc]     = Fix_ko_2_env_g[4];
+        ba_fix_ko_2_env_h[loc]     = Fix_ko_2_env_h[4];
+        ba_fix_ko_2_env_r[loc]     = Fix_ko_2_env_r[4];
+        ba_fix_ko_2_env_s[loc]     = Fix_ko_2_env_s[4];
         
         ba_frac_fix_ko_1_env_b[loc]     = ba_fix_ko_1_env_b[loc, 1]     / sum(ba_fix_ko_1_env_b[loc]);
         ba_frac_fix_ko_1_env_b_c_b[loc] = ba_fix_ko_1_env_b_c_b[loc, 1] / sum(ba_fix_ko_1_env_b_c_b[loc]);
@@ -1168,53 +1151,56 @@ generated quantities {
       
       
       //// Simulate marginal fix point with average population starts
-      Fix_avg[loc] = iterateFix_contributions(avg_state_init, // !!!
-                                              B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
-                                              ba_a_avg, ba_a_upper,
-                                              N_species, i_j, i_a, i_b,
-                                              tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);
-                                          
-                                     
-      iterations_fix_avg[loc] = Fix_avg[loc, 6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
-      converged_fix_avg[loc] = iterations_fix_avg[loc] < fixiter_max; // (i starts at 0), when fixiter_max is reached the model ran 5001 times
-      
-      if (converged_fix_avg[loc]) { // && convergent[loc]
-      
-        //// unpack Fix_avg
-        // J_fix_avg[loc] = Fix_avg[loc, 1];
-        // A_fix_avg[loc] = Fix_avg[loc, 2];
-        // B_fix_avg[loc] = Fix_avg[loc, 3];
-        // ba_fix_avg[loc] = Fix_avg[loc, 4];
-        eps_ba_fix_avg[loc] = Fix_avg[loc, 5];        
-        
-        // Fix_avg[loc, 6] is unpacked before
-        
-        //// Unpack the cumulative contributions into variables
-        sum_ko_1_b_fix_avg[loc] = Fix_avg[loc, 7];
-        sum_ko_1_b_c_b_fix_avg[loc] = Fix_avg[loc, 8];
-        sum_ko_1_c_a_fix_avg[loc] = Fix_avg[loc, 9];
-        sum_ko_1_c_b_fix_avg[loc] = Fix_avg[loc, 10];
-        sum_ko_1_c_j_fix_avg[loc] = Fix_avg[loc, 11];
-        sum_ko_1_g_fix_avg[loc] = Fix_avg[loc, 12];
-        sum_ko_1_h_fix_avg[loc] = Fix_avg[loc, 13];
-        sum_ko_1_l_fix_avg[loc] = Fix_avg[loc, 14];
-        sum_ko_1_r_fix_avg[loc] = Fix_avg[loc, 15];
-        sum_ko_1_s_fix_avg[loc] = Fix_avg[loc, 16];
-        
-        sum_ko_2_b_fix_avg[loc] = Fix_avg[loc, 17];
-        sum_ko_2_b_c_b_fix_avg[loc] = Fix_avg[loc, 18];
-        sum_ko_2_c_a_fix_avg[loc] = Fix_avg[loc, 19];
-        sum_ko_2_c_b_fix_avg[loc] = Fix_avg[loc, 20];
-        sum_ko_2_c_j_fix_avg[loc] = Fix_avg[loc, 21];
-        sum_ko_2_g_fix_avg[loc] = Fix_avg[loc, 22];
-        sum_ko_2_h_fix_avg[loc] = Fix_avg[loc, 23];
-        sum_ko_2_l_fix_avg[loc] = Fix_avg[loc, 24];
-        sum_ko_2_r_fix_avg[loc] = Fix_avg[loc, 25];
-        sum_ko_2_s_fix_avg[loc] = Fix_avg[loc, 26];
-
-      }
+      //
+      // array[N_fix_contributions] vector[N_species] Fix_avg;
+      // Fix_avg = iterateFix_contributions(avg_state_init, // !!!
+      //                                    B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
+      //                                    ba_a_avg, ba_a_upper,
+      //                                    N_species, i_j, i_a, i_b,
+      //                                    tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);
+      //                                     
+      //                                
+      // iterations_fix_avg[loc] = Fix_avg[6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
+      // converged_fix_avg[loc] = iterations_fix_avg[loc] < fixiter_max; // (i starts at 0), when fixiter_max is reached the model ran 5001 times
+      // 
+      // if (converged_fix_avg[loc]) { // && convergent[loc]
+      // 
+      //   //// unpack Fix_avg
+      //   // J_fix_avg[loc] = Fix[1];
+      //   // A_fix_avg[loc] = Fix[2];
+      //   // B_fix_avg[loc] = Fix[3];
+      //   // ba_fix_avg[loc] = Fix[4];
+      //   eps_ba_fix_avg[loc] = Fix[5];
+      //   
+      //   // Fix[6] is unpacked before
+      //   
+      //   //// Unpack the cumulative contributions into variables
+      //   sum_ko_1_b_fix_avg[loc] = Fix_avg[7];
+      //   sum_ko_1_b_c_b_fix_avg[loc] = Fix_avg[8];
+      //   sum_ko_1_c_a_fix_avg[loc] = Fix_avg[9];
+      //   sum_ko_1_c_b_fix_avg[loc] = Fix_avg[10];
+      //   sum_ko_1_c_j_fix_avg[loc] = Fix_avg[11];
+      //   sum_ko_1_g_fix_avg[loc] = Fix_avg[12];
+      //   sum_ko_1_h_fix_avg[loc] = Fix_avg[13];
+      //   sum_ko_1_l_fix_avg[loc] = Fix_avg[14];
+      //   sum_ko_1_r_fix_avg[loc] = Fix_avg[15];
+      //   sum_ko_1_s_fix_avg[loc] = Fix_avg[16];
+      //   
+      //   sum_ko_2_b_fix_avg[loc] = Fix_avg[17];
+      //   sum_ko_2_b_c_b_fix_avg[loc] = Fix_avg[18];
+      //   sum_ko_2_c_a_fix_avg[loc] = Fix_avg[19];
+      //   sum_ko_2_c_b_fix_avg[loc] = Fix_avg[20];
+      //   sum_ko_2_c_j_fix_avg[loc] = Fix_avg[21];
+      //   sum_ko_2_g_fix_avg[loc] = Fix_avg[22];
+      //   sum_ko_2_h_fix_avg[loc] = Fix_avg[23];
+      //   sum_ko_2_l_fix_avg[loc] = Fix_avg[24];
+      //   sum_ko_2_r_fix_avg[loc] = Fix_avg[25];
+      //   sum_ko_2_s_fix_avg[loc] = Fix_avg[26];
+      //
+      // } // end if (converged_fix_avg[loc])
   
-    }
+    } // end for(loc in 1:N_locs)
 
   } // end if(generateposteriorq)
+
 }
