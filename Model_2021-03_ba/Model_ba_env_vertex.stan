@@ -622,23 +622,23 @@ model {
   
   //// Priors for optimum value of parameters
   // note that there are no vertex parameters for l in the following, because for l we fit an intercept only:
-  b_log_center_env1   ~ normal(0, 1.25); // std_normal();
-  c_a_log_center_env1 ~ normal(0, 1.25); // std_normal();
-  c_b_log_center_env1 ~ normal(0, 1.25); // std_normal();
-  c_j_log_center_env1 ~ normal(0, 1.25); // std_normal();
-  g_log_center_env1   ~ normal(0, 1.25); // std_normal();
-  h_log_center_env1   ~ normal(0, 1.25); // std_normal();
-  r_log_center_env1   ~ normal(0, 1.25); // std_normal();
-  s_log_center_env1   ~ normal(0, 1.25); // std_normal();
+  b_log_center_env1   ~ std_normal();
+  c_a_log_center_env1 ~ std_normal();
+  c_b_log_center_env1 ~ std_normal();
+  c_j_log_center_env1 ~ std_normal();
+  g_log_center_env1   ~ std_normal();
+  h_log_center_env1   ~ std_normal();
+  r_log_center_env1   ~ std_normal();
+  s_log_center_env1   ~ std_normal();
 
-  b_log_center_env2   ~ normal(0, 1.25); // std_normal();
-  c_a_log_center_env2 ~ normal(0, 1.25); // std_normal();
-  c_b_log_center_env2 ~ normal(0, 1.25); // std_normal();
-  c_j_log_center_env2 ~ normal(0, 1.25); // std_normal();
-  g_log_center_env2   ~ normal(0, 1.25); // std_normal();
-  h_log_center_env2   ~ normal(0, 1.25); // std_normal();
-  r_log_center_env2   ~ normal(0, 1.25); // std_normal();
-  s_log_center_env2   ~ normal(0, 1.25); // std_normal();
+  b_log_center_env2   ~ std_normal();
+  c_a_log_center_env2 ~ std_normal();
+  c_b_log_center_env2 ~ std_normal();
+  c_j_log_center_env2 ~ std_normal();
+  g_log_center_env2   ~ std_normal();
+  h_log_center_env2   ~ std_normal();
+  r_log_center_env2   ~ std_normal();
+  s_log_center_env2   ~ std_normal();
 
   //// Priors for spread of parameters
   // Caution: exponential(rate) while double_exponential(mean, scale == 1/rate)
