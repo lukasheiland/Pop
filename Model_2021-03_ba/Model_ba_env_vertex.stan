@@ -854,6 +854,9 @@ generated quantities {
   
   // 2. K.O. of all environmental variation
   array[N_locs] vector[N_species] ba_fix_ko_1_env_b     = J_init;
+  array[N_locs] vector[N_species] sum_ko_1_sKoEnvB_fix  = J_init;
+  array[N_locs] vector[N_species] sum_ko_2_sKoEnvB_fix  = J_init;
+  
   array[N_locs] vector[N_species] ba_fix_ko_1_env_b_c_b = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_c_a   = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_c_b   = J_init;
@@ -1045,7 +1048,7 @@ generated quantities {
         
         
         // 2. K.O. of environmental variation
-        array[N_fix] vector[N_species] Fix_ko_1_env_b = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix_contributions] vector[N_species] Fix_ko_1_env_b = iterateFix_contributions(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_1_env_b_c_b = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);;
         array[N_fix] vector[N_species] Fix_ko_1_env_c_a = iterateFix(state_init[loc], B[loc], [ avg_c_a[1], C_a[loc, 2] ]', C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_1_env_c_b = iterateFix(state_init[loc], B[loc], C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
@@ -1065,7 +1068,10 @@ generated quantities {
         array[N_fix] vector[N_species] Fix_ko_2_env_r = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], [ R[loc, 1], avg_r[2] ]', S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_2_env_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ S[loc, 1], avg_s[2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         
-        ba_fix_ko_1_env_b[loc]     = Fix_ko_1_env_b[4];
+        ba_fix_ko_1_env_b[loc]    = Fix_ko_1_env_b[4];
+        sum_ko_1_sKoEnvB_fix[loc] = Fix_ko_1_env_b[16]; // the contribution of b under k.o. of 1_env_b
+        sum_ko_2_sKoEnvB_fix[loc] = Fix_ko_1_env_b[26];
+
         ba_fix_ko_1_env_b_c_b[loc] = Fix_ko_1_env_b_c_b[4];
         ba_fix_ko_1_env_c_a[loc]   = Fix_ko_1_env_c_a[4];
         ba_fix_ko_1_env_c_b[loc]   = Fix_ko_1_env_c_b[4];

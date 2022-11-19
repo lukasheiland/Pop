@@ -201,8 +201,9 @@ targets_parname <- list(
   tar_target(contribname_switch, paste0("sum_switch_", c(names(parname_plotorder), "b_c_b"), "_fix")),
   tar_target(contribname_init_env, paste0("sum_ko_", 1:2, "_", rep(c(names(parname_plotorder), "b_c_b"), each = 2), "_fix")),
   tar_target(contribname_avg_env, paste(contribname_init_env, "avg", sep = "_")),
-  tar_target(contribname_env, c(contribname_init_env, contribname_avg_env)),
-  tar_target(contribname, c(contribname_init, contribname_prop, contribname_switch, contribname_init_env, contribname_avg_env)),
+  tar_target(contribname_counterfactual_env, paste(contribname_init_env, "avg", sep = "_")),
+  tar_target(contribname_env, c(contribname_init_env, contribname_avg_env, contribname_counterfactual_env)),
+  tar_target(contribname, c(contribname_init, contribname_prop, contribname_switch, contribname_env)),
 
   tar_target(simname_posterior,
              c(statename, contribname,
@@ -929,7 +930,7 @@ targets_posterior_env <- list(
   
   tar_target(plot_binary_contrib_env,
              plotBinary(Environmental = Environmental_env,
-                        parname = contribname_init_env,
+                        parname = c(contribname_init_env, contribname_counterfactual_env),
                         fit_bin = fit_environmental_binomial_env[[sapply(fit_environmental_binomial_env, function(x) attr(x, "par") == "major_fix") %>% which()]],
                         binarythreshold = 0.5, facetscale = "free_x", plotlog = T, ## !!!
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
@@ -960,7 +961,7 @@ targets_posterior_env <- list(
                           path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = theme_fagus)),
   
   tar_target(plot_contributions_env,
-             plotContributions(cmdstanfit = fit_env, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, plotlog = T,
+             plotContributions(cmdstanfit = fit_env, parname = c(parname_plotorder, b_c_b = "b_c_b_log", sKoEnvB = "sKoEnvB"), path = dir_publish, plotlog = T,
                                color = twocolors, themefun = themefunction)),
   
   tar_target(plots_states_env,

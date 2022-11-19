@@ -2496,7 +2496,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
     mutate(tax = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>% 
     rename(p = .variable) %>% 
     mutate(parameter = if_else(str_starts(p, "sum_"),
-                               str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
+                               str_extract(p, "(?<=_)(sKoEnvB|b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
                                p), ## distinguish whether contribution or parameter
            parameter = factor(parameter, levels = unique(c(parname, parameter, p))), # for the order
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "others" = "2") ),
