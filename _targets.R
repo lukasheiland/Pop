@@ -114,6 +114,7 @@ targets_settings <- list(
   ),
   
   tar_target(twocolors, c("#119973", "#FFCC11")), ## Other greens include: Spanish Green '#208E50', Feldgrau '#3A7867' # Jade: #0FA564 # See green: #0E8C55
+  tar_target(divergentcolors, c(mennig = "#FF4D26", lightblue = "#00C3FF")), ## 1st is low, 2nd is high, mid is white
   tar_target(themefunction, theme_fagus)
   
 )
@@ -201,7 +202,7 @@ targets_parname <- list(
   tar_target(contribname_switch, paste0("sum_switch_", c(names(parname_plotorder), "b_c_b"), "_fix")),
   tar_target(contribname_init_env, paste0("sum_ko_", 1:2, "_", rep(c(names(parname_plotorder), "b_c_b"), each = 2), "_fix")),
   tar_target(contribname_avg_env, paste(contribname_init_env, "avg", sep = "_")),
-  tar_target(contribname_counterfactual_env, paste(contribname_init_env, "avg", sep = "_")),
+  tar_target(contribname_counterfactual_env, paste0("sum_ko_", 1:2, "_", rep("sKoEnvB", each = 2), "_fix")),
   tar_target(contribname_env, c(contribname_init_env, contribname_avg_env, contribname_counterfactual_env)),
   tar_target(contribname, c(contribname_init, contribname_prop, contribname_switch, contribname_env)),
 
@@ -272,6 +273,7 @@ targets_parname <- list(
   
   ## these are mainly for distinguishing different plots
   tar_target(parname_environmental_ba_env, parname_environmental_env[str_starts(parname_environmental_env, "ba")]), ## note: these have only tax %in% 1:2
+  tar_target(parname_environmental_ba_select_env, setdiff(parname_environmental_ba_env, "ba_init")),
   tar_target(parname_environmental_binomial_env, c("major_init", "major_fix")), ## note: these have only tax == 0
   tar_target(parname_environmental_gaussian_env, setdiff(parname_sim_environmental_env, c("L_loc", "L_log"))), ## note: these have only tax %in% 1:2
   tar_target(parname_environmental_diff_env, c(statename_environmentalko_fracdiff_env)), ## note: these have only tax == 0
@@ -624,7 +626,7 @@ targets_fit_env <- list(
              cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 10, iter_warmup = 800, iter_sampling = 200, fitpath = dir_fit,
+                      method = "mcmc", n_chains = 8, iter_warmup = 800, iter_sampling = 250, fitpath = dir_fit,
                       adapt_delta = 0.95)
              ),
   tar_target(basename_fit_env,
@@ -684,7 +686,7 @@ targets_posterior_test <- list(
   tar_target(plots_test,
              plotStanfit(stanfit = stanfit_test, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   tar_target(plots_parameters_test,
-             plotParameters(stanfit = stanfit_test, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
+             plotParameters(draws = stanfit_test, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_test, color = twocolors, themefun = themefunction)),
   ## Prior predictive tests that rely on currently out-commented generated quantities
   # tar_target(plots_predictions_prior_test,
   #            plotPredictions(cmdstanfit = fit_test, data_stan_priors, check = "prior")),
@@ -757,7 +759,7 @@ targets_posterior <- list(
              plotStanfit(stanfit = stanfit, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_parameters,
-             plotParameters(stanfit = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             plotParameters(draws = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_trace,
              plotTrace(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
@@ -852,8 +854,8 @@ targets_posterior_env <- list(
              pattern = cross(parname_environmental_gaussian_env, taxon_s),
              iteration = "list"),
   tar_target(fit_environmental_ba_env,
-             fitEnvironmental_gam(Environmental_env, parname = setdiff(parname_environmental_ba_env, "ba_init"), envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
-             pattern = cross(parname_environmental_ba_env, taxon_s),
+             fitEnvironmental_gam(Environmental_env, parname = parname_environmental_ba_select_env, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
+             pattern = cross(parname_environmental_ba_select_env, taxon_s),
              iteration = "list"),
   tar_target(fit_environmental_diff_env,
              fitEnvironmental_gam(Diff_environmentalko_env, parname = parname_environmental_diff_env, envname = predictor_select, taxon = 0, fam = "gaussian", path = dir_publish),
@@ -906,20 +908,20 @@ targets_posterior_env <- list(
   ## Plot
   tar_target(plot_poly_env,
              plotPoly(Surfaces_poly_env, Environmental = Environmental_env,
-                      basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = theme_fagus)),
+                      basename = basename_fit_env, path = dir_publish, color = divergentcolors, themefun = theme_fagus)),
 
   tar_target(plot_environmental_env,
              plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix", commonscale = F, removevar = NULL,
                                basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plot_diff_env,
              plotEnvironmental(surfaces = surface_diff_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+                               basename = basename_fit_env, path = dir_publish, color = divergentcolors, themefun = themefunction)),
   tar_target(plot_diff_interp_env,
              plotEnvironmental(surfaces = surface_diff_interp_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+                               basename = basename_fit_env, path = dir_publish, color = divergentcolors, themefun = themefunction)),
   tar_target(plot_diff_interp_sd_env,
              plotEnvironmental(surfaces = surface_diff_interp_sd_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+                               basename = basename_fit_env, path = dir_publish, color = divergentcolors, themefun = themefunction)),
 
   tar_target(plot_binary_par_env,
              plotBinary(Environmental = Environmental_env,
@@ -948,7 +950,7 @@ targets_posterior_env <- list(
              plotPairs(cmdstanfit = fit_env, parname = parname_B_env)),
   
   tar_target(plots_parameters_env,
-             plotParameters(stanfit = draws_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
+             plotParameters(draws = draws_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   tar_target(plot_posterior_center_env,
              plotPosterior(cmdstanfit = fit_env, varname = parname_center_env)),
   tar_target(plot_posterior_spread_env,

@@ -982,8 +982,8 @@ fitEnvironmental_gam <- function(Environmental, parname, envname = tar_read(pred
                                  taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   parname <- selectParnameEnvironmental(parname, Environmental)
-  
-  taxon <- head(as.integer(taxon))
+
+  taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
   
   E <- Environmental %>% 
@@ -2085,11 +2085,11 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
   I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
     mutate(p = parameter,
-           parameter = str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
+           parameter = str_extract(p, "(?<=_)(sKoEnvB|b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2") ),
            tax = suppressWarnings( fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2") ), # the last number in the string
            reciprocal = as.character(kotax) != as.character(tax), # there might be different level sets
-           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h", "b_c_b"),)
+           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s", "sKoEnvB"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h", "b_c_b"))
            ) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
@@ -2262,7 +2262,8 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
   
   
   #### Handling of the binary border
-  i_binary <- which(binaryname == sapply(surfaces, function(s) attr(s, "parname")))
+  parname_surfaces <- sapply(surfaces, function(s) attr(s, "parname")) ## Will be used to name plots below
+  i_binary <- which(binaryname == parname_surfaces)
   Binary <- if(isTRUE(i_binary >= 1)) surfaces[[i_binary]] else NULL
   Binary$z <- if(!is.null(Binary)) round(Binary$z) else NULL
   bnotnull <- !is.null(Binary)
@@ -2307,20 +2308,21 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
         scale_fill_viridis_c(direction = direction) +
         
         { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
-                                    data = Binary, bins = 2, col = "black", linetype = 2, size = 1.1, inherit.aes = F) } + 
+                                    data = Binary, bins = 2, col = "black", linetype = 2, size = 0.8, inherit.aes = F) } + 
         { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") } +
         
         themefun() +
         ggtitle(paste(parname, taxon)) +
         scale_y_reverse() ## invert water level scale, consistent with Ökogramm.
       
-      return(NULL) # return(plot)
+      return(plot)
     }
     
     plots <- lapply(surfaces, plotE)
+    names(plots) <- parname_surfaces
     plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 2)
     
-    ggsave(filename = paste0(path, "/", basename, "_plot_environmental_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
+    ggsave(filename = paste0(path, "/", basename, "_plotgrid_environmental_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
            plot = plotgrid, device = "pdf", width = 15, height = 4 * length(plots), limitsize = FALSE)
     
   } else {
@@ -2336,7 +2338,7 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
       suppressMessages( mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "others" = "2", "both" = "0")) ) %>%
       dplyr::filter(!variable %in% removevar)
     
-    scale_fill_div <- function(...) scale_fill_gradient2(low = color[2], mid = "white", high = color[1], midpoint = 0, ...)
+    scale_fill_div <- function(...) scale_fill_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
     
     plots <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
       geom_raster(aes(fill = z)) +
@@ -2344,7 +2346,7 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
       scale_fill_div() +
       
       { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
-                                  data = Binary, bins = 2, col = "black", linetype = 2, size = 1.1, inherit.aes = F) } + 
+                                  data = Binary, bins = 2, col = "black", linetype = 2, size = 0.8, inherit.aes = F) } + 
       { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") } +
       
       themefun() +
@@ -2357,7 +2359,7 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
     
   }
   
-  return(NULL) # return(plots)
+  return(plots)
 }
 
 
@@ -2376,7 +2378,7 @@ plotPoly <- function(Surfaces, Environmental = NULL,
   if (!is.null(Environmental)) {
     
     E <- Environmental %>%
-      dplyr::filter(str_starts(.variable, "sum_ko_") & str_ends(.variable, "fix_avg")) %>% 
+      dplyr::filter(str_starts(.variable, "sum_ko_") & str_ends(.variable, "fix")) %>% 
       rename(parname = .variable) %>%
       group_by_at(c("tax", "parname", "loc", name_x, name_y)) %>%
       dplyr::summarize(value = mean(.value, na.rm = T), .groups = "drop") %>%
@@ -2384,15 +2386,18 @@ plotPoly <- function(Surfaces, Environmental = NULL,
       filter(isdirectcontribution) %>%
       mutate(taxon = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>%
       mutate(parname = str_extract(parname, "(c_[jab]|[a-z])(?=_fix)")) %>%
-      mutate(parname = paste0(parname, "_log"))
+      mutate(parname = paste0(parname, "_log")) %>%
+      filter(parname %in% unique(Surfaces$parname))
     
     }
+  
+  scale_color_div <- function(...) scale_color_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
   
   plot <- ggplot(Surfaces, aes_string(x = name_x, y = name_y)) +
     # geom_raster(aes(fill = z)) +
     
     { if (!is.null(Environmental)) geom_jitter(data = E, mapping = aes(color = value), width = 0.1, height = 0.2, alpha = 0.6) } + # width = 0.3, height = 0.3, size = 0.5
-    { if (!is.null(Environmental)) scale_color_viridis_c() } + # scale_colour_divergent()
+    { if (!is.null(Environmental)) scale_color_div() } +
     
     metR::geom_contour2(data = Surfaces, mapping = aes(z = z, label = round(..level.., 3)), # 
                         colour = "gray30", global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) +

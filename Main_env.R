@@ -63,14 +63,14 @@ tar_make_future(c("summary_env",
                 workers = if(onserver) 32 else 3, reporter = "timestamp_positives")
 
 ## Simulations parallelized internally
-tar_make(c("plot_trajectories_avg_env"))
+# tar_make(c("plot_trajectories_avg_env"))
 
 ## Publishing
-tar_make_future(c("Summary_taxa",
-                  "Summary_NFIs",
-                  "Summary_range",
-                  "plot_range"),
-                workers = if(onserver) 12 else 3, reporter = "verbose_positives")
+# tar_make_future(c("Summary_taxa_env",
+#                   "Summary_NFI_env",
+#                   "Summary_range",
+#                   "plot_range"),
+#                 workers = if(onserver) 12 else 3, reporter = "verbose_positives")
 
 
 
