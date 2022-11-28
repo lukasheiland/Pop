@@ -300,11 +300,16 @@ interpolateSurface <- function(Environmental, parname = NULL, aggr = c("mean", "
   aggr <- first(match.arg(aggr))
   
   if(!is.null(parname)) {
+    
     parname <- selectParnameEnvironmental(parname, Environmental)
+    if(is.null(parname)) return(NULL)
+    
     Environmental %<>%  dplyr::filter(.variable %in% parname)
+    
   } else {
     parname <- unique(Environmental$.variable)
   }
+
   
   # koname <- parname[str_detect(parname, "_ko_")]
   # koname_ba <- koname[str_detect(koname, "ba_fix_")]
@@ -329,6 +334,7 @@ interpolateSurface <- function(Environmental, parname = NULL, aggr = c("mean", "
     dplyr::mutate(.value = !!ensym(aggr), .aggr = aggr) ## just rename based on arg aggr
   
   interpolateVar <- function(v, t) {
+    
     E <- filter(Environmental, .variable == v & tax == t)
     
     ## use akima?
@@ -968,7 +974,10 @@ selectParnameEnvironmental <- function(parname, Environmental) {
   parname_environmental <- union(parname_o, parname_environmental)
   names(parname_environmental) <- str_remove(parname_environmental, "_log")
   
-  return(parname_environmental[!is.na(parname_environmental)])
+  p <- parname_environmental[!is.na(parname_environmental)]
+  p <- if(length(p) == 0) NULL else p
+  
+  return(p)
 }
 
 
@@ -982,6 +991,7 @@ fitEnvironmental_gam <- function(Environmental, parname, envname = tar_read(pred
                                  taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   parname <- selectParnameEnvironmental(parname, Environmental)
+  if(is.null(parname)) return(NULL)
 
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -1020,6 +1030,7 @@ fitEnvironmental_glmnet <- function(Environmental, parname, envname = tar_read(p
                                     taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   parname <- selectParnameEnvironmental(parname, Environmental)
+  if(is.null(parname)) return(NULL)
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -1067,6 +1078,7 @@ fitEnvironmental_glm <- function(Environmental, parname, envname = tar_read(pred
                                  taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   parname <- selectParnameEnvironmental(parname, Environmental)
+  if(is.null(parname)) return(NULL)
   
   taxon <- head(as.integer(taxon), 1)
   fam <- match.arg(fam)
@@ -1104,7 +1116,7 @@ fitEnvironmental_glm <- function(Environmental, parname, envname = tar_read(pred
 # themefun  <- theme_fagus <-  tar_read("themefunction")
 predictEnvironmental <- function(fit, envname,
                                  path = dir_fit, basename = basename_fit_env,
-                                 color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                                 color = tar_read(twocolors), themefun = theme_fagus) {
   
   if(length(envname) != 2) stop("There are more or fewer than 2 environmental gradients.")
   
@@ -1189,7 +1201,7 @@ predictEnvironmental <- function(fit, envname,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotStanfit <- function(stanfit, exclude, path, basename,
-                        color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                        color = tar_read(twocolors), themefun = theme_fagus) {
   
   usedmcmc <- "sample" == attr(stanfit, "stan_args")[[1]]$method
   
@@ -1228,7 +1240,7 @@ plotStanfit <- function(stanfit, exclude, path, basename,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotParameters <- function(draws, parname, exclude = tar_read("exclude"), path, basename,
-                           color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                           color = tar_read(twocolors), themefun = theme_fagus) {
   
   extendedcolor <- c(color, "#555555") # add a third neutral colour for inspecific priors
   priorlinecolor <- c("#000000", "#000000")
@@ -1320,7 +1332,7 @@ plotParameters <- function(draws, parname, exclude = tar_read("exclude"), path, 
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotPosterior <- function(cmdstanfit, varname,
-                          path = tar_read("dir_publish"), color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                          path = tar_read("dir_publish"), color = tar_read(twocolors), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   varname_draws <- cmdstanfit$metadata()$stan_variables
@@ -1448,7 +1460,7 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 # themefun  <- tar_read("themefunction")
 plotStates <- function(States,
                        allstatevars = basalareaname,
-                       path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                       path, basename, color = tar_read(twocolors), themefun = theme_fagus) {
   
   allstatevars <- intersect(as.character(unique(States$var)), allstatevars)
   
@@ -1758,7 +1770,7 @@ plotStates <- function(States,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotConditional_resampling <- function(cmdstanfit, parname, path,
-                                       color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                                       color = tar_read(twocolors), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -1874,7 +1886,7 @@ plotConditional_resampling <- function(cmdstanfit, parname, path,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotConditional <- function(cmdstanfit, parname, conditional = T, path, 
-                            color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                            color = tar_read(twocolors), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -1969,7 +1981,7 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotPairs <- function(cmdstanfit, parname,
-                      path = tar_read("dir_publish"), color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                      path = tar_read("dir_publish"), color = tar_read(twocolors), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -2026,7 +2038,7 @@ plotPairs <- function(cmdstanfit, parname,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotTrace <- function(cmdstanfit, parname, path,
-                      color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                      color = tar_read(twocolors), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
   
@@ -2051,7 +2063,7 @@ plotTrace <- function(cmdstanfit, parname, path,
 # themefun  <- tar_read("themefunction")
 
 plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_ko", "sum_ko_avg", "sum_ko_prop", "sum_switch"), plotlog = FALSE,
-                              color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                              color = tar_read(twocolors), themefun = theme_fagus) {
   
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
@@ -2085,12 +2097,13 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
   M <- as_draws_matrix(fix_draws) ## enforce proper naming for plot methods
   I <- bayesplot::mcmc_intervals_data(M, point_est = "median", prob = 0.5, prob_outer = 0.8) %>%
     mutate(p = parameter,
-           parameter = str_extract(p, "(?<=_)(sKoEnvB|b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
+           parameter = str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"), # #! sKoEnvB|
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "other" = "2") ),
            tax = suppressWarnings( fct_recode(str_extract(p, "(\\d+)(?!.*\\d)"), "Fagus" = "1", "other" = "2") ), # the last number in the string
            reciprocal = as.character(kotax) != as.character(tax), # there might be different level sets
-           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s", "sKoEnvB"), "A" = c("g", "c_a"), "B" = c("c_b", "b", "h", "b_c_b"))
-           ) %>%
+           stage = fct_collapse(parameter, "J" = c("c_j", "r", "l", "s"), #! "sKoEnvB"
+                                           "A" = c("g", "c_a"),
+                                           "B" = c("c_b", "b", "h", "b_c_b"))) %>%
     mutate(stage = ordered(stage, c("J", "A", "B"))) %>%
     mutate(stagepos = as.numeric(as.character(fct_recode(stage, "1" = "J", "5.5" = "A", "7.5" = "B")))) %>%
     mutate(parameter = ordered(parameter, parorder)) %>%
@@ -2153,7 +2166,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotPredominant <- function(States, majorname,
-                            path = tar_read("dir_publish"), basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                            path = tar_read("dir_publish"), basename, color = tar_read(twocolors), themefun = theme_fagus) {
   
   States <- States[!is.na(States$value),]
   
@@ -2229,7 +2242,7 @@ plotPredominant <- function(States, majorname,
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotMarginal <- function(Marginal, parname,
-                         path, basename, color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                         path, basename, color = tar_read(twocolors), themefun = theme_fagus) {
 
   M <- Marginal %>%
     filter(.variable %in% parname) %>%
@@ -2258,10 +2271,14 @@ plotMarginal <- function(Marginal, parname,
 # basename <- tar_read(basename_fit_env)
 # path <-  tar_read(dir_publish)
 plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname = "major_fix", commonscale = FALSE, removevar = NULL,
-                              basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"), color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                              basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
+                              color = tar_read(twocolors), divscale = tar_read(divergingfillscale), themefun = theme_fagus) {
   
   
-  #### Handling of the binary border
+  ## Remove NULL objects from list (these can emerge from cross(parname, species), e.g., when this combinanation is not in gen quants)
+  surfaces[sapply(surfaces, is.null)] <- NULL
+  
+  ## Handling of the binary border
   parname_surfaces <- sapply(surfaces, function(s) attr(s, "parname")) ## Will be used to name plots below
   i_binary <- which(binaryname == parname_surfaces)
   Binary <- if(isTRUE(i_binary >= 1)) surfaces[[i_binary]] else NULL
@@ -2338,12 +2355,12 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
       suppressMessages( mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "others" = "2", "both" = "0")) ) %>%
       dplyr::filter(!variable %in% removevar)
     
-    scale_fill_div <- function(...) scale_fill_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
+    # divscale <- function(...) scale_fill_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
     
     plots <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
       geom_raster(aes(fill = z)) +
       metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
-      scale_fill_div() +
+      divscale() +
       
       { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
                                   data = Binary, bins = 2, col = "black", linetype = 2, size = 0.8, inherit.aes = F) } + 
@@ -2364,13 +2381,13 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
 
 
 ## plotPoly --------------------------------
-# Surfaces <- tar_read(Surfaces_poly_env)
+# Surfaces <- tar_read(Surfaces_poly_env) ## A data.frame with surfaces by .variable
 # Environmental <- tar_read(Environmental_env)
 # basename <- tar_read(basename_fit_env)
 # path <-  tar_read(dir_publish)
 plotPoly <- function(Surfaces, Environmental = NULL,
                      basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
-                     color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                     color = tar_read(twocolors), divscale = tar_read(divergingcolorscale), themefun = theme_fagus) {
 
   name_x <- attr(Surfaces, "name_x")
   name_y <- attr(Surfaces, "name_y")
@@ -2391,13 +2408,13 @@ plotPoly <- function(Surfaces, Environmental = NULL,
     
     }
   
-  scale_color_div <- function(...) scale_color_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
+  # divscale <- function(...) scale_color_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
   
   plot <- ggplot(Surfaces, aes_string(x = name_x, y = name_y)) +
     # geom_raster(aes(fill = z)) +
     
     { if (!is.null(Environmental)) geom_jitter(data = E, mapping = aes(color = value), width = 0.1, height = 0.2, alpha = 0.6) } + # width = 0.3, height = 0.3, size = 0.5
-    { if (!is.null(Environmental)) scale_color_div() } +
+    { if (!is.null(Environmental)) divscale() } +
     
     metR::geom_contour2(data = Surfaces, mapping = aes(z = z, label = round(..level.., 3)), # 
                         colour = "gray30", global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) +
@@ -2429,7 +2446,7 @@ plotPoly <- function(Surfaces, Environmental = NULL,
 plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold = 0.5,
                        facetscale = c("free", "free_x", "free_y"), plotlog = F,
                        path = tar_read("dir_publish"), basename = tar_read("basename_fit_env"),
-                       color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                       color = tar_read(twocolors), themefun = theme_fagus) {
   
   
   binaryname <- if (is.null(fit_bin)) "major_fix" else attr(fit_bin, "par")
@@ -2501,7 +2518,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
     mutate(tax = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>% 
     rename(p = .variable) %>% 
     mutate(parameter = if_else(str_starts(p, "sum_"),
-                               str_extract(p, "(?<=_)(sKoEnvB|b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"),
+                               str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"), #! sKoEnvB|
                                p), ## distinguish whether contribution or parameter
            parameter = factor(parameter, levels = unique(c(parname, parameter, p))), # for the order
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "others" = "2") ),
@@ -2547,7 +2564,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
 plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename, plotpdf = FALSE,
-                             color = c("#208E50", "#FFC800"), themefun = theme_fagus) {
+                             color = tar_read(twocolors), themefun = theme_fagus) {
   
   Trajectories %<>%
     group_by(loc, tax, stage, draw) %>%

@@ -37,7 +37,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "MASS", "mgcv", "glmnet", "itsadug", "interp",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
-             "stargazer", "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate", "metR",
+             "stargazer", "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate", "metR", "colorspace",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -113,8 +113,9 @@ targets_settings <- list(
              )
   ),
   
-  tar_target(twocolors, c("#119973", "#FFCC11")), ## Other greens include: Spanish Green '#208E50', Feldgrau '#3A7867' # Jade: #0FA564 # See green: #0E8C55
-  tar_target(divergentcolors, c(mennig = "#FF4D26", lightblue = "#00C3FF")), ## 1st is low, 2nd is high, mid is white
+  tar_target(twocolors, c("#007A7F", "#FFCC11")), ## Formerly "#119973", Other greens include: Spanish Green '#208E50', Feldgrau '#3A7867' # Jade: #0FA564 # See green: #0E8C55
+  tar_target(divergingcolorscale, function(...) scale_color_continuous_divergingx(palette = "BrBG", ...)), # function(n) rev(pals::ocean.curl(n))
+  tar_target(divergingfillscale, function(...) scale_fill_continuous_divergingx(palette = "BrBG", ...)),
   tar_target(themefunction, theme_fagus)
   
 )
@@ -277,11 +278,11 @@ targets_parname <- list(
   tar_target(parname_environmental_ba_select_env, setdiff(parname_environmental_ba_env, "ba_init")),
   tar_target(parname_environmental_binomial_env, c("major_init", "major_fix")), ## note: these have only tax == 0
   tar_target(parname_environmental_gaussian_env, setdiff(parname_sim_environmental_env, c("L_loc", "L_log"))), ## note: these have only tax %in% 1:2
-  tar_target(parname_environmental_diff_env, c(statename_environmentalko_fracdiff_env)), ## note: these have only tax == 0
+  tar_target(parname_environmental_diff_env, setdiff(statename_environmentalko_fracdiff_env, "ba_frac_diff_fix_ko_2_env_b_other_s")), ## note: 1. these have only tax == 0
   
   tar_target(parname_loc_env, ## anything that is local
              c(parname_environmental_env, statename_environmentalko_env,
-               "state_init", str_to_sentence(names(parname_plotorder)),)),
+               "state_init", str_to_sentence(names(parname_plotorder)))),
   
   
   
@@ -910,20 +911,20 @@ targets_posterior_env <- list(
   ## Plot
   tar_target(plot_poly_env,
              plotPoly(Surfaces_poly_env, Environmental = Environmental_env,
-                      basename = basename_fit_env, path = dir_publish, color = divergentcolors, themefun = theme_fagus)),
+                      basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingcolorscale, themefun = theme_fagus)),
 
   tar_target(plot_environmental_env,
              plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix", commonscale = F, removevar = NULL,
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, themefun = themefunction)),
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
   tar_target(plot_diff_env,
              plotEnvironmental(surfaces = surface_diff_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
-                               basename = basename_fit_env, path = dir_publish, color = divergentcolors, themefun = themefunction)),
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
   tar_target(plot_diff_interp_env,
              plotEnvironmental(surfaces = surface_diff_interp_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
-                               basename = basename_fit_env, path = dir_publish, color = divergentcolors, themefun = themefunction)),
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
   tar_target(plot_diff_interp_sd_env,
              plotEnvironmental(surfaces = surface_diff_interp_sd_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
-                               basename = basename_fit_env, path = dir_publish, color = divergentcolors, themefun = themefunction)),
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
 
   tar_target(plot_binary_par_env,
              plotBinary(Environmental = Environmental_env,
