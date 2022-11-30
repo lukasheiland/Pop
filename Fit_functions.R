@@ -271,11 +271,11 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
     ## Together with the offset, the mminimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
-    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.05) %>%
+    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.01) %>%
     
     group_by(loc, pop) %>%
     ## The summaries here are only effectual for loclevel == "nested", because otherwise the grouping group_by(loc, pop) is identical to the original id structure 
-    summarize(lower = min(y_prior, na.rm = T) * 0.5,
+    summarize(lower = min(y_prior, na.rm = T) * 0.01,
               y_prior = if (loclevel == "nested") first(y_hat_prior) else y_prior,
               min_pop = first(min_pop),
               

@@ -988,7 +988,7 @@ selectParnameEnvironmental <- function(parname, Environmental) {
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_publish")
 fitEnvironmental_gam <- function(Environmental, parname, envname = tar_read(predictor_select),
-                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
+                                 taxon = 0:2, fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   parname <- selectParnameEnvironmental(parname, Environmental)
   if(is.null(parname)) return(NULL)
@@ -1000,6 +1000,8 @@ fitEnvironmental_gam <- function(Environmental, parname, envname = tar_read(pred
     filter(tax == taxon) %>%
     filter(.variable == parname) %>%
     rename(v = .value)
+  
+  if(nrow(E) == 0) return(NULL)
   
   splineformula <- paste0("v ~ ", "te(", paste(envname, collapse = ", "), ", k = c(5, 5))")
   
@@ -1027,7 +1029,7 @@ fitEnvironmental_gam <- function(Environmental, parname, envname = tar_read(pred
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
 fitEnvironmental_glmnet <- function(Environmental, parname, envname = tar_read(predictor_select),
-                                    taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
+                                    taxon = 0:2, fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   parname <- selectParnameEnvironmental(parname, Environmental)
   if(is.null(parname)) return(NULL)
@@ -1039,6 +1041,8 @@ fitEnvironmental_glmnet <- function(Environmental, parname, envname = tar_read(p
     filter(tax %in% taxon) %>%
     filter(.variable == parname) %>%
     rename(v = .value)
+  
+  if(nrow(E) == 0) return(NULL)
   
   if (fam == "binomial") {
     E$v <- as.factor(round(E$v))
@@ -1075,7 +1079,7 @@ fitEnvironmental_glmnet <- function(Environmental, parname, envname = tar_read(p
 # envname <- tar_read("predictor_select")
 # path  <- tar_read("dir_fit")
 fitEnvironmental_glm <- function(Environmental, parname, envname = tar_read(predictor_select),
-                                 taxon = c(1:2, 0), fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
+                                 taxon = 0:2, fam = c("gaussian", "binomial"), path = tar_read("dir_publish")) {
   
   parname <- selectParnameEnvironmental(parname, Environmental)
   if(is.null(parname)) return(NULL)
@@ -1088,6 +1092,7 @@ fitEnvironmental_glm <- function(Environmental, parname, envname = tar_read(pred
     filter(.variable == parname) %>%
     rename(v = .value)
   
+  if(nrow(E) == 0) return(NULL)
   
   formula <- paste0("v ~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
   

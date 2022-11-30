@@ -274,9 +274,9 @@ targets_parname <- list(
                "ba_fix_ko_b_l_r")),
   
   ## these are mainly for distinguishing different plots
-  tar_target(parname_environmental_ba_env, parname_environmental_env[str_starts(parname_environmental_env, "ba")]), ## note: these have only tax %in% 1:2
-  tar_target(parname_environmental_ba_select_env, setdiff(parname_environmental_ba_env, "ba_init")),
-  tar_target(parname_environmental_binomial_env, c("major_init", "major_fix")), ## note: these have only tax == 0
+  tar_target(parname_environmental_ba_env, parname_environmental_env[str_starts(parname_environmental_env, "ba")]),
+  tar_target(parname_environmental_ba_select_env, setdiff(parname_environmental_ba_env, c("ba_init", "ba_frac_fix", "ba_frac_init"))),
+  tar_target(parname_environmental_binomial_env, c("major_init", "major_fix", "ba_frac_fix")),
   tar_target(parname_environmental_gaussian_env, setdiff(parname_sim_environmental_env, c("L_loc", "L_log"))), ## note: these have only tax %in% 1:2
   tar_target(parname_environmental_diff_env, setdiff(statename_environmentalko_fracdiff_env, "ba_frac_diff_fix_ko_2_env_b_other_s")), ## note: 1. these have only tax == 0
   
@@ -852,6 +852,10 @@ targets_posterior_env <- list(
              predictPoly(cmdstanfit = fit_env, parname_Beta = parname_Beta_env, Envgrid = Envgrid_env)),
   
   
+  tar_target(alltaxa_enironmental_env, c("Fagus.sylvatica" = 1, "others" = 2, "both" = 0)),
+  tar_target(comb_taxa_enironmental_binomial_env, c(0, 0, 1:2)),
+  tar_target(comb_par_enironmental_binomial_env, c("major_init", "major_fix", "ba_frac_fix", "ba_frac_fix")),
+
   tar_target(fit_environmental_gaussian_env,
              fitEnvironmental_glm(Environmental_env, parname = parname_environmental_gaussian_env, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
              pattern = cross(parname_environmental_gaussian_env, taxon_s),
@@ -865,8 +869,9 @@ targets_posterior_env <- list(
              pattern = map(parname_environmental_diff_env),
              iteration = "list"),
   tar_target(fit_environmental_binomial_env,
-             fitEnvironmental_gam(Environmental_env, parname = parname_environmental_binomial_env, envname = predictor_select, taxon = 0, fam = "binomial", path = dir_publish),
-             pattern = map(parname_environmental_binomial_env),
+             fitEnvironmental_gam(Environmental_env, parname = comb_par_enironmental_binomial_env, envname = predictor_select, taxon = comb_taxa_enironmental_binomial_env, fam = "binomial", path = dir_publish),
+             pattern = map(comb_par_enironmental_binomial_env, comb_taxa_enironmental_binomial_env), ## more efficient manual version, avoids superfical loading of Environmental_env
+             # pattern = cross(parname_environmental_binomial_env, alltaxa_enironmental_env), ## although this is crossing alltaxa 0:2, only the cases in the data (either 0, e.g. for major_fix, or 1 and 2 for frac) will be used
              iteration = "list"),
   tar_target(fit_environmental_env,
              c(fit_environmental_ba_env, fit_environmental_binomial_env), # excluded: fit_environmental_gaussian_env, i.e. all the pure parameters
@@ -930,6 +935,13 @@ targets_posterior_env <- list(
              plotBinary(Environmental = Environmental_env,
                         parname = str_to_sentence(parname_plotorder),
                         fit_bin = fit_environmental_binomial_env[[sapply(fit_environmental_binomial_env, function(x) attr(x, "par") == "major_fix") %>% which()]],
+                        binarythreshold = 0.5, facetscale = "free", plotlog = F,
+                        path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
+  
+  tar_target(plot_binary_par_classic_env, ## binary division of the posterior based on majority
+             plotBinary(Environmental = Environmental_env,
+                        parname = str_to_sentence(parname_plotorder),
+                        fit_bin = NULL,
                         binarythreshold = 0.5, facetscale = "free", plotlog = F,
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
   
