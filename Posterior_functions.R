@@ -246,8 +246,8 @@ predictPoly <- function(cmdstanfit, parname_Beta, Envgrid) {
   draws <- cmdstanfit$draws(variables = parname_Beta) %>%
     as_draws_rvars()
   
-  envname <- names(Envgrid)
-  formula <- paste0("~ 1 + ", paste0("poly(", envname, ", 2, raw = T)" , collapse = " + "))
+  envname_s <- attr(Envgrid, "envname_s") ## ! Use the scaled predictors!
+  formula <- paste0("~ 1 + ", paste0("poly(", envname_s, ", 2, raw = T)" , collapse = " + "))
   Matrix <- model.matrix(as.formula(formula), data = Envgrid)
   dimnames(Matrix) <- NULL ## character dimnames were fatal for %**%
 
@@ -256,7 +256,7 @@ predictPoly <- function(cmdstanfit, parname_Beta, Envgrid) {
     Beta1 <- as_draws_matrix(Beta[, 1, drop = T])
     Beta2 <- as_draws_matrix(Beta[, 2, drop = T])
     
-    ## %**% matrix multiplication from rvars does not seem to work with the called function tensorA::mul.tensor()
+    ## %**% matrix multiplication from rvars does not seem to work with the internally called function tensorA::mul.tensor()
     mult <- function(A, b) {
       return(A %*% b)
     }
@@ -270,7 +270,7 @@ predictPoly <- function(cmdstanfit, parname_Beta, Envgrid) {
     p2_sd <- apply(p2, MARGIN = 1, sd)
     
     ## uncertainties could also be carried on, to ggplot
-    P1 <- data.frame(Envgrid, z = p1_mean, sd_z = p1_sd, taxon = "Fagus")
+    P1 <- data.frame(Envgrid, z = p1_mean, sd_z = p1_sd, taxon = "Fagus") ## Envgrid includes scaled and unscaled version of predictors
     P2 <- data.frame(Envgrid, z = p2_mean, sd_z = p2_sd, taxon = "others")
     
     P <- bind_rows(P1, P2)
@@ -284,6 +284,8 @@ predictPoly <- function(cmdstanfit, parname_Beta, Envgrid) {
   
   attr(Predictions, "name_x") <- attr(Envgrid, "name_x")
   attr(Predictions, "name_y") <- attr(Envgrid, "name_y")
+  attr(Predictions, "name_x_s") <- attr(Envgrid, "name_x_s")
+  attr(Predictions, "name_y_s") <- attr(Envgrid, "name_y_s")
 
   return(Predictions)
 }
@@ -380,9 +382,12 @@ formatEnvgrid <- function(data_stan, envname, res = 500) {
   
   L <- attr(data_stan, "Long")
   
+  name_x <- envname[1]
+  name_y <- envname[2]
+    
   envname_s <- paste0(envname, "_s")
-  name_x <- envname_s[1]
-  name_y <- envname_s[2]
+  name_x_s <- envname_s[1]
+  name_y_s <- envname_s[2]
   
   O <- cbind(x = L[[name_x]], y = L[[name_y]])
   range_x <- range(L[[name_x]], na.rm = T)
@@ -397,11 +402,20 @@ formatEnvgrid <- function(data_stan, envname, res = 500) {
   P <- expand.grid(x, y) %>% setNames(c(name_x, name_y))
   points <- st_sfc(lapply(1:nrow(P), function(i) st_point(c(as.matrix(P[i,])))))
   
+  range_x_s <- range(L[[name_x_s]], na.rm = T)
+  range_y_s <- range(L[[name_y_s]], na.rm = T)
+  x_s <- seq(range_x_s[1], range_x_s[2], length.out = res)
+  y_s <- seq(range_y_s[1], range_y_s[2], length.out = res)
+  P_s <- expand.grid(x_s, y_s) %>% setNames(c(name_x_s, name_y_s))
+  
   iscovered <- st_covered_by(points, poly, sparse = F)
-  P_covered <- P[iscovered,]
+  P_covered <- cbind(P[iscovered,], P_s[iscovered,])
   
   attr(P_covered, "name_x") <- name_x
   attr(P_covered, "name_y") <- name_y
+  attr(P_covered, "name_x_s") <- name_x_s
+  attr(P_covered, "name_y_s") <- name_y_s
+  attr(P_covered, "envname_s") <- envname_s
   
   return(P_covered)
 }
@@ -1015,6 +1029,7 @@ fitEnvironmental_gam <- function(Environmental, parname, envname = tar_read(pred
     cat(textext, file = file.path(path, "fits_Environmental", paste0("Environmental", "_", parname, "_", taxon, "_summary_gam.tex")), fill = T) %>% invisible()
   }
   
+  attr(fit, "E") <- E
   attr(fit, "tax") <- taxon
   attr(fit, "par") <- parname
   
@@ -1105,6 +1120,7 @@ fitEnvironmental_glm <- function(Environmental, parname, envname = tar_read(pred
     stargazer(fit, out = file.path(path, "fits_Environmental", paste0("Environmental", "_", parname, "_", taxon, "_summary_glm.tex"))) %>% invisible()
   }
   
+  attr(fit, "E") <- E
   attr(fit, "tax") <- taxon
   attr(fit, "par") <- parname
   
@@ -1131,10 +1147,14 @@ predictEnvironmental <- function(fit, envname,
   res <- 400
   name_x <- envname[1]
   name_y <- envname[2]
+  name_x_s <- paste0(name_x, "_s")
+  name_y_s <- paste0(name_y, "_s")
+  E <- attr(fit, "E")
+  range_x_s <- range(E[[name_x_s]], na.rm = T)
+  range_y_s <- range(E[[name_y_s]], na.rm = T)
   
   if (is(fit, "cv.glmnet")) {
     
-    E <- attr(fit, "E")
     O <- cbind(x = E[[name_x]], y = E[[name_y]])
     range_x <- range(E[[name_x]], na.rm = T)
     range_y <- range(E[[name_y]], na.rm = T)
@@ -1167,8 +1187,13 @@ predictEnvironmental <- function(fit, envname,
   P <- expand.grid(x, y) %>% setNames(c(name_x, name_y))
   points <- st_sfc(lapply(1:nrow(P), function(i) st_point(c(as.matrix(P[i,])))))
   
+  x_s <- seq(range_x_s[1], range_x_s[2], length.out = res)
+  y_s <- seq(range_y_s[1], range_y_s[2], length.out = res)
+  P_s <- expand.grid(x_s, y_s) %>% setNames(c(name_x_s, name_y_s))
+  
   iscovered <- st_covered_by(points, poly, sparse = F)
   P_covered <- P[iscovered,]
+  P_s_covered <- P_s[iscovered,]
   
   if (is(fit, "cv.glmnet")) {
     
@@ -1180,11 +1205,12 @@ predictEnvironmental <- function(fit, envname,
     p <- predict(fit, newdata = P_covered, type = "response") %>% c() # %>% matrix(nrow = res, ncol = res)
   }
   
-  D <- cbind(P_covered, z = p)
-  
+  D <- cbind(P_covered, P_s_covered, z = p)
   
   attr(D, "name_x") <- name_x
   attr(D, "name_y") <- name_y
+  attr(D, "name_x_s") <- name_x_s
+  attr(D, "name_y_s") <- name_y_s
   attr(D, "taxon") <- taxon
   attr(D, "parname") <- parname
   
@@ -2275,13 +2301,23 @@ plotMarginal <- function(Marginal, parname,
 # surfaces <- tar_read(surface_environmental_env)
 # basename <- tar_read(basename_fit_env)
 # path <-  tar_read(dir_publish)
-plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname = "major_fix", commonscale = FALSE, removevar = NULL,
+# Waterlevel <- tar_read(Waterlevel)
+plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname = "major_fix", Waterlevel = NULL, commonscale = FALSE, removevar = NULL,
                               basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
                               color = tar_read(twocolors), divscale = tar_read(divergingfillscale), themefun = theme_fagus) {
   
   
   ## Remove NULL objects from list (these can emerge from cross(parname, species), e.g., when this combinanation is not in gen quants)
   surfaces[sapply(surfaces, is.null)] <- NULL
+  
+  
+  ## Handling annotations for waterlevels
+  if (!is.null(Waterlevel)) {
+    Waterlevel$value_s <- Surfaces$waterLevel_loc_s[match(Waterlevel$value, Surfaces$waterLevel_loc)]
+    Waterlevel$value_s[is.na(Waterlevel$value_s)] <- sapply(Waterlevel$value[is.na(Waterlevel$value_s)],
+                                                            function(x) Surfaces$waterLevel_loc_s[which.min(abs(x - Surfaces$waterLevel_loc))])
+  }
+  
   
   ## Handling of the binary border
   parname_surfaces <- sapply(surfaces, function(s) attr(s, "parname")) ## Will be used to name plots below
@@ -2310,6 +2346,7 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
       
       name_x <- attr(D, "name_x")
       name_y <- attr(D, "name_y")
+      name_y_s <- attr(D, "name_y_s")
       parname <- attr(D, "parname")
       taxon <- attr(D, "taxon")
       
@@ -2323,20 +2360,21 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
       
       direction <- if (isanyreversepar) 1 else -1
       
-      plot <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
+      plot <- ggplot(D, aes_string(x = name_x, y = name_y_s, z = "z")) +
         geom_raster(aes(fill = z)) +
         metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
         # scale_color_manual(values = color) +
         scale_fill_viridis_c(direction = direction) +
         
-        { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
+        { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
                                     data = Binary, bins = 2, col = "black", linetype = 2, size = 0.8, inherit.aes = F) } + 
-        { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") } +
+        { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y_s, label = "label"), col = "black") } +
+        
+        { if (!is.null(Waterlevel)) scale_y_reverse(breaks = c(-1, 0, 1, Waterlevel$value_s), labels = c(-1, 0, 1, Waterlevel$en)) else scale_y_reverse()} +
         
         themefun() +
-        ggtitle(paste(parname, taxon)) +
-        scale_y_reverse() ## invert water level scale, consistent with Ökogramm.
-      
+        ggtitle(paste(parname, taxon))
+
       return(plot)
     }
     
@@ -2353,6 +2391,7 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
     
     name_x <- attr(surfaces[[1]], "name_x")
     name_y <- attr(surfaces[[2]], "name_y")
+    name_y_s <- attr(surfaces[[2]], "name_y_s")
     
     surfaces <- lapply(surfaces, function(S) bind_cols(S, tax = attr(S, "taxon"), variable = attr(S, "parname")))
     
@@ -2362,14 +2401,14 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
     
     # divscale <- function(...) scale_fill_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
     
-    plots <- ggplot(D, aes_string(x = name_x, y = name_y, z = "z")) +
+    plots <- ggplot(D, aes_string(x = name_x, y = name_y_s, z = "z")) +
       geom_raster(aes(fill = z)) +
       metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
       divscale() +
       
-      { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y, z = "z"),
+      { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
                                   data = Binary, bins = 2, col = "black", linetype = 2, size = 0.8, inherit.aes = F) } + 
-      { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y, label = "label"), col = "black") } +
+      { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y_s, label = "label"), col = "black") } +
       
       themefun() +
       scale_y_reverse() + ## invert water level scale, consistent with Ökogramm.
@@ -2388,21 +2427,35 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
 ## plotPoly --------------------------------
 # Surfaces <- tar_read(Surfaces_poly_env) ## A data.frame with surfaces by .variable
 # Environmental <- tar_read(Environmental_env)
+# Binary <- surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "par") == "major_fix") %>% which()]]
+# Waterlevel <- tar_read(Waterlevel)
 # basename <- tar_read(basename_fit_env)
 # path <-  tar_read(dir_publish)
-plotPoly <- function(Surfaces, Environmental = NULL,
+plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel = NULL,
                      basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
                      color = tar_read(twocolors), divscale = tar_read(divergingcolorscale), themefun = theme_fagus) {
 
   name_x <- attr(Surfaces, "name_x")
   name_y <- attr(Surfaces, "name_y")
+  name_y_s <- attr(Surfaces, "name_y")
+  
+  ## Handling annotations for waterlevels
+  if (!is.null(Waterlevel)) {
+    Waterlevel$value_s <- Surfaces$waterLevel_loc_s[match(Waterlevel$value, Surfaces$waterLevel_loc)]
+    Waterlevel$value_s[is.na(Waterlevel$value_s)] <- sapply(Waterlevel$value[is.na(Waterlevel$value_s)],
+                                                           function(x) Surfaces$waterLevel_loc_s[which.min(abs(x - Surfaces$waterLevel_loc))])
+  }
+  
+  ## Handling of the binary border
+  bnotnull <- !is.null(Binary)
+  Binary$z <- if(bnotnull) round(Binary$z) else NULL
   
   if (!is.null(Environmental)) {
     
     E <- Environmental %>%
       dplyr::filter(str_starts(.variable, "sum_ko_") & str_ends(.variable, "fix")) %>% 
       rename(parname = .variable) %>%
-      group_by_at(c("tax", "parname", "loc", name_x, name_y)) %>%
+      group_by_at(c("tax", "parname", "loc", name_x, name_y_s)) %>%
       dplyr::summarize(value = mean(.value, na.rm = T), .groups = "drop") %>%
       mutate(isdirectcontribution = str_extract(parname, "[1-2]") == tax) %>%
       filter(isdirectcontribution) %>%
@@ -2411,25 +2464,28 @@ plotPoly <- function(Surfaces, Environmental = NULL,
       mutate(parname = paste0(parname, "_log")) %>%
       filter(parname %in% unique(Surfaces$parname))
     
-    }
+  }
   
   # divscale <- function(...) scale_color_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
   
-  plot <- ggplot(Surfaces, aes_string(x = name_x, y = name_y)) +
+  plot <- ggplot(Surfaces, aes_string(x = name_x, y = name_y_s)) +
     # geom_raster(aes(fill = z)) +
     
     { if (!is.null(Environmental)) geom_jitter(data = E, mapping = aes(color = value), width = 0.1, height = 0.2, alpha = 0.6) } + # width = 0.3, height = 0.3, size = 0.5
     { if (!is.null(Environmental)) divscale() } +
+
+    { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
+                                data = Binary, bins = 2, col = "black", linetype = 2, size = 0.8, inherit.aes = F) } +
     
     metR::geom_contour2(data = Surfaces, mapping = aes(z = z, label = round(..level.., 3)), # 
                         colour = "gray30", global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) +
     
-
+    { if (!is.null(Waterlevel)) scale_y_reverse(breaks = c(-1, 0, 1, Waterlevel$value_s), labels = c(-1, 0, 1, Waterlevel$de)) else scale_y_reverse()} +
     
     facet_grid(rows = vars(parname), cols = vars(taxon)) +
     themefun() +
-    
-    scale_y_reverse()
+    theme(aspect.ratio = 1)
+
 
   ggsave(filename = paste0(path, "/", basename, "_plot_poly", ".pdf"),
          plot = plot, device = "pdf", width = 10, height = 40, limitsize = FALSE)

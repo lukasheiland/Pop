@@ -341,6 +341,10 @@ targets_wrangling <- list(
   list(
     tar_target(predictor_select,
                c("phCaCl_esdacc", "waterLevel_loc")), # "alt_loc"
+    tar_target(Waterlevel,
+               data.frame(de = c("trocken", "mäßig trocken", "mäßig frisch", "frisch", "feucht", "nass"),
+                          en = c("dry", "moderately dry", "moderate", "moderately moist", "moist", "wet"),
+                          value = c(-8, -3, 0, 2, 8, 10))),
     tar_target(Env_clean,
                cleanEnv(Data_env, predictor_select)),
     ## Summarize (mutate) predictors per cluster, but keep plot-level disturbance data etc.
@@ -916,19 +920,21 @@ targets_posterior_env <- list(
   ## Plot
   tar_target(plot_poly_env,
              plotPoly(Surfaces_poly_env, Environmental = Environmental_env,
+                      Binary = surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "par") == "major_fix") %>% which()]],
+                      Waterlevel = Waterlevel,
                       basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingcolorscale, themefun = theme_fagus)),
 
   tar_target(plot_environmental_env,
-             plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix", commonscale = F, removevar = NULL,
+             plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = F, removevar = NULL,
                                basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
   tar_target(plot_diff_env,
-             plotEnvironmental(surfaces = surface_diff_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
+             plotEnvironmental(surfaces = surface_diff_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
                                basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
   tar_target(plot_diff_interp_env,
-             plotEnvironmental(surfaces = surface_diff_interp_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
+             plotEnvironmental(surfaces = surface_diff_interp_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
                                basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
   tar_target(plot_diff_interp_sd_env,
-             plotEnvironmental(surfaces = surface_diff_interp_sd_env, binaryname = "major_fix", commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
+             plotEnvironmental(surfaces = surface_diff_interp_sd_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
                                basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
 
   tar_target(plot_binary_par_env,
