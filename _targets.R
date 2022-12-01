@@ -104,7 +104,7 @@ targets_settings <- list(
                prior_b_log = c(-3, 1),
                prior_c_a_log = c(-7, 1),
                prior_c_b_log = c(-6, 1),
-               prior_c_j_log = c(-12, 2),
+               prior_c_j_log = c(-10, 2),
                prior_g_log = c(-6, 1),
                prior_h_log = c(-3, 1),
                prior_l_log = c(5, 1),
@@ -343,8 +343,8 @@ targets_wrangling <- list(
                c("phCaCl_esdacc", "waterLevel_loc")), # "alt_loc"
     tar_target(Waterlevel,
                data.frame(de = c("trocken", "mäßig trocken", "mäßig frisch", "frisch", "feucht", "nass"),
-                          en = c("dry", "moderately dry", "moderate", "moderately moist", "moist", "wet"),
-                          value = c(-8, -3, 0, 2, 8, 10))),
+                          en = c("dry", "moderately dry", "moderately moderate", "moderate", "moist", "wet"),
+                          value = c(-8, -5.5, -4, -2, 5, 8))),
     tar_target(Env_clean,
                cleanEnv(Data_env, predictor_select)),
     ## Summarize (mutate) predictors per cluster, but keep plot-level disturbance data etc.

@@ -463,23 +463,23 @@ parameters {
   vector[N_species] s_log_center_env2;
   
   // Spread of the parameters along environmental axes
-  vector<upper=0>[N_species] b_log_spread_env1_100; // bell-shaped
-  vector<lower=0>[N_species] c_a_log_spread_env1_100;  // inverse bell-shaped
+  vector<upper=0>[N_species] b_log_spread_env1_10; // bell-shaped
+  vector<lower=0>[N_species] c_a_log_spread_env1_10;  // inverse bell-shaped
   vector<lower=0>[N_species] c_b_log_spread_env1_100; // inverse bell-shaped
-  vector<lower=0>[N_species] c_j_log_spread_env1_100; // inverse bell-shaped
+  vector<lower=0>[N_species] c_j_log_spread_env1_10; // inverse bell-shaped
   vector<upper=0>[N_species] g_log_spread_env1_100; // bell-shaped
   vector<upper=0>[N_species] h_log_spread_env1_100; // bell-shaped
-  vector<upper=0>[N_species] r_log_spread_env1_100; // (inverse?) bell-shaped
-  vector<lower=0>[N_species] s_log_spread_env1_100; // (inverse?) bell-shaped
+  vector<upper=0>[N_species] r_log_spread_env1_10; // (inverse?) bell-shaped
+  vector<lower=0>[N_species] s_log_spread_env1_10; // (inverse?) bell-shaped
   
-  vector<upper=0>[N_species] b_log_spread_env2_100;
-  vector<lower=0>[N_species] c_a_log_spread_env2_100;
+  vector<upper=0>[N_species] b_log_spread_env2_10;
+  vector<lower=0>[N_species] c_a_log_spread_env2_10;
   vector<lower=0>[N_species] c_b_log_spread_env2_100;
-  vector<lower=0>[N_species] c_j_log_spread_env2_100;
+  vector<lower=0>[N_species] c_j_log_spread_env2_10;
   vector<upper=0>[N_species] g_log_spread_env2_100;
   vector<upper=0>[N_species] h_log_spread_env2_100;
-  vector<upper=0>[N_species] r_log_spread_env2_100;
-  vector<lower=0>[N_species] s_log_spread_env2_100;
+  vector<upper=0>[N_species] r_log_spread_env2_10;
+  vector<lower=0>[N_species] s_log_spread_env2_10;
 
 
   //// Dispersion
@@ -503,23 +503,23 @@ transformed parameters {
   array[N_locs] vector<lower=0>[N_pops] state_init;
   
   // Spread of the parameters along environmental axes
-  vector<upper=0>[N_species] b_log_spread_env1 = b_log_spread_env1_100 * 1e-2; // bell-shaped
-  vector<lower=0>[N_species] c_a_log_spread_env1 = c_a_log_spread_env1_100 * 1e-2;  // inverse bell-shaped
+  vector<upper=0>[N_species] b_log_spread_env1 = b_log_spread_env1_10 * 1e-1; // bell-shaped
+  vector<lower=0>[N_species] c_a_log_spread_env1 = c_a_log_spread_env1_10 * 1e-1;  // inverse bell-shaped
   vector<lower=0>[N_species] c_b_log_spread_env1 = c_b_log_spread_env1_100 * 1e-2; // inverse bell-shaped
-  vector<lower=0>[N_species] c_j_log_spread_env1 = c_j_log_spread_env1_100 * 1e-2; // inverse bell-shaped
+  vector<lower=0>[N_species] c_j_log_spread_env1 = c_j_log_spread_env1_10 * 1e-1; // inverse bell-shaped
   vector<upper=0>[N_species] g_log_spread_env1 = g_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
   vector<upper=0>[N_species] h_log_spread_env1 = h_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
-  vector<upper=0>[N_species] r_log_spread_env1 = r_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
-  vector<lower=0>[N_species] s_log_spread_env1 = s_log_spread_env1_100 * 1e-2; // (inverse?) bell-shaped
+  vector<upper=0>[N_species] r_log_spread_env1 = r_log_spread_env1_10 * 1e-1; // (inverse?) bell-shaped
+  vector<lower=0>[N_species] s_log_spread_env1 = s_log_spread_env1_10 * 1e-1; // (inverse?) bell-shaped
   
-  vector<upper=0>[N_species] b_log_spread_env2 = b_log_spread_env2_100 * 1e-2;
-  vector<lower=0>[N_species] c_a_log_spread_env2  = c_a_log_spread_env2_100 * 1e-2;
+  vector<upper=0>[N_species] b_log_spread_env2 = b_log_spread_env2_10 * 1e-1;
+  vector<lower=0>[N_species] c_a_log_spread_env2  = c_a_log_spread_env2_10 * 1e-1;
   vector<lower=0>[N_species] c_b_log_spread_env2 = c_b_log_spread_env2_100 * 1e-2;
-  vector<lower=0>[N_species] c_j_log_spread_env2 = c_j_log_spread_env2_100 * 1e-2;
+  vector<lower=0>[N_species] c_j_log_spread_env2 = c_j_log_spread_env2_10 * 1e-1;
   vector<upper=0>[N_species] g_log_spread_env2 = g_log_spread_env2_100 * 1e-2;
   vector<upper=0>[N_species] h_log_spread_env2 = h_log_spread_env2_100 * 1e-2;
-  vector<upper=0>[N_species] r_log_spread_env2 = r_log_spread_env2_100 * 1e-2;
-  vector<lower=0>[N_species] s_log_spread_env2 = s_log_spread_env2_100 * 1e-2;
+  vector<upper=0>[N_species] r_log_spread_env2 = r_log_spread_env2_10 * 1e-1;
+  vector<lower=0>[N_species] s_log_spread_env2 = s_log_spread_env2_10 * 1e-1;
   
   //// Environmental effects
   matrix[N_beta, N_species] Beta_b_log = transformToNormal(b_log, b_log_center_env1, b_log_center_env2, b_log_spread_env1, b_log_spread_env2);
@@ -1027,14 +1027,21 @@ generated quantities {
  
         
         //// Counterfactual fix point iteration --------------------------
-        // 0. Fagus getting the other s
+        // 0. Fagus getting the other s //#
         matrix[N_beta, N_species] Beta_s_log_other_s = transformToNormal(s_log[{2, 2}], s_log_center_env1, s_log_center_env2, s_log_spread_env1, s_log_spread_env2);
         row_vector[N_species] s_log_other_s = X[loc,] * Beta_s_log_other_s;
+        vector[N_species] other_s = exp(s_log_other_s');
         
-        array[N_fix] vector[N_species] Fix_other_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], exp(s_log_other_s'), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_other_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], other_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         ba_fix_other_s[loc] = Fix_other_s[4];
         ba_frac_fix_other_s[loc] = ba_fix_other_s[loc, 1] / sum(ba_fix_other_s[loc]);
         major_fix_other_s[loc] = ba_fix_other_s[loc, 1] > ba_fix_other_s[loc, 2];
+        
+        array[N_fix] vector[N_species] Fix_ko_1_env_b_other_s = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], other_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        vector[N_species] ba_fix_ko_1_env_b_other_s = Fix_ko_1_env_b_other_s[4];
+        real ba_frac_fix_ko_1_env_b_other_s = ba_fix_ko_1_env_b_other_s[1] / sum(ba_fix_ko_1_env_b_other_s);
+
+        
         
         
         // 1. K.O. of all regeneration
@@ -1125,7 +1132,7 @@ generated quantities {
         
         real ba_frac_fix_loc_1 = ba_frac_fix[loc, 1];
         ba_frac_diff_fix_ko_1_env_b[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_b[loc];
-        ba_frac_diff_fix_ko_1_env_b_other_s[loc]  =  ba_frac_fix_other_s[loc] - ba_frac_fix_ko_1_env_b[loc]; //#
+        ba_frac_diff_fix_ko_1_env_b_other_s[loc]  =  ba_frac_fix_other_s[loc] - ba_frac_fix_ko_1_env_b_other_s; //#
         ba_frac_diff_fix_ko_1_env_b_c_b[loc]      =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_b_c_b[loc];
         ba_frac_diff_fix_ko_1_env_c_a[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_c_a[loc];
         ba_frac_diff_fix_ko_1_env_c_b[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_c_b[loc];
