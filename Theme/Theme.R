@@ -17,10 +17,15 @@ theme_fagus <- function(...) {
           
           panel.grid = element_line(colour = "#444444"), ## only slightly less weight than full black
           axis.ticks = element_line(colour = "black", size = rel(0.8), lineend = "round"),
+          axis.ticks.y.right = element_line(colour = "grey40"),
+          
           axis.title.x = element_text(margin = margin(t = 3)), #add margin to x-axis title
           axis.title.y = element_text(margin = margin(r = 2.5)),
+          axis.title.y.right = element_text(colour = "grey40"),
+          
           axis.text.x = element_text(margin = margin(t = 6)),
-          axis.text.y = element_text(margin = margin(r = 4.5))
+          axis.text.y = element_text(margin = margin(r = 4.5)),
+          axis.text.y.right = element_text(colour = "grey40")
           ) + 
     
     theme(text = element_text(size = 14, family = "Helvetica")) # theme(text = element_text(size = 14, family = "SF Compact Rounded")) # theme(text = element_text(size = 14, family = "TGL17"))
