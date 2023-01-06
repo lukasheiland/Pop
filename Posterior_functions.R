@@ -96,11 +96,9 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 
 ## formatEnvironmental --------------------------------
 # cmdstanfit <- tar_read("fit_env")
-# parname <- tar_read("parname_environmental_env")
-# envname <- tar_read("predictor_select")
-# data_stan <- tar_read("data_stan_priors_offset_env")
-formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = data_stan_priors_offset,
-                                envname = predictor_select, locmeans = F) {
+# af(formatEnvironmental)
+formatEnvironmental <- function(cmdstanfit, parname = tar_read(parname_env), data_stan = tar_read(data_stan_priors_offset_env),
+                                envname = tar_read(predictor_select), locmeans = F, jitter = 0.1) {
   
   varname_draws <- cmdstanfit$metadata()$stan_variables
   parname <- unique(c(parname, "major_fix")) ## explicitly include major fix, because it is assumed later
@@ -149,16 +147,21 @@ formatEnvironmental <- function(cmdstanfit, parname = parname_env, data_stan = d
       ungroup()
   }
   
-  envname_all <- c(envname, paste0(envname, "_s"))
+  envname_alt <- sapply(envname, function(n) if( str_ends(n, "_s") ) str_remove(n, "_s$") else paste0(n, "_s"))
+  envname_all <- unname(c(envname, envname_alt))
+  envname_all_jittered <- c(envname_all, paste(envname_all, "jittered", sep = "_"))
   
   ## Add environmental values by loc
   Env <- attr(data_stan, "Long") %>% ## use "Long_BA" for an sf with point coordinates
+    
     group_by(loc) %>%
     summarize_at(envname_all, function(x) first(x[!is.na(x)])) %>%
-    ungroup()
+    ungroup() %>%
+    
+    mutate(across(any_of(envname_all), function(x) x + runif(x, -jitter, jitter), .names = "{col}_jittered"))
   
   n_row <- nrow(Draws_env)
-  Draws_env <- bind_cols(Draws_env, Env[match(Draws_env$loc, Env$loc), envname_all]) %>%
+  Draws_env <- bind_cols(Draws_env, Env[match(Draws_env$loc, Env$loc), envname_all_jittered]) %>%
     filter(!(.variable %in% c("major_fix") & .value == 9)) %>%
     ungroup()
   
@@ -180,6 +183,126 @@ formatMarginal <- function(Environmental) {
   return(D)
 }
 
+
+## formatCred -----------------------------
+# Environmental <- tar_read("Diff_environmentalko_env")
+# basename <- tar_read("basename_fit_env")
+# af(formatCred)
+formatCred <- function(Environmental, envname = tar_read("predictor_select"), credlevel = 0.9,
+                       basename, path = tar_read("dir_publish"),  color = tar_read("twocolors")) {
+  
+  envname_alt <- sapply(envname, function(n) if( str_ends(n, "_s") ) str_remove(n, "_s$") else paste0(n, "_s"))
+  allenvname <- c(unname(envname), unname(envname_alt))
+  allenvname <- c(allenvname, paste0(allenvname, "_jittered"))
+  
+  C <- Environmental %>%
+    mutate(ispositive = .value > 0, isnegative = .value < 0, absolute = abs(.value)) %>%
+    rename(variable = .variable) %>%
+    
+    group_by(variable, tax) %>%
+    mutate(var_tot =  var(.value), meanabs_tot = mean(abs(.value))) %>%
+    ungroup()
+  
+  variable_exclude <- c("ba_frac_diff_fix_ko_1_env_b_c_b", "ba_frac_diff_fix_ko_2_env_b_c_b", "ba_frac_diff_fix_ko_1_env_b_other_s", "major_fix")
+  C_ex <- dplyr::filter(C, !variable %in% variable_exclude) ## This is important to include only meanabs_tot values that are within the interesting variables
+  meanabs_tot_include <- c(head(sort(unique(C_ex$meanabs_tot)), n = 1), tail(sort(unique(C_ex$meanabs_tot)), n = 3))
+  
+  C %<>% 
+    group_by_at(c("variable", "tax", "loc", allenvname)) %>%
+    summarize(var_tot = first(var_tot), meanabs_tot = first(meanabs_tot),
+              mean_loc = mean(.value), # meanabs_loc = mean(absolute),
+              freqpositive = mean(ispositive), freqnegative = mean(isnegative),
+              iscrediblypositive = freqpositive > credlevel, iscrediblynegative = freqnegative > credlevel,
+              # ismeanpositive = mean(.value) > 0, ismeannegative = mean(.value) < 0,
+              across(any_of(allenvname), first),
+              isdifferentfrom0 = iscrediblypositive | iscrediblynegative,
+              isnotdifferentfrom0 = !isdifferentfrom0,
+              .groups = "drop") %>%
+    
+    group_by(variable, tax) %>%
+    mutate(var_mean_loc = var(mean_loc),
+           freqdifferentfrom0 = mean(isdifferentfrom0),
+           mostlydifferentfrom0 = freqdifferentfrom0 > 0.5,
+           included = !( variable %in% variable_exclude ) &
+                      meanabs_tot %in% meanabs_tot_include) %>%
+    ungroup() %>%
+    mutate(effect = case_when(iscrediblypositive ~ "pos",
+                              iscrediblynegative ~ "neg",
+                              isnotdifferentfrom0 ~ "nd")) %>%
+    mutate(effect = factor(effect, levels = c("neg", "nd", "pos")))
+    
+  
+  ## Frequency of plots with either positive or negative difference.
+  Summary_cred <- C %>%
+    filter(variable != "major_fix") %>%
+    group_by(variable, tax) %>%
+    summarize(Par = str_extract(first(variable), "(?<=env_).*$"),
+              Parameter = suppressWarnings( fct_recode(Par, "l" = "l", "r" = "r", "s" = "s", "c_j" = "c_j", "g" = "g", "c_a" = "c_a", "h" = "h", "b" = "b", "c_b" = "c_b",
+                                                                  "b and c_b" = "b_c_b", "b given the s of others" = "b_other_s")),
+              Species = suppressWarnings( fct_recode(str_extract(first(variable), "\\d+"),  "Fagus" = "1", "others" = "2") ),
+              order = match(Par, c("l", "r", "s", "c_j", "g", "c_a", "h", "b", "b_other_s", "c_b", "b_c_b")),
+              Mean = first(meanabs_tot),
+              Var_loc = first(var_mean_loc),
+              Var_tot = first(var_tot),
+              Freq = first(freqdifferentfrom0), # paste0( formatNumber(first(freqdifferentfrom0) * 100), "%"),
+              included = first(included),
+              Included = if_else(first(included), "check-circle", ""),
+              .groups = "drop") %>%
+    group_by(Species) %>%
+    arrange(order, .by_group = T) %>%
+    ungroup() %>%
+    bind_rows(data.frame(Parameter = "Max", Freq = 1, Var_loc = max(.$Var_tot), Var_tot = max(.$Var_tot))) ## add a row of maximal values to scale to. Var_loc is intended to be scaled with Var_tot
+  
+  write.csv(Summary_cred, file.path(path, paste0(basename, "_summary_freq_cred.csv")))
+  
+  Table_cred <- Summary_cred %>%
+    select(-c("tax", "variable", "order", "Par", "included")) %>%
+    gt() %>%
+    
+    cols_align(align = "left", columns = any_of("Parameter")) %>%
+    
+    fmt_number(columns = c("Mean", "Var_loc", "Var_tot"), decimals = 4) %>%
+    # gt_theme_538() %>%
+    
+    gt_duplicate_column(Mean, after = "Mean") %>% ## this is a bugfix: 'keep_column = F' in gt_plt_bar does not work properly with multiple columns
+    gt_plt_bar(column = Mean_dupe, color = color[1], keep_column = F, width = 20) %>% 
+    
+    gt_duplicate_column(Var_loc, after = "Var_loc") %>%
+    gt_plt_bar(column = Var_loc_dupe, color = color[1], keep_column = F, width = 20) %>%
+    
+    gt_duplicate_column(Var_tot, after = "Var_tot") %>%
+    gt_plt_bar(column = Var_tot_dupe, color = color[1], keep_column = F, width = 20) %>%
+    
+    fmt_percent(columns = "Freq", decimals = 1) %>%
+    gt_duplicate_column(Freq, after = "Freq") %>%
+    gt_plt_bar_pct(column = Freq_dupe, fill = color[1], height = 20, scaled = F) %>%
+    
+    gt_fa_column(column = Included) %>%
+    cols_align(align = "center", columns = any_of("Included")) %>%
+    
+    data_color(column = Species, palette = color) %>%
+    
+    cols_label(Mean = "Mean of absolute differences", Mean_dupe = "",
+               Var_loc = "Variance of plot means", Var_loc_dupe = "",
+               Var_tot = "Variance overall", Var_tot_dupe = "",
+               Freq = "Credibly different plots", Freq_dupe = "% _________",
+               Included = "Incl.") %>%
+    tab_style(style = list(cell_text(style = "italic")), locations = cells_body(columns = Species)) %>%
+    gtable_squash_rows(nrow(.))
+  
+  tablepath <- file.path(path, "Table_cred.html")
+  gtsave(Table_cred, tablepath)
+
+  ## Generate levels of env combinations. Verbosity for efficiency.
+  ## pH has to be rounded to even produce non-unique levels
+  # C$isuniqueloc <- !duplicated(C$loc)
+  # C_ul <- C[C$isuniqueloc,]
+  # Envlevel <- data.frame(envlevel = paste(round(C_ul[[envname[1]]], digits = 3), round(C_ul[[envname[2]]], digits = 3), sep = "_"),
+  #                        loc = C_ul$loc)
+
+  attr(C, "included") <- Summary_cred$variable[Vectorize(isTRUE)(Summary_cred$included)]
+  return(C)
+}
 
 
 ## formatStates --------------------------------
@@ -517,8 +640,7 @@ summarizeMarginal <- function(Marginal, basename, path) {
 ## summarizeStates --------------------------------
 # States <- tar_read("States")[[1]]
 # data_stan <- tar_read("data_stan")
-# path <- tar_read("dir_publish")
-summarizeStates <- function(States, data_stan, basename, path) {
+summarizeStates <- function(States, data_stan, basename, path = tar_read("dir_publish")) {
   
   D <- attr(data_stan, "Long_BA") %>%
     st_drop_geometry() %>% ## avoiding potential problems from sf methods
@@ -1540,7 +1662,7 @@ plotStates <- function(States,
     ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
     scale_color_manual(values = color) +
     scale_fill_manual(values = color)
-  # geom_jitter(position = position_jitter(0.2))
+
   
   #### When
   # whenvar <- c("ba_init", "ba_fix")
@@ -2298,24 +2420,39 @@ plotMarginal <- function(Marginal, parname,
 
 
 ## plotEnvironmental --------------------------------
+# af(plotEnvironmental)
 # surfaces <- tar_read(surface_environmental_env)
+# surfaces <- c(tar_read(surface_diff_env), list(Binary = tar_read(Surface_binary_env)))
 # basename <- tar_read(basename_fit_env)
 # path <-  tar_read(dir_publish)
+# Cred <- tar_read(Cred_env)
 # Waterlevel <- tar_read(Waterlevel)
-plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname = "major_fix", Waterlevel = NULL, commonscale = FALSE, removevar = NULL,
+plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = NULL, Cred = NULL, commonscale = FALSE, removevar = "",
                               basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
-                              color = tar_read(twocolors), divscale = tar_read(divergingfillscale), themefun = theme_fagus) {
+                              color = tar_read(twocolors), ps = tar_read(plotsettings), themefun = theme_fagus) {
   
   
   ## Remove NULL objects from list (these can emerge from cross(parname, species), e.g., when this combinanation is not in gen quants)
   surfaces[sapply(surfaces, is.null)] <- NULL
+  surfaces <- surfaces[!sapply(surfaces, function(s) isTRUE(attr(s, "parname") %in% removevar))]
   
+  ## Handling the addition of points for not sufficent credibility
+  crednotnull <- !is.null(Cred)
+  # if(crednotnull) {
+  #   Cred %<>% dplyr::filter(isnotdifferentfrom0) # use only those points that are not credible
+  # }
   
   ## Handling annotations for waterlevels
   if (!is.null(Waterlevel)) {
-    Waterlevel$value_s <- Surfaces$waterLevel_loc_s[match(Waterlevel$value, Surfaces$waterLevel_loc)]
-    Waterlevel$value_s[is.na(Waterlevel$value_s)] <- sapply(Waterlevel$value[is.na(Waterlevel$value_s)],
-                                                            function(x) Surfaces$waterLevel_loc_s[which.min(abs(x - Surfaces$waterLevel_loc))])
+    Surface <- surfaces[[1]]
+    Waterlevel$value_s <- Surface$waterLevel_loc_s[ match(Waterlevel$value, Surface$waterLevel_loc) ]
+    isnavalue_s <- is.na(Waterlevel$value_s)
+    if( any(isnavalue_s) ) Waterlevel$value_s[isnavalue_s] <- sapply(Waterlevel$value[isnavalue_s],
+                                                                     function(x) Surface$waterLevel_loc_s[which.min(abs(x - Surface$waterLevel_loc))])
+    ## common y-scale for plotting
+    yscale <- scale_y_reverse(minor_breaks = 0, breaks = c(Waterlevel$value_s), labels = c(Waterlevel$en), sec.axis = sec_axis(~ ., breaks = c(-1, 0, 1)))
+  } else {
+    yscale <- scale_y_reverse() 
   }
   
   
@@ -2328,6 +2465,7 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
   
   if(bnotnull) {
     
+    ## Find some quick-hack position for labelling the range of Fagus predominance
     Binary_1 <- dplyr::filter(Binary, z == 1) %>% ## is ordered, so that slicing should return some central location
       slice(round(nrow(.)*0.5)) %>%
       bind_cols(label = "Fagus predominant")
@@ -2347,8 +2485,13 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
       name_x <- attr(D, "name_x")
       name_y <- attr(D, "name_y")
       name_y_s <- attr(D, "name_y_s")
+      name_y_s <- if ( is.null(name_y_s) ) name_y else name_y_s
       parname <- attr(D, "parname")
       taxon <- attr(D, "taxon")
+      
+      if(crednotnull) {
+        C <- Cred %>% filter(variable == parname)
+      }
       
       parstart_reverse <- c("S_", "C_j_", "C_a_", "C_b_",
                             "sum_ko_1_s_fix", "sum_ko_2_s_fix",
@@ -2361,19 +2504,30 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
       direction <- if (isanyreversepar) 1 else -1
       
       plot <- ggplot(D, aes_string(x = name_x, y = name_y_s, z = "z")) +
+        ps$hlines +
+        
         geom_raster(aes(fill = z)) +
         metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
         # scale_color_manual(values = color) +
         scale_fill_viridis_c(direction = direction) +
         
         { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
-                                    data = Binary, bins = 2, col = "black", linetype = 2, size = 0.8, inherit.aes = F) } + 
-        { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y_s, label = "label"), col = "black") } +
+                                    data = Binary, bins = 2, col = "black", linetype = "dotted", size = 0.8, inherit.aes = F) } + 
         
-        { if (!is.null(Waterlevel)) scale_y_reverse(breaks = c(-1, 0, 1, Waterlevel$value_s), labels = c(-1, 0, 1, Waterlevel$en)) else scale_y_reverse()} +
+        # { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y_s, label = "label"), col = "black") } +
         
+        { if(crednotnull) geom_point(data = C, mapping = aes_string(x = paste0(name_x, "_jittered"), y = paste0(name_y_s, "_jittered"),
+                                                                    shape = "effect", col = "isdifferentfrom0", alpha = "isdifferentfrom0"),
+                                              size = 1.3, inherit.aes = F) } + # pos = ps$jitter_points ## jitter is added manually for consistency across facets
+        { if(crednotnull) scale_shape_manual(values = c("⊖", "⦾", "⊕")) } +
+        { if(crednotnull) scale_color_manual(values = c("grey50", "black")) } +
+        { if(crednotnull) scale_alpha_manual(values = c(0.3, 0.8)) } +
+        
+        yscale +
         themefun() +
-        ggtitle(paste(parname, taxon))
+        ps$aspect +
+        ggtitle(paste(parname, taxon)) +
+        ps$axislabls
 
       return(plot)
     }
@@ -2383,40 +2537,62 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
     plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 2)
     
     ggsave(filename = paste0(path, "/", basename, "_plotgrid_environmental_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
-           plot = plotgrid, device = "pdf", width = 15, height = 4 * length(plots), limitsize = FALSE)
+           plot = plotgrid, device = "pdf", width = 15, height = (ps$height_plot + 0.8) * length(plots)/2, limitsize = FALSE)
     
   } else {
     
     #### 2. CASE: commonscale, i.e. common plot with facets
     
     name_x <- attr(surfaces[[1]], "name_x")
-    name_y <- attr(surfaces[[2]], "name_y")
-    name_y_s <- attr(surfaces[[2]], "name_y_s")
+    name_y <- attr(surfaces[[1]], "name_y")
+    name_y_s <- attr(surfaces[[1]], "name_y_s")
+    name_y_s <- if ( is.null(name_y_s) ) name_y else name_y_s
     
-    surfaces <- lapply(surfaces, function(S) bind_cols(S, tax = attr(S, "taxon"), variable = attr(S, "parname")))
+    if(crednotnull) {
+      Cred %<>% filter(!(variable %in% c(binaryname, removevar)))
+    }
+    
+    surfaces <- surfaces[-i_binary]
+    surfaces <- lapply(surfaces, function(S) bind_cols(S, z_binary = Binary$z, tax = attr(S, "taxon"), variable = attr(S, "parname")))
     
     D <- bind_rows(surfaces, .id = "bindingid") %>%
-      suppressMessages( mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "others" = "2", "both" = "0")) ) %>%
-      dplyr::filter(!variable %in% removevar)
+      suppressMessages( mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "others" = "2", "both" = "0")) )
     
-    # divscale <- function(...) scale_fill_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
+    z_maxabs <- max(abs(D$z), na.rm = T)
     
-    plots <- ggplot(D, aes_string(x = name_x, y = name_y_s, z = "z")) +
-      geom_raster(aes(fill = z)) +
-      metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
-      divscale() +
+    if(crednotnull) D <- bind_rows(grid = D, points = Cred, .id = "pointsorgrid") ## this makes sure that both data sets actually have the same cols and that faceting on the whole dataset works while geoms are based on the two subsets. Note that for "points" z is NA!
+    
+    plots <- ggplot(D, aes_string(x = name_x, y = name_y_s, z = "z")) + # group = "variable"
+      ps$hlines +
       
-      { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
-                                  data = Binary, bins = 2, col = "black", linetype = 2, size = 0.8, inherit.aes = F) } + 
-      { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y_s, label = "label"), col = "black") } +
+      geom_raster(data = D[D$pointsorgrid == "grid",], aes(fill = z)) +
       
+      { if(bnotnull) geom_contour(data = D[D$pointsorgrid == "grid",],
+                                  mapping = aes(z = z_binary),
+                                  bins = 2, col = "black", linetype = "dotted", size = 0.8, inherit.aes = T) } + 
+      # { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y_s, label = "label"), col = "black") } +
+      
+      { if(crednotnull) geom_point(data = D[D$pointsorgrid == "points",],
+                                   mapping = aes(x = !!sym(paste0(name_x, "_jittered")), y = !!sym(paste0(name_y_s, "_jittered")), shape = effect, col = isdifferentfrom0, alpha = isdifferentfrom0),
+                                   size = 1.3) } + # pos = ps$jitter_points ## ## jitter is added manually for consistency across facets
+      { if(crednotnull) scale_shape_manual(values = c("⊖", "⦾", "⊕")) } + # { if(crednotnull) scale_shape_manual(values = c("-", ".", "+")) } +
+      { if(crednotnull) scale_color_manual(values = c("grey50", "black")) } +
+      { if(crednotnull) scale_alpha_manual(values = c(0.3, 0.8)) } +
+      
+      metR::geom_contour2(data = D[D$pointsorgrid == "grid",], mapping = aes(z = z, label = round(..level.., 4)), col = "white", label_colour = "black") +
+      ps$divergingfillscale(limits = c(-z_maxabs, z_maxabs), name = "difference") +
+      
+      { if( length(unique(D$tax)) > 1 ) facet_wrap(~ variable + tax, ncol = 2) else facet_wrap(~ variable, ncol = 2, labeller = labeller(variable = function(x) str_replace(x, fixed("ba_frac_diff_fix_ko_"), "difference "))) } +
+      
+      yscale +
       themefun() +
-      scale_y_reverse() + ## invert water level scale, consistent with Ökogramm.
-      { if( length(unique(D$tax)) > 1 ) facet_wrap(~ variable + tax, ncol = 2) else facet_wrap(~ variable, ncol = 2) }
-
+      ps$aspect +
+      ps$axislabs
     
     ggsave(filename = paste0(path, "/", basename, "_plot_environmental_commonscale_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
-           plot = plots, device = "pdf", width = 10, height = 2.2 * length(surfaces), limitsize = FALSE)
+           plot = plots, device = cairo_pdf, width = 10, height = (ps$height_plot + 0.2) * length(surfaces)/2, limitsize = FALSE)
+    ggsave(filename = paste0(path, "/", basename, "_plot_environmental_commonscale_", format(Sys.time(), "%H.%M.%S"), ".png"),
+           plot = plots, device = "png", width = 10, height = (ps$height_plot + 0.2) * length(surfaces)/2, limitsize = FALSE)
     
   }
   
@@ -2433,17 +2609,23 @@ plotEnvironmental <- function(surfaces = surface_environmental_env, binaryname =
 # path <-  tar_read(dir_publish)
 plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel = NULL,
                      basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
-                     color = tar_read(twocolors), divscale = tar_read(divergingcolorscale), themefun = theme_fagus) {
+                     color = tar_read(twocolors), ps = tar_read(plotsettings), themefun = theme_fagus) {
 
   name_x <- attr(Surfaces, "name_x")
   name_y <- attr(Surfaces, "name_y")
-  name_y_s <- attr(Surfaces, "name_y")
+  name_y_s <- attr(Surfaces, "name_y_s")
+  envname_all <- c(name_x, name_y, name_y_s) %>% c(paste0(., "_jittered"))
   
   ## Handling annotations for waterlevels
   if (!is.null(Waterlevel)) {
     Waterlevel$value_s <- Surfaces$waterLevel_loc_s[match(Waterlevel$value, Surfaces$waterLevel_loc)]
-    Waterlevel$value_s[is.na(Waterlevel$value_s)] <- sapply(Waterlevel$value[is.na(Waterlevel$value_s)],
-                                                           function(x) Surfaces$waterLevel_loc_s[which.min(abs(x - Surfaces$waterLevel_loc))])
+    isnavalue_s <- is.na(Waterlevel$value_s)
+    if( any(isnavalue_s) ) Waterlevel$value_s[isnavalue_s] <- sapply(Waterlevel$value[isnavalue_s],
+                                                                     function(x) Surfaces$waterLevel_loc_s[which.min(abs(x - Surfaces$waterLevel_loc))])
+    ## common y-scale for plotting
+    yscale <- scale_y_reverse(minor_breaks = 0, breaks = c(Waterlevel$value_s), labels = c(Waterlevel$en), sec.axis = sec_axis(~ ., breaks = c(-1, 0, 1)))
+  } else {
+    yscale <- scale_y_reverse() 
   }
   
   ## Handling of the binary border
@@ -2455,7 +2637,7 @@ plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel =
     E <- Environmental %>%
       dplyr::filter(str_starts(.variable, "sum_ko_") & str_ends(.variable, "fix")) %>% 
       rename(parname = .variable) %>%
-      group_by_at(c("tax", "parname", "loc", name_x, name_y_s)) %>%
+      group_by_at(c("tax", "parname", "loc", envname_all)) %>%
       dplyr::summarize(value = mean(.value, na.rm = T), .groups = "drop") %>%
       mutate(isdirectcontribution = str_extract(parname, "[1-2]") == tax) %>%
       filter(isdirectcontribution) %>%
@@ -2464,33 +2646,154 @@ plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel =
       mutate(parname = paste0(parname, "_log")) %>%
       filter(parname %in% unique(Surfaces$parname))
     
+    maxabs <- max(abs(E$value))
   }
   
   # divscale <- function(...) scale_color_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
   
+  
   plot <- ggplot(Surfaces, aes_string(x = name_x, y = name_y_s)) +
     # geom_raster(aes(fill = z)) +
     
-    { if (!is.null(Environmental)) geom_jitter(data = E, mapping = aes(color = value), width = 0.1, height = 0.2, alpha = 0.6) } + # width = 0.3, height = 0.3, size = 0.5
-    { if (!is.null(Environmental)) divscale() } +
+    ps$hlines +
+    
+    { if (!is.null(Environmental)) geom_point(data = E, mapping = aes_string(x = paste0(name_x, "_jittered"), ## jitter is added manually for consistency across facets, instead of ## pos = ps$jitter_points 
+                                                                             y = paste0(name_y_s, "_jittered"),
+                                                                             color = "value"), ) } + # alpha = 0.6, size = 0.5
+    { if (!is.null(Environmental)) ps$divergingcolorscale(limits = c(-maxabs, maxabs), name = "contribution") } +
 
     { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
-                                data = Binary, bins = 2, col = "black", linetype = 2, size = 0.8, inherit.aes = F) } +
+                                data = Binary, bins = 2, col = "black", linetype = "dotted", size = 0.8, inherit.aes = F) } +
     
-    metR::geom_contour2(data = Surfaces, mapping = aes(z = z, label = round(..level.., 3)), # 
+    metR::geom_contour2(data = Surfaces, mapping = aes(z = z, label = round(..level.., 4)), # 
                         colour = "gray30", global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) +
     
-    { if (!is.null(Waterlevel)) scale_y_reverse(breaks = c(-1, 0, 1, Waterlevel$value_s), labels = c(-1, 0, 1, Waterlevel$de)) else scale_y_reverse()} +
-    
-    facet_grid(rows = vars(parname), cols = vars(taxon)) +
+    yscale +
+    facet_grid(rows = vars(parname),
+               cols = vars(taxon),
+               labeller = labeller(.rows = function(x) paste("log", str_remove(x, "_log")))) +
     themefun() +
-    theme(aspect.ratio = 1)
-
+    ps$aspect +
+    ps$axislabs
 
   ggsave(filename = paste0(path, "/", basename, "_plot_poly", ".pdf"),
-         plot = plot, device = "pdf", width = 10, height = 40, limitsize = FALSE)
+         plot = plot, device = "pdf", width = 10, height = (ps$height_plot + 0.6) * n_distinct(Surfaces$parname)/2, limitsize = FALSE)
   
   return(NULL) # return(plot)
+}
+
+
+## plotTriptych --------------------------------
+# Environmental <- tar_read(Environmental_env)
+# Surface_init <- surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_init") %>% which())]]
+# Surface_fix <- surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_fix") %>% which())]]
+# Binary <- surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "par") == "major_fix") %>% which()]]
+# Waterlevel <- tar_read(Waterlevel)
+# basename <- tar_read(basename_fit_env)
+# path <-  tar_read(dir_publish)
+plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary, Waterlevel = NULL,
+                         basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
+                         color = tar_read(twocolors), ps = tar_read(plotsettings), themefun = theme_fagus) {
+  
+
+  name_x <- attr(Surface_init, "name_x")
+  name_y <- attr(Surface_init, "name_y")
+  name_y_s <- attr(Surface_init, "name_y_s")
+  envname_all <- c(name_x, name_y, name_y_s) %>% c(paste0(., "_jittered"))
+  
+  ## Handling annotations for waterlevels
+  if (!is.null(Waterlevel)) {
+    Waterlevel$value_s <- Surface_init$waterLevel_loc_s[match(Waterlevel$value, Surface_init$waterLevel_loc)]
+    isnavalue_s <- is.na(Waterlevel$value_s)
+    if( any(isnavalue_s) ) Waterlevel$value_s[isnavalue_s] <- sapply(Waterlevel$value[isnavalue_s],
+                                                                     function(x) Surface_init$waterLevel_loc_s[which.min(abs(x - Surface_init$waterLevel_loc))])
+    ## common y-scale for plotting
+    yscale <- scale_y_reverse(minor_breaks = 0, breaks = c(Waterlevel$value_s), labels = c(Waterlevel$en), sec.axis = sec_axis(~ ., breaks = c(-1, 0, 1)))
+  } else {
+    yscale <- scale_y_reverse() 
+  }
+
+  rectlimits <- c(xmin = 3.5, xmax = max(Surface_init[[name_x]]), ymin = -6, ymax = 4.3)
+  rectlimits[3:4] <- sapply(rectlimits[3:4], function(x) Surface_init$waterLevel_loc_s[which.min(abs(x - Surface_init$waterLevel_loc))])
+
+  #### 0. Binary border --------------
+  Binary$z <- round(Binary$z)
+  
+  
+  #### 1. Panel center: environmental variable from the model fit as points --------------
+  parname_select <- "ba_frac_init"
+  tax_select <- 1
+  E <- Environmental %>%
+    dplyr::filter(.variable == parname_select & tax == tax_select) %>% 
+    dplyr::rename(parname = .variable) %>%
+    group_by_at(c("tax", "parname", "loc", envname_all)) %>%
+    dplyr::summarize(value = mean(.value, na.rm = T), .groups = "drop") %>%
+    mutate(taxon = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>%
+    suppressWarnings() ## for fct_recode
+
+  plot_init <- ggplot(E, aes_string(x = name_x, y = name_y_s, color = "value")) +
+    ps$hlines +
+    metR::geom_contour2(data = Surface_init, mapping = aes(z = z, label = round(..level.., 3)), col = "grey50") +
+    # geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
+    #              data = Binary, bins = 2, col = "grey", linetype = "dotted", size = 0.8, inherit.aes = F)+
+    geom_point(data = E, mapping = aes(x = !!sym(paste0(name_x, "_jittered")), ## jitter is added manually for consistency across facets, instead of # pos = ps$jitter_points
+                                       y = !!sym(paste0(name_y_s, "_jittered")),
+                                       color = value)) + # alpha = 0.6)
+    scale_color_viridis_c(direction = -1, limits = ps$lims_colorscale) +
+    yscale +
+    themefun() +
+    ps$aspect +
+    theme(legend.position = "left") +
+    ps$axislabs +
+    ps$removeylabs +
+    ggtitle("Initial state")
+  
+  legend <- get_legend(plot_init)
+  plot_init <- plot_init + theme(legend.position = "none")
+  
+  
+  #### 2. Panel right: "Surface_fix" --------------------
+  parname_2 <- attr(Surface_fix, "par")
+  plot_fix <- ggplot(Surface_fix, aes_string(x = name_x, y = name_y_s, z = "z")) +
+    ps$hlines +
+    geom_raster(aes(fill = z)) +
+    scale_fill_viridis_c(direction = -1, limits = ps$lims_colorscale) +
+    
+    geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
+                 data = Binary, bins = 2, col = "black", linetype = "dotted", size = 0.8, inherit.aes = F) +
+    
+    metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
+    
+    yscale +
+    themefun() +
+    ps$aspect +
+    theme(legend.position = "none") +
+    ps$axislabs +
+    ps$removeleftylabs +
+    ggtitle("Equilibrium")
+  
+  #### 3. Panel left: theory --------------------
+  plot_theory <- ggplot(Surface_fix, aes_string(x = name_x, y = name_y_s)) +
+    # geom_blank() +
+    geom_rect(mapping=aes(xmin = rectlimits[1], xmax = rectlimits[2], ymin = rectlimits[3], ymax = rectlimits[4]), color = "black", linetype = "dotted", fill = NA) +
+    { if (!is.null(Waterlevel)) scale_y_reverse(breaks = Waterlevel$value_s, labels = Waterlevel$en, minor_breaks = NULL) else scale_y_reverse() } +
+    scale_x_continuous(minor_breaks = NULL) +
+    themefun() +
+    ps$aspect +
+    ps$axislabs +
+    ggtitle("Ellenberg theory")
+  
+  
+  plotstrip <- cowplot::plot_grid(plot_theory, plot_init, plot_fix, nrow = 1, rel_heights = 1, align = "v") # , axis = "bt", 
+  
+  save_plot(filename = paste0(path, "/", basename, "_plot_triptych", ".pdf"),
+            plot = plotstrip, device = "pdf", base_asp = 1, base_height = ps$height_plot, ncol = 3, nrow = 1)
+  save_plot(filename = paste0(path, "/", basename, "_plot_triptych", ".png"),
+            plot = plotstrip, device = "png", base_asp = 1, base_height = ps$height_plot, ncol = 3, nrow = 1)
+  save_plot(filename = paste0(path, "/", basename, "_plot_triptych_legend", ".pdf"),
+            plot = legend, device = "pdf", base_height = ps$height_plot, ncol = 1, nrow = 1)
+  
+  return(NULL) # return(plotstrip)
 }
 
 
@@ -2643,7 +2946,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename, plot
   aes_lines <- aes(x = time, y = abundance, group = grp, col = tax)
   
   plot <- ggplot(Trajectories, aes_lines) +
-    { if(thicker) geom_line(size = 0.5, alpha = 0.06) else geom_line(size = 0.2, alpha = 0.05) } +
+    { if(thicker) geom_line(linewidth = 0.5, alpha = 0.06) else geom_line(linewidth = 0.2, alpha = 0.05) } +
     facet_wrap(~stage, scales = "free_y",
                labeller = labeller(stage = c(J = "J (count [ha^-1])",
                                              A = "A (count [ha^-1])",
