@@ -30,7 +30,7 @@ tar_make(c("fit_env"))
 tar_make_future(c("summary_env",
                   "summary_states_env",
                   "summary_marginal_env",
-                  # "residuals_env",
+                  "residuals_env",
                   "residuals_init_env",
                   # "plots_trace_env",
                   
@@ -59,7 +59,8 @@ tar_make_future(c("summary_env",
                   # "plot_posterior_phi_env",
                   
                   # "plots_conditional_env",
-                  "plots_states_env"
+                  # "plots_states_env",
+                  "plot_predominant_env"
                   ),
                 workers = if(onserver) 32 else 3, reporter = "timestamp_positives")
 

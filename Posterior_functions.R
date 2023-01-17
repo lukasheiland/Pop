@@ -723,14 +723,14 @@ generateResiduals <- function(cmdstanfit, data_stan_priors, yhatvar = c("y_hat_o
     grp <- droplevels(grp[isnotinit])
   }
   
-  png(paste0(path, "/", basename_cmdstanfit, "_", "DHARMa", ".png"), width = 1600, height = 1000)
+  png(paste0(path, "/", basename_cmdstanfit, "_", "DHARMa", if(includeinit) "_includeinit" else "", ".png"), width = 1600, height = 1000)
   plot(residuals, quantreg = T, smoothScatter = F)
   dev.off()
   
   # residuals_recalc <- recalculateResiduals(residuals, group = grp)
   # plot(residuals_recalc, quantreg = T, smoothScatter = F)
   
-  png(paste0(path, "/", basename_cmdstanfit, "_", "DHARMa_grouped", ".png"), width = 2200, height = 800)
+  png(paste0(path, "/", basename_cmdstanfit, "_", "DHARMa_grouped", if(includeinit) "_includeinit" else "", ".png"), width = 2200, height = 800)
   plot(residuals, form = grp, quantreg = T, smoothScatter = F)
   dev.off()
   
@@ -2128,7 +2128,8 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
 
 ## plotPairs --------------------------------
 # parname  <- tar_read("parname_plotorder")
-# cmdstanfit  <- tar_read("fit_test")
+# parname  <- tar_read("parname_A_env")
+# cmdstanfit  <- tar_read("fit_env")
 # cmdstanfit  <- tar_read("fit")[[1]]
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
@@ -2161,23 +2162,23 @@ plotPairs <- function(cmdstanfit, parname,
   pairsplot <- mcmc_pairs(d,
                           # pars = c("..."), transform = list(sigma = "log"),
                           diag_fun = "dens",
-                          # diag_args = "",
-                          off_diag_fun = "hex", # "scatter",
-                          # off_diag_args = list(size = 0.3, alpha = 0.5), ## for "scatter"
+                          # diag_args = "scatter",
+                          off_diag_fun = "scatter", # "hex"
+                          off_diag_args = list(size = 0.2, alpha = 0.25), ## for "scatter"
                           # condition = pairs_condition(nuts = "lp__"),
                           # lp = logposterior,
                           np = nutsparam,
                           np_style = pairs_style_np(div_color = "red",
                                                     div_shape = 4,
-                                                    div_size = 1,
+                                                    div_size = 0.3,
                                                     div_alpha = 1,
                                                     td_color = "black",
                                                     td_shape = 3,
                                                     td_size = 1,
                                                     td_alpha = 1)) # + theme_fagus()
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".png"), pairsplot, device = "png", height = 28, width = 28)
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".pdf"), pairsplot, device = "pdf", height = 28, width = 28)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".png"), pairsplot, device = "png", height = 36, width = 36)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".pdf"), pairsplot, device = "pdf", height = 36, width = 36)
   
   return(list('pairs' = pairsplot))
 }
@@ -2733,13 +2734,15 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary, Water
 
   plot_init <- ggplot(E, aes_string(x = name_x, y = name_y_s, color = "value")) +
     ps$hlines +
-    metR::geom_contour2(data = Surface_init, mapping = aes(z = z, label = round(..level.., 3)), col = "grey50") +
     # geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
     #              data = Binary, bins = 2, col = "grey", linetype = "dotted", size = 0.8, inherit.aes = F)+
     geom_point(data = E, mapping = aes(x = !!sym(paste0(name_x, "_jittered")), ## jitter is added manually for consistency across facets, instead of # pos = ps$jitter_points
                                        y = !!sym(paste0(name_y_s, "_jittered")),
                                        color = value)) + # alpha = 0.6)
     scale_color_viridis_c(direction = -1, limits = ps$lims_colorscale) +
+    
+    metR::geom_contour2(data = Surface_init, mapping = aes(z = z, label = round(..level.., 3)), col = "grey50") +
+    
     yscale +
     themefun() +
     ps$aspect +

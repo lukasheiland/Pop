@@ -26,6 +26,7 @@ source("Fit_seedlings_functions.R")
 source("Fit_functions.R")
 source("Posterior_functions.R")
 source("Theme/Theme.R")
+source("Helper_functions.R")
 
 
 ### Options
@@ -37,7 +38,8 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "MASS", "mgcv", "glmnet", "itsadug", "interp",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
-             "stargazer", "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "scales", "gganimate", "metR", "colorspace",
+             "stargazer", "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", # "emojifont",
+             "scales", "gganimate", "metR", "colorspace", "gt", "gtExtras", "svglite",
              "future.apply")
 tar_option_set(packages = package)
 
@@ -60,12 +62,12 @@ targets_settings <- list(
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")
-  tar_target(n_locations, 2000),
+  tar_target(n_locations, 1600),
   
   ## Threshold to discriminate A and B [mm]
   ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile
   ## lower in the data is 100, so that: 100mm > A > threshold_dbh > B
-  tar_target(threshold_dbh, 180), ## [mm]
+  tar_target(threshold_dbh, 200), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
@@ -100,22 +102,30 @@ targets_settings <- list(
   ),
   
   tar_target(weakpriors_env,
-             list(
-               prior_b_log = c(-3, 1),
-               prior_c_a_log = c(-7, 1),
-               prior_c_b_log = c(-6, 1),
-               prior_c_j_log = c(-10, 2),
-               prior_g_log = c(-6, 1),
-               prior_h_log = c(-3, 1),
-               prior_l_log = c(5, 1),
-               prior_r_log = c(4, 1),
-               prior_s_log = c(-6, 1)
-             )
+             list(prior_b_log = c(-3, 2),
+                  prior_c_a_log = c(-7, 2),
+                  prior_c_b_log = c(-6, 2),
+                  prior_c_j_log = c(-13, 3),
+                  prior_g_log = c(-6, 2),
+                  prior_h_log = c(-3, 1),
+                  prior_l_log = c(4, 2),
+                  prior_r_log = c(4, 1),
+                  prior_s_log = c(-5, 1)
+                  )
   ),
   
   tar_target(twocolors, c("#007A7F", "#FFCC11")), ## Formerly "#119973", Other greens include: Spanish Green '#208E50', Feldgrau '#3A7867' # Jade: #0FA564 # See green: #0E8C55
-  tar_target(divergingcolorscale, function(...) scale_color_continuous_divergingx(palette = "BrBG", ...)), # function(n) rev(pals::ocean.curl(n))
-  tar_target(divergingfillscale, function(...) scale_fill_continuous_divergingx(palette = "BrBG", ...)),
+  tar_target(plotsettings,
+             list(jitter_points = position_jitter(seed = 1, width = 0.1, height = 0.1),
+                  divergingcolorscale = function(...) scale_color_continuous_divergingx(palette = "BrBG", ...), # function(n) rev(pals::ocean.curl(n))
+                  divergingfillscale = function(...) scale_fill_continuous_divergingx(palette = "BrBG", ...),
+                  lims_colorscale = 0:1,
+                  axislabs = labs(x = "soil pH", y = "soil water level"),
+                  aspect = theme(aspect.ratio = 1),
+                  removeylabs = theme(axis.title.y = element_blank(), axis.text.y = element_blank()),
+                  removeleftylabs = theme(axis.title.y.left = element_blank(), axis.text.y.left = element_blank()),
+                  hlines = lapply(-1:1, function(y) geom_hline(aes(yintercept = y), linetype = 2, col = "grey40", size = 0.4)),
+                  height_plot = 5.3)),
   tar_target(themefunction, theme_fagus)
   
 )
@@ -341,10 +351,12 @@ targets_wrangling <- list(
   list(
     tar_target(predictor_select,
                c("phCaCl_esdacc", "waterLevel_loc")), # "alt_loc"
+    
     tar_target(Waterlevel,
-               data.frame(de = c("trocken", "mäßig trocken", "mäßig frisch", "frisch", "feucht", "nass"),
-                          en = c("dry", "moderately dry", "moderately moderate", "moderate", "moist", "wet"),
-                          value = c(-8, -5.5, -4, -2, 5, 8))),
+               data.frame(de = c("trocken", "mäßig trocken", "mäßig frisch", "frisch", "(mäßig feucht)", "feucht", "nass", "sehr nass"),
+                          en = c("dry", "slightly dry", "slightly damp", "damp", "(slightly moist)", "moist", "wet", "very wet"),
+                          value = c(-7, -5, -3, -1, 1, 3, 5, 7))), ## highly acidic soils (pH<3.5); neutral = 7
+    
     tar_target(Env_clean,
                cleanEnv(Data_env, predictor_select)),
     ## Summarize (mutate) predictors per cluster, but keep plot-level disturbance data etc.
@@ -633,8 +645,7 @@ targets_fit_env <- list(
              cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 8, iter_warmup = 800, iter_sampling = 250, fitpath = dir_fit,
-                      adapt_delta = 0.95)
+                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 500, adapt_delta = 0.95, fitpath = dir_fit)
              ),
   tar_target(basename_fit_env,
              getBaseName(fit_env))
@@ -818,7 +829,7 @@ targets_posterior_env <- list(
   
   ## Summarize
   tar_target(summary_env,
-             summarizeFit(cmdstanfit = fit_env, exclude = exclude,
+             summarizeFit(cmdstanfit = fit_env, exclude = setdiff(exclude, "phi_obs_inv_sqrt"),
                           publishpar = c(parname_plotorder, parname_vertex_env), path = dir_publish)),
   tar_target(summary_states_env,
              summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
@@ -827,9 +838,11 @@ targets_posterior_env <- list(
   tar_target(Freq_converged_env,
            summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
 
-  ## Generate
+  ## Generate 
   tar_target(residuals_env,
              generateResiduals(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
+  tar_target(residuals_init_env,
+             generateResiduals(cmdstanfit = fit_env, data_stan_priors_env, includeinit = TRUE, path = dir_publish)),
   tar_target(Trajectories_avg_env,
              generateTrajectories(cmdstanfit = fit_env, data_stan_priors_env, parname, locparname = parname_trajectories_environmental_env,
                                   time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "drawsperlocs_all")),
@@ -841,10 +854,13 @@ targets_posterior_env <- list(
   
   tar_target(Environmental_env,
              formatEnvironmental(cmdstanfit = fit_env, parname = parname_environmental_env, ## formatEnvironmental() always includes major_fix in the output variables, regardless of parname!
-                                 data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),
+                                 data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F, jitter = 0.1)),
   tar_target(Diff_environmentalko_env,
              formatEnvironmental(cmdstanfit = fit_env, parname = parname_environmental_diff_env,
                                  data_stan = data_stan_priors_offset_env, envname = predictor_select, locmeans = F)),
+  tar_target(Cred_env,
+             formatCred(Diff_environmentalko_env, envname = predictor_select, credlevel = 0.9, basename = basename_fit_env, path = dir_publish)),
+  
   tar_target(Envgrid_env,
              formatEnvgrid(data_stan_priors_offset_env, envname = predictor_select, res = 500)),
   tar_target(Marginal_env,
@@ -857,8 +873,8 @@ targets_posterior_env <- list(
   
   
   tar_target(alltaxa_enironmental_env, c("Fagus.sylvatica" = 1, "others" = 2, "both" = 0)),
-  tar_target(comb_taxa_enironmental_binomial_env, c(0, 0, 1:2)),
-  tar_target(comb_par_enironmental_binomial_env, c("major_init", "major_fix", "ba_frac_fix", "ba_frac_fix")),
+  tar_target(comb_taxa_enironmental_binomial_env, c(0, 0, 1, 1:2)),
+  tar_target(comb_par_enironmental_binomial_env, c("major_init", "major_fix", "ba_frac_init", "ba_frac_fix", "ba_frac_fix")),
 
   tar_target(fit_environmental_gaussian_env,
              fitEnvironmental_glm(Environmental_env, parname = parname_environmental_gaussian_env, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
@@ -878,20 +894,19 @@ targets_posterior_env <- list(
              # pattern = cross(parname_environmental_binomial_env, alltaxa_enironmental_env), ## although this is crossing alltaxa 0:2, only the cases in the data (either 0, e.g. for major_fix, or 1 and 2 for frac) will be used
              iteration = "list"),
   tar_target(fit_environmental_env,
-             c(fit_environmental_ba_env, fit_environmental_binomial_env), # excluded: fit_environmental_gaussian_env, i.e. all the pure parameters
+             c(fit_environmental_binomial_env, fit_environmental_ba_env), # excluded: fit_environmental_gaussian_env, i.e. all the pure parameters
              iteration = "list"),
-  tar_target(fit_diff_env,
-             c(fit_environmental_diff_env, fit_environmental_binomial_env),
-             iteration = "list"),  
-  
   
   tar_target(surface_environmental_env,
              predictEnvironmental(fit_environmental_env, envname = predictor_select, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
              pattern = map(fit_environmental_env),
              iteration = "list"),
+  tar_target(Surface_binary_env,
+             surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "par") == "major_fix") %>% which()]]),
+  
   tar_target(surface_diff_env,
-             predictEnvironmental(fit_diff_env, envname = predictor_select, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
-             pattern = map(fit_diff_env),
+             predictEnvironmental(fit_environmental_diff_env, envname = predictor_select, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
+             pattern = map(fit_environmental_diff_env),
              iteration = "list"),
   
   tar_target(surface_diff_interp_env,
@@ -920,23 +935,35 @@ targets_posterior_env <- list(
   ## Plot
   tar_target(plot_poly_env,
              plotPoly(Surfaces_poly_env, Environmental = Environmental_env,
-                      Binary = surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "par") == "major_fix") %>% which()]],
+                      Binary = NULL, # = Surface_binary_env
                       Waterlevel = Waterlevel,
-                      basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingcolorscale, themefun = theme_fagus)),
+                      basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = theme_fagus)),
 
+  tar_target(plot_triptych_env,
+             plotTriptych(Environmental_env,
+                          Surface_init = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_init") %>% which())]],
+                          Surface_fix = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_fix") %>% which())]],
+                          Binary = Surface_binary_env,
+                          Waterlevel = Waterlevel,
+                          basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
+  
   tar_target(plot_environmental_env,
-             plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = F, removevar = NULL,
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
+             plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = F, removevar = "",
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   tar_target(plot_diff_env,
-             plotEnvironmental(surfaces = surface_diff_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
+             plotEnvironmental(surfaces = c(surface_diff_env, list(Binary = Surface_binary_env)), binaryname = "major_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   tar_target(plot_diff_interp_env,
-             plotEnvironmental(surfaces = surface_diff_interp_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
+             plotEnvironmental(surfaces = surface_diff_interp_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   tar_target(plot_diff_interp_sd_env,
-             plotEnvironmental(surfaces = surface_diff_interp_sd_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = T, removevar = c("ba_frac_fix", "major_fix", "major_init"),
-                               basename = basename_fit_env, path = dir_publish, color = twocolors, divscale = divergingfillscale, themefun = themefunction)),
+             plotEnvironmental(surfaces = surface_diff_interp_sd_env, binaryname = "major_fix", Waterlevel = NULL, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"), ## interpolated surfaces do not have both scaled and unscaled predictors, therefore Waterlevel matching does not work 
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
 
+  tar_target(plot_predominant_env,
+             plotPredominant(States_env, majorname = c("major_init", "major_fix", "major_fix_other_s"),
+                             path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
+  
   tar_target(plot_binary_par_env,
              plotBinary(Environmental = Environmental_env,
                         parname = str_to_sentence(parname_plotorder),

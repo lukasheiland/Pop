@@ -21,6 +21,16 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   radius_a_upper <- threshold_dbh/2
   ba_a_upper <-  pi * radius_a_upper^2 * 1e-6
   
+  ## reparameterizeModeGamma
+  ## http://doingbayesiandataanalysis.blogspot.com/2012/01/parameterizing-gamma-distribution-by.html
+  ## shape == alpha; inverse scale == rate == beta
+  ## v <- reparameterizeModeGamma(200, 100); curve(dgamma(x, v["alpha"] , v["beta"]), 0, 300)
+  reparameterizeModeGamma <- function(mode, sd) {
+    rate <- ( mode + sqrt( mode^2 + 4*sd^2 ) ) / ( 2 * sd^2 )
+    shape <- 1 + mode * rate
+    return(c(alpha = shape, beta = rate))
+  }
+  
   #### Prepare ba_a_avg
   ## vector[N_species] for ba_a_avg
   ## For multiplication with count A, ba_a_avg is the average basal area of an individual tree in class A and has unit $\mathit{areaunit} \cdot 1^-1$, so that A * ba_a_avg has unit $\mathit{areaunit} \cdot ha^-1$.
@@ -270,12 +280,14 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
-    ## Together with the offset, the mminimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
-    mutate(min_pop = min(y_prior[y_prior != 0], na.rm = T) * 0.01) %>%
+    ## Together with the offset, the minimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
+    mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.2,
+                               stage == "A" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.02,
+                               stage == "B" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.005)) %>%
     
     group_by(loc, pop) %>%
     ## The summaries here are only effectual for loclevel == "nested", because otherwise the grouping group_by(loc, pop) is identical to the original id structure 
-    summarize(lower = min(y_prior, na.rm = T) * 0.01,
+    summarize(lower = min(y_prior, na.rm = T) * 0.01, ## the lower boundary, 1% of the minimum value, is not used in the model
               y_prior = if (loclevel == "nested") first(y_hat_prior) else y_prior,
               min_pop = first(min_pop),
               
@@ -283,11 +295,25 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
               
               ## Setting alpha = 1 for 0, so that the most density is towards zero
               # alpha = if_else(y_prior == 0, 1, 10),
-              alpha = case_when(stage == "J" ~ 1 + as.integer(count_obs > 0) * 4 + 2 * count_obs, ## this will assign 1 to count_obs == 0
-                                stage == "A" ~ 1 + as.integer(count_obs > 0) * 9 + 10 * count_obs,
-                                stage == "B" ~ 1 + as.integer(count_obs > 0) * 9 + 10 * count_obs
-                                ),
-              alphaByE = alpha/y_prior_0,
+              alpha_mean = case_when(stage == "J" ~ 1 + as.integer(count_obs > 0) * 9, # 4 + 2 * count_obs, ## this will assign 1 to count_obs == 0
+                                     stage == "A" ~ 1 + as.integer(count_obs > 0) * 9, # 4 + 10 * count_obs,
+                                     stage == "B" ~ 1 + as.integer(count_obs > 0) * 9  # 9 + 10 * count_obs
+                                     ),
+              beta_mean = alpha_mean/y_prior_0, ## this is equivalent to beta
+              
+              sd_mode = case_when(stage == "J" ~ 100, ## median 3000, mean 9000, min 200
+                                  stage == "A" ~ 20, ## median 460, mean 650, min 130, long tail
+                                  stage == "B" ~ 2), ## median 20, mean 22, min 4, short tail
+              alpha_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["alpha"],
+              beta_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["beta"],
+              ## The priors concern the N/ha
+              ## example, minimum value for A:  v <- reparameterizeModeGamma(130, 20); curve(dgamma(x, v["alpha"] , v["beta"]), 0, 200)
+              ## example, mean value for J:  v <- reparameterizeModeGamma(200, 200); curve(dgamma(x, v["alpha"] , v["beta"]), 0, 600)
+              
+              alpha = if_else(y_prior == 0, 1, alpha_mode), ## for case zero, alpha is like in alpha_mean case
+              beta = if_else(y_prior == 0, 1/min_pop, beta_mode),
+              
+              ## alphaByE = alpha/y_prior_0, ## this is equivalent to beta in the mean parameterization
               .groups = "drop")
   
   Lower_init <- Y_init %>%
@@ -308,16 +334,16 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
     arrange(loc) %>%
     tibble::column_to_rownames(var = "loc")
   
-  AlphaByE_init <- Y_init %>%
-    dplyr::select(pop, loc, alphaByE) %>%
-    pivot_wider(names_from = pop, values_from = alphaByE, id_cols = c("loc")) %>%
+  Beta_init <- Y_init %>%
+    dplyr::select(pop, loc, beta) %>%
+    pivot_wider(names_from = pop, values_from = beta, id_cols = c("loc")) %>%
     arrange(loc) %>%
     tibble::column_to_rownames(var = "loc")
   
   ## Zero
-  # curve(dgamma(x, Alpha_init[1,1], AlphaByE_init[1,1]), 0, 10)
+  # curve(dgamma(x, Alpha_init[1,1], Beta_init[1,1]), 0, 10)
   ## High J observation
-  # curve(dgamma(x, Alpha_init[10,1], AlphaByE_init[10,1]), 0, 8000)
+  # curve(dgamma(x, Alpha_init[10,1], Beta_init[10,1]), 0, 8000)
   
   ## State debugging
   # State_1 <- filter(S, isy0) %>%
@@ -444,7 +470,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
     upper_init = upper_init,
     lower_init = Lower_init,
     alpha_init = Alpha_init,
-    beta_init = AlphaByE_init,
+    beta_init = Beta_init,
     
     ## State debugging
     # state_init = State_1,
@@ -650,7 +676,7 @@ fitModel <- function(model, data_stan, gpq = FALSE,
   
   data_stan$generateposteriorq <- as.integer(gpq)
   
-  inits <- 0.1
+  inits <- 0.2
   # inits <- list(state_init_raw = apply(data_stan$state_init_data, 2, function(x) scales::rescale(x, to = c(1e-12, 0.7))),
   #               b_log = data_stan$prior_b_log[1], c_a_log = data_stan$prior_c_a_log[1], c_b_log = data_stan$prior_c_b_log[1], c_j_log = data_stan$prior_c_j_log[1],
   #               g_log = unlist(data_stan$prior_g_log[1,], use.names = F), h_log = unlist(data_stan$prior_h_log[1,], use.names = F), l_log = data_stan$prior_l_log[1], r_log = unlist(data_stan$prior_r_log[1,], use.names = F), s_log = data_stan$prior_s_log[1], 
