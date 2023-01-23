@@ -2597,7 +2597,7 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
     
   }
   
-  return(plots)
+  return(NULL) # return(plots)
 }
 
 
@@ -2921,7 +2921,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
   ggsave(paste0(path, "/", basename, "_plot_binary_", parname[1], ".pdf"),
          plot_binary, dev = "pdf", height = 10, width = 10)
   
-  return(plot_binary)
+  return(NULL) # return(plot_binary)
 }
 
 
