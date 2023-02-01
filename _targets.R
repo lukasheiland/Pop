@@ -38,7 +38,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "MASS", "mgcv", "glmnet", "itsadug", "interp",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
-             "stargazer", "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", # "emojifont",
+             "stargazer", "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "ggforce", # "emojifont",
              "scales", "gganimate", "metR", "colorspace", "gt", "gtExtras", "svglite",
              "future.apply")
 tar_option_set(packages = package)
@@ -62,12 +62,12 @@ targets_settings <- list(
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")
-  tar_target(n_locations, 1600),
+  tar_target(n_locations, 1500),
   
   ## Threshold to discriminate A and B [mm]
-  ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile
+  ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile of pure measured trees, i.e. without area standardization
   ## lower in the data is 100, so that: 100mm > A > threshold_dbh > B
-  tar_target(threshold_dbh, 200), ## [mm]
+  tar_target(threshold_dbh, 180), ## [mm]
   
   ## Upper sampling radius
   ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
@@ -102,14 +102,14 @@ targets_settings <- list(
   ),
   
   tar_target(weakpriors_env,
-             list(prior_b_log = c(-3, 2),
-                  prior_c_a_log = c(-7, 2),
-                  prior_c_b_log = c(-6, 2),
-                  prior_c_j_log = c(-13, 3),
-                  prior_g_log = c(-6, 2),
+             list(prior_b_log = c(-3, 1),
+                  prior_c_a_log = c(-8, 1),
+                  prior_c_b_log = c(-7, 1),
+                  prior_c_j_log = c(-12, 2),
+                  prior_g_log = c(-6, 1),
                   prior_h_log = c(-3, 1),
-                  prior_l_log = c(4, 2),
-                  prior_r_log = c(4, 1),
+                  prior_l_log = c(4, 1),
+                  prior_r_log = c(5, 1),
                   prior_s_log = c(-5, 1)
                   )
   ),
@@ -121,7 +121,7 @@ targets_settings <- list(
                   divergingfillscale = function(...) scale_fill_continuous_divergingx(palette = "BrBG", ...),
                   lims_colorscale = 0:1,
                   axislabs = labs(x = "soil pH", y = "soil water level"),
-                  aspect = theme(aspect.ratio = 1),
+                  aspect = theme(aspect.ratio = 1.1),
                   removeylabs = theme(axis.title.y = element_blank(), axis.text.y = element_blank()),
                   removeleftylabs = theme(axis.title.y.left = element_blank(), axis.text.y.left = element_blank()),
                   hlines = lapply(-1:1, function(y) geom_hline(aes(yintercept = y), linetype = 2, col = "grey40", size = 0.4)),
@@ -645,7 +645,7 @@ targets_fit_env <- list(
              cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 500, adapt_delta = 0.95, fitpath = dir_fit)
+                      method = "mcmc", n_chains = 6, iter_warmup = 1000, iter_sampling = 400, adapt_delta = 0.95, fitpath = dir_fit)
              ),
   tar_target(basename_fit_env,
              getBaseName(fit_env))
@@ -828,6 +828,8 @@ targets_posterior_env <- list(
              extractDraws(fit_env, exclude = exclude)),
   
   ## Summarize
+  tar_target(Summary_NFIs_env,
+             summarizeNFIs(Data_big, Data_seedlings, Stages_select_env, Seedlings_s, tablepath = dir_publish)),
   tar_target(summary_env,
              summarizeFit(cmdstanfit = fit_env, exclude = setdiff(exclude, "phi_obs_inv_sqrt"),
                           publishpar = c(parname_plotorder, parname_vertex_env), path = dir_publish)),
@@ -944,6 +946,8 @@ targets_posterior_env <- list(
                           Surface_init = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_init") %>% which())]],
                           Surface_fix = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_fix") %>% which())]],
                           Binary = Surface_binary_env,
+                          Summary = summary_env,
+                          Scaling = Stages_loc_env,
                           Waterlevel = Waterlevel,
                           basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   

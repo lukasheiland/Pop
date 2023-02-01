@@ -2685,14 +2685,19 @@ plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel =
 
 
 ## plotTriptych --------------------------------
+# af(plotTriptych)
 # Environmental <- tar_read(Environmental_env)
+# tar_load(surface_environmental_env)
 # Surface_init <- surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_init") %>% which())]]
 # Surface_fix <- surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_fix") %>% which())]]
 # Binary <- surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "par") == "major_fix") %>% which()]]
+# Summary <- tar_read(summary_env)
+# Scaling <- tar_read(Stages_loc_env)
 # Waterlevel <- tar_read(Waterlevel)
 # basename <- tar_read(basename_fit_env)
 # path <-  tar_read(dir_publish)
-plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary, Waterlevel = NULL,
+plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary,
+                         Summary = tar_read(summary_env), Scaling = tar_read(Stages_loc), Waterlevel = NULL,
                          basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
                          color = tar_read(twocolors), ps = tar_read(plotsettings), themefun = theme_fagus) {
   
@@ -2702,6 +2707,17 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary, Water
   name_y_s <- attr(Surface_init, "name_y_s")
   envname_all <- c(name_x, name_y, name_y_s) %>% c(paste0(., "_jittered"))
   
+  scaling <- attr(Scaling, "scaled:scale") # named numeric vector
+  centering <- attr(Scaling, "scaled:center")
+  rm(Scaling)
+  
+  E <- Environmental
+  lim_y <- c(max(E$waterLevel_loc_s), min(E$waterLevel_loc_s)) ## NOTE: these are limits for a reverse scale
+  expand_y <- diff(lim_y) * 0.02
+  lim_y <- c(lim_y[1] - expand_y, lim_y[2] + expand_y)
+  
+  lim_x <- c(min(E$phCaCl_esdacc), max(E$phCaCl_esdacc)) ## not reversed
+  
   ## Handling annotations for waterlevels
   if (!is.null(Waterlevel)) {
     Waterlevel$value_s <- Surface_init$waterLevel_loc_s[match(Waterlevel$value, Surface_init$waterLevel_loc)]
@@ -2709,7 +2725,8 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary, Water
     if( any(isnavalue_s) ) Waterlevel$value_s[isnavalue_s] <- sapply(Waterlevel$value[isnavalue_s],
                                                                      function(x) Surface_init$waterLevel_loc_s[which.min(abs(x - Surface_init$waterLevel_loc))])
     ## common y-scale for plotting
-    yscale <- scale_y_reverse(minor_breaks = 0, breaks = c(Waterlevel$value_s), labels = c(Waterlevel$en), sec.axis = sec_axis(~ ., breaks = c(-1, 0, 1)))
+    yscale <- scale_y_reverse(minor_breaks = 0, breaks = c(Waterlevel$value_s),
+                              labels = c(Waterlevel$en), sec.axis = sec_axis(~ ., breaks = c(-1, 0, 1)))
   } else {
     yscale <- scale_y_reverse() 
   }
@@ -2721,10 +2738,10 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary, Water
   Binary$z <- round(Binary$z)
   
   
-  #### 1. Panel center: environmental variable from the model fit as points --------------
+  #### 1. Panel center right: initial states (environmental variable from the model) fit as points --------------
   parname_select <- "ba_frac_init"
   tax_select <- 1
-  E <- Environmental %>%
+  E <- E %>%
     dplyr::filter(.variable == parname_select & tax == tax_select) %>% 
     dplyr::rename(parname = .variable) %>%
     group_by_at(c("tax", "parname", "loc", envname_all)) %>%
@@ -2744,6 +2761,8 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary, Water
     metR::geom_contour2(data = Surface_init, mapping = aes(z = z, label = round(..level.., 3)), col = "grey50") +
     
     yscale +
+    coord_cartesian(ylim = lim_y, x = lim_x) + ## sets limits as zoom, without discarding data
+    
     themefun() +
     ps$aspect +
     theme(legend.position = "left") +
@@ -2768,6 +2787,8 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary, Water
     metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
     
     yscale +
+    coord_cartesian(ylim = lim_y, x = lim_x) + ## sets limits as zoom, without discarding data
+    
     themefun() +
     ps$aspect +
     theme(legend.position = "none") +
@@ -2775,24 +2796,66 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary, Water
     ps$removeleftylabs +
     ggtitle("Equilibrium")
   
+  
   #### 3. Panel left: theory --------------------
-  plot_theory <- ggplot(Surface_fix, aes_string(x = name_x, y = name_y_s)) +
-    # geom_blank() +
-    geom_rect(mapping=aes(xmin = rectlimits[1], xmax = rectlimits[2], ymin = rectlimits[3], ymax = rectlimits[4]), color = "black", linetype = "dotted", fill = NA) +
+  plot_theory <- ggplot() + ## data = Surface_fix, aes_string(x = name_x, y = name_y_s)
+    geom_blank() +
+    geom_rect(mapping=aes(xmin = rectlimits[1], xmax = rectlimits[2], ymin = rectlimits[3], ymax = rectlimits[4]), color = "black", linetype = "dotted", fill = NA, inherit.aes = F) +
     { if (!is.null(Waterlevel)) scale_y_reverse(breaks = Waterlevel$value_s, labels = Waterlevel$en, minor_breaks = NULL) else scale_y_reverse() } +
+    
     scale_x_continuous(minor_breaks = NULL) +
+    coord_cartesian(ylim = lim_y, x = lim_x) + ## sets limits as zoom, without discarding data
+    
     themefun() +
     ps$aspect +
     ps$axislabs +
     ggtitle("Ellenberg theory")
   
   
-  plotstrip <- cowplot::plot_grid(plot_theory, plot_init, plot_fix, nrow = 1, rel_heights = 1, align = "v") # , axis = "bt", 
+  #### 4. Panel center right: rate optima --------------------
+  S <- Summary %>%
+    filter(str_detect(variable, "_center_")) %>% 
+    mutate(ax = if_else(str_detect(variable, "env1"), "x", "y")) %>%
+    mutate(tax = if_else(str_ends(variable, "\\[1\\]"), "Fagus", "others")) %>%
+    mutate(par = str_extract(variable, ".*(?=_log)")) %>%
+    mutate(par = if_else(str_length(par) > 1,
+                          paste0(str_sub(par, 1, 1), "[", str_sub(par, 3, 3), "]"),
+                          par)) %>%
+    dplyr::select(mean, sd, par, tax, ax) %>% 
+    pivot_wider(names_from = ax, values_from = c("sd", "mean")) %>%
+    mutate(sd_x = sd_x * scaling[name_x], ## y == waterlevel is already scaled in the same way
+           mean_x = mean_x + centering[name_x]) %>%
+    filter(par %in% c("r", "g", "h", "b")) ## confine to positive rates
+  
+  
+  plot_extrema <- ggplot() +
+    ps$hlines +
+    ggforce::geom_ellipse(data = S, mapping = aes(x0 = mean_x, y0 = mean_y, a = sd_x, b = sd_y, angle = 0, color = tax, fill = tax, linetype = tax),
+                          alpha = 0.3, size = 1, inherit.aes = F) +
+    geom_text(data = S, mapping = aes(label = par, x = mean_x, y = mean_y, color = tax),
+               alpha = 1, parse = T, size = 7) +
+    scale_color_manual(values = color) +
+    scale_fill_manual(values = color) +
+    
+    yscale +
+    coord_cartesian(ylim = lim_y, x = lim_x) + ## sets limits as zoom, without discarding data
+    
+    themefun() +
+    ps$aspect +
+    theme(legend.position = c(0.15, 0.85), legend.title = element_blank()) +
+    ps$axislabs +
+    ps$removeylabs +
+    ggtitle("Optima of demographic rates")
+  
+  
+  
+  
+  plotstrip <- cowplot::plot_grid(plot_theory, plot_init, plot_extrema, plot_fix, nrow = 1, rel_heights = 1, align = "v") # , axis = "bt", 
   
   save_plot(filename = paste0(path, "/", basename, "_plot_triptych", ".pdf"),
-            plot = plotstrip, device = "pdf", base_asp = 1, base_height = ps$height_plot, ncol = 3, nrow = 1)
+            plot = plotstrip, device = "pdf", base_asp = 1, base_height = ps$height_plot, ncol = 4, nrow = 1)
   save_plot(filename = paste0(path, "/", basename, "_plot_triptych", ".png"),
-            plot = plotstrip, device = "png", base_asp = 1, base_height = ps$height_plot, ncol = 3, nrow = 1)
+            plot = plotstrip, device = "png", base_asp = 1, base_height = ps$height_plot, ncol = 4, nrow = 1)
   save_plot(filename = paste0(path, "/", basename, "_plot_triptych_legend", ".pdf"),
             plot = legend, device = "pdf", base_height = ps$height_plot, ncol = 1, nrow = 1)
   

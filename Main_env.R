@@ -52,7 +52,7 @@ tar_make_future(c("summary_env",
 
                   "plot_contributions_env",
                   
-                  # "plots_parameters_env"
+                  "plots_parameters_env"
                   
                   # "plot_posterior_center_env",
                   # "plot_posterior_spread_env",

@@ -463,13 +463,14 @@ saveStages_s <- function(Stages_s) {
 # predictor_select <- tar_read("predictor_select")
 # loclevel <- "plot"
 selectLocs <- function(Stages_s, predictor_select,
-                       selectspec = T, selectpred = F, stratpred = F, n_locations = 1000,
+                       selectspec = T, selectpred = F, stratpred = F, n_locations = 1000, sampleseed = 1,
                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
                        loc = c("plot", "nested", "cluster"),
                        tablepath = "~"
                        ) {
   
   loclevel <- match.arg(loc)
+  set.seed(sampleseed)
   
   message(paste(Stages_s %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
                 Stages_s %>% pull(plotid) %>% unique() %>% length(), "plots before selectLocs()."))
@@ -628,6 +629,7 @@ selectLocs <- function(Stages_s, predictor_select,
         filter(!duplicated(plotid)) %>%
         mutate_at(predictor_select, cut, breaks = nbins_sqrt) %>%
         mutate(bin2d = interaction(get(predictor_select[1]), get(predictor_select[2])))
+        
       
       Strata <- table(Stages_strata[,predictor_select[1], drop = T], Stages_strata[,predictor_select[2], drop = T])
       write.csv(Strata, file.path(tablepath, "Strata_env_DE.csv"))
@@ -648,11 +650,11 @@ selectLocs <- function(Stages_s, predictor_select,
       ##!!!
       plotid_subset <- Samples_strata$plotid
       
-      Strata_sampled <- table(Samples_strata[,predictor_select[1], drop = T], Samples_strata[,predictor_select[2], drop = T])
+      Strata_sampled <- t(table(Samples_strata[,predictor_select[1], drop = T], Samples_strata[,predictor_select[2], drop = T]))
       write.csv(Strata_sampled, file.path(tablepath, "Strata_env_DE_sampled.csv"))
       
       Samples_strata_anyFagus <- filter(Samples_strata, anyFagus)
-      Strata_sampled_anyFagus <- table(Samples_strata_anyFagus[,predictor_select[1], drop = T], Samples_strata_anyFagus[,predictor_select[2], drop = T])
+      Strata_sampled_anyFagus <- t(table(Samples_strata_anyFagus[,predictor_select[1], drop = T], Samples_strata_anyFagus[,predictor_select[2], drop = T]))
       write.csv(Strata_sampled_anyFagus, file.path(tablepath, "Strata_env_DE_sampled_anyFagus.csv"))
       
       Strata_sampled_relative <- Strata_sampled_anyFagus/Strata_sampled

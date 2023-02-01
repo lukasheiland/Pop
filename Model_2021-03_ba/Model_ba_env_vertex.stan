@@ -169,7 +169,7 @@ functions {
       
       BA_1 = A_1 .* ba_a_avg + B_1; // New BA as additional state.
 
-      eps_ba = fabs((BA_1 - BA) ./ BA_1);
+      eps_ba = abs((BA_1 - BA) ./ BA_1);
       
 
       /// !
@@ -252,7 +252,7 @@ functions {
       
       BA_1 = A_1 .* ba_a_avg + B_1; // New BA as additional state.
 
-      eps_ba = fabs((BA_1 - BA) ./ BA_1);
+      eps_ba = abs((BA_1 - BA) ./ BA_1);
       
       //// This is here to only calculate the contributions for an earlier period
       // if (i < fixiter_min) {
@@ -585,7 +585,7 @@ transformed parameters {
   //?                                              );
   
   vector<lower=0>[N_protocolTax] phi_obs = inv_square(phi_obs_inv_sqrt .*
-                                                     [1e-2, 1e-2, 1, 1, 1, 1, 1e-1, 1e-1, 1e-1, 1e-1, 1, 1, 1, 1]'
+                                                     [1e-2, 1e-2, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1, 1e-1]'
                                                      //[F.J.init, o.J.init, F.J.2, o.J.2, F.J.3, o.J.3, F.A.init, o.A.init, F.B.init, o.B.init, F.A.23, o.A.23, F.B.23, o.B.23]
                                                      );
   
