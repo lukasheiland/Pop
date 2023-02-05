@@ -103,14 +103,14 @@ targets_settings <- list(
   
   tar_target(weakpriors_env,
              list(prior_b_log = c(-3, 1),
-                  prior_c_a_log = c(-8, 1),
+                  prior_c_a_log = c(-6, 1), ## experimental: does this lead to faster decline of A.others in residuals?
                   prior_c_b_log = c(-7, 1),
-                  prior_c_j_log = c(-12, 2),
-                  prior_g_log = c(-6, 1),
+                  prior_c_j_log = c(-10, 2),
+                  prior_g_log = c(-5, 1),
                   prior_h_log = c(-3, 1),
-                  prior_l_log = c(4, 1),
-                  prior_r_log = c(5, 1),
-                  prior_s_log = c(-5, 1)
+                  prior_l_log = c(3, 1),
+                  prior_r_log = c(4, 1),
+                  prior_s_log = c(-6, 1)
                   )
   ),
   
@@ -186,7 +186,7 @@ targets_parname <- list(
              c("y_hat_prior", "y_hat_prior_rep", "y_hat_prior_offset", "y_hat_prior_rep_offset", "y_prior_sim")),
   
   tar_target(statename_environmentalko_fracdiff_env,
-             paste0("ba_frac_diff_fix_ko_", 1:2,"_env_", rep(c(setdiff(names(parname_plotorder), "l"), "b_c_b", "b_other_s"), each = 2))),
+             paste0("ba_frac_diff_fix_ko_", 1:2,"_env_", rep(c(setdiff(names(parname_plotorder), "l"), "b_c_b"), each = 2))), # "b_other_s"
   
   tar_target(statename_environmentalko_env,
              c(paste0("ba_fix_ko_", 1:2,"_env_", rep(c(setdiff(names(parname_plotorder), "l"), "b_c_b"), each = 2)),
@@ -279,14 +279,14 @@ targets_parname <- list(
   tar_target(parname_environmental_env,  ## anything that is environmentally-relevant, except for statename_environmentalko_.*_env
              c(parname_sim_environmental_env,
                contribname_env,
-               "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix",
+               "ba_init", "ba_fix", "ba_frac_init", "ba_frac_fix", "ba_frac_fix_other_s",
                "major_fix", "major_init",
                "ba_fix_ko_b_l_r")),
   
   ## these are mainly for distinguishing different plots
   tar_target(parname_environmental_ba_env, parname_environmental_env[str_starts(parname_environmental_env, "ba")]),
-  tar_target(parname_environmental_ba_select_env, setdiff(parname_environmental_ba_env, c("ba_init", "ba_frac_fix", "ba_frac_init"))),
-  tar_target(parname_environmental_binomial_env, c("major_init", "major_fix", "ba_frac_fix")),
+  tar_target(parname_environmental_ba_select_env, setdiff(parname_environmental_ba_env, c("ba_init", "ba_frac_fix", "ba_frac_init", "ba_frac_fix_other_s"))), ## remove fractions that will be fitted with a binommial response
+  tar_target(parname_environmental_binomial_env, c("major_init", "major_fix", "ba_frac_fix", "ba_frac_fix_other_s")),
   tar_target(parname_environmental_gaussian_env, setdiff(parname_sim_environmental_env, c("L_loc", "L_log"))), ## note: these have only tax %in% 1:2
   tar_target(parname_environmental_diff_env, setdiff(statename_environmentalko_fracdiff_env, "ba_frac_diff_fix_ko_2_env_b_other_s")), ## note: 1. these have only tax == 0
   
@@ -645,7 +645,7 @@ targets_fit_env <- list(
              cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 6, iter_warmup = 1000, iter_sampling = 400, adapt_delta = 0.95, fitpath = dir_fit)
+                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, adapt_delta = 0.95, fitpath = dir_fit)
              ),
   tar_target(basename_fit_env,
              getBaseName(fit_env))
@@ -875,8 +875,8 @@ targets_posterior_env <- list(
   
   
   tar_target(alltaxa_enironmental_env, c("Fagus.sylvatica" = 1, "others" = 2, "both" = 0)),
-  tar_target(comb_taxa_enironmental_binomial_env, c(0, 0, 1, 1:2)),
-  tar_target(comb_par_enironmental_binomial_env, c("major_init", "major_fix", "ba_frac_init", "ba_frac_fix", "ba_frac_fix")),
+  tar_target(comb_taxa_enironmental_binomial_env, c(0, 0, 1, 1, 2, 0)),
+  tar_target(comb_par_enironmental_binomial_env, c("major_init", "major_fix", "ba_frac_init", "ba_frac_fix", "ba_frac_fix", "ba_frac_fix_other_s")),
 
   tar_target(fit_environmental_gaussian_env,
              fitEnvironmental_glm(Environmental_env, parname = parname_environmental_gaussian_env, envname = predictor_select, taxon = taxon_s, fam = "gaussian", path = dir_publish),
@@ -904,7 +904,7 @@ targets_posterior_env <- list(
              pattern = map(fit_environmental_env),
              iteration = "list"),
   tar_target(Surface_binary_env,
-             surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "par") == "major_fix") %>% which()]]),
+             surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "parname") == "major_fix") %>% isTRUE() %>% which()]]),
   
   tar_target(surface_diff_env,
              predictEnvironmental(fit_environmental_diff_env, envname = predictor_select, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
@@ -943,8 +943,8 @@ targets_posterior_env <- list(
 
   tar_target(plot_triptych_env,
              plotTriptych(Environmental_env,
-                          Surface_init = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_init") %>% which())]],
-                          Surface_fix = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "par") == "ba_frac_fix") %>% which())]],
+                          Surface_init = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "parname") == "ba_frac_init") %>% isTRUE() %>% which())]],
+                          Surface_fix = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "parname") == "ba_frac_fix") %>% isTRUE() %>% which())]],
                           Binary = Surface_binary_env,
                           Summary = summary_env,
                           Scaling = Stages_loc_env,
@@ -971,7 +971,7 @@ targets_posterior_env <- list(
   tar_target(plot_binary_par_env,
              plotBinary(Environmental = Environmental_env,
                         parname = str_to_sentence(parname_plotorder),
-                        fit_bin = fit_environmental_binomial_env[[sapply(fit_environmental_binomial_env, function(x) attr(x, "par") == "major_fix") %>% which()]],
+                        fit_bin = fit_environmental_binomial_env[[sapply(fit_environmental_binomial_env, function(x) attr(x, "par") == "major_fix") %>% isTRUE() %>% which()]],
                         binarythreshold = 0.5, facetscale = "free", plotlog = F,
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
   
@@ -985,7 +985,7 @@ targets_posterior_env <- list(
   tar_target(plot_binary_contrib_env,
              plotBinary(Environmental = Environmental_env,
                         parname = c(contribname_init_env), ## + contribname_counterfactual_env
-                        fit_bin = fit_environmental_binomial_env[[sapply(fit_environmental_binomial_env, function(x) attr(x, "par") == "major_fix") %>% which()]],
+                        fit_bin = fit_environmental_binomial_env[[sapply(fit_environmental_binomial_env, function(x) attr(x, "par") == "major_fix") %>% isTRUE() %>% which()]],
                         binarythreshold = 0.5, facetscale = "free_x", plotlog = T, ## !!!
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
   

@@ -903,7 +903,7 @@ generated quantities {
   
 
   vector[N_locs] ba_frac_diff_fix_ko_1_env_b          = ba_frac_fix_ko_1_env_b;
-  vector[N_locs] ba_frac_diff_fix_ko_1_env_b_other_s  = ba_frac_fix_ko_1_env_b; //#
+  // vector[N_locs] ba_frac_diff_fix_ko_1_env_b_other_s  = ba_frac_fix_ko_1_env_b; //#
   vector[N_locs] ba_frac_diff_fix_ko_1_env_b_c_b      = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_1_env_c_a        = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_1_env_c_b        = ba_frac_fix_ko_1_env_b;
@@ -1037,9 +1037,9 @@ generated quantities {
         ba_frac_fix_other_s[loc] = ba_fix_other_s[loc, 1] / sum(ba_fix_other_s[loc]);
         major_fix_other_s[loc] = ba_fix_other_s[loc, 1] > ba_fix_other_s[loc, 2];
         
-        array[N_fix] vector[N_species] Fix_ko_1_env_b_other_s = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], other_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        vector[N_species] ba_fix_ko_1_env_b_other_s = Fix_ko_1_env_b_other_s[4];
-        real ba_frac_fix_ko_1_env_b_other_s = ba_fix_ko_1_env_b_other_s[1] / sum(ba_fix_ko_1_env_b_other_s);
+        // array[N_fix] vector[N_species] Fix_ko_1_env_b_other_s = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], other_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix); //#
+        // vector[N_species] ba_fix_ko_1_env_b_other_s = Fix_ko_1_env_b_other_s[4];
+        // real ba_frac_fix_ko_1_env_b_other_s = ba_fix_ko_1_env_b_other_s[1] / sum(ba_fix_ko_1_env_b_other_s);
 
         
         
@@ -1132,7 +1132,7 @@ generated quantities {
         
         real ba_frac_fix_loc_1 = ba_frac_fix[loc, 1];
         ba_frac_diff_fix_ko_1_env_b[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_b[loc];
-        ba_frac_diff_fix_ko_1_env_b_other_s[loc]  =  ba_frac_fix_other_s[loc] - ba_frac_fix_ko_1_env_b_other_s; //#
+        // ba_frac_diff_fix_ko_1_env_b_other_s[loc]  =  ba_frac_fix_other_s[loc] - ba_frac_fix_ko_1_env_b_other_s; //#
         ba_frac_diff_fix_ko_1_env_b_c_b[loc]      =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_b_c_b[loc];
         ba_frac_diff_fix_ko_1_env_c_a[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_c_a[loc];
         ba_frac_diff_fix_ko_1_env_c_b[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_c_b[loc];

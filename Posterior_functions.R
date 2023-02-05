@@ -97,21 +97,24 @@ formatLoc <- function(name, locmeans = FALSE, cmdstanfit_ = cmdstanfit, data_sta
 ## formatEnvironmental --------------------------------
 # cmdstanfit <- tar_read("fit_env")
 # af(formatEnvironmental)
-formatEnvironmental <- function(cmdstanfit, parname = tar_read(parname_env), data_stan = tar_read(data_stan_priors_offset_env),
+formatEnvironmental <- function(cmdstanfit, parname = tar_read(parname_environmental_env), data_stan = tar_read(data_stan_priors_offset_env),
                                 envname = tar_read(predictor_select), locmeans = F, jitter = 0.1) {
   
   varname_draws <- cmdstanfit$metadata()$stan_variables
   parname <- unique(c(parname, "major_fix")) ## explicitly include major fix, because it is assumed later
   parname <- intersect(parname, varname_draws)
   
+  ## Detect what kind of variables are included. Reals with species indices, Binaries (without species indices 1/2, will get 0) include major, anyenvdiff, anyotherfrac
   onlyreals <- all(str_detect(parname, "(ba_frac_.*fix_ko_.+)|(major_.+)"))
   anyenvdiff <- any(str_detect(parname, "ba_frac_.*fix_ko_.+"))
+  anyotherfrac <- any(str_detect(parname, "ba_frac_.*_other_.*"))
   
   draws_env <- cmdstanfit$draws(parname) %>%
     posterior::as_draws()
   
   Draws_env_bin <- tidybayes::gather_draws(draws_env, `major_.+`[loc], regex = T) %>% 
     { if(anyenvdiff) bind_rows(., tidybayes::gather_draws(draws_env, `ba_frac_.*fix_ko_.+`[loc], regex = T)) else . } %>% 
+    { if(anyotherfrac) bind_rows(., tidybayes::gather_draws(draws_env, `ba_frac_.*_other_.*`[loc], regex = T)) else . } %>% 
     bind_cols(tax = 0) %>%
     suppressWarnings() ## package tidyr warns about using deprecated gather_()
   
