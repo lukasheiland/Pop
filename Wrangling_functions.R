@@ -463,7 +463,7 @@ saveStages_s <- function(Stages_s) {
 # predictor_select <- tar_read("predictor_select")
 # loclevel <- "plot"
 selectLocs <- function(Stages_s, predictor_select,
-                       selectspec = T, selectpred = F, stratpred = F, n_locations = 1000, sampleseed = 1,
+                       selectspec = T, selectpred = F, stratpred = F, selectalt = c(NULL, NULL), sampleseed = 1, n_locations = 1000,
                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
                        loc = c("plot", "nested", "cluster"),
                        tablepath = "~"
@@ -485,6 +485,14 @@ selectLocs <- function(Stages_s, predictor_select,
   ## NOTE: waterLevel_loc, phCaCl_esdacc are data on the plot level
   
   ## Filter based on environment
+  if (is.numeric(selectalt)) {
+    alt_lower <- selectalt[1]
+    alt_upper <- selectalt[2]
+    
+    Stages_s  %<>%
+      filter(alt_loc > alt_lower & alt_loc < alt_upper)
+  }
+  
   if (selectpred) {
     Stages_s  %<>%
       filter_at(predictor_select, function(x) !is.na(x))
