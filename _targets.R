@@ -358,7 +358,7 @@ targets_wrangling <- list(
                           value = c(-7, -5, -3, -1, 1, 3, 5, 7))), ## highly acidic soils (pH<3.5); neutral = 7
     
     tar_target(Env_clean,
-               cleanEnv(Data_env, predictor_select)),
+               cleanEnv(Data_env, c(predictor_select, "alt_loc"))),
     ## Summarize (mutate) predictors per cluster, but keep plot-level disturbance data etc.
     tar_target(Env_cluster,
                summarizeEnvByCluster(Env_clean, predictor_select))
@@ -601,7 +601,8 @@ targets_fit_env <- list(
   ## Prepare data
   tar_target(Stages_select_env,
              selectLocs(Stages_s, predictor_select,
-                        selectspec = F, selectpred = T, stratpred = T, n_locations = n_locations, loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
+                        selectspec = F, selectpred = T, stratpred = T, selectalt = c(200, 600), n_locations = n_locations,
+                        loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
   
   tar_target(Stages_scaled_env,
              scaleData(Stages_select_env, predictor_select)), # After selection, so that scaling includes selected plots 
