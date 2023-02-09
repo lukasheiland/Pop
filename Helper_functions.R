@@ -12,3 +12,10 @@ af <- attachFunction <- function(f) {
   return(names(defaults))
 }
 
+
+## whichAttr --------------------------------
+## for getting the index in a list with a certain attribute
+matchAttr <- function(l, what, string) {
+  sapply(l, function(x) isTRUE(attr(x, what) == string)) %>% which() %>% first()
+}
+

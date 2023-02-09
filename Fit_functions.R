@@ -281,7 +281,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
     ## Together with the offset, the minimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
-    mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.2,
+    mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.3,
                                stage == "A" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.05,
                                stage == "B" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.02)) %>%
     
@@ -301,8 +301,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
                                      ),
               beta_mean = alpha_mean/y_prior_0, ## this is equivalent to beta
               
-              sd_mode = case_when(stage == "J" ~ 100, ## median 3000, mean 9000, min 200
-                                  stage == "A" ~ 30, ## median 460, mean 650, min 130, long tail
+              sd_mode = case_when(stage == "J" ~ 150, ## median 3000, mean 9000, min 200
+                                  stage == "A" ~ 20, ## min prob around 80, long tail
                                   stage == "B" ~ 2), ## median 20, mean 22, min 4, short tail
               alpha_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["alpha"],
               beta_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["beta"],

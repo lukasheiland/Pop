@@ -62,7 +62,7 @@ targets_settings <- list(
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")
-  tar_target(n_locations, 1500),
+  tar_target(n_locations, 2000),
   
   ## Threshold to discriminate A and B [mm]
   ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile of pure measured trees, i.e. without area standardization
@@ -102,15 +102,15 @@ targets_settings <- list(
   ),
   
   tar_target(weakpriors_env,
-             list(prior_b_log = c(-3, 1),
-                  prior_c_a_log = c(-6, 1), ## experimental: does this lead to faster decline of A.others in residuals?
-                  prior_c_b_log = c(-7, 1),
-                  prior_c_j_log = c(-10, 2),
-                  prior_g_log = c(-5, 1),
+             list(prior_b_log = c(-2.5, 1), ## A are invented to compensate for small B
+                  prior_c_a_log = c(-7, 1),
+                  prior_c_b_log = c(-6, 1),
+                  prior_c_j_log = c(-11, 1),
+                  prior_g_log = c(-6, 1),
                   prior_h_log = c(-3, 1),
                   prior_l_log = c(3, 1),
                   prior_r_log = c(4, 1),
-                  prior_s_log = c(-6, 1)
+                  prior_s_log = c(-7, 1)
                   )
   ),
   
@@ -905,7 +905,7 @@ targets_posterior_env <- list(
              pattern = map(fit_environmental_env),
              iteration = "list"),
   tar_target(Surface_binary_env,
-             surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "parname") == "major_fix") %>% isTRUE() %>% which()]]),
+             surface_environmental_env[[ matchAttr(surface_environmental_env, "parname", "major_fix") ]]),
   
   tar_target(surface_diff_env,
              predictEnvironmental(fit_environmental_diff_env, envname = predictor_select, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
@@ -944,8 +944,8 @@ targets_posterior_env <- list(
 
   tar_target(plot_triptych_env,
              plotTriptych(Environmental_env,
-                          Surface_init = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "parname") == "ba_frac_init") %>% isTRUE() %>% which())]],
-                          Surface_fix = surface_environmental_env[[first(sapply(surface_environmental_env, function(x) attr(x, "parname") == "ba_frac_fix") %>% isTRUE() %>% which())]],
+                          Surface_init = surface_environmental_env[[ matchAttr(surface_environmental_env, "parname", "ba_frac_init") ]],
+                          Surface_fix = surface_environmental_env[[ matchAttr(surface_environmental_env, "parname", "ba_frac_fix") ]],
                           Binary = Surface_binary_env,
                           Summary = summary_env,
                           Scaling = Stages_loc_env,
@@ -972,7 +972,7 @@ targets_posterior_env <- list(
   tar_target(plot_binary_par_env,
              plotBinary(Environmental = Environmental_env,
                         parname = str_to_sentence(parname_plotorder),
-                        fit_bin = fit_environmental_binomial_env[[sapply(fit_environmental_binomial_env, function(x) attr(x, "par") == "major_fix") %>% isTRUE() %>% which()]],
+                        fit_bin = fit_environmental_binomial_env[[ matchAttr(surface_environmental_env, "par", "major_fix") ]],
                         binarythreshold = 0.5, facetscale = "free", plotlog = F,
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
   
@@ -986,7 +986,7 @@ targets_posterior_env <- list(
   tar_target(plot_binary_contrib_env,
              plotBinary(Environmental = Environmental_env,
                         parname = c(contribname_init_env), ## + contribname_counterfactual_env
-                        fit_bin = fit_environmental_binomial_env[[sapply(fit_environmental_binomial_env, function(x) attr(x, "par") == "major_fix") %>% isTRUE() %>% which()]],
+                        fit_bin = fit_environmental_binomial_env[[ matchAttr(surface_environmental_env, "par", "major_fix") ]],
                         binarythreshold = 0.5, facetscale = "free_x", plotlog = T, ## !!!
                         path = dir_publish, basename = basename_fit_env,  color = twocolors, themefun = themefunction)),
   
