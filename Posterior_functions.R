@@ -240,14 +240,15 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     filter(variable != "major_fix") %>%
     group_by(variable, tax) %>%
     summarize(Par = str_extract(first(variable), "(?<=env_).*$"),
-              Parameter = suppressWarnings( fct_recode(Par, "l" = "l", "r" = "r", "s" = "s", "c_j" = "c_j", "g" = "g", "c_a" = "c_a", "h" = "h", "b" = "b", "c_b" = "c_b",
-                                                                  "b and c_b" = "b_c_b", "b given the s of others" = "b_other_s")),
+              Parameter = suppressWarnings( fct_recode(Par, "l" = "l", "r" = "r", "s" = "s", "c<sub>J</sub>" = "c_j", "g" = "g", "c<sub>A</sub>" = "c_a", "h" = "h", "b" = "b", "c<sub>B</sub>" =  "c_b",
+                                                                  "b and c<sub>B</sub>" = "b_c_b", "b given the s of others" = "b_other_s")),
               Species = suppressWarnings( fct_recode(str_extract(first(variable), "\\d+"),  "Fagus" = "1", "others" = "2") ),
               order = match(Par, c("l", "r", "s", "c_j", "g", "c_a", "h", "b", "b_other_s", "c_b", "b_c_b")),
               Mean = first(meanabs_tot),
               Var_loc = first(var_mean_loc),
               Var_tot = first(var_tot),
-              Freq = first(freqdifferentfrom0), # paste0( formatNumber(first(freqdifferentfrom0) * 100), "%"),
+              ## Removed:
+              # Freq = first(freqdifferentfrom0), # paste0( formatNumber(first(freqdifferentfrom0) * 100), "%"),
               included = first(included),
               Included = if_else(first(included), "check-circle", ""),
               .groups = "drop") %>%
@@ -276,9 +277,10 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     gt_duplicate_column(Var_tot, after = "Var_tot") %>%
     gt_plt_bar(column = Var_tot_dupe, color = color[1], keep_column = F, width = 20) %>%
     
-    fmt_percent(columns = "Freq", decimals = 1) %>%
-    gt_duplicate_column(Freq, after = "Freq") %>%
-    gt_plt_bar_pct(column = Freq_dupe, fill = color[1], height = 20, scaled = F) %>%
+    ## Removed frequency of credible plots
+    # fmt_percent(columns = "Freq", decimals = 1) %>%
+    # gt_duplicate_column(Freq, after = "Freq") %>%
+    # gt_plt_bar_pct(column = Freq_dupe, fill = color[1], height = 20, scaled = F) %>%
     
     gt_fa_column(column = Included) %>%
     cols_align(align = "center", columns = any_of("Included")) %>%
@@ -1151,7 +1153,7 @@ fitEnvironmental_gam <- function(Environmental, parname, envname = tar_read(pred
     s <- summary(fit)
     textext <- itsadug::gamtabs(s, caption = "Summary of the thin plate spline fit for environmental ...", label = paste("tab:gam", parname, taxon, sep = "_"))
     dir.create(file.path(path, "fits_Environmental"), showWarnings = FALSE)
-    cat(textext, file = file.path(path, "fits_Environmental", paste0("Environmental", "_", parname, "_", taxon, "_summary_gam.tex")), fill = T) %>% invisible()
+    cat(textext, file = file.path(path, "fits_Environmental", paste0("Environmental", "_", parname, "_", taxon, "_summary_gam.tex")), fill = T) %>% capture.output(file = nullfile())
   }
   
   attr(fit, "E") <- E
@@ -2741,7 +2743,7 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary,
   Binary$z <- round(Binary$z)
   
   
-  #### 1. Panel center right: initial states (environmental variable from the model) fit as points --------------
+  #### 1. Panel center left: initial states (environmental variable from the model) fit as points --------------
   parname_select <- "ba_frac_init"
   tax_select <- 1
   E <- E %>%

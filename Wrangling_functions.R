@@ -472,8 +472,9 @@ selectLocs <- function(Stages_s, predictor_select,
   loclevel <- match.arg(loc)
   set.seed(sampleseed)
   
-  message(paste(Stages_s %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
-                Stages_s %>% pull(plotid) %>% unique() %>% length(), "plots before selectLocs()."))
+  text_before <- paste(Stages_s %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
+                       Stages_s %>% pull(plotid) %>% unique() %>% length(), "plots before selectLocs().")
+  message(text_before)
   
   ## for reference
   disturbance_select = c("standage_DE_BWI_1",
@@ -714,8 +715,11 @@ selectLocs <- function(Stages_s, predictor_select,
   Stages_select %<>%
     dplyr::select(-any_of(setdiff(disturbance_select, "standage_DE_BWI_1")))
   
-  message(paste(Stages_select %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
-                Stages_select %>% pull(plotid) %>% unique() %>% length(), "plots after selectLocs()."))
+  text_after <- paste(Stages_select %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
+                      Stages_select %>% pull(plotid) %>% unique() %>% length(), "plots after selectLocs().")
+  
+  writeLines(c(text_before, text_after), file.path(tablepath, "Locs_Selected.txt"))
+  message(text_after)
   
   ## Filter clusters based on succession
   # Stages_select %<>%
