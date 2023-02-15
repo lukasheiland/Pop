@@ -31,7 +31,6 @@ tar_make_future(c("summary_env",
                   "summary_states_env",
                   "summary_marginal_env",
                   "residuals_env",
-                  "residuals_init_env",
                   # "plots_trace_env",
                   
                   "plot_environmental_env", ## currently includes *_ba and *_binomial (both init and fix)

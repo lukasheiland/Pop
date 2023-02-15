@@ -2734,7 +2734,7 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary,
     yscale <- scale_y_reverse() 
   }
 
-  rectlimits <- c(xmin = 3.5, xmax = max(Surface_init[[name_x]]), ymin = -6, ymax = 4.3)
+  rectlimits <- c(xmin = 3.5, xmax = max(Surface_init[[name_x]]), ymin = -5, ymax = 4.3)
   rectlimits[3:4] <- sapply(rectlimits[3:4], function(x) Surface_init$waterLevel_loc_s[which.min(abs(x - Surface_init$waterLevel_loc))])
 
   #### 0. Binary border --------------
