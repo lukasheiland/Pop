@@ -200,7 +200,7 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
   
   C <- Environmental %>%
     mutate(ispositive = .value > 0, isnegative = .value < 0, absolute = abs(.value)) %>%
-    rename(variable = .variable) %>%
+    dplyr::rename(variable = .variable) %>%
     
     group_by(variable, tax) %>%
     mutate(var_tot =  var(.value), meanabs_tot = mean(abs(.value))) %>%
@@ -212,7 +212,7 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
   
   C %<>% 
     group_by_at(c("variable", "tax", "loc", allenvname)) %>%
-    summarize(var_tot = first(var_tot), meanabs_tot = first(meanabs_tot),
+    dplyr::summarize(var_tot = first(var_tot), meanabs_tot = first(meanabs_tot),
               mean_loc = mean(.value), # meanabs_loc = mean(absolute),
               freqpositive = mean(ispositive), freqnegative = mean(isnegative),
               iscrediblypositive = freqpositive > credlevel, iscrediblynegative = freqnegative > credlevel,
@@ -242,6 +242,7 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     summarize(Par = str_extract(first(variable), "(?<=env_).*$"),
               Parameter = suppressWarnings( fct_recode(Par, "l" = "l", "r" = "r", "s" = "s", "c<sub>J</sub>" = "c_j", "g" = "g", "c<sub>A</sub>" = "c_a", "h" = "h", "b" = "b", "c<sub>B</sub>" =  "c_b",
                                                                   "b and c<sub>B</sub>" = "b_c_b", "b given the s of others" = "b_other_s")),
+              Parameter = html(as.character(Parameter)),
               Species = suppressWarnings( fct_recode(str_extract(first(variable), "\\d+"),  "Fagus" = "1", "others" = "2") ),
               order = match(Par, c("l", "r", "s", "c_j", "g", "c_a", "h", "b", "b_other_s", "c_b", "b_c_b")),
               Mean = first(meanabs_tot),
@@ -255,16 +256,17 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     group_by(Species) %>%
     arrange(order, .by_group = T) %>%
     ungroup() %>%
-    bind_rows(data.frame(Parameter = "Max", Freq = 1, Var_loc = max(.$Var_tot), Var_tot = max(.$Var_tot))) ## add a row of maximal values to scale to. Var_loc is intended to be scaled with Var_tot
+    bind_rows(data.frame(Parameter = html("Max"), Var_loc = max(.$Var_tot), Var_tot = max(.$Var_tot))) # Freq = 1, ## add a row of maximal values to scale to. Var_loc is intended to be scaled with Var_tot
   
   write.csv(Summary_cred, file.path(path, paste0(basename, "_summary_freq_cred.csv")))
   
   Table_cred <- Summary_cred %>%
-    select(-c("tax", "variable", "order", "Par", "included")) %>%
+    dplyr::select(-c("tax", "variable", "order", "Par", "included")) %>%
     gt() %>%
     
     cols_align(align = "left", columns = any_of("Parameter")) %>%
     
+    fmt_markdown(columns = any_of("Parameter")) %>%
     fmt_number(columns = c("Mean", "Var_loc", "Var_tot"), decimals = 4) %>%
     # gt_theme_538() %>%
     
@@ -290,7 +292,7 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     cols_label(Mean = "Mean of absolute differences", Mean_dupe = "",
                Var_loc = "Variance of plot means", Var_loc_dupe = "",
                Var_tot = "Variance overall", Var_tot_dupe = "",
-               Freq = "Credibly different plots", Freq_dupe = "% _________",
+               # Freq = "Credibly different plots", Freq_dupe = "% _________",
                Included = "Incl.") %>%
     tab_style(style = list(cell_text(style = "italic")), locations = cells_body(columns = Species)) %>%
     gtable_squash_rows(nrow(.))
@@ -1665,7 +1667,7 @@ plotStates <- function(States,
     theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
     
     ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
-    scale_color_manual(values = color) +
+    scale_color_manual(values = color, name = "species") +
     scale_fill_manual(values = color)
 
   
@@ -1698,7 +1700,7 @@ plotStates <- function(States,
   #   
   #   labs(y = "basal area [m^2 ha^-1]") +
   #   
-  #   scale_color_manual(values = color) +
+  #   scale_color_manual(values = color, name = "species") +
   #   scale_fill_manual(values = color)
   
   
@@ -2215,8 +2217,9 @@ plotTrace <- function(cmdstanfit, parname, path,
 
 ## plotContributions --------------------------------
 # parname  <- c(tar_read("parname_plotorder"), b_c_b = "b_c_b_log")
-# contribname <- paste("sum_ko", rep(1:2, each = length(parname)), names(parname), "fix", sep = "_")
-# cmdstanfit  <- tar_read("fit")[[1]]
+# contribution <- "sum_ko"
+# contribname <- paste("sum_ko", rep(1:n_species, each = length(parname)), parname, "fix", sep = "_")
+# cmdstanfit  <- tar_read("fit_env")
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
@@ -2297,8 +2300,9 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
                                                               scales = "free",
                                                               labeller = labeller(kotax = function(kotax) paste(kotax, "demographic rates"),
                                                                                   reciprocal = function(reciprocal) if_else(reciprocal == 'TRUE', "indirect", "direct"))) } +
+
     themefun() +
-    scale_color_manual(values = color) +
+    scale_color_manual(values = color, name = "species") +
     theme(axis.title.x = element_blank()) +
     
     ## Only for log-scale
@@ -2413,7 +2417,7 @@ plotMarginal <- function(Marginal, parname,
     geom_density(trim = T, alpha = 0.8) +
     scale_fill_manual(values = color) +
     geom_vline(aes(xintercept = medianofmedians, color = tax)) +
-    scale_color_manual(values = color) +
+    scale_color_manual(values = color, name = "species") +
     facet_grid(rows = vars(.variable), scales = "free") + # cols = vars(tax)
     themefun() +
     theme(axis.title.x = element_blank())
@@ -2984,13 +2988,14 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
     { if (plotlog) scale_x_continuous(trans = pseudo_log_trans(sigma = 0.1, base = 10)) } +
     
     themefun() +
-    scale_color_manual(values = color)
+    scale_color_manual(values = color, name = "species")
   
   ggsave(paste0(path, "/", basename, "_plot_binary_", parname[1], ".pdf"),
          plot_binary, dev = "pdf", height = 10, width = 10)
   
   return(NULL) # return(plot_binary)
 }
+
 
 
 ## plotTrajectories --------------------------------
@@ -3026,7 +3031,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename, plot
     scale_x_continuous(breaks = scales::pretty_breaks(n = 6)) +
     scale_y_continuous(breaks = scales::pretty_breaks(n = 12)) +
     # scale_y_continuous(trans = "pseudo_log", n.breaks = 8) +
-    scale_color_manual(values = color) +
+    scale_color_manual(values = color, name = "species") +
     xlab("time (years)") +
     themefun()
   

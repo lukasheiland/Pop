@@ -62,7 +62,7 @@ targets_settings <- list(
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")
-  tar_target(n_locations, 2000),
+  tar_target(n_locations, 1500),
   
   ## Threshold to discriminate A and B [mm]
   ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile of pure measured trees, i.e. without area standardization
@@ -70,10 +70,11 @@ targets_settings <- list(
   tar_target(threshold_dbh, 180), ## [mm]
   
   ## Upper sampling radius
-  ## 	- All trees above a sampling radius of 14m were dropped, which is about the 98%tile (14.08m). The radius of 14m corresponds to the threshold radius of trees with dbh = 56cm
+  ## 	- All trees above a sampling radius of 15m were dropped, which is about the 99%tile of measured trees (15.71m).
+  ## - The radius of 15m corresponds to the threshold radius of trees with dbh = 60cm
   ##    - dbh_threshold = radius_threshold/c with c == 25
   ##    - Alternatives: 99% radius == 1571 cm, 95% radius == 1188,  96% radius == 1242, 97% 1310.91
-  tar_target(radius_max, 14000), ## [mm]
+  tar_target(radius_max, 15000), ## [mm]
   
   ## Vector of taxa to select. All others will be lumped into "other".
   tar_target(taxon_select, c("Fagus.sylvatica")),
@@ -102,15 +103,15 @@ targets_settings <- list(
   ),
   
   tar_target(weakpriors_env,
-             list(prior_b_log = c(-2.5, 1), ## A are invented to compensate for small B
+             list(prior_b_log = c(-3, 1),
                   prior_c_a_log = c(-7, 1),
                   prior_c_b_log = c(-6, 1),
-                  prior_c_j_log = c(-11, 1),
+                  prior_c_j_log = c(-10, 1),
                   prior_g_log = c(-6, 1),
-                  prior_h_log = c(-3, 1),
-                  prior_l_log = c(3, 1),
-                  prior_r_log = c(4, 1),
-                  prior_s_log = c(-7, 1)
+                  prior_h_log = c(-3.5, 1),
+                  prior_l_log = c(3, 2),
+                  prior_r_log = c(3, 1),
+                  prior_s_log = c(-6, 1)
                   )
   ),
   
@@ -353,9 +354,9 @@ targets_wrangling <- list(
                c("phCaCl_esdacc", "waterLevel_loc")), # "alt_loc"
     
     tar_target(Waterlevel,
-               data.frame(de = c("trocken", "mäßig trocken", "mäßig frisch", "frisch", "(mäßig feucht)", "feucht", "nass", "sehr nass"),
-                          en = c("dry", "slightly dry", "slightly damp", "damp", "(slightly moist)", "moist", "wet", "very wet"),
-                          value = c(-7, -5, -3, -1, 1, 3, 5, 7))), ## highly acidic soils (pH<3.5); neutral = 7
+               data.frame(de = c("trocken", "mäßig trocken", "mäßig frisch", "frisch", "(mäßig feucht)", "feucht", "nass"), # "sehr nass" might not be in the data
+                          en = c("dry", "slightly dry", "slightly damp", "damp", "(slightly moist)", "moist", "wet"), # "very wet" might not be in the data
+                          value = c(-6, -4, -2, 0, 2, 4, 6))), ## highly acidic soils (pH<3.5); neutral = 7 ## 8 might not be in the data
     
     tar_target(Env_clean,
                cleanEnv(Data_env, c(predictor_select, "alt_loc"))),
@@ -601,7 +602,7 @@ targets_fit_env <- list(
   ## Prepare data
   tar_target(Stages_select_env,
              selectLocs(Stages_s, predictor_select,
-                        selectspec = F, selectpred = T, stratpred = T, selectalt = c(200, 600), n_locations = n_locations,
+                        selectspec = F, selectpred = T, stratpred = T, selectalt = c(100, 600), n_locations = n_locations,
                         loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
   
   tar_target(Stages_scaled_env,
@@ -843,9 +844,7 @@ targets_posterior_env <- list(
 
   ## Generate 
   tar_target(residuals_env,
-             generateResiduals(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
-  tar_target(residuals_init_env,
-             generateResiduals(cmdstanfit = fit_env, data_stan_priors_env, includeinit = TRUE, path = dir_publish)),
+             generateResiduals(cmdstanfit = fit_env, data_stan_priors_env, includeinit = F, path = dir_publish)),
   tar_target(Trajectories_avg_env,
              generateTrajectories(cmdstanfit = fit_env, data_stan_priors_env, parname, locparname = parname_trajectories_environmental_env,
                                   time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1, average = "drawsperlocs_all")),

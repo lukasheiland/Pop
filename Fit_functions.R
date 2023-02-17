@@ -281,9 +281,9 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
     ## Together with the offset, the minimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
-    mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.3,
-                               stage == "A" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.05,
-                               stage == "B" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.02)) %>%
+    mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.1,
+                               stage == "A" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.03,
+                               stage == "B" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.01)) %>%
     
     group_by(loc, pop) %>%
     ## The summaries here are only effectual for loclevel == "nested", because otherwise the grouping group_by(loc, pop) is identical to the original id structure 
@@ -294,6 +294,8 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
               y_prior_0 = if_else(y_prior == 0, min_pop, y_prior),
               
               ## Setting alpha = 1 for 0, so that the most density is towards zero
+              ## parameters of the prior gamma density, alpha and beta, are computed based on the data.
+              ## Computation happens for two different parameterizations: by mean and by model.
               # alpha = if_else(y_prior == 0, 1, 10),
               alpha_mean = case_when(stage == "J" ~ 1 + as.integer(count_obs > 0) * 9, # 4 + 2 * count_obs, ## this will assign 1 to count_obs == 0
                                      stage == "A" ~ 1 + as.integer(count_obs > 0) * 9, # 4 + 10 * count_obs,
@@ -301,16 +303,16 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
                                      ),
               beta_mean = alpha_mean/y_prior_0, ## this is equivalent to beta
               
-              sd_mode = case_when(stage == "J" ~ 150, ## median 3000, mean 9000, min 200
-                                  stage == "A" ~ 20, ## min prob around 80, long tail
-                                  stage == "B" ~ 2), ## median 20, mean 22, min 4, short tail
+              sd_mode = case_when(stage == "J" ~ 100 + 10 * count_obs, ## median 3000, mean 9000, min 200
+                                  stage == "A" ~ 10 + 1 * count_obs, ## min prob around 80, long tail
+                                  stage == "B" ~ 1 + 0.5 * count_obs), ## median 20, mean 22, min 4, short tail
               alpha_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["alpha"],
               beta_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["beta"],
               ## The priors concern the N/ha
               ## example, minimum value for A:  v <- reparameterizeModeGamma(130, 20); curve(dgamma(x, v["alpha"] , v["beta"]), 0, 200)
               ## example, mean value for J:  v <- reparameterizeModeGamma(200, 200); curve(dgamma(x, v["alpha"] , v["beta"]), 0, 600)
               
-              alpha = if_else(y_prior == 0, 1, alpha_mode), ## for case zero, alpha is like in alpha_mean case
+              alpha = if_else(y_prior == 0, 1, alpha_mode), ## for case zero, alpha_mode is like in alpha_mean case
               beta = if_else(y_prior == 0, 1/min_pop, beta_mode),
               
               ## alphaByE = alpha/y_prior_0, ## this is equivalent to beta in the mean parameterization
