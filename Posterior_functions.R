@@ -503,6 +503,26 @@ formatNumber <- function(x, signif.digits = 4) {
 }
 
 
+## formatParName --------------------------------
+formatParName <- function(p, log = FALSE, factor = FALSE) {
+  p <- stringi::stri_replace_all_fixed(p,
+                                  c("b_c_b", "_a", "_b", "_j"),
+                                  c("b~'&'~c[B]", "[A]", "[B]", "[J]"),
+                                  vectorize_all = F) ##!!
+  if(isTRUE(log)) {
+    p <- paste0("log~", p)
+  }
+  
+  if(isTRUE(factor)) {
+    p <- factor(p, levels = unique(c("l", "r", "c[J]", "s", "g", "c[A]", "h", "b", "c[B]", "b~'&'~c[B]",
+                                     "log~l", "log~r", "log~c[J]", "log~s", "log~g", "log~c[A]", "log~h", "log~b", "log~c[B]", "log~b~'&'~c[B]",
+                                     as.character(p))))
+  }
+  
+  return(p)
+}
+
+
 ## formatEnvgrid --------------------------------
 # envname <- tar_read("predictor_select")
 # data_stan <- tar_read("data_stan_priors_offset_env")
@@ -2444,7 +2464,18 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
   
   ## Remove NULL objects from list (these can emerge from cross(parname, species), e.g., when this combinanation is not in gen quants)
   surfaces[sapply(surfaces, is.null)] <- NULL
-  surfaces <- surfaces[!sapply(surfaces, function(s) isTRUE(attr(s, "parname") %in% removevar))]
+  
+  removeSurface <- function(surface, r) {
+    withtax <- str_detect(r, '\\d')
+    if(isTRUE(attr(surface, "parname") %in% r[!withtax])) {
+      return(T)
+      } else {
+      rmbcname <- attr(surface, "parname") == str_remove(r[withtax], '\\[\\d\\]')
+      rmbctax <- attr(surface, "tax") == as.numeric(str_extract(r[withtax], '\\d'))
+      return(isTRUE(any(rmbcname & rmbctax)))
+    }
+  }
+  surfaces <- surfaces[!sapply(surfaces, removeSurface, r = removevar)]
   
   ## Handling the addition of points for not sufficent credibility
   crednotnull <- !is.null(Cred)
@@ -2535,19 +2566,20 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
         
         yscale +
         themefun() +
+        theme(legend.title = element_blank()) +
         ps$aspect +
         ggtitle(paste(parname, taxon)) +
-        ps$axislabls
+        ps$axislabs
 
       return(plot)
     }
     
     plots <- lapply(surfaces, plotE)
     names(plots) <- parname_surfaces
-    plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 2)
+    plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 3)
     
     ggsave(filename = paste0(path, "/", basename, "_plotgrid_environmental_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
-           plot = plotgrid, device = "pdf", width = 15, height = (ps$height_plot + 0.8) * length(plots)/2, limitsize = FALSE)
+           plot = plotgrid, device = "pdf", width = 22, height = (ps$height_plot + 0.8) * length(plots)/2, limitsize = FALSE)
     
   } else {
     
@@ -2572,6 +2604,10 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
     
     if(crednotnull) D <- bind_rows(grid = D, points = Cred, .id = "pointsorgrid") ## this makes sure that both data sets actually have the same cols and that faceting on the whole dataset works while geoms are based on the two subsets. Note that for "points" z is NA!
     
+    D %<>%
+      mutate(partax = fct_recode(str_extract(variable, "\\d"), "Fagus" = "1", "others" = "2"),
+             parname = formatParName(str_remove(variable, "ba_frac_diff_fix_ko_\\d_env_"), factor = T))
+    
     plots <- ggplot(D, aes_string(x = name_x, y = name_y_s, z = "z")) + # group = "variable"
       ps$hlines +
       
@@ -2592,7 +2628,7 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
       metR::geom_contour2(data = D[D$pointsorgrid == "grid",], mapping = aes(z = z, label = round(..level.., 4)), col = "white", label_colour = "black") +
       ps$divergingfillscale(limits = c(-z_maxabs, z_maxabs), name = "difference") +
       
-      { if( length(unique(D$tax)) > 1 ) facet_wrap(~ variable + tax, ncol = 2) else facet_wrap(~ variable, ncol = 2, labeller = labeller(variable = function(x) str_replace(x, fixed("ba_frac_diff_fix_ko_"), "difference "))) } +
+      { if( length(unique(D$tax)) > 1 ) facet_wrap(~ parname + tax, ncol = 2) else if ( length(unique(D$partax)) > 1 ) facet_wrap(~ parname + partax, ncol = 2, labeller = label_parsed) else facet_wrap(~ parname, ncol = 2, labeller = label_parsed) } +
       
       yscale +
       themefun() +
@@ -2654,6 +2690,7 @@ plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel =
       mutate(taxon = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>%
       mutate(parname = str_extract(parname, "(c_[jab]|[a-z])(?=_fix)")) %>%
       mutate(parname = paste0(parname, "_log")) %>%
+      mutate(parname_formatted = formatParName(str_remove(parname, "_log"), log = T, factor = T)) %>%
       filter(parname %in% unique(Surfaces$parname))
     
     maxabs <- max(abs(E$value))
@@ -2661,6 +2698,7 @@ plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel =
   
   # divscale <- function(...) scale_color_gradient2(low = color[1], mid = "white", high = color[2], midpoint = 0, ...)
   
+  Surfaces %<>% mutate(parname_formatted = formatParName(str_remove(parname, "_log"), log = T, factor = T))
   
   plot <- ggplot(Surfaces, aes_string(x = name_x, y = name_y_s)) +
     # geom_raster(aes(fill = z)) +
@@ -2679,9 +2717,9 @@ plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel =
                         colour = "gray30", global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) +
     
     yscale +
-    facet_grid(rows = vars(parname),
+    facet_grid(rows = vars(parname_formatted),
                cols = vars(taxon),
-               labeller = labeller(.rows = function(x) paste("log", str_remove(x, "_log")))) +
+               labeller = labeller(.rows = label_parsed)) +
     themefun() +
     ps$aspect +
     ps$axislabs
@@ -2928,6 +2966,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
     dplyr::filter(!is.na(binary))
     # rename(chain = .chain, iteration = .iteration, draw = .draw, variable = .variable, value = .value) %>%
   
+  parorder <- c("l", "r", "c[J]", "s", "g", "c[A]", "h", "b", "c[B]", "~'&'~[B]")
   
   E <- Environmental %>%
     rename(value = .value) %>%
@@ -2956,10 +2995,11 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
     
     mutate(tax = fct_recode(as.character(tax), Fagus = "1", others = "2")) %>% 
     rename(p = .variable) %>% 
+    # arrange(p) %>%
     mutate(parameter = if_else(str_starts(p, "sum_"),
-                               str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)"), #! sKoEnvB|
+                               formatParName(str_extract(p, "(?<=_)(b_c_b|c_a|c_b|c_j|[bghlrs]{1})(?=_)")), #! sKoEnvB|
                                p), ## distinguish whether contribution or parameter
-           parameter = factor(parameter, levels = unique(c(parname, parameter, p))), # for the order
+           parameter = factor(parameter, levels = unique(c(parorder, parname, parameter, p))), # for the order
            kotax = suppressWarnings( fct_recode(str_extract(p, "(?<=_)(\\d)(?!=_)"), "Fagus" = "1", "others" = "2") ),
            # avg = str_detect(p, "_avg"),
            predominance = as.factor(if_else(binary, "wins", "looses")),
@@ -2974,8 +3014,8 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
   
   plot_binary <- ggplot(E, aes(x = m, y = tax, color = tax, group = predominance)) +  # y = parameter, 
     
-    geom_linerange(aes(xmin = l, xmax = u), size = 2.6, position = pos) +
-    geom_linerange(aes(xmin = ll, xmax = uu), size = 1.2, position = pos) +
+    geom_linerange(aes(xmin = l, xmax = u), linewidth = 2.6, position = pos) +
+    geom_linerange(aes(xmin = ll, xmax = uu), linewidth = 1.2, position = pos) +
     geom_point(color = "black", position = pos, size = 0.8) +
     geom_text(aes(x = labelxpos, label = predominance), position = pos) +
     coord_flip() +
@@ -2983,7 +3023,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
     # geom_hline(yintercept = c(5, 7), linetype = 3, size = 0.6, col = "#222222") + ## lines through g/h
     
     facet_wrap(~parameter, scales = facetscale,
-               labeller = labeller(tax = function(tax) paste(tax))) +
+               labeller = label_parsed) +
     
     { if (plotlog) scale_x_continuous(trans = pseudo_log_trans(sigma = 0.1, base = 10)) } +
     

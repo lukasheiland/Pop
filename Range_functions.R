@@ -75,17 +75,23 @@ plotRange <- function(Ranges, predictor,
   ranges <- Ranges %>%
     dplyr::select(all_of(c("origin", predictor))) %>%
     pivot_longer(cols = predictor, names_to = "variable", values_to = "value") %>%
+    mutate(origin = if_else(origin == "DE", "German NFI", origin)) %>%
+    mutate(variable = case_when(variable == "phCaCl_esdacc" ~ "soil pH",
+                                variable == "cwbYear_aclim" ~ "climatic water balance [mm/a]",
+                                TRUE ~ variable)) %>% 
     split(., .$variable)
+    
   
   plotR <- function(R) {
     plot <- ggplot(R, mapping = aes(x = value, y = origin, group = origin)) +
       geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
       facet_wrap(~variable) + ## just to have a nice title, although there is only one variable
-      themefun()
+      themefun() +
+      theme(axis.title.x = element_blank(), axis.title.y = element_blank())
   }
   
   plots <- lapply(ranges, plotR)
-  plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 1, rel_widths = 2)
+  plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 1, rel_widths = 2, labels = "AUTO")
   ggsave(file.path(path, "Plot_range_Fagus.sylvatica.pdf"), plotgrid, device = "pdf", height = 6, width = 6)
   
   return(plots)

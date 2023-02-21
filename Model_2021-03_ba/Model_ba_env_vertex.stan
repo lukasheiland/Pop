@@ -503,7 +503,7 @@ transformed parameters {
   array[N_locs] vector<lower=0>[N_pops] state_init;
   
   // Spread of the parameters along environmental axes
-  vector<upper=0>[N_species] b_log_spread_env1 = b_log_spread_env1_1x * [1e-1, 1e-2]'; // bell-shaped
+  vector<upper=0>[N_species] b_log_spread_env1 = b_log_spread_env1_1x .* [1e-1, 1e-2]'; // bell-shaped
   vector<lower=0>[N_species] c_a_log_spread_env1 = c_a_log_spread_env1_10 * 1e-1;  // inverse bell-shaped
   vector<lower=0>[N_species] c_b_log_spread_env1 = c_b_log_spread_env1_100 * 1e-2; // inverse bell-shaped
   vector<lower=0>[N_species] c_j_log_spread_env1 = c_j_log_spread_env1_10 * 1e-1; // inverse bell-shaped
@@ -512,7 +512,7 @@ transformed parameters {
   vector<upper=0>[N_species] r_log_spread_env1 = r_log_spread_env1_10 * 1e-1; // (inverse?) bell-shaped
   vector<lower=0>[N_species] s_log_spread_env1 = s_log_spread_env1_10 * 1e-1; // (inverse?) bell-shaped
   
-  vector<upper=0>[N_species] b_log_spread_env2 = b_log_spread_env2_1x * [1, 1e-1]';
+  vector<upper=0>[N_species] b_log_spread_env2 = b_log_spread_env2_1x .* [1, 1e-1]';
   vector<lower=0>[N_species] c_a_log_spread_env2  = c_a_log_spread_env2_10 * 1e-1;
   vector<lower=0>[N_species] c_b_log_spread_env2 = c_b_log_spread_env2_10 * 1e-1;
   vector<lower=0>[N_species] c_j_log_spread_env2 = c_j_log_spread_env2_10 * 1e-1;
@@ -580,8 +580,8 @@ transformed parameters {
   vector[L_y] y_hat_offset = y_hat .* offset_data;
   
   vector<lower=0>[N_protocolTax] phi_obs = inv(phi_obs_inv .*
-                                               [1e-3, 1e-3, 1e1, 1e1, 1e1, 1e1, 1e-3, 1e-3, 1e-3, 1e-3, 1e-1, 1e-1, 1e-3, 1e-3]'
-                                               //[F.J.init, o.J.init, F.J.2, o.J.2, F.J.3, o.J.3, F.A.init, o.A.init, F.B.init, o.B.init, F.A.23, o.A.23, F.B.23, o.B.23]
+                                               [1e-3, 1e-3,      1e0, 1e0, 1e0, 1e0,          1e-3, 1e-3, 1e-3, 1e-3,      1e-1, 1e-1,      1e-1, 1e-1]'
+                                               //[F.J.1, o.J.1,  F.J.2, o.J.2, F.J.3, o.J.3,  F.A.1, o.A.1, F.B.1, o.B.1,  F.A.23, o.A.23,  F.B.23, o.B.23]
                                                );
   
   //? vector<lower=0>[N_protocolTax] phi_obs = inv_square(phi_obs_inv_sqrt .*
@@ -642,23 +642,23 @@ model {
 
   //// Priors for spread of parameters
   // Caution: exponential(rate) while double_exponential(mean, scale == 1/rate)
-  -b_log_spread_env1   ~  normal(0, 0.5); // exponential(5.0); // negative!
-  c_a_log_spread_env1 ~  normal(0, 0.5); // exponential(5.0);
-  c_b_log_spread_env1 ~  normal(0, 0.5); // exponential(5.0);
-  c_j_log_spread_env1 ~  normal(0, 0.5); // exponential(5.0);
-  -g_log_spread_env1   ~  normal(0, 0.5); // exponential(5.0);
-  -h_log_spread_env1   ~  normal(0, 0.5); // exponential(5.0);
-  -r_log_spread_env1   ~  normal(0, 0.5); // exponential(5.0);
-  s_log_spread_env1   ~  normal(0, 0.5); // exponential(5.0);
+  -b_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0); // negative!
+  c_a_log_spread_env1 ~  normal(0, 0.1); // exponential(5.0);
+  c_b_log_spread_env1 ~  normal(0, 0.1); // exponential(5.0);
+  c_j_log_spread_env1 ~  normal(0, 0.1); // exponential(5.0);
+  -g_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
+  -h_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
+  -r_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
+  s_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
   
-  -b_log_spread_env2   ~  normal(0, 0.5); // exponential(5.0);
-  c_a_log_spread_env2 ~  normal(0, 0.5); // exponential(5.0);
-  c_b_log_spread_env2 ~  normal(0, 0.5); // exponential(5.0);
-  c_j_log_spread_env2 ~  normal(0, 0.5); // exponential(5.0);
-  -g_log_spread_env2   ~  normal(0, 0.5); // exponential(5.0);
-  -h_log_spread_env2   ~  normal(0, 0.5); // exponential(5.0);
-  -r_log_spread_env2   ~  normal(0, 0.5); // exponential(5.0);
-  s_log_spread_env2   ~  normal(0, 0.5); // exponential(5.0);
+  -b_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
+  c_a_log_spread_env2 ~  normal(0, 0.1); // exponential(5.0);
+  c_b_log_spread_env2 ~  normal(0, 0.1); // exponential(5.0);
+  c_j_log_spread_env2 ~  normal(0, 0.1); // exponential(5.0);
+  -g_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
+  -h_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
+  -r_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
+  s_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
   
   
   for(l in 1:N_locs) { 
@@ -683,6 +683,11 @@ model {
 
 
 generated quantities {
+  //—————————————————————————————————————————————————————————————————————//
+  // Print for debugging -----------------------------------------------//
+  //———————————————————————————————————————————————————————————————————//  
+  print(b_log);
+  
 
   //—————————————————————————————————————————————————————————————————————//
   // Prediction  -------------------------------------------------------//
