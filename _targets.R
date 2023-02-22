@@ -103,7 +103,7 @@ targets_settings <- list(
   ),
   
   tar_target(weakpriors_env,
-             list(prior_b_log = c(-4, 2),
+             list(prior_b_log = c(-4, 1),
                   prior_c_a_log = c(-6, 2),
                   prior_c_b_log = c(-6, 2),
                   prior_c_j_log = c(-9, 1),

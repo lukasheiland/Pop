@@ -642,23 +642,23 @@ model {
 
   //// Priors for spread of parameters
   // Caution: exponential(rate) while double_exponential(mean, scale == 1/rate)
-  -b_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0); // negative!
-  c_a_log_spread_env1 ~  normal(0, 0.1); // exponential(5.0);
-  c_b_log_spread_env1 ~  normal(0, 0.1); // exponential(5.0);
-  c_j_log_spread_env1 ~  normal(0, 0.1); // exponential(5.0);
-  -g_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
-  -h_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
-  -r_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
-  s_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
+  -b_log_spread_env1   ~  normal(0, 0.2); // exponential(5.0); // negative!
+  c_a_log_spread_env1 ~  normal(0, 0.2); // exponential(5.0);
+  c_b_log_spread_env1 ~  normal(0, 0.2); // exponential(5.0);
+  c_j_log_spread_env1 ~  normal(0, 0.2); // exponential(5.0);
+  -g_log_spread_env1   ~  normal(0, 0.2); // exponential(5.0);
+  -h_log_spread_env1   ~  normal(0, 0.2); // exponential(5.0);
+  -r_log_spread_env1   ~  normal(0, 0.2); // exponential(5.0);
+  s_log_spread_env1   ~  normal(0, 0.2); // exponential(5.0);
   
-  -b_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
-  c_a_log_spread_env2 ~  normal(0, 0.1); // exponential(5.0);
-  c_b_log_spread_env2 ~  normal(0, 0.1); // exponential(5.0);
-  c_j_log_spread_env2 ~  normal(0, 0.1); // exponential(5.0);
-  -g_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
-  -h_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
-  -r_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
-  s_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
+  -b_log_spread_env2   ~  normal(0, 0.2); // exponential(5.0);
+  c_a_log_spread_env2 ~  normal(0, 0.2); // exponential(5.0);
+  c_b_log_spread_env2 ~  normal(0, 0.2); // exponential(5.0);
+  c_j_log_spread_env2 ~  normal(0, 0.2); // exponential(5.0);
+  -g_log_spread_env2   ~  normal(0, 0.2); // exponential(5.0);
+  -h_log_spread_env2   ~  normal(0, 0.2); // exponential(5.0);
+  -r_log_spread_env2   ~  normal(0, 0.2); // exponential(5.0);
+  s_log_spread_env2   ~  normal(0, 0.2); // exponential(5.0);
   
   
   for(l in 1:N_locs) { 
