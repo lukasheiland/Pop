@@ -305,7 +305,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
               
               sd_mode = case_when(stage == "J" ~ 100 + 10 * count_obs, ## median 3000, mean 9000, min 200
                                   stage == "A" ~ 10 + 1 * count_obs, ## min prob around 80, long tail
-                                  stage == "B" ~ 1 + 0.5 * count_obs), ## median 20, mean 22, min 4, short tail
+                                  stage == "B" ~ 1 + 0.3 * count_obs), ## median 20, mean 22, min 4, short tail
               alpha_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["alpha"],
               beta_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["beta"],
               ## The priors concern the N/ha
