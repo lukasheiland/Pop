@@ -1,0 +1,246 @@
+######################################################################################
+# JAB model simulations                       ---------------------------------------
+######################################################################################
+
+
+# Library -----------------------------------------------------------------
+library(deSolve)
+
+
+# Different versions of the JAB model wrapped into functions ----------------------------------
+## Here, we show three versions of the JAB model
+## 1) the originally proposed iterateJAB()
+## 2) an altered JAB model based on the reviewer's suggestions iterateJAB2()
+## 3) for comparison an ODE version, calculateOdeJAB(), which can be numerically integrated with deSolve
+
+
+## 1) Originally proposed JAB model
+iterateJAB <- function(time, ## vector of times
+                       state_0, ## vector of initial species states.
+                       par){
+  
+  b <- par$b
+  c_a <- par$c_a
+  c_b <- par$c_b
+  c_j <- par$c_j
+  g <- par$g
+  h <- par$h
+  l <- par$l
+  r <- par$r
+  s <- par$s
+  
+  ba_a_avg <- 0.5
+  ba_a_upper <- 0.7
+  
+  ## Set the count variables
+  n <- length(r) # no. of species
+  
+  times_intern <- 1:max(time)
+  n_times <- length(times_intern)
+  
+  # Prepare a state matrix
+  whichstage <- rep(1:3, each = n)
+  State <- matrix(rep(state_0, times = n_times), nrow = n_times, byrow = T)
+  
+  ## Here comes the model.
+  for (t in 2:n_times) {
+    
+    ## States at t-1
+    J <- State[t-1, whichstage == 1]
+    A <- State[t-1, whichstage == 2]
+    B <- State[t-1, whichstage == 3]
+    
+    ## The total basal area of big trees
+    BA <- A * ba_a_avg + B
+    BA_sum <- sum(BA)
+    
+    J_trans <- r*BA + l + (J - g*J)
+    J_t <- J_trans * 1/(1 + c_j*sum(J) + s*BA_sum) # count of juveniles J
+    # with all variables > 0, and 0 < g, m_j < 1
+    
+    A_trans <- g*J + (A - h*A) # + u[ ,2]
+    A_t <-  A_trans * 1/(1 + c_a*BA_sum) # count of small adults
+    # with all variables > 0, and 0 < h, m_a < 1
+    
+    A_ba <- A * h * ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
+    B_trans <- A_ba + B # + u[ ,3]
+    B_t <- (1+b)*B_trans * 1/(1 + c_b*BA_sum)  # basal area of big adults B
+    
+    State[t, ] <- c(J_t, A_t, B_t)
+  }
+  
+  whichtimes <- match(time, times_intern)
+  State <- State[whichtimes,]
+  State <- cbind(time = whichtimes, State)
+
+  return(State)
+}
+
+
+## 2) Altered JAB model with 1. limitation only acting on the state, and 2. with density-independent mortality m
+iterateJAB2 <- function(time, ## vector of times
+                        state_0, ## vector of initial species states.
+                        par){
+  
+  b <- par$b
+  c_a <- par$c_a
+  c_b <- par$c_b
+  c_j <- par$c_j
+  g <- par$g
+  h <- par$h
+  l <- par$l
+  r <- par$r
+  s <- par$s
+  m <- par$m
+  
+  ba_a_avg <- 0.5
+  ba_a_upper <- 0.7
+  
+  ## Set the count variables
+  n <- length(r) # no. of species
+  
+  times_intern <- 1:max(time)
+  n_times <- length(times_intern)
+  
+  # Prepare a state matrix
+  whichstage <- rep(1:3, each = n)
+  State <- matrix(rep(state_0, times = n_times), nrow = n_times, byrow = T)
+  
+  ## Here comes the model.
+  for (t in 2:n_times) {
+    
+    ## States at t-1
+    J <- State[t-1, whichstage == 1]
+    A <- State[t-1, whichstage == 2]
+    B <- State[t-1, whichstage == 3]
+    
+    ## The total basal area of big trees
+    BA <- A * ba_a_avg + B
+    BA_sum <- sum(BA)
+    
+    J_input <- r*BA + l
+    J_trans <- g*J
+    J_t <- J/(1 + c_j*sum(J) + s*BA_sum) + J_input - J_trans
+    
+    A_trans <- h*A
+    A_t <-  A/(1 + c_a*BA_sum) + J_trans - A_trans
+    
+    A_ba <- ba_a_upper * (A * h)
+    B_t <- B/(1 + c_b*BA_sum) + A_ba + B*b
+    
+    State[t, ] <- c(J_t, A_t, B_t)
+  }
+  
+  whichtimes <- match(time, times_intern)
+  State <- State[whichtimes,]
+  State <- cbind(time = whichtimes, State)
+  
+  return(State)
+}
+
+
+## 3. ODE version of the JAB model for comparison
+calculateOdeJAB <- function(time,
+                             state, # vector of species states.
+                             par){
+  
+  b <- par$b
+  c_a <- par$c_a
+  c_b <- par$c_b
+  c_j <- par$c_j
+  g <- par$g
+  h <- par$h
+  l <- par$l
+  r <- par$r
+  s <- par$s
+  # m <- par$m
+  
+  ba_a_avg <- 0.5 ## constants for basal area conversion
+  ba_a_upper <- 0.7
+
+  J <- state[1:2]
+  A <- state[3:4]
+  B <- state[5:6]
+  BA <- (A * ba_a_avg) + B
+  BA_sum <- sum(BA)
+
+  dJ <- l + r * BA - (c_j*sum(J) + s*BA_sum + g)*J
+  dA <- g * J - (c_a*BA_sum + h)*A
+  dB <- A * h * ba_a_upper + B*b - (c_b*BA_sum)*B # - m*B
+  
+  return(list(c(dJ, dA, dB)))
+}
+
+
+# Set up simulation -------------------------------------------------------------------
+set.seed(1)
+time <- seq(1, 500, 20)
+
+## All equal parameters loosely based on the priors
+par <- list(b = c(-3, -3),
+            c_a = c(-8, -8),
+            c_b = c(-7, -7),
+            c_j = c(-9, -9),
+            g = c(-5, -5),
+            h = c(-4, -4),
+            l = c(4, 4),
+            r = c(4, 4),
+            s = c(-6, -6),
+            m = c(-3, -3))
+
+## Equal states, loosely based on initial states in the data (change sd in rnorm for some randomness)
+state_0 <- exp(rnorm(6, rep(c(8, 5, 2), each = 2), 0))
+
+
+## Wrapper for  plotting trajectories given a Matrix with observations as rows and columns 1: time, 2: j, 3: J, 4: a, 5: A, etc.
+wrapMatplot <- function(Mat) {
+  matplot(Mat[, 1], Mat[, -1],
+          type = "p", pch = c("j", "J", "a", "A", "b", "B"), col = rep(c(1, 3), 3),
+          log = "y")
+}
+
+
+
+
+# Simulations ------------------------------------------------------
+
+## Equal states and equal parameters between species --------------
+
+Sim_JAB <- iterateJAB(time, state_0, lapply(par, exp))
+wrapMatplot(Sim_JAB)
+## Here, letter case and color indicate species, while J, A, B indicate stage
+
+## The ODE version has very similar dynamics
+Sim_JAB_ode <- deSolve::ode(state_0, time, calculateOdeJAB, lapply(par, exp))
+wrapMatplot(Sim_JAB_ode) 
+
+## We propose JAB2 which incorporates the reviewers suggestions
+## 1. better parameter interpretability through limitation acting only between steps
+## 2. include density-independent mortality m
+Sim_JAB2 <- iterateJAB2(time, state_0, lapply(par, exp))
+wrapMatplot(Sim_JAB2)
+
+
+## Different recruitment rates clearly alter equilibria -------------------------
+## regardless of model version
+
+par_r <- within(par, { r = c(2, 2.3)}) ## change only r within par
+
+Sim_JAB_r <- iterateJAB(time, state_0, lapply(par_r, exp))
+wrapMatplot(Sim_JAB_r)
+
+Sim_JAB2_r <- iterateJAB2(time, state_0, lapply(par_r, exp))
+wrapMatplot(Sim_JAB2_r)
+
+Sim_odeJAB_r <- deSolve::ode(state_0, time, calculateOdeJAB, lapply(par_r, exp))
+wrapMatplot(Sim_odeJAB_r)
+
+
+par_l <- within(par, { l = c(5, 3)}) ## change l; Note that l is acting only linearly
+
+Sim_JAB_l <- iterateJAB(seq(1, 3000, 100), state_0, lapply(par_l, exp))
+wrapMatplot(Sim_JAB_l)
+
+Sim_odeJAB_l <- deSolve::ode(state_0, seq(1, 3000, 100), calculateOdeJAB, lapply(par_l, exp))
+wrapMatplot(Sim_odeJAB_l)
+

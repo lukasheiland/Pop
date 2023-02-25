@@ -526,7 +526,7 @@ targets_fit_general <- list(
                             loc = "plot")),
   
   tar_target(file_model_transitions,
-             "Model_2021-03_ba/Model_transitions.stan",
+             "Model_2023-02_bb/Model_transitions.stan",
              format = "file"),
   
   tar_target(model_transitions,
@@ -583,7 +583,7 @@ targets_fit_test <- list(
 #### fit ----------
 targets_fit <- list(
   tar_target(file_model,
-             "Model_2021-03_ba/Model_ba.stan",
+             "Model_2023-02_bb/Model_bb.stan",
              format = "file"),
   tar_target(model,
              cmdstan_model(file_model, stanc_options = list("O1"))),
@@ -637,11 +637,8 @@ targets_fit_env <- list(
              selectOffset(offsetname_select, data_stan_priors_env)),
 
   ## Fit
-  tar_target(file_model_env,
-             "Model_2021-03_ba/Model_ba_env.stan",
-             format = "file"),
   tar_target(file_model_env_vertex,
-             "Model_2021-03_ba/Model_ba_env_vertex.stan",
+             "Model_2023-02_bb/Model_bb_env_vertex.stan",
              format = "file"),
   tar_target(model_env,
              cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
