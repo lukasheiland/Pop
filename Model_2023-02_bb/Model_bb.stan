@@ -22,11 +22,11 @@ functions {
       real BA_sum = sum(BA);
       
       /// Model
-      vector lim_J = (1 + c_j*sum(J) + s*BA_sum)
+      vector[N_spec] lim_J = (1 + c_j*sum(J) + s*BA_sum);
       State[i_j, t]  =  l + r .* BA + (J - g .* J) ./ lim_J;
-      vector lim_A = (1 + c_a*BA_sum)
+      vector[N_spec] lim_A = (1 + c_a*BA_sum);
       State[i_a, t]  =  (g .* J) ./ lim_J + (A - h .* A) ./ lim_A;
-      State[i_b, t]  =  ba_a_upper * (h .* A) ./lim_A + B ./ (1 + c_b*BA_sum) + b .* B;
+      State[i_b, t]  =  ba_a_upper * (h .* A) ./ lim_A + b .* B + B ./ (1 + c_b*BA_sum);
     
     }
     
@@ -108,9 +108,12 @@ functions {
       vector[N_spec] BA = A .* ba_a_avg + B;
       real BA_sum = sum(BA);
       
-      J_1  =  J ./ (1 + c_j*sum(J) + s*BA_sum) + r .* BA + l - g .* J;
-      A_1  =  A ./ (1 + c_a*BA_sum) + g .* J - h .* A;
-      B_1  =  B ./ (1 + c_b*BA_sum) + b .* B + h .* A * ba_a_upper;
+      
+      vector[N_spec] lim_J = (1 + c_j*sum(J) + s*BA_sum);
+      J_1  =  l + r .* BA + (J - g .* J) ./ lim_J;
+      vector[N_spec] lim_A = (1 + c_a*BA_sum);
+      A_1  =  (g .* J) ./ lim_J + (A - h .* A) ./ lim_A;
+      B_1  =  ba_a_upper * (h .* A) ./ lim_A + b .* B + B ./ (1 + c_b*BA_sum);
       
       BA_1 = A_1 .* ba_a_avg + B_1; // New BA as additional state.
 
