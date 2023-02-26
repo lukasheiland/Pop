@@ -22,9 +22,11 @@ functions {
       real BA_sum = sum(BA);
       
       /// Model
-      State[i_j, t]  =  J ./ (1 + c_j*sum(J) + s*BA_sum) + r .* BA + l - g .* J;
-      State[i_a, t]  =  A ./ (1 + c_a*BA_sum) + g .* J - h .* A;
-      State[i_b, t]  =  B ./ (1 + c_b*BA_sum) + b .* B + (h .* A * ba_a_upper);
+      vector lim_J = (1 + c_j*sum(J) + s*BA_sum)
+      State[i_j, t]  =  l + r .* BA + (J - g .* J) ./ lim_J;
+      vector lim_A = (1 + c_a*BA_sum)
+      State[i_a, t]  =  (g .* J) ./ lim_J + (A - h .* A) ./ lim_A;
+      State[i_b, t]  =  ba_a_upper * (h .* A) ./lim_A + B ./ (1 + c_b*BA_sum) + b .* B;
     
     }
     

@@ -54,17 +54,10 @@ iterateJAB <- function(time, ## vector of times
     BA <- A * ba_a_avg + B
     BA_sum <- sum(BA)
     
-    J_trans <- r*BA + l + (J - g*J)
-    J_t <- J_trans * 1/(1 + c_j*sum(J) + s*BA_sum) # count of juveniles J
-    # with all variables > 0, and 0 < g, m_j < 1
-    
-    A_trans <- g*J + (A - h*A) # + u[ ,2]
-    A_t <-  A_trans * 1/(1 + c_a*BA_sum) # count of small adults
-    # with all variables > 0, and 0 < h, m_a < 1
-    
+    J_t <- r*BA + l + (J - g*J) / (1 + c_j*sum(J) + s*BA_sum) # count of juveniles J
+    A_t <-  g*J + (A - h*A) / (1 + c_a*BA_sum) # count of small adults
     A_ba <- A * h * ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
-    B_trans <- A_ba + B # + u[ ,3]
-    B_t <- (1+b)*B_trans * 1/(1 + c_b*BA_sum)  # basal area of big adults B
+    B_t <- (1+b)*(A_ba + B) / (1 + c_b*BA_sum)  # basal area of big adults B
     
     State[t, ] <- c(J_t, A_t, B_t)
   }
@@ -91,7 +84,7 @@ iterateJAB2 <- function(time, ## vector of times
   l <- par$l
   r <- par$r
   s <- par$s
-  m <- par$m
+  # m <- par$m
   
   ba_a_avg <- 0.5
   ba_a_upper <- 0.7
@@ -118,15 +111,14 @@ iterateJAB2 <- function(time, ## vector of times
     BA <- A * ba_a_avg + B
     BA_sum <- sum(BA)
     
-    J_input <- r*BA + l
-    J_trans <- g*J
-    J_t <- J/(1 + c_j*sum(J) + s*BA_sum) + J_input - J_trans
+    lim_J <- (1 + c_j*sum(J) + s*BA_sum)
+    J_t <- l + r*BA + (J - g*J)/lim_J
     
-    A_trans <- h*A
-    A_t <-  A/(1 + c_a*BA_sum) + J_trans - A_trans
+    lim_A <- (1 + c_a*BA_sum)
+    A_t <-  g*J/lim_J + (A - h*A)/lim_A
     
-    A_ba <- ba_a_upper * (A * h)
-    B_t <- B/(1 + c_b*BA_sum) + A_ba + B*b
+    A_ba <- ba_a_upper * (A * h)/lim_A
+    B_t <- A_ba + B*b + B/(1 + c_b*BA_sum) # - m*B
     
     State[t, ] <- c(J_t, A_t, B_t)
   }
@@ -216,7 +208,6 @@ wrapMatplot(Sim_JAB_ode)
 
 ## We propose JAB2 which incorporates the reviewers suggestions
 ## 1. better parameter interpretability through limitation acting only between steps
-## 2. include density-independent mortality m
 Sim_JAB2 <- iterateJAB2(time, state_0, lapply(par, exp))
 wrapMatplot(Sim_JAB2)
 
