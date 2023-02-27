@@ -54,8 +54,8 @@ iterateJAB <- function(time, ## vector of times
     BA <- A * ba_a_avg + B
     BA_sum <- sum(BA)
     
-    J_t <- r*BA + l + (J - g*J) / (1 + c_j*sum(J) + s*BA_sum) # count of juveniles J
-    A_t <-  g*J + (A - h*A) / (1 + c_a*BA_sum) # count of small adults
+    J_t <- (r*BA + l + J - g*J) / (1 + c_j*sum(J) + s*BA_sum) # count of juveniles J
+    A_t <-  (g*J + A - h*A) / (1 + c_a*BA_sum) # count of small adults
     A_ba <- A * h * ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
     B_t <- (1+b)*(A_ba + B) / (1 + c_b*BA_sum)  # basal area of big adults B
     
@@ -70,7 +70,7 @@ iterateJAB <- function(time, ## vector of times
 }
 
 
-## 2) Altered JAB model with 1. limitation only acting on the state, and 2. with density-independent mortality m
+## 2) Altered JAB model with limitation only acting on the state
 iterateJAB2 <- function(time, ## vector of times
                         state_0, ## vector of initial species states.
                         par){
@@ -166,7 +166,7 @@ calculateOdeJAB <- function(time,
 
 # Set up simulation -------------------------------------------------------------------
 set.seed(1)
-time <- seq(1, 500, 20)
+time <- seq(1, 200, 10)
 
 ## All equal parameters loosely based on the priors
 par <- list(b = c(-3, -3),
@@ -188,6 +188,7 @@ state_0 <- exp(rnorm(6, rep(c(8, 5, 2), each = 2), 0))
 wrapMatplot <- function(Mat) {
   matplot(Mat[, 1], Mat[, -1],
           type = "p", pch = c("j", "J", "a", "A", "b", "B"), col = rep(c(1, 3), 3),
+          xlab = "time", ylab = "abundance",
           log = "y")
 }
 
@@ -206,8 +207,8 @@ wrapMatplot(Sim_JAB)
 Sim_JAB_ode <- deSolve::ode(state_0, time, calculateOdeJAB, lapply(par, exp))
 wrapMatplot(Sim_JAB_ode) 
 
-## We propose JAB2 which incorporates the reviewers suggestions
-## 1. better parameter interpretability through limitation acting only between steps
+## We propose JAB2 which addresses the reviewer's suggestions
+## - better parameter interpretability through limitation acting only between steps
 Sim_JAB2 <- iterateJAB2(time, state_0, lapply(par, exp))
 wrapMatplot(Sim_JAB2)
 
@@ -215,7 +216,7 @@ wrapMatplot(Sim_JAB2)
 ## Different recruitment rates clearly alter equilibria -------------------------
 ## regardless of model version
 
-par_r <- within(par, { r = c(2, 2.3)}) ## change only r within par
+par_r <- within(par, { r <- c(2, 2.3)}) ## change only r within par
 
 Sim_JAB_r <- iterateJAB(time, state_0, lapply(par_r, exp))
 wrapMatplot(Sim_JAB_r)
@@ -227,11 +228,11 @@ Sim_odeJAB_r <- deSolve::ode(state_0, time, calculateOdeJAB, lapply(par_r, exp))
 wrapMatplot(Sim_odeJAB_r)
 
 
-par_l <- within(par, { l = c(5, 3)}) ## change l; Note that l is acting only linearly
+par_l <- within(par, { l <- c(8, 3)}) ## change l; Note that l is acting only linearly
 
-Sim_JAB_l <- iterateJAB(seq(1, 3000, 100), state_0, lapply(par_l, exp))
-wrapMatplot(Sim_JAB_l)
+Sim_JAB2_l <- iterateJAB2(seq(1, 1500, 100), state_0, lapply(par_l, exp))
+wrapMatplot(Sim_JAB2_l)
 
-Sim_odeJAB_l <- deSolve::ode(state_0, seq(1, 3000, 100), calculateOdeJAB, lapply(par_l, exp))
+Sim_odeJAB_l <- deSolve::ode(state_0, seq(1, 1500, 100), calculateOdeJAB, lapply(par_l, exp))
 wrapMatplot(Sim_odeJAB_l)
 

@@ -197,12 +197,14 @@ data {
   vector[2] prior_c_a_log;
   vector[2] prior_c_b_log;
   vector[2] prior_c_j_log;
+  vector[2] prior_g_log;
+  vector[2] prior_h_log;
   vector[2] prior_l_log;
   vector[2] prior_s_log;
 
   // Specific priors
-  array[2] vector[N_species] prior_g_log;
-  array[2] vector[N_species] prior_h_log;
+  // array[2] vector[N_species] prior_g_log;
+  // array[2] vector[N_species] prior_h_log;
   // array[2] vector[N_species] prior_l_log;
   array[2] vector[N_species] prior_r_log;
 
@@ -308,8 +310,8 @@ model {
   c_a_log ~ normal(prior_c_a_log[1], prior_c_a_log[2]);
   c_b_log ~ normal(prior_c_b_log[1], prior_c_b_log[2]);
   c_j_log ~ normal(prior_c_j_log[1], prior_c_j_log[2]);
-  g_log ~ normal(prior_g_log[1], prior_g_log[2]); // species-specific! 
-  h_log ~ normal(prior_h_log[1], prior_h_log[2]); // species-specific! 
+  g_log ~ normal(prior_g_log[1], prior_g_log[2]);
+  h_log ~ normal(prior_h_log[1], prior_h_log[2]);
   l_log ~ normal(prior_l_log[1], prior_l_log[2]);
   r_log ~ normal(prior_r_log[1], prior_r_log[2]); // species-specific! 
   s_log ~ normal(prior_s_log[1], prior_s_log[2]);
@@ -372,8 +374,10 @@ generated quantities {
   real c_a_log_prior = normal_rng(prior_c_a_log[1], prior_c_a_log[2]);
   real c_b_log_prior = normal_rng(prior_c_b_log[1], prior_c_b_log[2]);
   real c_j_log_prior = normal_rng(prior_c_j_log[1], prior_c_j_log[2]);
-  vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
-  vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
+  // vector<upper=0>[N_species] g_log_prior = -sqrt(square(to_vector(normal_rng(prior_g_log[1,], prior_g_log[2,]))));
+  real<upper=0> g_log_prior = -sqrt(square(normal_rng(prior_g_log[1], prior_g_log[2])));
+  // vector<upper=0>[N_species] h_log_prior = -sqrt(square(to_vector(normal_rng(prior_h_log[1,], prior_h_log[2,]))));
+  real<upper=0> h_log_prior = -sqrt(square(normal_rng(prior_h_log[1], prior_h_log[2])));
   real l_log_prior = normal_rng(prior_l_log[1], prior_l_log[2]);
   // vector[N_species] l_log_prior = to_vector(normal_rng(prior_l_log[1,], prior_l_log[2,]));
   vector[N_species] r_log_prior = to_vector(normal_rng(prior_r_log[1,], prior_r_log[2,]));  
@@ -442,7 +446,6 @@ generated quantities {
   array[N_locs] int major_fix_switch_h = converged_fix;
   // array[N_locs] int major_fix_switch_l = converged_fix;
   array[N_locs] int major_fix_switch_l_r = converged_fix;
-  array[N_locs] int major_fix_switch_m = converged_fix;
   array[N_locs] int major_fix_switch_s = converged_fix;
   // 
   // //// Declarations of counterfactual posterior quantities
@@ -467,7 +470,6 @@ generated quantities {
   array[N_locs, N_fix] vector[N_species] Fix_switch_h = Fix;
   // array[N_locs, N_fix] vector[N_species] Fix_switch_l = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_l_r = Fix;
-  array[N_locs, N_fix] vector[N_species] Fix_switch_m = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_s = Fix;
    
   // array[N_locs] vector[N_species] ba_fix_switch_b = J_init;
@@ -481,7 +483,6 @@ generated quantities {
   // array[N_locs] vector[N_species] ba_fix_switch_g_l_r_s = J_init;
   // array[N_locs] vector[N_species] ba_fix_switch_l = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_l_r = J_init;
-  array[N_locs] vector[N_species] ba_fix_switch_m = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_s = J_init;
 
 

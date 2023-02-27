@@ -89,16 +89,15 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-3, 2),
-               prior_c_a_log = c(-8, 3),
-               prior_c_b_log = c(-7, 3),
-               prior_c_j_log = c(-9, 3),
-               # prior_g_log = cbind(Fagus = c(-6, 0.1), others = c(-6, 0.1)),
-               # prior_h_log = cbind(Fagus = c(-4, 1), others = c(-4, 1)),
-               # prior_l_log = cbind(Fagus = c(4, 1), others = c(5, 1)),
-               prior_l_log = c(4, 1),
+               prior_b_log = c(-4, 2),
+               prior_c_a_log = c(-6, 3),
+               prior_c_b_log = c(-6, 3),
+               prior_c_j_log = c(-12, 3),
+               prior_g_log = c(-5, 2),
+               prior_h_log = c(-3, 2),
+               prior_l_log = c(3, 2),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-6, 2)
+               prior_s_log = c(-5, 2)
              )
   ),
   
@@ -106,7 +105,7 @@ targets_settings <- list(
              list(prior_b_log = c(-4, 1),
                   prior_c_a_log = c(-6, 2),
                   prior_c_b_log = c(-6, 2),
-                  prior_c_j_log = c(-9, 1),
+                  prior_c_j_log = c(-12, 1),
                   prior_g_log = c(-6, 1),
                   prior_h_log = c(-3, 1),
                   prior_l_log = c(4, 1),
@@ -539,8 +538,9 @@ targets_fit_general <- list(
              fitTransition(data_stan_transitions, which = "h", model_transitions, fitpath = dir_fit)),
   
   tar_target(data_stan_priors,
-             formatPriors(data_stan, weakpriors, fit_g, fit_h, fit_Seedlings,
-                          widthfactor_trans = 3, widthfactor_reg = 4)),
+             formatPriors(data_stan, weakpriors,
+                          fit_g = NULL, fit_h = NULL, fit_Seedlings = fit_Seedlings,
+                          widthfactor_trans = 1, widthfactor_reg = 4)),
   
   tar_target(offsetname,
              c("offset", "offset_avg", "offset_q1", "offset_q3")),
