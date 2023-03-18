@@ -26,7 +26,7 @@ functions {
       State[i_j, t]  =  l + r .* BA + (J - g .* J) ./ lim_J;
       vector[N_spec] lim_A = (1 + c_a*BA_sum);
       State[i_a, t]  =  (g .* J) ./ lim_J + (A - h .* A) ./ lim_A;
-      State[i_b, t]  =  ba_a_upper * (h .* A) ./ lim_A + b .* B + B ./ (1 + c_b*BA_sum);
+      State[i_b, t]  =  (ba_a_upper * h .* A ./ lim_A) + (1 + b) .* B ./ (1 + c_b*BA_sum);
     
     }
     
@@ -113,11 +113,12 @@ functions {
       J_1  =  l + r .* BA + (J - g .* J) ./ lim_J;
       vector[N_spec] lim_A = (1 + c_a*BA_sum);
       A_1  =  (g .* J) ./ lim_J + (A - h .* A) ./ lim_A;
-      B_1  =  ba_a_upper * (h .* A) ./ lim_A + b .* B + B ./ (1 + c_b*BA_sum);
+      B_1  =  (ba_a_upper * h .* A ./ lim_A) + (1 + b) .* B ./ (1 + c_b*BA_sum);
+
       
       BA_1 = A_1 .* ba_a_avg + B_1; // New BA as additional state.
 
-      eps_ba = fabs((BA_1 - BA) ./ BA_1);
+      eps_ba = abs((BA_1 - BA) ./ BA_1);
       
       /// !
       J = J_1;
@@ -278,7 +279,10 @@ transformed parameters {
                                 
   vector[L_y] y_hat_offset = y_hat .* offset_data;
   
-  vector<lower=0>[N_protocolTax] phi_obs = inv(phi_obs_inv);
+  vector<lower=0>[N_protocolTax] phi_obs = inv(phi_obs_inv .*
+                                               [1e-3, 1e-3,      1e0, 1e0, 1e0, 1e0,          1e-3, 1e-3, 1e-3, 1e-3,      1e-1, 1e-1,      1e-1, 1e-1]'
+                                               //[F.J.1, o.J.1,  F.J.2, o.J.2, F.J.3, o.J.3,  F.A.1, o.A.1, F.B.1, o.B.1,  F.A.23, o.A.23,  F.B.23, o.B.23]
+                                               );
   vector[L_y] phi_obs_rep = phi_obs[rep_protocolTax2y];
   
 }
@@ -295,7 +299,7 @@ model {
   //———————————————————————————————————————————————————————————————————//    
   
   //// Prior for count precision
-  phi_obs_inv ~ normal(0, 10);
+  phi_obs_inv ~ std_normal();
 
   for(l in 1:N_locs) { 
 
@@ -388,19 +392,7 @@ generated quantities {
   // Posterior quantities  -------------------------------------------------//
   //———————————————————————————————————————————————————————————————————————//
   
-  
-  //// Rate tests -------------------------------------
-  // int greater_b = b_log[1] > b_log[2];
-  // int greater_c_a = c_a_log[1] > c_a_log[2];
-  // int greater_c_b = c_b_log[1] > c_b_log[2];
-  // int greater_c_j = c_j_log[1] > c_j_log[2];
-  // int greater_g = g_log[1] > g_log[2];
-  // int greater_h = h_log[1] > h_log[2];
-  // int greater_l = l_log[1] > l_log[2];
-  // int greater_r = r_log[1] > r_log[2];
-  // int greater_s = s_log[1] > s_log[2];
-  
-  
+
   //// Declarations of posterior quantites (as global variables).
   // … are directly initiated with zeroes or 9, so that there are never NaNs in generated quantities.
   
@@ -414,6 +406,8 @@ generated quantities {
   array[N_locs] vector[N_species] B_fix = J_init;
   array[N_locs] vector[N_species] ba_init = J_init;
   array[N_locs] vector[N_species] ba_fix = J_init;
+  
+  vector[N_locs] ba_sum_fix_loc = rep_vector(0.0, N_locs);
   
   array[N_locs] vector[N_species] eps_ba_fix = J_init;
   array[N_locs] real iterations_fix = rep_array(0.0, N_locs);
@@ -430,20 +424,35 @@ generated quantities {
   array[N_locs] int major_init = converged_fix;
   array[N_locs] int major_fix = converged_fix;
   
+  
+  //// Parameters after limitation -------------------------------------
+  vector[N_species] b_lim_init_log = rep_vector(0, N_species);
+  vector[N_species] g_lim_init_log = b_lim_init_log;
+  vector[N_species] h_lim_init_log = b_lim_init_log;
+  
+  vector[N_species] b_lim_fix_log = b_lim_init_log;
+  vector[N_species] g_lim_fix_log = b_lim_init_log;
+  vector[N_species] h_lim_fix_log = b_lim_init_log;
+  
+  
+  //// Counterfactual simulations --------------------------------------
   // array[N_locs] int major_fix_ko_b = converged_fix;
   // array[N_locs] int major_fix_ko_s = converged_fix;
   // array[N_locs] int major_fix_ko_2_b = converged_fix;
   // array[N_locs] int major_fix_ko_2_s = converged_fix;
   
-  // array[N_locs] int major_fix_switch_b = converged_fix;
+  array[N_locs] int major_fix_switch_b = converged_fix;
   array[N_locs] int major_fix_switch_b_c_b = converged_fix;
   // array[N_locs] int major_fix_switch_b_c_a_c_b_h = converged_fix;
   array[N_locs] int major_fix_switch_c_a = converged_fix;
-  // array[N_locs] int major_fix_switch_c_b = converged_fix;
+  array[N_locs] int major_fix_switch_c_b = converged_fix;
   array[N_locs] int major_fix_switch_c_j = converged_fix;
   array[N_locs] int major_fix_switch_g = converged_fix;
-  // array[N_locs] int major_fix_switch_g_l_r_s = converged_fix;
+  array[N_locs] int major_fix_switch_g_s = converged_fix;
+  array[N_locs] int major_fix_switch_g_c_j_s = converged_fix;
+  // array[N_locs] int major_fix_switch_g_c_j_l_r_s = converged_fix;
   array[N_locs] int major_fix_switch_h = converged_fix;
+  array[N_locs] int major_fix_switch_h_c_a = converged_fix;
   // array[N_locs] int major_fix_switch_l = converged_fix;
   array[N_locs] int major_fix_switch_l_r = converged_fix;
   array[N_locs] int major_fix_switch_s = converged_fix;
@@ -459,28 +468,34 @@ generated quantities {
   // array[N_locs] vector[N_species] ba_fix_ko_2_b = J_init;
   // array[N_locs] vector[N_species] ba_fix_ko_2_s = J_init;
    
-  // array[N_locs, N_fix] vector[N_species] Fix_switch_b = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_switch_b = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_b_c_b = Fix;
   // array[N_locs, N_fix] vector[N_species] Fix_switch_b_c_a_c_b_h = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_c_a = Fix;
-  // array[N_locs, N_fix] vector[N_species] Fix_switch_c_b = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_switch_c_b = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_c_j = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_g = Fix;
-  // array[N_locs, N_fix] vector[N_species] Fix_switch_g_l_r_s = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_switch_g_s = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_switch_g_c_j_s = Fix;
+  // array[N_locs, N_fix] vector[N_species] Fix_switch_g_c_j_l_r_s = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_h = Fix;
+  array[N_locs, N_fix] vector[N_species] Fix_switch_h_c_a = Fix;
   // array[N_locs, N_fix] vector[N_species] Fix_switch_l = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_l_r = Fix;
   array[N_locs, N_fix] vector[N_species] Fix_switch_s = Fix;
    
-  // array[N_locs] vector[N_species] ba_fix_switch_b = J_init;
+  array[N_locs] vector[N_species] ba_fix_switch_b = J_init;
   // array[N_locs] vector[N_species] ba_fix_switch_b_c_a_c_b_h = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_b_c_b = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_c_a = J_init;
-  // array[N_locs] vector[N_species] ba_fix_switch_c_b = J_init;
+  array[N_locs] vector[N_species] ba_fix_switch_c_b = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_c_j = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_g = J_init;
+  array[N_locs] vector[N_species] ba_fix_switch_g_s = J_init;
+  array[N_locs] vector[N_species] ba_fix_switch_g_c_j_s = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_h = J_init;
-  // array[N_locs] vector[N_species] ba_fix_switch_g_l_r_s = J_init;
+  array[N_locs] vector[N_species] ba_fix_switch_h_c_a = J_init;
+  // array[N_locs] vector[N_species] ba_fix_switch_g_c_j_l_r_s = J_init;
   // array[N_locs] vector[N_species] ba_fix_switch_l = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_l_r = J_init;
   array[N_locs] vector[N_species] ba_fix_switch_s = J_init;
@@ -491,8 +506,12 @@ generated quantities {
   //—————————————————————————————————————————————————————————————————//
   
   if (generateposteriorq) {
-
-  
+    
+  vector[N_locs] ba_sum_init_loc;
+  vector[N_locs] J_sum_init_loc;
+  // already declared above for saving: vector[N_locs] ba_sum_fix_loc; 
+  vector[N_locs] J_sum_fix_loc;
+    
     //// Fix point iteration -------------------------------------------
     for(loc in 1:N_locs) {
       
@@ -502,7 +521,9 @@ generated quantities {
       
       ba_init[loc] = state_init[loc, (N_pops-N_species+1):N_pops] + // State B
                      ba_a_avg .* state_init[loc, (N_species+1):(N_species+N_species)]; // State A * ba
-
+      
+      ba_sum_init_loc[loc] = sum(ba_init[loc]);
+      J_sum_init_loc[loc] = sum(J_init[loc]);
       
       //// Booleans at init
       dominant_init[loc] = (ba_init[loc, 1]/ba_init[loc, 2]) > 3; // ba_1 > 75%
@@ -529,13 +550,15 @@ generated quantities {
         eps_ba_fix[loc] = Fix[loc, 5];        
         // Fix[loc, 6] is unpacked before
         
+        ba_sum_fix_loc[loc] = sum(ba_fix[loc]);
+        J_sum_fix_loc[loc] = sum(J_fix[loc]);
+        
         //// Booleans at fixpoint
         dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
         major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
         
-        
         //// Counterfactual fix point iteration
-        vector[N_pops] state_fix = append_row(append_row(J_fix[loc],  A_fix[loc]),  B_fix[loc]);
+        // vector[N_pops] state_fix = append_row(append_row(J_fix[loc],  A_fix[loc]),  B_fix[loc]);
         
         ////// ... with knocked out parameters
         // vector[N_species] ko = [0.0, 0.0]';
@@ -564,8 +587,8 @@ generated quantities {
         vector[N_species] switch_r = exp([r_log[2], r_log[1]]');
         vector[N_species] switch_s = exp([s_log[2], s_log[1]]');
         
-        // Fix_switch_b[loc] = iterateFix(state_init[loc], switch_b, exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
-        //ba_fix_switch_b[loc] = Fix_switch_b[loc, 4];
+        Fix_switch_b[loc] = iterateFix(state_init[loc], switch_b, exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        ba_fix_switch_b[loc] = Fix_switch_b[loc, 4];
         
         Fix_switch_b_c_b[loc] = iterateFix(state_init[loc], switch_b, exp(c_a_log), switch_c_b, exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_b_c_b[loc] = Fix_switch_b_c_b[loc, 4];
@@ -576,8 +599,8 @@ generated quantities {
         Fix_switch_c_a[loc] = iterateFix(state_init[loc], exp(b_log), switch_c_a, exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_c_a[loc] = Fix_switch_c_a[loc, 4];
         
-        // Fix_switch_c_b[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), switch_c_b, exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
-        // ba_fix_switch_c_b[loc] = Fix_switch_c_b[loc, 4];
+        Fix_switch_c_b[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), switch_c_b, exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        ba_fix_switch_c_b[loc] = Fix_switch_c_b[loc, 4];
         
         Fix_switch_c_j[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), switch_c_j , exp(g_log), exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_c_j[loc] = Fix_switch_c_j[loc, 4];
@@ -585,11 +608,20 @@ generated quantities {
         Fix_switch_g[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), switch_g, exp(h_log), L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_g[loc] = Fix_switch_g[loc, 4];
         
-        // Fix_switch_g_l_r_s[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), switch_g, exp(h_log), switch_l, switch_r, switch_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
-        // ba_fix_switch_g_l_r_s[loc] = Fix_switch_g_l_r_s[loc, 4];
+        Fix_switch_g_s[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), switch_g, exp(h_log), L_loc[loc, ], exp(r_log), switch_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        ba_fix_switch_g_s[loc] = Fix_switch_g_s[loc, 4];
+        
+        Fix_switch_g_c_j_s[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), switch_c_j, switch_g, exp(h_log), L_loc[loc, ], exp(r_log), switch_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        ba_fix_switch_g_c_j_s[loc] = Fix_switch_g_c_j_s[loc, 4];
+        
+        // Fix_switch_g_c_j_l_r_s[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), switch_c_j, switch_g, exp(h_log), switch_l, switch_r, switch_s, ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        // ba_fix_switch_g_c_j_l_r_s[loc] = Fix_switch_g_c_j_l_r_s[loc, 4];
 
         Fix_switch_h[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), switch_h, L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         ba_fix_switch_h[loc] = Fix_switch_h[loc, 4];
+        
+        Fix_switch_h_c_a[loc] = iterateFix(state_init[loc], exp(b_log), switch_c_a, exp(c_b_log), exp(c_j_log), exp(g_log), switch_h, L_loc[loc, ], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
+        ba_fix_switch_h_c_a[loc] = Fix_switch_h_c_a[loc, 4];
         
         // Fix_switch_l[loc] = iterateFix(state_init[loc], exp(b_log), exp(c_a_log), exp(c_b_log), exp(c_j_log), exp(g_log), exp(h_log), L_loc[loc, 2:1], exp(r_log), exp(s_log), ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, fixiter_min, N_fix);
         // ba_fix_switch_l[loc] = Fix_switch_l[loc, 4];
@@ -606,22 +638,38 @@ generated quantities {
         // major_fix_ko_2_b[loc] = ba_fix_ko_2_b[loc, 1] > ba_fix_ko_2_b[loc, 2]; // ba_1 > 50%
         // major_fix_ko_2_s[loc] = ba_fix_ko_2_s[loc, 1] > ba_fix_ko_2_s[loc, 2]; // ba_1 > 50%
          
-        // major_fix_switch_b[loc] = ba_fix_switch_b[loc, 1] > ba_fix_switch_b[loc, 2]; // ba_1 > 50%
+        major_fix_switch_b[loc] = ba_fix_switch_b[loc, 1] > ba_fix_switch_b[loc, 2]; // ba_1 > 50%
         major_fix_switch_b_c_b[loc] = ba_fix_switch_b_c_b[loc, 1] > ba_fix_switch_b_c_b[loc, 2]; // ba_1 > 50%
         // major_fix_switch_b_c_a_c_b_h[loc] = ba_fix_switch_b_c_a_c_b_h[loc, 1] > ba_fix_switch_b_c_a_c_b_h[loc, 2]; // ba_1 > 50%
         major_fix_switch_c_a[loc] = ba_fix_switch_c_a[loc, 1] > ba_fix_switch_c_a[loc, 2]; // ba_1 > 50%
-        // major_fix_switch_c_b[loc] = ba_fix_switch_c_b[loc, 1] > ba_fix_switch_c_b[loc, 2]; // ba_1 > 50%
+        major_fix_switch_c_b[loc] = ba_fix_switch_c_b[loc, 1] > ba_fix_switch_c_b[loc, 2]; // ba_1 > 50%
         major_fix_switch_c_j[loc] = ba_fix_switch_c_j[loc, 1] > ba_fix_switch_c_j[loc, 2]; // ba_1 > 50%
         major_fix_switch_g[loc] = ba_fix_switch_g[loc, 1] > ba_fix_switch_g[loc, 2]; // ba_1 > 50%
-        // major_fix_switch_g_l_r_s[loc] = ba_fix_switch_g_l_r_s[loc, 1] > ba_fix_switch_g_l_r_s[loc, 2]; // ba_1 > 50%
+        major_fix_switch_g_s[loc] = ba_fix_switch_g_s[loc, 1] > ba_fix_switch_g_s[loc, 2]; // ba_1 > 50%
+        major_fix_switch_g_c_j_s[loc] = ba_fix_switch_g_c_j_s[loc, 1] > ba_fix_switch_g_c_j_s[loc, 2]; // ba_1 > 50%
+        // major_fix_switch_g_c_j_l_r_s[loc] = ba_fix_switch_g_c_j_l_r_s[loc, 1] > ba_fix_switch_g_c_j_l_r_s[loc, 2]; // ba_1 > 50%
         major_fix_switch_h[loc] = ba_fix_switch_h[loc, 1] > ba_fix_switch_h[loc, 2]; // ba_1 > 50%
+        major_fix_switch_h_c_a[loc] = ba_fix_switch_h_c_a[loc, 1] > ba_fix_switch_h_c_a[loc, 2]; // ba_1 > 50%
         // major_fix_switch_l[loc] = ba_fix_switch_l[loc, 1] > ba_fix_switch_l[loc, 2]; // ba_1 > 50%
         major_fix_switch_l_r[loc] = ba_fix_switch_l_r[loc, 1] > ba_fix_switch_l_r[loc, 2]; // ba_1 > 50%
         major_fix_switch_s[loc] = ba_fix_switch_s[loc, 1] > ba_fix_switch_s[loc, 2]; // ba_1 > 50%
 
       }
   
-    }
+    } // end for(loc in 1:N_locs)
+    
+    real ba_sum_init_avg = mean(ba_sum_init_loc);
+    real J_sum_init_avg = mean(J_sum_init_loc);
+    real ba_sum_fix_avg = mean(ba_sum_fix_loc);
+    real J_sum_fix_avg = mean(J_sum_fix_loc);
+
+    b_lim_init_log = log( exp(b_log) ./ (1 + exp(c_b_log) * ba_sum_init_avg) );
+    g_lim_init_log = log( exp(g_log) ./ (1 + exp(c_j_log) * J_sum_init_avg + exp(s_log) * ba_sum_init_avg) );
+    h_lim_init_log = log( exp(h_log) ./ (1 + exp(c_a_log) * ba_sum_init_avg) );
+        
+    b_lim_fix_log = log( exp(b_log) ./ (1 + exp(c_b_log) * ba_sum_fix_avg) );
+    g_lim_fix_log = log( exp(g_log) ./ (1 + exp(c_j_log) * J_sum_fix_avg + exp(s_log) * ba_sum_fix_avg) ); 
+    h_lim_fix_log = log( exp(h_log) ./ (1 + exp(c_a_log) * ba_sum_fix_avg) ); 
 
   } // end if(generateposteriorq)
 

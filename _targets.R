@@ -62,7 +62,8 @@ targets_settings <- list(
   tar_target(loc, c("plot", "nested", "cluster")[1]),
   
   ## No. of locations to subset (currently only for loc == "plot")
-  tar_target(n_locations, 1500),
+  tar_target(n_locations, 1000),
+  tar_target(n_locations_env, 1500),
   
   ## Threshold to discriminate A and B [mm]
   ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile of pure measured trees, i.e. without area standardization
@@ -89,28 +90,28 @@ targets_settings <- list(
   tar_target(weakpriors,
              ## Priors are organized like the parameter data structure but with an additional dimension in the case of a vector row of sds.
              list(
-               prior_b_log = c(-4, 2),
-               prior_c_a_log = c(-6, 3),
-               prior_c_b_log = c(-6, 3),
-               prior_c_j_log = c(-12, 3),
+               prior_b_log = c(-3.2, 1),
+               prior_c_a_log = c(-7, 2),
+               prior_c_b_log = c(-7, 2),
+               prior_c_j_log = c(-10, 2),
                prior_g_log = c(-5, 2),
-               prior_h_log = c(-3, 2),
-               prior_l_log = c(3, 2),
+               prior_h_log = c(-4, 2),
+               prior_l_log = c(4, 2),
                # prior_r_log = cbind(Fagus = c(4, 1), others = c(4, 1)),
-               prior_s_log = c(-5, 2)
+               prior_s_log = c(-6, 2)
              )
   ),
   
   tar_target(weakpriors_env,
-             list(prior_b_log = c(-4, 1),
-                  prior_c_a_log = c(-6, 2),
-                  prior_c_b_log = c(-6, 2),
-                  prior_c_j_log = c(-12, 1),
-                  prior_g_log = c(-6, 1),
-                  prior_h_log = c(-3, 1),
-                  prior_l_log = c(4, 1),
+             list(prior_b_log = c(-3, 1),
+                  prior_c_a_log = c(-7, 2),
+                  prior_c_b_log = c(-7, 2),
+                  prior_c_j_log = c(-10, 2),
+                  prior_g_log = c(-5, 2),
+                  prior_h_log = c(-4, 2),
+                  prior_l_log = c(4, 2),
                   prior_r_log = c(3, 1),
-                  prior_s_log = c(-5, 1)
+                  prior_s_log = c(-6, 2)
                   )
   ),
   
@@ -195,18 +196,20 @@ targets_parname <- list(
                statename_environmentalko_fracdiff_env)),
   
   tar_target(statename,
-             c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix",
+             c("ba_init", "ba_fix", "J_init", "J_fix", "A_init", "A_fix", "B_init", "B_fix", "ba_sum_fix_loc",
                "ba_tot_init", "ba_tot_fix", "ba_frac_init", "ba_frac_fix",
                "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s", "ba_fix_ko_b_l_r",
                "major_init", "major_fix", "dominant_init", "dominant_fix",
                "major_fix_ko_b", "major_fix_ko_s", "major_fix_ko_2_b", "major_fix_ko_2_s",
-               paste0("major_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
+               paste0("major_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "g_c_j_l_r_s", "g_c_j_s", "g_l_r_s", "g_s", "h_c_a", "l_r")),
                "ba_fix_other_s", "ba_frac_fix_other_s", "major_fix_other_s",
                "ba_fix_ko_b", "ba_fix_ko_s", "ba_fix_ko_2_b", "ba_fix_ko_2_s",
                statename_environmentalko_fracdiff_env,
-               paste0("ba_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")))),
+               paste0("ba_fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "g_c_j_l_r_s", "g_c_j_s", "g_l_r_s", "g_s", "h_c_a", "l_r")))),
   tar_target(basalareaname, statename[str_starts(statename, "ba_")]),
   tar_target(majorname, statename[str_starts(statename, "major_")]),
+  tar_target(majorname_main, c("major_init", "major_fix", paste0("major_fix_switch_", c(names(parname_plotorder), "l_r")))),
+  tar_target(majorname_supp, c("major_init", "major_fix", setdiff(majorname, majorname_main))),
   tar_target(statename_select, setdiff(statename, c(statename_environmentalko_fracdiff_env))),
   
   tar_target(contribname_init, paste0("sum_ko_", 1:2, "_", rep(c(names(parname_plotorder), "b_c_b"), each = 2), "_fix")),
@@ -228,14 +231,28 @@ targets_parname <- list(
   
   #### Parameters
   tar_target(parname,
-             c("phi_obs", # "sigma_k_loc", # "k_log", # "theta", 
+             c("phi_obs",
                "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
+  
+  tar_target(parname_lim,
+             c("b_lim_init_log", "g_lim_init_log", "h_lim_init_log",
+               "b_lim_fix_log", "g_lim_fix_log", "h_lim_fix_log")),
   
   tar_target(parname_sim,
              setdiff(parname, c("theta", "phi_obs", "sigma_k_loc"))),
 
   tar_target(parname_plotorder,
              c(l = "l_log", r = "r_log", c_j = "c_j_log", s = "s_log", g = "g_log", c_a = "c_a_log", h = "h_log", b = "b_log", c_b = "c_b_log" )),
+  
+  tar_target(parname_lim_plotorder,
+             c(l = "l_log", r = "r_log", c_j = "c_j_log", s = "s_log", g = "g_log", g_lim_init = "g_lim_init_log", g_lim_fix = "g_lim_fix_log",
+               c_a = "c_a_log", h = "h_log", h_lim_init = "h_lim_init_log", h_lim_fix = "h_lim_fix_log",
+               b = "b_log", b_lim_init = "b_lim_init_log", b_lim_init = "b_lim_fix_log", c_b = "c_b_log" )),
+  
+  tar_target(parname_lim_plotorder_plot,
+             c(g = "g_log", g_lim_init = "g_lim_init_log", g_lim_fix = "g_lim_fix_log",
+               h = "h_log", h_lim_init = "h_lim_init_log", h_lim_fix = "h_lim_fix_log",
+               b = "b_log", b_lim_init = "b_lim_init_log", b_lim_init = "b_lim_fix_log")),
   
   tar_target(parname_loc,
              c("state_init", "L_loc")),
@@ -298,12 +315,12 @@ targets_parname <- list(
   
   #### Variables to exclude from any summary
   tar_target(par_exclude,
-             c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_raw", "state_init_log", "phi_obs_inv", "phi_obs_inv_sqrt", "m")),
+             c("y_hat", "L_loc_log", "K_loc_log_raw", "L_loc", "K_loc", "state_init", "state_init_raw", "state_init_log", "m")),
   
   tar_target(helper_exclude,
              c("Fix", "Fix_avg", "Fix_ko_s", "Fix_ko_1_b_l_r", "Fix_ko_2_b_l_r",
                paste0("Fix_ko_", 1:2,"_env_", rep(c(names(parname_plotorder), "b_c_b"), each = 2)),
-               paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "l_r", "g_l_r_s")),
+               paste0("Fix_switch_", c(names(parname_plotorder), "b_c_b", "b_c_a_c_b_h", "g_c_j_l_r_s", "g_c_j_s", "g_l_r_s", "g_s", "h_c_a", "l_r")),
                "B_log_raw", "C_a_log_raw", "C_b_log_raw", "C_j_log_raw", "G_log_raw", "H_log_raw", "L_log_raw", "R_log_raw", "S_log_raw",
                str_to_sentence(names(parname_plotorder)),
                "vector_b_log_prior", "vector_c_a_log_prior", "vector_c_b_log_prior", "vector_c_j_log_prior", "vector_s_log_prior",
@@ -432,7 +449,7 @@ targets_wrangling <- list(
       tar_target(Seedlings_s,
                  predictS(fits_Seedlings_s, Seedlings)),
       tar_target(file_model_Seedlings,
-                 "Model_2021-03_ba/Model_seedlings.stan",
+                 "Model_2023-02_bb/Model_seedlings.stan",
                  format = "file"),
       tar_target(model_Seedlings,
                  cmdstan_model(file_model_Seedlings, stanc_options = list("O1"))),
@@ -443,7 +460,7 @@ targets_wrangling <- list(
     
     tar_target(Stages_select,
                selectLocs(Stages_s, predictor_select,
-                          selectspec = T, selectpred = F, stratpred = F, n_locations = n_locations, loc = "plot", tablepath = dir_publish)), # Subsetting after smooth, so that smooth can be informed by all plots.
+                          selectspec = T, selectpred = F, stratpred = F, selectalt = c(100, 600), n_locations = n_locations, loc = "plot", tablepath = dir_publish)), # Subsetting after smooth, so that smooth can be informed by all plots.
     
     tar_target(Stages_scaled,
                scaleData(Stages_select, predictor_select)), # After selection, so that scaling includes selected plots .
@@ -602,7 +619,7 @@ targets_fit_env <- list(
   ## Prepare data
   tar_target(Stages_select_env,
              selectLocs(Stages_s, predictor_select,
-                        selectspec = F, selectpred = T, stratpred = T, selectalt = c(100, 600), n_locations = n_locations,
+                        selectspec = F, selectpred = T, stratpred = T, selectalt = c(100, 600), n_locations = n_locations_env,
                         loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
   
   tar_target(Stages_scaled_env,
@@ -696,7 +713,7 @@ targets_posterior_test <- list(
   
   ## Formatted posterior data stuctures
   tar_target(States_test,
-             formatStates(cmdstanfit = fit_test, statename = statename[!str_detect(statename, "_env_")], ## exclude env_ko
+             formatStates(cmdstanfit = fit_test, statename = statename,
                           data_stan_priors = data_stan_priors)),
   
   ## Plot
@@ -748,7 +765,7 @@ targets_posterior <- list(
   ## Summarize
   tar_target(summary,
              summarizeFit(cmdstanfit = fit, exclude = exclude,
-                          publishpar = parname_plotorder, path = dir_publish),
+                          publishpar = parname_lim_plotorder, path = dir_publish),
              pattern = map(fit), iteration = "list"),
   tar_target(summary_states,
              summarizeStates(States = States, data_stan = data_stan, basename = basename_fit, path = dir_publish),
@@ -776,7 +793,10 @@ targets_posterior <- list(
              plotStanfit(stanfit = stanfit, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_parameters,
-             plotParameters(draws = stanfit, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             plotParameters(draws = stanfit, parname = parname_plotorder, exclude = exclude, supp = FALSE, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             pattern = map(stanfit, basename_fit), iteration = "list"),
+  tar_target(plots_parameters_lim,
+             plotParameters(draws = stanfit, parname = parname_lim_plotorder_plot, exclude = exclude, supp = TRUE, path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(stanfit, basename_fit), iteration = "list"),
   tar_target(plots_trace,
              plotTrace(cmdstanfit = fit, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction),
@@ -801,11 +821,18 @@ targets_posterior <- list(
              plotContributions(cmdstanfit = fit, parname = c(parname_plotorder, b_c_b = "b_c_b_log"), path = dir_publish, contribution = "sum_switch", plotlog = T, color = twocolors, themefun = themefunction),
              pattern = map(fit), iteration = "list"),
   tar_target(plots_states,
-             plotStates(States, allstatevars = basalareaname,
+             plotStates(States,
+                        mainstatevars = c("ba_init", "ba_fix", "ba_fix_switch_s"),
+                        suppstatevars = c("ba_fix", "ba_fix_switch_l_r", "ba_fix_switch_g_s", "ba_fix_switch_c_j", "ba_fix_switch_c_a", "ba_fix_switch_b_c_b"),
+                        allstatevars = basalareaname,
                         path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(States, basename_fit), iteration = "list"),
   tar_target(plot_predominant,
-             plotPredominant(States, majorname,
+             plotPredominant(States, majorname_main,
+                             path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
+             pattern = map(States, basename_fit), iteration = "list"),
+  tar_target(plot_predominant_supp,
+             plotPredominant(States, majorname_supp, supp = T,
                              path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction),
              pattern = map(States, basename_fit), iteration = "list"),
   tar_target(plot_trajectories_avg,
@@ -830,7 +857,7 @@ targets_posterior_env <- list(
   tar_target(Summary_NFIs_env,
              summarizeNFIs(Data_big, Data_seedlings, Stages_select_env, Seedlings_s, tablepath = dir_publish)),
   tar_target(summary_env,
-             summarizeFit(cmdstanfit = fit_env, exclude = setdiff(exclude, "phi_obs_inv"),
+             summarizeFit(cmdstanfit = fit_env, exclude = exclude,
                           publishpar = c(parname_plotorder, parname_vertex_env), path = dir_publish)),
   tar_target(summary_states_env,
              summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
@@ -962,7 +989,7 @@ targets_posterior_env <- list(
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
 
   tar_target(plot_predominant_env,
-             plotPredominant(States_env, majorname = c("major_init", "major_fix", "major_fix_other_s"),
+             plotPredominant(States_env, majorname = c("major_init", "major_fix"),
                              path = dir_publish, basename = basename_fit, color = twocolors, themefun = themefunction)),
   
   tar_target(plot_binary_par_env,
@@ -1016,7 +1043,10 @@ targets_posterior_env <- list(
                                color = twocolors, themefun = themefunction)),
   
   tar_target(plots_states_env,
-             plotStates(States_env, allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_b_l_r"),
+             plotStates(States_env,
+                        mainstatevars = c("ba_init", "ba_fix", "ba_fix_switch_s"),
+                        suppstatevars = c("ba_fix", "ba_fix_switch_s", "ba_fix_ko_b_l_r"),
+                        allstatevars = c("ba_init", "ba_fix", "ba_fix_ko_b_l_r"),
                         path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),
   
   tar_target(plot_trajectories_avg_env,

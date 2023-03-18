@@ -63,14 +63,14 @@ transformed parameters {
 model {
 
   //// Priors
-  theta_logit ~ normal(0, 2); // beta(2, 4);
-  m_logit ~ std_normal();
+  theta_logit ~ normal(0, 2);
+  m_logit ~ normal(0, 2);
   
   phi_inv_sqrt ~ std_normal();
   
-  k_log ~ normal(4, 5);
+  k_log ~ normal(5, 10);
   // l_log ~ normal(0, 3);
-  r_log ~ normal(3, 5);
+  r_log ~ normal(5, 10);
   
 
   //// Model

@@ -49,7 +49,7 @@ tar_make_future(c("summary_env",
                   "plot_binary_par_env",
                   "plot_binary_contrib_env",
 
-                  "plot_contributions_env",
+                  # "plot_contributions_env",
                   
                   "plots_parameters_env"
                   

@@ -504,6 +504,7 @@ formatNumber <- function(x, signif.digits = 4) {
 
 
 ## formatParName --------------------------------
+# factor = TRUE returns correct order 
 formatParName <- function(p, log = FALSE, factor = FALSE) {
   p <- stringi::stri_replace_all_fixed(p,
                                   c("b_c_b", "_a", "_b", "_j"),
@@ -576,8 +577,8 @@ formatEnvgrid <- function(data_stan, envname, res = 500) {
 # ————————————————————————————————————————————————————————————————————————————————— #
 
 ## summarizeFit --------------------------------
-# cmdstanfit <- tar_read("fit_env")
-# publishpar <- tar_read(parname_plotorder)
+# cmdstanfit <- tar_read("fit")[[1]]
+# publishpar <- tar_read(parname_lim_plotorder)
 # publishpar <- c(tar_read(parname_plotorder), tar_read(parname_env_vertex))
 # exclude <- tar_read(exclude)
 # path <- tar_read("dir_publish")
@@ -723,7 +724,7 @@ summarizeFreqConverged <- function(cmdstanfit, data_stan_priors, path) {
 # ————————————————————————————————————————————————————————————————————————————————— #
 
 ## generateResiduals --------------------------------
-# cmdstanfit  <- tar_read("fit_test")
+# cmdstanfit  <- tar_read("fit")[[1]]
 # data_stan_priors  <- tar_read("data_stan_priors")
 # path  <- tar_read("dir_fit")
 # yhatvar <- "y_hat_offset"
@@ -822,10 +823,13 @@ generatePredictiveChecks <- function(cmdstanfit, data_stan_priors_offset, path) 
 
 ## generateTrajectories --------------------------------
 # cmdstanfit <- tar_read("fit_env")
+# cmdstanfit <- tar_read("fit")
 # parname <- tar_read("parname")
 # data_stan_priors <- tar_read("data_stan_priors_env")
+# data_stan_priors <- tar_read("data_stan_priors")
 # locparname <- tar_read("parname_trajectories_env")
-
+# locparname <- tar_read("parname_loc")
+# af(generateTrajectories)
 generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparname = c("state_init", "L_loc"),
                                  time = c(1:25, seq(30, 300, by = 10), seq(400, 5000, by = 100)), thinstep = 1,
                                  average = c("none", "locsperdraws_all", "drawsperlocs_all", "locsperdraws_avgL", "locsperdraws_avgL_qInit")) {
@@ -833,6 +837,7 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
   varname_draws <- cmdstanfit$metadata()$stan_variables
   
   ## Global parameters
+  parname <- setdiff(parname, "phi_obs")
   parname <- intersect(parname, varname_draws)
   parname_sans_log <- gsub("_log$", "", parname)
   
@@ -1018,18 +1023,14 @@ generateTrajectories <- function(cmdstanfit, data_stan_priors, parname, locparna
       BA <- A * ba_a_avg + B
       BA_sum <- sum(BA)
       
-      J_trans <- r*BA + l + (J - g*J) # use rlnorm + u[ ,1]
-      J_t <- J_trans * 1/(1 + c_j*sum(J) + s*BA_sum) # count of juveniles J
-      # with all variables > 0, and 0 < g, m_j < 1
+      lim_J <- (1 + c_j*sum(J) + s*BA_sum)
+      J_t <- l + r*BA + (J - g*J)/lim_J
       
-      A_trans <- g*J + (A - h*A) # + u[ ,2]
-      A_t <-  A_trans * 1/(1 + c_a*BA_sum) # count of small adults
-      # with all variables > 0, and 0 < h, m_a < 1
+      lim_A <- (1 + c_a*BA_sum)
+      A_t <-  g*J/lim_J + (A - h*A)/lim_A
       
-      A_ba <- A * h * ba_a_upper # Basal area of small adults A. Conversion by multiplication with basal area of State exit (based on upper dhh boundary of the class)
-      B_trans <- A_ba + B # + u[ ,3]
-      B_t <- (1+b)*B_trans * 1/(1 + c_b*BA_sum)  # basal area of big adults B
-      ## b is the net basal area increment (including density-independent m) basically equivalent to a Ricker model, i.e. constant increment rate leading to exponential growth, negative density dependent limitation scaled with total BA_sum.
+      A_ba <- ba_a_upper * (A * h)/lim_A
+      B_t <- A_ba + (1+b)*B/(1 + c_b*BA_sum)
       
       State[t, ] <- c(J_t, A_t, B_t)
     }
@@ -1412,15 +1413,11 @@ plotStanfit <- function(stanfit, exclude, path, basename,
 
 
 ## plotParameters --------------------------------
-# draws  <- tar_read("draws_env")
-# exclude <- tar_read("exclude")
-# parname <- tar_read("parname_plotorder")
-# path  <- tar_read("dir_fit")
-# basename  <- tar_read("basename_fit_env")
-# color  <- tar_read("twocolors")
-# themefun  <- tar_read("themefunction")
-plotParameters <- function(draws, parname, exclude = tar_read("exclude"), path, basename,
-                           color = tar_read(twocolors), themefun = theme_fagus) {
+# draws  <- tar_read("stanfit")[[1]]
+# parname <- tar_read("parname_lim_plotorder")
+# af(plotParameters)
+plotParameters <- function(draws, parname, exclude = tar_read(exclude), supp = FALSE,
+                           path = tar_read(dir_publish), basename = tar_read(basename_fit), color = tar_read(twocolors), themefun = theme_fagus) {
   
   extendedcolor <- c(color, "#555555") # add a third neutral colour for inspecific priors
   priorlinecolor <- c("#000000", "#000000")
@@ -1447,7 +1444,14 @@ plotParameters <- function(draws, parname, exclude = tar_read("exclude"), path, 
                                is.na(tax) & prior ~ 'prior')) %>%
       mutate(group = factor(group, levels = c('Fagus', 'other', 'Fagus prior', 'other prior', 'prior'), ordered = T)) %>%
       mutate(arrangement = sort(as.integer(group), decreasing = T)) %>%
-      left_join(M[, c("parameter", "m")], by = "parameter")
+      left_join(M[, c("parameter", "m")], by = "parameter") %>%
+      mutate(Par = suppressWarnings( fct_recode(par,
+                              "log~l" = "l_log", "log~r" = "r_log", "log~c[J]" = "c_j_log", "log~s" = "s_log",
+                              "log~g" = "g_log", 'log~g~"limited at initial state"' = "g_lim_init_log", 'log~g~"limited at equilibrium"' = "g_lim_fix_log", # expression(log~frac(g,c[J]~bar(J[sum]) + s~bar(BA[sum]))~"at equilibrium")
+                              "log~c[A]" = "c_a_log",
+                              "log~h" = "h_log", 'log~h~"limited at initial state"' = "h_lim_init_log", 'log~h~"limited at equilibrium"' = "h_lim_fix_log",
+                              "log~b" = "b_log", 'log~b~"limited at initial state"' = "b_lim_init_log", 'log~b~"limited at equilibrium"' = "b_lim_fix_log",
+                              "log~c[B]" = "c_b_log")) )
     
     # group_by(parameter, tax) %>%
     # mutate(m_d = median(x, na.rm = T), max_d = max(scaled_density, na.rm = T)) %>%
@@ -1463,12 +1467,12 @@ plotParameters <- function(draws, parname, exclude = tar_read("exclude"), path, 
     
     ggplot(Data, aes(y = parameter, height = scaled_density, x = x, col = prior, fill = tax, alpha = prior)) +
       geom_density_ridges(stat = "identity", size = 0.8, rel_min_height = 0.01) +
-      geom_segment(aes(x = m, xend = m, y = parameter, yend = as.integer(parameter) + scaled_density), color = "black", linetype = 3, size = 0.3) +
+      geom_segment(aes(x = m, xend = m, y = parameter, yend = as.integer(parameter) + scaled_density), color = "black", linetype = 3, linewidth = 0.3) +
       scale_color_manual(values = priorlinecolor) +
       scale_fill_manual(values = extendedcolor) +
       scale_alpha_manual(values = prioralpha) +
       
-      ggtitle(paste("log", str_remove(first(Data$par), "_log"))) +
+      ggtitle(parse(text = paste(first(Data$Par)))) +
       scale_y_discrete(labels = function(parameter) Data$group[match(parameter, Data$parameter)], expand = expansion(mult = c(0.1, 1))) +
       
       themefun() +
@@ -1492,13 +1496,14 @@ plotParameters <- function(draws, parname, exclude = tar_read("exclude"), path, 
   # areasplot <- bayesplot::mcmc_areas(draws, area_method = "scaled height", pars = vars(!matches(c(exclude, "log_", "lp_", "prior")))) + themefun()
   
   ridgedata <- parallel::mclapply(parname_sansprior, getRidgedata, mc.cores = getOption("mc.cores", 18L))
+  ## ridgedata <- lapply(parname_sansprior, getRidgedata)
   ridgeplots <- lapply(ridgedata, plotRidges)
-  ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots,  align = "v")
+  ridgeplotgrid <- cowplot::plot_grid(plotlist = ridgeplots,  align = "v", ncol = if(supp) 3 else NULL)
   legendplot <- plotRidges(ridgedata[[1]], plotlegend = TRUE)
   
   plots <- list(ridgeplotgrid = ridgeplotgrid, ridge_legendplot = legendplot) # areasplot = areasplot
   
-  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, ".pdf"), p, device = "pdf", height = 10, width = 12), plots, names(plots))
+  mapply(function(p, n) ggsave(paste0(path, "/", basename, "_", n, if(supp) "_supp" else "", ".pdf"), p, device = "pdf", height = 10, width = 12), plots, names(plots))
   message("Parameter plots complete.")
   
   return(NULL) # return(plots)
@@ -1633,41 +1638,45 @@ plotSensitivity <- function(cmdstanfit, include, measure = "cjs_dist", path) {
 
 ## plotStates --------------------------------
 # States <- tar_read("States")[[1]]
-# allstatevars <- tar_read(basalareaname)
-# path  <- tar_read("dir_publish")
-# basename  <- tar_read("basename_fit")
-# color  <- tar_read("twocolors")
-# themefun  <- tar_read("themefunction")
-plotStates <- function(States,
-                       allstatevars = basalareaname,
-                       path, basename, color = tar_read(twocolors), themefun = theme_fagus) {
+# af(plotStates)
+plotStates <- function(States, mainstatevars, suppstatevars,
+                       allstatevars = tar_read(basalareaname),
+                       path = tar_read(dir_publish), basename = tar_read(basename_fit), color = tar_read(twocolors), themefun = theme_fagus) {
   
+  mainstatevars <- intersect(as.character(unique(States$var)), mainstatevars)
+  suppstatevars <- intersect(as.character(unique(States$var)), suppstatevars)
   allstatevars <- intersect(as.character(unique(States$var)), allstatevars)
   
-  statelabel <- c(ba_init = "Initial state",
-                  ba_fix = "Equilibrium state",
-                  ba_frac_init = "Initial fraction of the total basal area",
-                  ba_frac_fix = "Equilibrium fraction of the total basal area",
+  statelabel <- c(ba_init = "Initial~state",
+                  ba_fix = "Equilibrium~state",
+                  ba_frac_init = "Initial~fraction~of~the~total~basal~area",
+                  ba_frac_fix = "Equilibrium~fraction~of~the~total~basal~area",
                   
-                  ba_fix_ko_b = "Equilibrium without b",
-                  ba_fix_ko_s = "Equilibrium without s",
-                  ba_fix_ko_2_b = "Equilibrium without b of others",
-                  ba_fix_ko_2_s = "Equilibrium without s effect on others",
-                  ba_fix_ko_b_l_r = "Equilibrium without the respective other",
-                  ba_fix_ko_b_l_r_ko = "K.O. state",
+                  ba_fix_ko_b = "Equilibrium~without~b",
+                  ba_fix_ko_s = "Equilibrium~without~s",
+                  ba_fix_ko_2_b = "Equilibrium~without~b~of~others",
+                  ba_fix_ko_2_s = "Equilibrium~without~s~effect~on~others",
+                  ba_fix_ko_b_l_r = "Equilibrium~without~the~respective~other",
+                  ba_fix_ko_b_l_r_ko = "KO~state",
                   
-                  ba_fix_switch_b = "Equilibrium with switched b",
-                  ba_fix_switch_c_a = "Equilibrium with switched c_A",
-                  ba_fix_switch_c_b = "Equilibrium with switched c_B",
-                  ba_fix_switch_c_j = "Equilibrium with switched c_J",
-                  ba_fix_switch_b_c_b = "Equilibrium with switched b and c_B",
-                  ba_fix_switch_b_c_a_c_b_h = "Equilibrium with switched overstory parameters",
-                  ba_fix_switch_g = "Equilibrium with switched g",
-                  ba_fix_switch_h = "Equilibrium with switched h",
-                  ba_fix_switch_l = "Equilibrium with switched l",
-                  ba_fix_switch_l_r = "Equilibrium with switched l and r",
-                  ba_fix_switch_g_l_r_s = "Equilibrium with switched understory parameters",
-                  ba_fix_switch_s = "Equilibrium with switched s")
+                  ba_fix_switch_b = "Equilibrium~with~switched~b",
+                  ba_fix_switch_c_a = "Equilibrium~with~switched~c[A]",
+                  ba_fix_switch_c_b = "Equilibrium~with~switched~c[B]",
+                  ba_fix_switch_c_j = "Equilibrium~with~switched~c[J]",
+                  ba_fix_switch_b_c_b = "Equilibrium~with~switched~b~and~c[B]",
+                  ba_fix_switch_b_c_a_c_b_h = "Equilibrium~with~switched~overstory~parameters",
+                  ba_fix_switch_g = "Equilibrium~with~switched~g",
+                  ba_fix_switch_g_s = "Equilibrium~with~switched~g~and~s",
+                  ba_fix_switch_g_c_j = "Equilibrium~with~switched~g~and~c[J]",
+                  ba_fix_switch_g_c_j_s = "Equilibrium~with~switched~g~and~c[J]~and~s",
+                  ba_fix_switch_g_l_r_s = "Equilibrium~with~switched~understory~parameters",
+                  ba_fix_switch_h = "Equilibrium~with~switched~h",
+                  ba_fix_switch_h_c_a = "Equilibrium~with~switched~h~and~c[A]",
+                  ba_fix_switch_l = "Equilibrium~with~switched~L[p]",
+                  ba_fix_switch_l_r = "Equilibrium~with~switched~L[p]~and~r",
+                  ba_fix_switch_s = "Equilibrium~with~switched~s")
+  
+  matchStatelabel <- function(w) statelabel[match(w, names(statelabel))] %>% unname()
   
   States <- States[!is.na(States$value),]
   
@@ -1688,7 +1697,7 @@ plotStates <- function(States,
     
     ggtitle("Equilibrium BA by taxon and whether Fagus ultimately has majority") +
     scale_color_manual(values = color, name = "species") +
-    scale_fill_manual(values = color)
+    scale_fill_manual(values = color, name = "species")
 
   
   #### When
@@ -1718,10 +1727,10 @@ plotStates <- function(States,
   #   
   #   facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
   #   
-  #   labs(y = "basal area [m^2 ha^-1]") +
+  #   labs(y = expression(basal~area~m^2~ha^-1)) +
   #   
   #   scale_color_manual(values = color, name = "species") +
-  #   scale_fill_manual(values = color)
+  #   scale_fill_manual(values = color, name = "species")
   
   
   # Scatter_when <- States %>%
@@ -1769,11 +1778,11 @@ plotStates <- function(States,
   
   
   #### Main
-  threevar <- c("ba_init", "ba_fix", "ba_fix_switch_s")
-  T_main <- filter(States, var %in% threevar) %>%
+  T_main <- filter(States, var %in% mainstatevars) %>%
     rename(when = var) %>%
-    mutate(when = factor(when, levels = threevar)) %>%
-    group_by(when, loc, draw) %>%
+    mutate(when = factor(when, levels = mainstatevars)) %>%
+    mutate(When = fct_relabel(when, matchStatelabel)) %>%
+    group_by(when, When, loc, draw) %>%
     mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
     ungroup()
   
@@ -1792,27 +1801,27 @@ plotStates <- function(States,
     theme(axis.title.x = element_blank()) +
     theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
     
-    facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
+    facet_grid(rows = . ~ When, labeller = label_parsed) +
     
-    labs(y = "basal area [m^2 ha^-1]") +
+    labs(y = expression(basal~area~m^2~ha^-1)) +
     
-    scale_color_manual(values = color) +
-    scale_fill_manual(values = color)
+    scale_color_manual(values = color, name = "species") +
+    scale_fill_manual(values = color, name = "species")
   
   Scatter_main <- States %>%
-    filter(var %in% threevar) %>% # filter(States, str_starts(var, "ba")) %>%
+    filter(var %in% mainstatevars) %>%
     filter(!is.na(value)) %>%
-    rename(when = var) %>%
-    mutate(when = factor(when, levels = threevar)) %>%
-    dplyr::select(tax, loc, value, when, draw) %>%
-    pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
+    mutate(when = factor(var, levels = mainstatevars)) %>%
+    mutate(When = fct_relabel(when, matchStatelabel)) %>%
+    dplyr::select(tax, loc, value, when, When, draw) %>%
+    pivot_wider(id_cols = c("draw", "when", "When", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
   
   plot_scatter_main <- ggplot(Scatter_main, aes(x = ba_other, y = ba_Fagus)) +
     geom_hex(bins = 100) +
     scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
     geom_abline(slope = 1, intercept = 0, linetype = 3) +
-    facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
-    labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
+    facet_grid(rows = . ~ When, labeller = label_parsed) +
+    labs(y = "Fagus", x = "other", title = expression(Specific~states~basal~area~m^2~ha^-1)) +
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
                   labels = scales::trans_format("log10", scales::math_format(10^.x))) +
     scale_x_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
@@ -1824,12 +1833,11 @@ plotStates <- function(States,
   
   
   #### Supplementary
-  fourvar <- c("ba_fix", "ba_fix_switch_s", "ba_fix_c_j", "ba_fix_switch_l_r",
-               "ba_fix_switch_g", "ba_fix_switch_b_c_b")
-  T_supp <- filter(States, var %in% fourvar) %>%
+  T_supp <- filter(States, var %in% suppstatevars) %>%
     rename(when = var) %>%
-    mutate(when = factor(when, levels = fourvar)) %>%
-    group_by(when, loc, draw) %>%
+    mutate(when = factor(when, levels = suppstatevars)) %>%
+    mutate(When = fct_relabel(when, matchStatelabel)) %>%
+    group_by(when, When, loc, draw) %>%
     mutate(diff_ba = value[tax == "Fagus"] - value[tax == "other"]) %>%
     ungroup()
   
@@ -1849,27 +1857,27 @@ plotStates <- function(States,
     theme(axis.title.x = element_blank()) +
     theme(panel.grid.minor = element_blank()) + ## !!! remove the minor gridlines
     
-    facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
+    facet_grid(rows = . ~ When, labeller = label_parsed) +
     
-    labs(y = "basal area [m^2 ha^-1]") +
+    labs(y = expression(basal~area~m^2~ha^-1)) +
     
-    scale_color_manual(values = color) +
-    scale_fill_manual(values = color)
+    scale_color_manual(values = color, name = "species") +
+    scale_fill_manual(values = color, name = "species")
   
   Scatter_supp <- States %>%
-    filter(var %in% fourvar) %>% # filter(States, str_starts(var, "ba")) %>%
+    filter(var %in% suppstatevars) %>% # filter(States, str_starts(var, "ba")) %>%
     filter(!is.na(value)) %>%
-    rename(when = var) %>%
-    mutate(when = factor(when, levels = fourvar)) %>%
-    dplyr::select(tax, loc, value, when, draw) %>%
-    pivot_wider(id_cols = c("draw", "when", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
+    mutate(when = factor(var, levels = suppstatevars)) %>%
+    mutate(When = fct_relabel(when, matchStatelabel)) %>%
+    dplyr::select(tax, loc, value, when, When, draw) %>%
+    pivot_wider(id_cols = c("draw", "when", "When", "loc"), names_from = "tax", values_from = "value", names_prefix = "ba_")
   
   plot_scatter_supp <- ggplot(Scatter_supp, aes(x = ba_other, y = ba_Fagus)) +
     geom_hex(bins = 100) +
     scale_fill_gradient(low = "#DDDDDD", high = "#000000", trans = "sqrt") +
     geom_abline(slope = 1, intercept = 0, linetype = 3) +
-    facet_grid(rows = . ~ when, labeller = labeller(when = statelabel)) +
-    labs(y = "Fagus", x = "other", title = "Specific states basal area [m^2 ha^-1]") +
+    facet_grid(rows = . ~ When, labeller = label_parsed) +
+    labs(y = "Fagus", x = "other", title = expression(Specific~states~basal~area~m^2~ha^-1)) +
     scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x, n = 6),
                   labels = scales::trans_format("log10", scales::math_format(10^.x))
     ) +
@@ -1928,8 +1936,8 @@ plotStates <- function(States,
   ggsave(paste0(path, "/", basename, "_plot_states_main", ".pdf"), stateplotgrid_main, device = "pdf", width = 10, height = 9)
   
   stateplotgrid_supp <- cowplot::plot_grid(plot_supp + theme(legend.position = "none"), plot_scatter_supp, labels = c("(A)", "(B)"),  align = "h", axis = "rl",  nrow = 2, rel_heights = c(1.3 ,1))
-  ggsave(paste0(path, "/", basename, "_plot_states_supp", ".png"), stateplotgrid_supp, device = "png", width = 14, height = 8)
-  ggsave(paste0(path, "/", basename, "_plot_states_supp", ".pdf"), stateplotgrid_supp, device = "pdf", width = 14, height = 8)
+  ggsave(paste0(path, "/", basename, "_plot_states_supp", ".png"), stateplotgrid_supp, device = "png", width = 2.4*length(suppstatevars), height = 8)
+  ggsave(paste0(path, "/", basename, "_plot_states_supp", ".pdf"), stateplotgrid_supp, device = "pdf", width = 2.4*length(suppstatevars), height = 8)
   
   return(NULL) # return(plots)
 }
@@ -2092,8 +2100,9 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
     ungroup() %>%
     mutate(tax = fct_recode(as.character(i), "Fagus" = "1", "other" = "2")) %>%
     mutate(parameter = str_extract(.variable, "([a-z]|c_.+)_log")) %>%
-    mutate(parameter = factor(parameter, levels = parname)) %>%
-    pivot_wider(id_cols = c(".draw"), names_from = c("parameter", "tax"), values_from = ".value") %>%
+    mutate(parameter = str_remove(parameter, "_log")) %>%
+    mutate(parameter = formatParName(parameter, factor = T, log = T)) %>%
+    pivot_wider(id_cols = c(".draw"), names_from = c("parameter", "tax"), values_from = ".value", names_sep = "~") %>%
     bind_cols(freq_major = freq_major, major = if_else(ismajor, "Fagus", "other"))
   
   ## Custom density for colorscale
@@ -2133,10 +2142,12 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
     return(gtext)
   }
   
+  cn <- paste0(rep(formatParName(names(parname), log = T), each = 2), c("~Fagus", "~other")) ## reproduce colnames for matching
   
   pairsplot <- ggpairs(D,
                        mapping = aes(fill = !!if (conditional) D$major else NULL), ## discrete mapping for densities
-                       columns = match(paste0(rep(parname, each = 2), c("_Fagus", "_other")), colnames(D)),
+                       columns = match(cn, colnames(D)),
+                       labeller = label_parsed,
                        diag = list(continuous = plotDensity),
                        upper = list(continuous = plotStats), # wrap("cor", size = 3.3)
                        lower = list( continuous = if (conditional) plotPoints else plotHex ) ) + ## wrap("points", alpha = 0.1, size = 0.6)
@@ -2190,7 +2201,7 @@ plotPairs <- function(cmdstanfit, parname,
                           # pars = c("..."), transform = list(sigma = "log"),
                           diag_fun = "dens",
                           # diag_args = "scatter",
-                          off_diag_fun = "scatter", # "hex"
+                          off_diag_fun = "hex", # "scatter"
                           off_diag_args = list(size = 0.2, alpha = 0.25), ## for "scatter"
                           # condition = pairs_condition(nuts = "lp__"),
                           # lp = logposterior,
@@ -2332,7 +2343,7 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
     # { if (!plotprop & plotlog) theme(panel.grid.minor = element_blank()) } + ## !!! remove the minor gridlines
     
     { if (plotprop) labs(x = "Average yearly increment in proportion to the total basal area increment [ ]", y = "Parameter", title = "Yearly propotional contributions to the basal") } +
-    { if (!plotprop) labs(x = "Cumulated rate of basal area increment [m2 ha-1 yr-1]", y = "Parameter", title = "Contributions to the basal area") }
+    { if (!plotprop) labs(x = expression(Mean~rate~of~basal~area~increment~m^2~ha^-1~yr^-1), y = "Parameter", title = "Contributions to the basal area") }
   
   ggsave(paste0(path, "/", basename_cmdstanfit, "_plot_contributions_", contribution, if(plotlog) "_log_" else "_", length(contribname), ".pdf"),
          plot_contributions, dev = "pdf", height = 8, width = 12)
@@ -2343,33 +2354,37 @@ plotContributions <- function(cmdstanfit, parname, path, contribution = c("sum_k
 
 ## plotPredominant --------------------------------
 # States  <- tar_read("States")[[1]]
-# majorname  <- tar_read(majorname)
-# path  <- tar_read("dir_publish")
+# majorname  <- tar_read(majorname_supp)
 # basename  <- tar_read("basename_fit")[[1]]
-# color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
-plotPredominant <- function(States, majorname,
+# af(plotPredominant)
+plotPredominant <- function(States, majorname, supp = FALSE,
                             path = tar_read("dir_publish"), basename, color = tar_read(twocolors), themefun = theme_fagus) {
   
   States <- States[!is.na(States$value),]
   
   majorname <- intersect(unique(States$var), majorname)
   
-  majorlabel <- c(major_init = "Initial state",
-                  major_fix = "Equilibrium state",
+  majorlabel <- c(major_init = "Initial~state",
+                  major_fix = "Equilibrium~state",
                   
-                  major_fix_switch_l = "switched l",
-                  major_fix_switch_l_r = "switched l and r",
-                  major_fix_switch_c_j = "switched c_J",
-                  major_fix_switch_s = "switched s",
-                  major_fix_switch_g = "switched g",
-                  major_fix_switch_g_l_r_s = "switched understory parameters",
-                  major_fix_switch_c_a = "switched c_A",
-                  major_fix_switch_h = "switched h",
-                  major_fix_switch_b = "switched b",
-                  major_fix_switch_c_b = "switched c_B",
-                  major_fix_switch_b_c_b = "switched b and c_B",
-                  major_fix_switch_b_c_a_c_b_h = "switched overstory parameters")
+                  major_fix_switch_l = "switched~l",
+                  major_fix_switch_l_r = "switched~L[p]~and~r",
+                  major_fix_switch_c_j = "switched~c[J]",
+                  major_fix_switch_s = "switched~s",
+                  major_fix_switch_g = "switched~g",
+                  major_fix_switch_g_s = "switched~g~and~s",
+                  major_fix_switch_g_c_j = 'switched~g~and~c[J]',
+                  major_fix_switch_g_c_j_s = 'switched~g~and~c[J]~and~s',
+                  major_fix_switch_g_l_r_s = "switched~understory~parameters~sans~c[J]",
+                  major_fix_switch_g_c_j_l_r_s = "switched~understory~parameters",
+                  major_fix_switch_c_a = "switched~c[A]",
+                  major_fix_switch_h = "switched~h",
+                  major_fix_switch_h_c_a = "switched~h~and~c[A]",
+                  major_fix_switch_b = "switched~b",
+                  major_fix_switch_c_b = "switched~c[B]",
+                  major_fix_switch_b_c_b = "switched~b~and~c[B]",
+                  major_fix_switch_b_c_a_c_b_h = "switched~overstory~parameters")
   
   
   D <- States[1:6] %>%
@@ -2378,18 +2393,20 @@ plotPredominant <- function(States, majorname,
     
     mutate(value_ = 1 - value) %>%
     mutate(value = if_else(tax == "Fagus", value, value_)) %>% ## more efficient than doing the if_else inside groups
-    mutate(stage = fct_collapse(var,
-                                J = c("major_fix_switch_l_r", "major_fix_switch_c_j", "major_fix_switch_s", "major_fix_switch_g"),
-                                A = c("major_fix_switch_c_a", "major_fix_switch_h"),
-                                B = c("major_fix_switch_b_c_b"))
+    mutate(stage = suppressWarnings( fct_collapse(var,
+                                J = c("major_fix_switch_l_r", "major_fix_switch_c_j", "major_fix_switch_s", "major_fix_switch_g", "major_fix_switch_g_c_j_s"),
+                                A = c("major_fix_switch_c_a", "major_fix_switch_h", "major_fix_switch_h_c_a"),
+                                B = c("major_fix_switch_b", "major_fix_switch_c_b", "major_fix_switch_b_c_b")))
     ) %>%
     
+    mutate(Major = factor(var, levels = rev(names(majorlabel)), labels = rev(majorlabel))) %>%
+    
     ## average over draws
-    group_by(var, tax, stage) %>%
+    group_by(var, Major, tax, stage) %>%
     summarize(value = mean(value), sd = sd(value), q10 = quantile(value, 0.1), q90 = quantile(value, 0.9)) %>%
     ungroup()
   
-  plot_predominant <- ggplot(D, aes(x = factor(var, levels = rev(names(majorlabel))),
+  plot_predominant <- ggplot(D, aes(x = Major,
                                     y = value,
                                     group = stage,
                                     # ymin = if_else(tax == "Fagus", q10, as.numeric(NA)),
@@ -2401,15 +2418,16 @@ plotPredominant <- function(States, majorname,
               position = position_fill(reverse = TRUE, vjust = 0.5), colour = "white", size = 4) +
     ylab("% predominant subpopulations") +
     scale_y_continuous(labels = scales::percent) +
+    scale_x_discrete(labels = parse(text = paste(levels(droplevels(D$Major))))) +
     # scale_color_manual(values = color) +
-    scale_fill_manual(values = color) +
+    scale_fill_manual(values = color, name = "species") +
     themefun() +
     coord_flip() +
     theme(axis.title.y = element_blank()) +
     theme(legend.position = c(-0.4, 0))
   
   
-  ggsave(paste0(path, "/", basename, "_plot_predominance", ".pdf"),
+  ggsave(paste0(path, "/", basename, "_plot_predominance", if(supp) "_supp" else "", ".pdf"),
          plot_predominant,
          dev = "pdf", height = 8, width = 5)
   
@@ -3039,7 +3057,7 @@ plotBinary <- function(Environmental, parname, fit_bin = NULL, binarythreshold =
 
 
 ## plotTrajectories --------------------------------
-# Trajectories <- tar_read("Trajectories_avg_test")
+# Trajectories <- tar_read("Trajectories_avg")[[1]]
 # path  <- tar_read("dir_publish")
 # color  <- tar_read("twocolors")
 # themefun  <- tar_read("themefunction")
@@ -3055,6 +3073,7 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename, plot
     mutate(grp = interaction(loc, tax, draw), tax = as.factor(tax)) %>%
     ungroup() %>%
     mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "other" = "2")) %>%
+    mutate(Stage = fct_recode(stage, "J~count~ha^-1" = "J", "A~count~ha^-1" = "A", "B~basal~area~m^2~ha^-1" = "B")) %>%
     
     ## Cut stage B above a certain value for pretty facet ylims
     filter(!(stage == "B" & abundance > 400))
@@ -3063,10 +3082,8 @@ plotTrajectories <- function(Trajectories, thicker = FALSE, path, basename, plot
   
   plot <- ggplot(Trajectories, aes_lines) +
     { if(thicker) geom_line(linewidth = 0.5, alpha = 0.06) else geom_line(linewidth = 0.2, alpha = 0.05) } +
-    facet_wrap(~stage, scales = "free_y",
-               labeller = labeller(stage = c(J = "J (count [ha^-1])",
-                                             A = "A (count [ha^-1])",
-                                             B = "B (basal area [m^2 ha^-1])"))) +
+    facet_wrap(~Stage, scales = "free_y",
+               labeller = label_parsed) +
     coord_trans(y = "sqrt", x = "sqrt") + # coord_trans(y = "log2", x = "log2") + # 
     scale_x_continuous(breaks = scales::pretty_breaks(n = 6)) +
     scale_y_continuous(breaks = scales::pretty_breaks(n = 12)) +

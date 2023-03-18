@@ -303,9 +303,9 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
                                      ),
               beta_mean = alpha_mean/y_prior_0, ## this is equivalent to beta
               
-              sd_mode = case_when(stage == "J" ~ 100 + 10 * count_obs, ## median 3000, mean 9000, min 200
-                                  stage == "A" ~ 10 + 1 * count_obs, ## min prob around 80, long tail
-                                  stage == "B" ~ 1 + 0.3 * count_obs), ## median 20, mean 22, min 4, short tail
+              sd_mode = case_when(stage == "J" ~ 100 + 20 * count_obs, ## median 3000, mean 9000, min 200
+                                  stage == "A" ~ 10 + 2 * count_obs, ## min prob around 80, long tail
+                                  stage == "B" ~ 1 + 0.2 * count_obs), ## median 20, mean 22, min 4, short tail
               alpha_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["alpha"],
               beta_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["beta"],
               ## The priors concern the N/ha
@@ -576,31 +576,46 @@ fitTransition <- function(data_stan, which, model_transitions, prior_rate = c(g 
 # fit_g  <- tar_read("fit_g")
 # fit_h  <- tar_read("fit_h")
 # fit_Seedlings  <- tar_read("fit_Seedlings")
+# af(formatPriors)
 formatPriors <- function(data_stan, weakpriors,
                          fit_g = NULL, fit_h = NULL, fit_Seedlings = NULL,
                          widthfactor_trans = 1, widthfactor_reg = 1) {
   
-  ## CASE: inferred priors are provided (any, because indexing should also work when objects are NULL so that a list of NULLs gets returned)
-  if( any(!is.null(fit_g), !is.null(fit_h), !is.null(fit_Seedlings)) ) {
+  anyinferredprior <- NULL
+  pars_g <- NULL
+  pars_h <- NULL
+  
+  ## CASE: inferred priors are provided
+  if( !is.null(fit_Seedlings)) {
+    seedlingpar <- c("r_log") # , "k_log", "l_log"
+    draws_seedlings <- sapply(seedlingpar,
+                              function(v) fit_Seedlings$draws(variables = v, format = "draws_matrix") %>% as.data.frame(),
+                              simplify = F, USE.NAMES = T)
+    pars_r <- lapply(draws_seedlings[["r_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
+    # pars_l <- lapply(draws_seedlings[["l_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
+    # pars_k <- lapply(draws_seedlings[["k_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
+    ## pars_seedlings <- lapply(Draws_seedlings, function(d) MASS::fitdistr(d, "normal")$estimate)
+    
+    anyinferredprior <- T
+  }
+  
+  if( !is.null(fit_g) & !is.null(fit_h) ) {
     
     ## Matrices[draws, species]
     Draws_g <- fit_g$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
     Draws_h <- fit_h$draws(variables = "rate_log", format = "draws_matrix") %>% as.data.frame()
     
-    seedlingpar <- c("r_log") # , "k_log", "l_log"
-    draws_seedlings <- sapply(seedlingpar,
-                              function(v) fit_Seedlings$draws(variables = v, format = "draws_matrix") %>% as.data.frame(),
-                              simplify = F, USE.NAMES = T)
+    
     
     # Draws_seedlings <- posterior_samples(fit_Seedlings, fixed = F, pars = c("b_ba_ha$", "b_s_"))
     
     pars_g <- lapply(Draws_g, function(d) MASS::fitdistr(d, "normal")$estimate)
     pars_h <- lapply(Draws_h, function(d) MASS::fitdistr(d, "normal")$estimate)
     
-    pars_r <- lapply(draws_seedlings[["r_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
-    # pars_l <- lapply(draws_seedlings[["l_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
-    # pars_k <- lapply(draws_seedlings[["k_log"]], function(d) MASS::fitdistr(d, "normal")$estimate)
-    ## pars_seedlings <- lapply(Draws_seedlings, function(d) MASS::fitdistr(d, "normal")$estimate)
+    anyinferredprior <- T
+  }
+  
+  if(isTRUE(anyinferredprior)) {
     
     if(widthfactor_trans != 1) {
       pars_g <- lapply(pars_g, function(p) c(p["mean"], widthfactor_trans*p["sd"]))

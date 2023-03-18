@@ -463,14 +463,13 @@ saveStages_s <- function(Stages_s) {
 # predictor_select <- tar_read("predictor_select")
 # loclevel <- "plot"
 selectLocs <- function(Stages_s, predictor_select,
-                       selectspec = T, selectpred = F, stratpred = F, selectalt = c(NULL, NULL), sampleseed = 1, n_locations = 1000,
+                       selectspec = T, selectpred = F, stratpred = F, selectalt = c(NULL, NULL), n_locations = 1000,
                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
                        loc = c("plot", "nested", "cluster"),
                        tablepath = "~"
                        ) {
   
   loclevel <- match.arg(loc)
-  set.seed(sampleseed)
   
   text_before <- paste(Stages_s %>% pull(clusterid) %>% unique() %>% length(), "clusters, and",
                        Stages_s %>% pull(plotid) %>% unique() %>% length(), "plots before selectLocs().")
