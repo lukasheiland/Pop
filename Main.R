@@ -21,9 +21,8 @@ sapply(package, require, character.only = TRUE) ## package is a vector of all pa
 # M <- tar_manifest(fields = c("name", "command"))
 
 ## Wrangling pipeline
-tar_make_future(c("data_stan_priors_offsets",
-                  # "surfaceplots_s"
-                  ), workers = if(onserver) 16 else 3, reporter = "timestamp")
+tar_make_future(c("data_stan_priors_offsets"),
+                workers = if(onserver) 16 else 3, reporter = "timestamp")
 
 ## Fitting, parallelized internally
 tar_make(c("fit"))
@@ -42,7 +41,6 @@ tar_make_future(c("summary",
                   "plots_pairs",
                   "plot_trajectories_avg",
                   # "animation_trajectories_avg",
-                  # "plots_conditional",
                   "residuals"),
                 workers = if(onserver) 16 else 3, reporter = "timestamp")
 
