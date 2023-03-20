@@ -605,9 +605,9 @@ targets_fit <- list(
   tar_target(model,
              cmdstan_model(file_model, stanc_options = list("O1"))),
   tar_target(fit,
-             fitModel(model = model, data_stan = data_stan_priors_offsets_1, gpq = TRUE, ## data_stan_priors_offsets ## for testing all offsets
+             fitModel(model = model, data_stan = data_stan_priors_offsets, gpq = TRUE, ## use data_stan_priors_offsets for mapping over all offset variants; data_stan_priors_offsets_1 for only using the one default option
                       method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, fitpath = dir_fit),
-             pattern = map(data_stan_priors_offsets_1), iteration = "list"), ## data_stan_priors_offsets ## for testing all offsets
+             pattern = map(data_stan_priors_offsets), iteration = "list"), ## data_stan_priors_offsets ## for testing all offsets
   tar_target(basename_fit,
              getBaseName(fit),
              pattern = map(fit), iteration = "list")
