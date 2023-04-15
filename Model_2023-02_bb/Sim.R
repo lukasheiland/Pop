@@ -84,7 +84,6 @@ iterateJAB2 <- function(time, ## vector of times
   l <- par$l
   r <- par$r
   s <- par$s
-  # m <- par$m
   
   ba_a_avg <- 0.5
   ba_a_upper <- 0.7
@@ -145,7 +144,6 @@ calculateOdeJAB <- function(time,
   l <- par$l
   r <- par$r
   s <- par$s
-  # m <- par$m
   
   ba_a_avg <- 0.5 ## constants for basal area conversion
   ba_a_upper <- 0.7
@@ -158,7 +156,7 @@ calculateOdeJAB <- function(time,
 
   dJ <- l + r * BA - (c_j*sum(J) + s*BA_sum + g)*J
   dA <- g * J - (c_a*BA_sum + h)*A
-  dB <- A * h * ba_a_upper + B*b - (c_b*BA_sum)*B # - m*B
+  dB <- A * h * ba_a_upper + B*b - (c_b*BA_sum)*B
   
   return(list(c(dJ, dA, dB)))
 }
@@ -168,31 +166,19 @@ calculateOdeJAB <- function(time,
 set.seed(1)
 time <- seq(1, 80, 4)
 
-## All equal parameters loosely based on the priors
+## Equal parameters among species, loosely based on the estimates
 par <- list(b = c(-4, -4),
             c_a = c(-5, -5),
-            c_b = c(-8, -8),
+            c_b = c(-7, -7),
             c_j = c(-7, -7),
-            g = c(-3, -3),
-            h = c(-2, -2),
+            g = c(-5, -5),
+            h = c(-3, -3),
             l = c(5, 5),
             r = c(4, 4),
-            s = c(-6, -6),
-            m = c(-3, -3))
-
-# par <- list(b = c(-0.01, -0.01),
-#             c_a = c(-6, -6),
-#             c_b = c(-0.01, -0.01),
-#             c_j = c(-13, -13),
-#             g = c(-5, -5),
-#             h = c(-4, -4),
-#             l = c(3, 3),
-#             r = c(2, 2),
-#             s = c(-7, -7))
+            s = c(-5, -5))
 
 ## Equal states, loosely based on initial states in the data (change sd in rnorm for some randomness)
-# state_0 <- exp(rnorm(6, rep(c(8, 5, 2), each = 2), 0))
-state_0 <- rep(c(4100, 236, 15), each = 2)
+state_0 <- exp(rnorm(6, rep(c(8, 5, 2), each = 2), 0)) # state_0 <- rep(c(4100, 236, 15), each = 2)
 
 ## Wrapper for  plotting trajectories given a Matrix with observations as rows and columns 1: time, 2: j, 3: J, 4: a, 5: A, etc.
 wrapMatplot <- function(Mat) {
@@ -238,7 +224,10 @@ Sim_JAB2_r <- iterateJAB2(time, state_0, lapply(par_r, exp))
 wrapMatplot(Sim_JAB2_r)
 
 
-par_l <- within(par, { l <- c(8, 3)}) ## change l; Note that l is acting only linearly
+par_l <- within(par, { l <- c(6, 4)}) ## change l; Note that l is acting only linearly, therefore larger assumed differences for faster equilibria
+
+Sim_JAB_l <- iterateJAB(seq(1, 1500, 100), state_0, lapply(par_l, exp))
+wrapMatplot(Sim_JAB_l)
 
 Sim_odeJAB_l <- deSolve::ode(state_0, seq(1, 1500, 100), calculateOdeJAB, lapply(par_l, exp))
 wrapMatplot(Sim_odeJAB_l)
