@@ -606,13 +606,13 @@ generated quantities {
   array[N_locs] vector[N_species] ba_init = J_init;
   array[N_locs] vector[N_species] ba_fix = J_init;
   
-  array[N_locs] real ba_tot_init = rep_array(0.0, N_locs);
-  array[N_locs] real ba_tot_fix = ba_tot_init;
+  array[N_locs] real ba_sum_init_loc = rep_array(0.0, N_locs);
+  array[N_locs] real ba_sum_fix_loc = ba_sum_init_loc;
   array[N_locs] vector[N_species] ba_frac_init = J_init;
   array[N_locs] vector[N_species] ba_frac_fix = J_init;
   
   array[N_locs] vector[N_species] eps_ba_fix = J_init;
-  array[N_locs] real iterations_fix = ba_tot_init;
+  array[N_locs] real iterations_fix = ba_sum_init_loc;
 
   int fixiter_max = 6000;
   int fixiter_min = 250;
@@ -627,10 +627,20 @@ generated quantities {
   array[N_locs] int major_fix = converged_fix;
   
   
+  //// Parameters after limitation -------------------------------------
+  
+  array[N_locs] vector[N_species] G_lim_init_log = J_init;
+  array[N_locs] vector[N_species] H_lim_init_log = J_init;
+  array[N_locs] vector[N_species] B_lim_init_log = J_init;
+  array[N_locs] vector[N_species] G_lim_fix_log = J_init;
+  array[N_locs] vector[N_species] H_lim_fix_log = J_init;
+  array[N_locs] vector[N_species] B_lim_fix_log = J_init;
+
+  
   //// Contributions with average initial value --------------------------
   //
   // array[N_locs] vector[N_species] eps_ba_fix_avg = J_init;
-  // array[N_locs] real iterations_fix_avg = ba_tot_init;
+  // array[N_locs] real iterations_fix_avg = ba_sum_init_loc;
   //
   // array[N_locs] int converged_fix_avg = converged_fix; // tolerance has been reached
   
@@ -737,6 +747,10 @@ generated quantities {
   //—————————————————————————————————————————————————————————————————//
   
   if (generateposteriorq) {
+    
+    
+    array[N_locs] real J_sum_fix_loc; // additional quantity for generating d.-d. growth terms
+    array[N_locs] real J_sum_init_loc; // additional quantity for generating d.-d. growth terms
 
   
     //// Fix point iteration -------------------------------------------
@@ -748,10 +762,17 @@ generated quantities {
       
       ba_init[loc] = state_init[loc, (N_pops-N_species+1):N_pops] + // State B
                      ba_a_avg .* state_init[loc, (N_species+1):(N_species+N_species)]; // State A * ba
+                     
+      ba_sum_init_loc[loc] = sum(ba_init[loc]);
+      J_sum_init_loc[loc] = sum(J_init[loc]);
       
-      ba_tot_init[loc] = sum(ba_init[loc]);
-      ba_frac_init[loc] = ba_init[loc] / ba_tot_init[loc];
+      ba_frac_init[loc] = ba_init[loc] / ba_sum_init_loc[loc];
       
+      //// Density-dependent growth terms at the loc level
+      B_lim_init_log[loc] = log( B[loc] ./ (1 + C_b[loc] * ba_sum_init_loc[loc]) );
+      G_lim_init_log[loc] = log( G[loc] ./ (1 + C_j[loc] * J_sum_init_loc[loc] + S[loc] * ba_sum_init_loc[loc]) );
+      H_lim_init_log[loc] = log( H[loc] ./ (1 + C_a[loc] * ba_sum_init_loc[loc]) );
+
       //// Booleans at init
       // dominant_init[loc] = (ba_init[loc, 1]/ba_init[loc, 2]) > 3; // ba_1 > 75%
       major_init[loc] = ba_init[loc, 1] > ba_init[loc, 2]; // ba_1 > 50%
@@ -781,13 +802,18 @@ generated quantities {
         
         
         //// ba calculations
-        ba_tot_fix[loc] = sum(ba_fix[loc]);
-        ba_frac_fix[loc] = ba_fix[loc] / ba_tot_fix[loc];
+        ba_sum_fix_loc[loc] = sum(ba_fix[loc]);
+        J_sum_fix_loc[loc] = sum(J_fix[loc]);
+        ba_frac_fix[loc] = ba_fix[loc] / ba_sum_fix_loc[loc];
         
         //// Booleans at fixpoint
         // dominant_fix[loc] = (ba_fix[loc, 1]/ba_fix[loc, 2]) > 3; // ba_1 > 75%
         major_fix[loc] = ba_fix[loc, 1] > ba_fix[loc, 2]; // ba_1 > 50%
         
+        //// Density-dependent growth terms at the loc level
+        B_lim_fix_log[loc] = log( B[loc] ./ (1 + C_b[loc] * ba_sum_fix_loc[loc]) );
+        G_lim_fix_log[loc] = log( G[loc] ./ (1 + C_j[loc] * J_sum_fix_loc[loc] + S[loc] * ba_sum_fix_loc[loc]) ); 
+        H_lim_fix_log[loc] = log( H[loc] ./ (1 + C_a[loc] * ba_sum_fix_loc[loc]) );
  
         
         //// Counterfactual fix point iteration --------------------------
