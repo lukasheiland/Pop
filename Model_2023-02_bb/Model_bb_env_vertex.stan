@@ -48,9 +48,11 @@ functions {
       real BA_sum = sum(BA);
       
       /// Model
-      State[i_j, t]  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      State[i_a, t]  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
-      State[i_b, t]  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+      vector[N_spec] lim_J = (1 + c_j*sum(J) + s*BA_sum);
+      State[i_j, t]  =  l + r .* BA + (J - g .* J) ./ lim_J;
+      vector[N_spec] lim_A = (1 + c_a*BA_sum);
+      State[i_a, t]  =  (g .* J) ./ lim_J + (A - h .* A) ./ lim_A;
+      State[i_b, t]  =  (ba_a_upper * h .* A ./ lim_A) + (1 + b) .* B ./ (1 + c_b*BA_sum);
     
     }
     
@@ -58,37 +60,8 @@ functions {
   }
   
 
-
-  //// simulate_1(): Difference equations of one-step model
-  vector simulate_1(vector J, vector A, vector B,
-                    vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
-                    vector ba_a_avg, real ba_a_upper,
-                    int N_spec) {
-    
-    vector[N_spec] BA = (A .* ba_a_avg) + B;
-    real BA_sum = sum(BA);
-
-    /// Model (1 iteration)
-    /// First run: get limiting states
-    vector[N_spec] J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-    vector[N_spec] A_1  =  (g .* J_1 + (A - h .*A )) ./ (1 + c_a*BA_sum);
-    vector[N_spec] B_1  =  (1+b).*((h .* A_1 * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
-    
-    real BA_sum_1 = sum(A_1 .* ba_a_avg + B_1);
-		
-	// Second run: use limiting states
-    J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J_1) + s*BA_sum_1); // use the states already generated before: J_1, BA_sum_1
-    A_1  =  (g .* J_1 + (A - h .*A )) ./ (1 + c_a*BA_sum_1);
-    B_1  =  (1+b).*((h .* A_1 * ba_a_upper) + B) ./ (1 + c_b*BA_sum_1);
-    
-    vector[N_spec] ba_1 = (A_1 .* ba_a_avg) + B_1;
-    
-    return ba_1;
-  }
   
-  
-  
-  //// unpack(): ODE integration and data assignment to one long vector is wrapped into a function here because
+  //// unpack(): simulation and data assignment to one long vector is wrapped into a function here because
   // - the transformed parameters block does not allow declaring integers (necessary for ragged data structure indexing),
   // - the model block does not alllow for declaring variables within a loop.
   vector unpack(array[] vector state_init, array[] int time_max, array[] int times,    //* vector unpack(array[] vector state_init_log, array[] int time_max, array[] int times,
@@ -162,16 +135,18 @@ functions {
       vector[N_spec] BA = A .* ba_a_avg + B;
       real BA_sum = sum(BA);
       
-      // s_1[i_j]  =  ((r .* BA)/(1 + BA_sum) + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      A_1  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
-      B_1  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
+      
+      vector[N_spec] lim_J = (1 + c_j*sum(J) + s*BA_sum);
+      J_1  =  l + r .* BA + (J - g .* J) ./ lim_J;
+      vector[N_spec] lim_A = (1 + c_a*BA_sum);
+      A_1  =  (g .* J) ./ lim_J + (A - h .* A) ./ lim_A;
+      B_1  =  (ba_a_upper * h .* A ./ lim_A) + (1 + b) .* B ./ (1 + c_b*BA_sum);
+
       
       BA_1 = A_1 .* ba_a_avg + B_1; // New BA as additional state.
 
       eps_ba = abs((BA_1 - BA) ./ BA_1);
       
-
       /// !
       J = J_1;
       A = A_1;
@@ -189,151 +164,7 @@ functions {
     return fix;
   
   }
-    
-
-
-  //// iterateFix(): Difference equations simulated up to the fix point (i.e. equilibrium) given a maximum tolerance over all states.
-  // Expects a state vector[N_pops]
-  // returns a state vector of the form [J1, J2, A1, A2, B1, B2, BA1, BA2, eps_BA1, eps_BA2, iterations]
-  array[] vector iterateFix_contributions(vector state_0,
-                                          vector b, vector c_a, vector c_b, vector c_j, vector g,  vector h, vector l, vector r, vector s, 
-                                          vector ba_a_avg, real ba_a_upper,
-                                          int N_spec, array[] int i_j, array[] int i_a, array[] int i_b,
-                                          real tolerance_fix, int fixiter_max, int fixiter_min, int N_fix) {
-                       
-        
-    /// Summed up contributions, initialize with 0 to avoid NaNs
-    vector[N_spec] sum_ko_1_b = rep_vector(0.0, N_spec);
-    vector[N_spec] sum_ko_1_b_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_c_a = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_c_j = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_g = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_h = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_l = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_r = sum_ko_1_b;
-    vector[N_spec] sum_ko_1_s = sum_ko_1_b;
-    
-    vector[N_spec] sum_ko_2_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_b_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_c_a = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_c_b = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_c_j = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_g = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_h = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_l = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_r = sum_ko_1_b;
-    vector[N_spec] sum_ko_2_s = sum_ko_1_b;
-    
-    
-    /// initialize while loop conditions
-    vector[N_spec] J = state_0[i_j];
-    vector[N_spec] A = state_0[i_a];
-    vector[N_spec] B = state_0[i_b];
-    
-    vector[N_spec] J_1;
-    vector[N_spec] A_1;
-    vector[N_spec] B_1;
-    vector[N_spec] BA_1;
-
-    vector[N_spec] eps_ba = rep_vector(1.0, N_spec); // tolerance_fix is set to <upper=0.5>, that's why it is enough to set it to one for the while loop to run
-    int i = 0;
-
-    
-    while ( i < fixiter_min || (max(eps_ba) > tolerance_fix && i < fixiter_max) ) {
-            
-      vector[N_spec] BA = A .* ba_a_avg + B;
-      real BA_sum = sum(BA);
-      
-      // s_1[i_j]  =  ((r .* BA)/(1 + BA_sum) + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      J_1  =  (r .* BA + l + (J - g .* J)) ./ (1 + c_j*sum(J) + s*BA_sum);
-      A_1  =  (g .* J + (A - h .*A )) ./ (1 + c_a*BA_sum);
-      B_1  =  (1+b).*((h .* A * ba_a_upper) + B) ./ (1 + c_b*BA_sum);
-      
-      BA_1 = A_1 .* ba_a_avg + B_1; // New BA as additional state.
-
-      eps_ba = abs((BA_1 - BA) ./ BA_1);
-      
-      //// This is here to only calculate the contributions for an earlier period
-      // if (i < fixiter_min) {
-      
-        vector[N_spec] ba_ko_none = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-
-        vector[N_spec] ba_ko_1_b = simulate_1(J, A, B, [0, b[2]]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_1_b_c_b = simulate_1(J, A, B, [0, b[2]]', c_a, [0, c_b[2]]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_1_c_a  = simulate_1(J, A, B, b, [0, c_a[2]]', c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_1_c_b = simulate_1(J, A, B, b, c_a, [0, c_b[2]]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_1_c_j = simulate_1(J, A, B, b, c_a, c_b, [0, c_j[2]]', g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_1_g = simulate_1(J, A, B, b, c_a, c_b, c_j, [0, g[2]]', h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_1_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, [0, h[2]]', l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_1_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, [0, l[2]]', r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_1_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [0, r[2]]', s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_1_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [0, s[2]]', ba_a_avg, ba_a_upper, N_spec);
-        
-        vector[N_spec] ba_ko_2_b = simulate_1(J, A, B, [b[1], 0]', c_a, c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_2_b_c_b = simulate_1(J, A, B, [b[1], 0]', c_a, [c_b[1], 0]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_2_c_a  = simulate_1(J, A, B, b, [c_a[1], 0]', c_b, c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_2_c_b = simulate_1(J, A, B, b, c_a, [c_b[1], 0]', c_j, g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_2_c_j = simulate_1(J, A, B, b, c_a, c_b, [c_j[1], 0]', g, h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_2_g = simulate_1(J, A, B, b, c_a, c_b, c_j, [g[1], 0]', h, l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_2_h = simulate_1(J, A, B, b, c_a, c_b, c_j, g, [h[1], 0]', l, r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_2_l = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, [l[1], 0]', r, s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_2_r = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, [r[1], 0]', s, ba_a_avg, ba_a_upper, N_spec);
-        vector[N_spec] ba_ko_2_s = simulate_1(J, A, B, b, c_a, c_b, c_j, g, h, l, r, [s[1], 0]', ba_a_avg, ba_a_upper, N_spec);
-        
-        
-        /// Summed up contributions
-        sum_ko_1_b += ba_ko_none - ba_ko_1_b;
-        sum_ko_1_b_c_b += ba_ko_none - ba_ko_1_b_c_b;
-        sum_ko_1_c_a += ba_ko_none - ba_ko_1_c_a;
-        sum_ko_1_c_b += ba_ko_none - ba_ko_1_c_b;
-        sum_ko_1_c_j += ba_ko_none - ba_ko_1_c_j;
-        sum_ko_1_g += ba_ko_none - ba_ko_1_g;
-        sum_ko_1_h += ba_ko_none - ba_ko_1_h;
-        sum_ko_1_l += ba_ko_none - ba_ko_1_l;
-        sum_ko_1_r += ba_ko_none - ba_ko_1_r;
-        sum_ko_1_s += ba_ko_none - ba_ko_1_s;
-        
-        sum_ko_2_b += ba_ko_none - ba_ko_2_b;
-        sum_ko_2_b_c_b += ba_ko_none - ba_ko_2_b_c_b;
-        sum_ko_2_c_a += ba_ko_none - ba_ko_2_c_a;
-        sum_ko_2_c_b += ba_ko_none - ba_ko_2_c_b;
-        sum_ko_2_c_j += ba_ko_none - ba_ko_2_c_j;
-        sum_ko_2_g += ba_ko_none - ba_ko_2_g;
-        sum_ko_2_h += ba_ko_none - ba_ko_2_h;
-        sum_ko_2_l += ba_ko_none - ba_ko_2_l;
-        sum_ko_2_r += ba_ko_none - ba_ko_2_r;
-        sum_ko_2_s += ba_ko_none - ba_ko_2_s;
-        
-
-      // }  // end if i < fixiter_min
-      
-      
-      /// !
-      J = J_1;
-      A = A_1;
-      B = B_1;
-      
-      i += 1;
-
-    } // end while i < fixiter_max
-    
-    // array with 3 (states) + 1 (BA) + 1 (eps) + 1 (n_iter) + some variables (overall N_fix)
-    array[N_fix] vector[N_spec] fix = {J_1, A_1, B_1, BA_1,
-                                       eps_ba, rep_vector(i, N_spec), // int i gets cast to real
-                                       
-                                       //// when considering the whole period, use i, when considering only the first period use fixiter_min as a denominator here
-                                       // indices 7–26
-                                       sum_ko_1_b/i, sum_ko_1_b_c_b/i, sum_ko_1_c_a/i, sum_ko_1_c_b/i, sum_ko_1_c_j/i, sum_ko_1_g/i, sum_ko_1_h/i, sum_ko_1_l/i, sum_ko_1_r/i, sum_ko_1_s/i,
-                                       sum_ko_2_b/i, sum_ko_2_b_c_b/i, sum_ko_2_c_a/i, sum_ko_2_c_b/i, sum_ko_2_c_j/i, sum_ko_2_g/i, sum_ko_2_h/i, sum_ko_2_l/i, sum_ko_2_r/i, sum_ko_2_s/i};
-                                       
-                                       // sum_ko_1_b/fixiter_min, sum_ko_1_b_c_b/fixiter_min, sum_ko_1_c_a/fixiter_min, sum_ko_1_c_b/fixiter_min, sum_ko_1_c_j/fixiter_min, sum_ko_1_g/fixiter_min, sum_ko_1_h/fixiter_min, sum_ko_1_l/fixiter_min, sum_ko_1_r/fixiter_min, sum_ko_1_s/fixiter_min,
-                                       // sum_ko_2_b/fixiter_min, sum_ko_2_b_c_b/fixiter_min, sum_ko_2_c_a/fixiter_min, sum_ko_2_c_b/fixiter_min, sum_ko_2_c_j/fixiter_min, sum_ko_2_g/fixiter_min, sum_ko_2_h/fixiter_min, sum_ko_2_l/fixiter_min, sum_ko_2_r/fixiter_min, sum_ko_2_s/fixiter_min};
-                                    
-    return fix;
-  } 
-
-
+  
 }
 
 
@@ -421,7 +252,6 @@ transformed data {
   
   //// Data for generated quantities
   int N_fix = 6; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter}
-  int N_fix_contributions = 26; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter, 2 * (9+1) diff_ko_parameter }
   
 }
 
@@ -784,29 +614,6 @@ generated quantities {
   array[N_locs] vector[N_species] eps_ba_fix = J_init;
   array[N_locs] real iterations_fix = ba_tot_init;
 
-  array[N_locs] vector[N_species] sum_ko_1_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_b_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_c_a_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_c_j_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_g_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_h_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_l_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_r_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_1_s_fix = J_init;
-  
-  array[N_locs] vector[N_species] sum_ko_2_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_b_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_c_a_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_c_b_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_c_j_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_g_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_h_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_l_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_r_fix = J_init;
-  array[N_locs] vector[N_species] sum_ko_2_s_fix = J_init;
-  
-
   int fixiter_max = 6000;
   int fixiter_min = 250;
 
@@ -825,28 +632,6 @@ generated quantities {
   // array[N_locs] vector[N_species] eps_ba_fix_avg = J_init;
   // array[N_locs] real iterations_fix_avg = ba_tot_init;
   //
-  // array[N_locs] vector[N_species] sum_ko_1_b_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_b_c_b_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_c_a_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_c_b_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_c_j_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_g_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_h_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_l_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_r_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_s_fix_avg = J_init;
-  // 
-  // array[N_locs] vector[N_species] sum_ko_2_b_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_b_c_b_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_c_a_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_c_b_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_c_j_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_g_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_h_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_l_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_r_fix_avg = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_s_fix_avg = J_init;
-  //
   // array[N_locs] int converged_fix_avg = converged_fix; // tolerance has been reached
   
   
@@ -864,8 +649,6 @@ generated quantities {
   
   // 2. K.O. of all environmental variation
   array[N_locs] vector[N_species] ba_fix_ko_1_env_b          = J_init;
-  // array[N_locs] vector[N_species] sum_ko_1_sKoEnvB_fix    = J_init;
-  // array[N_locs] vector[N_species] sum_ko_2_sKoEnvB_fix    = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_b_c_b      = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_c_a        = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_c_b        = J_init;
@@ -975,12 +758,12 @@ generated quantities {
       
       
       //// Simulate fix point, given parameters
-      array[N_fix_contributions] vector[N_species] Fix; // N_locs arrays of vectors[N_specices] { J, A, B, BA, eps, n_iter, 2 * 9 * diff_ko_parameter }
-      Fix = iterateFix_contributions(state_init[loc],
-                                     B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
-                                     ba_a_avg, ba_a_upper,
-                                     N_species, i_j, i_a, i_b,
-                                     tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);
+      array[N_fix] vector[N_species] Fix; // N_locs arrays of vectors[N_specices] { J, A, B, BA, eps, n_iter, 2 * 9 * diff_ko_parameter }
+      Fix = iterateFix(state_init[loc],
+                      B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
+                      ba_a_avg, ba_a_upper,
+                      N_species, i_j, i_a, i_b,
+                      tolerance_fix, fixiter_max, fixiter_min, N_fix);
                                           
                                      
       iterations_fix[loc] = Fix[6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
@@ -994,31 +777,7 @@ generated quantities {
         B_fix[loc] = Fix[3];
         ba_fix[loc] = Fix[4];
         eps_ba_fix[loc] = Fix[5];        
-        
         // Fix[6] is unpacked before
-        
-        //// Unpack the cumulative contributions into variables
-        sum_ko_1_b_fix[loc] = Fix[7];
-        sum_ko_1_b_c_b_fix[loc] = Fix[8];
-        sum_ko_1_c_a_fix[loc] = Fix[9];
-        sum_ko_1_c_b_fix[loc] = Fix[10];
-        sum_ko_1_c_j_fix[loc] = Fix[11];
-        sum_ko_1_g_fix[loc] = Fix[12];
-        sum_ko_1_h_fix[loc] = Fix[13];
-        sum_ko_1_l_fix[loc] = Fix[14];
-        sum_ko_1_r_fix[loc] = Fix[15];
-        sum_ko_1_s_fix[loc] = Fix[16];
-        
-        sum_ko_2_b_fix[loc] = Fix[17];
-        sum_ko_2_b_c_b_fix[loc] = Fix[18];
-        sum_ko_2_c_a_fix[loc] = Fix[19];
-        sum_ko_2_c_b_fix[loc] = Fix[20];
-        sum_ko_2_c_j_fix[loc] = Fix[21];
-        sum_ko_2_g_fix[loc] = Fix[22];
-        sum_ko_2_h_fix[loc] = Fix[23];
-        sum_ko_2_l_fix[loc] = Fix[24];
-        sum_ko_2_r_fix[loc] = Fix[25];
-        sum_ko_2_s_fix[loc] = Fix[26];
         
         
         //// ba calculations
@@ -1073,7 +832,6 @@ generated quantities {
         
         // 2. K.O. of environmental variation
         array[N_fix] vector[N_species] Fix_ko_1_env_b = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
-        // array[N_fix_contributions] vector[N_species] Fix_ko_1_env_b = iterateFix_contributions(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_1_env_b_c_b = iterateFix(state_init[loc], [ avg_b[1], B[loc, 2] ]', C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);;
         array[N_fix] vector[N_species] Fix_ko_1_env_c_a = iterateFix(state_init[loc], B[loc], [ avg_c_a[1], C_a[loc, 2] ]', C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_1_env_c_b = iterateFix(state_init[loc], B[loc], C_a[loc], [ avg_c_b[1], C_b[loc, 2] ]', C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
@@ -1094,8 +852,6 @@ generated quantities {
         array[N_fix] vector[N_species] Fix_ko_2_env_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ S[loc, 1], avg_s[2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         
         ba_fix_ko_1_env_b[loc]          = Fix_ko_1_env_b[4];
-        // sum_ko_1_sKoEnvB_fix[loc]    = Fix_ko_1_env_b[16]; // the contribution of b under k.o. of 1_env_b
-        // sum_ko_2_sKoEnvB_fix[loc]    = Fix_ko_1_env_b[26];
         ba_fix_ko_1_env_b_c_b[loc]      = Fix_ko_1_env_b_c_b[4];
         ba_fix_ko_1_env_c_a[loc]        = Fix_ko_1_env_c_a[4];
         ba_fix_ko_1_env_c_b[loc]        = Fix_ko_1_env_c_b[4];
@@ -1183,12 +939,12 @@ generated quantities {
       
       //// Simulate marginal fix point with average population starts
       //
-      // array[N_fix_contributions] vector[N_species] Fix_avg;
-      // Fix_avg = iterateFix_contributions(avg_state_init, // !!!
-      //                                    B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
-      //                                    ba_a_avg, ba_a_upper,
-      //                                    N_species, i_j, i_a, i_b,
-      //                                    tolerance_fix, fixiter_max, fixiter_min, N_fix_contributions);
+      // array[N_fix] vector[N_species] Fix_avg;
+      // Fix_avg = iterateFix(avg_state_init, // !!!
+      //                     B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc, ], R[loc], S[loc],
+      //                     ba_a_avg, ba_a_upper,
+      //                     N_species, i_j, i_a, i_b,
+      //                     tolerance_fix, fixiter_max, fixiter_min, N_fix);
       //                                     
       //                                
       // iterations_fix_avg[loc] = Fix_avg[6, 1]; // the 6th element is the vector: [n_iter, n_iter]'
@@ -1204,29 +960,7 @@ generated quantities {
       //   eps_ba_fix_avg[loc] = Fix[5];
       //   
       //   // Fix[6] is unpacked before
-      //   
-      //   //// Unpack the cumulative contributions into variables
-      //   sum_ko_1_b_fix_avg[loc] = Fix_avg[7];
-      //   sum_ko_1_b_c_b_fix_avg[loc] = Fix_avg[8];
-      //   sum_ko_1_c_a_fix_avg[loc] = Fix_avg[9];
-      //   sum_ko_1_c_b_fix_avg[loc] = Fix_avg[10];
-      //   sum_ko_1_c_j_fix_avg[loc] = Fix_avg[11];
-      //   sum_ko_1_g_fix_avg[loc] = Fix_avg[12];
-      //   sum_ko_1_h_fix_avg[loc] = Fix_avg[13];
-      //   sum_ko_1_l_fix_avg[loc] = Fix_avg[14];
-      //   sum_ko_1_r_fix_avg[loc] = Fix_avg[15];
-      //   sum_ko_1_s_fix_avg[loc] = Fix_avg[16];
-      //   
-      //   sum_ko_2_b_fix_avg[loc] = Fix_avg[17];
-      //   sum_ko_2_b_c_b_fix_avg[loc] = Fix_avg[18];
-      //   sum_ko_2_c_a_fix_avg[loc] = Fix_avg[19];
-      //   sum_ko_2_c_b_fix_avg[loc] = Fix_avg[20];
-      //   sum_ko_2_c_j_fix_avg[loc] = Fix_avg[21];
-      //   sum_ko_2_g_fix_avg[loc] = Fix_avg[22];
-      //   sum_ko_2_h_fix_avg[loc] = Fix_avg[23];
-      //   sum_ko_2_l_fix_avg[loc] = Fix_avg[24];
-      //   sum_ko_2_r_fix_avg[loc] = Fix_avg[25];
-      //   sum_ko_2_s_fix_avg[loc] = Fix_avg[26];
+      //
       //
       // } // end if (converged_fix_avg[loc])
   
