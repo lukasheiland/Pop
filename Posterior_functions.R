@@ -240,11 +240,14 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     filter(variable != "major_fix") %>%
     group_by(variable, tax) %>%
     summarize(Par = str_extract(first(variable), "(?<=env_).*$"),
-              Parameter = suppressWarnings( fct_recode(Par, "l" = "l", "r" = "r", "s" = "s", "c<sub>J</sub>" = "c_j", "g" = "g", "c<sub>A</sub>" = "c_a", "h" = "h", "b" = "b", "c<sub>B</sub>" =  "c_b",
-                                                                  "b and c<sub>B</sub>" = "b_c_b", "b given the s of others" = "b_other_s")),
+              Parameter = suppressWarnings( fct_recode(Par, "l" = "l", "r" = "r", "c<sub>J</sub>" = "c_j", "s" = "s",
+                                                            "g" = "g", "g &#38; c<sub>J</sub> &#38; s" = "g_c_j_s",
+                                                            "c<sub>A</sub>" = "c_a", "h" = "h", "h &#38; c<sub>A</sub>" = "h_c_a",
+                                                            "b" = "b", "c<sub>B</sub>" =  "c_b",
+                                                            "b &#38; c<sub>B</sub>" = "b_c_b", "b given the s of others" = "b_other_s")),
               Parameter = html(as.character(Parameter)),
               Species = suppressWarnings( fct_recode(str_extract(first(variable), "\\d+"),  "Fagus" = "1", "others" = "2") ),
-              order = match(Par, c("l", "r", "s", "c_j", "g", "c_a", "h", "b", "b_other_s", "c_b", "b_c_b")),
+              order = match(Par, c("l", "r", "c_j", "s", "g", "g_c_j_s", "c_a", "h", "h_c_a", "b", "b_other_s", "c_b", "b_c_b")),
               Mean = first(meanabs_tot),
               Var_loc = first(var_mean_loc),
               Var_tot = first(var_tot),
@@ -507,16 +510,16 @@ formatNumber <- function(x, signif.digits = 4) {
 # factor = TRUE returns correct order 
 formatParName <- function(p, log = FALSE, factor = FALSE) {
   p <- stringi::stri_replace_all_fixed(p,
-                                  c("b_c_b", "_a", "_b", "_j"),
-                                  c("b~'&'~c[B]", "[A]", "[B]", "[J]"),
+                                  c("b_c_b", "h_c_a", "g_c_j_s", "_a", "_b", "_j"),
+                                  c("b~'&'~c[B]", "h~'&'~c[A]", "g~'&'~c[J]~'&'~s", "[A]", "[B]", "[J]"),
                                   vectorize_all = F) ##!!
   if(isTRUE(log)) {
     p <- paste0("log~", p)
   }
   
   if(isTRUE(factor)) {
-    p <- factor(p, levels = unique(c("l", "r", "c[J]", "s", "g", "c[A]", "h", "b", "c[B]", "b~'&'~c[B]",
-                                     "log~l", "log~r", "log~c[J]", "log~s", "log~g", "log~c[A]", "log~h", "log~b", "log~c[B]", "log~b~'&'~c[B]",
+    p <- factor(p, levels = unique(c("l", "r", "c[J]", "s", "g", "c[A]", "h", "b", "c[B]", "g~'&'~c[J]~'&'~s", "h~'&'~c[A]", "b~'&'~c[B]", 
+                                     "log~l", "log~r", "log~c[J]", "log~s", "log~g", "log~c[A]", "log~h", "log~b", "log~c[B]", "log~g~'&'~c[J]~'&'~s", "log~h~'&'~c[A]", "log~b~'&'~c[B]",
                                      as.character(p))))
   }
   
@@ -2470,12 +2473,12 @@ plotMarginal <- function(Marginal, parname,
 ## plotEnvironmental --------------------------------
 # af(plotEnvironmental)
 # surfaces <- tar_read(surface_environmental_env)
+# surfaces <- tar_read(surface_lim_env)
 # surfaces <- c(tar_read(surface_diff_env), list(Binary = tar_read(Surface_binary_env)))
-# basename <- tar_read(basename_fit_env)
-# path <-  tar_read(dir_publish)
 # Cred <- tar_read(Cred_env)
 # Waterlevel <- tar_read(Waterlevel)
 plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = NULL, Cred = NULL, commonscale = FALSE, removevar = "",
+                              gridcols = NULL,
                               basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
                               color = tar_read(twocolors), ps = tar_read(plotsettings), themefun = theme_fagus) {
   
@@ -2531,7 +2534,8 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
   
   } else{
     
-    warning("plotEnvironmental(): surface with binaryname is not in provided surfaces.")
+    if (is.character(binaryname)) warning("plotEnvironmental(): surface with binaryname is not in provided surfaces.")
+  
   }
   
   
@@ -2547,6 +2551,15 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
       name_y_s <- if ( is.null(name_y_s) ) name_y else name_y_s
       parname <- attr(D, "parname")
       taxon <- attr(D, "taxon")
+      
+      plottitle <- stringi::stri_replace_all_fixed(parname,
+                                                   c("B_log", "G_log", "H_log", "B", "G", "H", "_lim_init_log", "_lim_fix_log"),
+                                                   c("B", "G", "H", "log B", "log G", "log H", " dens.-dep. at initial state", " dens.-dep. at equilibrium"),
+                                                   vectorize_all = F) ##!!
+      plottitle <- paste(case_when(taxon == 1 ~ "Fagus",
+                                   taxon == 2 ~ "others",
+                                   taxon == 0 ~ "",
+                                   TRUE ~ as.character(taxon)), plottitle)
       
       if(crednotnull) {
         C <- Cred %>% filter(variable == parname)
@@ -2586,7 +2599,7 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
         themefun() +
         theme(legend.title = element_blank()) +
         ps$aspect +
-        ggtitle(paste(parname, taxon)) +
+        ggtitle(plottitle) +
         ps$axislabs
 
       return(plot)
@@ -2594,10 +2607,11 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
     
     plots <- lapply(surfaces, plotE)
     names(plots) <- parname_surfaces
-    plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = 3)
+    gridcols <- if (is.numeric(gridcols)) gridcols else 3
+    plotgrid <- cowplot::plot_grid(plotlist = plots, ncol = gridcols)
     
-    ggsave(filename = paste0(path, "/", basename, "_plotgrid_environmental_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
-           plot = plotgrid, device = "pdf", width = 22, height = (ps$height_plot + 0.8) * length(plots)/2, limitsize = FALSE)
+    ggsave(filename = paste0(path, "/", basename, "_plotgrid_environmental_", first(parname_surfaces), "_", format(Sys.time(), "%H.%M.%S"), ".pdf"),
+           plot = plotgrid, device = "pdf", width = 8*gridcols, height = (ps$height_plot + 0.8) * length(plots) / gridcols, limitsize = FALSE)
     
   } else {
     
@@ -2608,23 +2622,39 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
     name_y_s <- attr(surfaces[[1]], "name_y_s")
     name_y_s <- if ( is.null(name_y_s) ) name_y else name_y_s
     
-    if(crednotnull) {
-      Cred %<>% filter(!(variable %in% c(binaryname, removevar)))
+
+    if (bnotnull) {
+      surfaces <- surfaces[-i_binary]
+      surfaces <- lapply(surfaces, function(S) bind_cols(S, z_binary = Binary$z))
     }
     
-    surfaces <- surfaces[-i_binary]
-    surfaces <- lapply(surfaces, function(S) bind_cols(S, z_binary = Binary$z, tax = attr(S, "taxon"), variable = attr(S, "parname")))
-    
+    surfaces <- lapply(surfaces, function(S) bind_cols(S, tax = attr(S, "taxon"), variable = attr(S, "parname")))
     D <- bind_rows(surfaces, .id = "bindingid") %>%
-      suppressMessages( mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "others" = "2", "both" = "0")) )
+      mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "others" = "2", "both" = "0")) %>%
+      suppressWarnings()
+      
     
     z_maxabs <- max(abs(D$z), na.rm = T)
     
-    if(crednotnull) D <- bind_rows(grid = D, points = Cred, .id = "pointsorgrid") ## this makes sure that both data sets actually have the same cols and that faceting on the whole dataset works while geoms are based on the two subsets. Note that for "points" z is NA!
+    if(crednotnull) {
+      var_exclude <- c(binaryname, removevar)
+      var_include <- unique(D$variable)
+      
+      Cred %<>%
+        filter(!(variable %in% var_exclude)) %>%
+        filter(variable %in% var_include) %>%
+        mutate(tax = fct_recode(as.character(tax), "Fagus" = "1", "others" = "2", "both" = "0")) %>%
+        suppressWarnings()
+      
+      D <- bind_rows(grid = D, points = Cred, .id = "pointsorgrid") ## this makes sure that both data sets actually have the same cols and that faceting on the whole dataset works while geoms are based on the two subsets. Note that for "points" z is NA!
+    }
     
     D %<>%
       mutate(partax = fct_recode(str_extract(variable, "\\d"), "Fagus" = "1", "others" = "2"),
-             parname = formatParName(str_remove(variable, "ba_frac_diff_fix_ko_\\d_env_"), factor = T))
+             parname = formatParName(str_remove(variable, "ba_frac_diff_fix_ko_\\d_env_"), factor = T)) %>%
+      suppressWarnings()
+    
+    gridcols <- if (is.numeric(gridcols)) gridcols else 2
     
     plots <- ggplot(D, aes_string(x = name_x, y = name_y_s, z = "z")) + # group = "variable"
       ps$hlines +
@@ -2633,7 +2663,7 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
       
       { if(bnotnull) geom_contour(data = D[D$pointsorgrid == "grid",],
                                   mapping = aes(z = z_binary),
-                                  bins = 2, col = "black", linetype = "dotted", size = 0.8, inherit.aes = T) } + 
+                                  bins = 2, col = "black", linetype = "dotted", linewidth = 0.8, inherit.aes = T) } + 
       # { if(bnotnull) geom_text(data = Binary_1, mapping = aes_string(x = name_x, y = name_y_s, label = "label"), col = "black") } +
       
       { if(crednotnull) geom_point(data = D[D$pointsorgrid == "points",],
@@ -2646,7 +2676,7 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
       metR::geom_contour2(data = D[D$pointsorgrid == "grid",], mapping = aes(z = z, label = round(..level.., 4)), col = "white", label_colour = "black") +
       ps$divergingfillscale(limits = c(-z_maxabs, z_maxabs), name = "difference") +
       
-      { if( length(unique(D$tax)) > 1 ) facet_wrap(~ parname + tax, ncol = 2) else if ( length(unique(D$partax)) > 1 ) facet_wrap(~ parname + partax, ncol = 2, labeller = label_parsed) else facet_wrap(~ parname, ncol = 2, labeller = label_parsed) } +
+      { if( length(unique(D$tax)) > 1 ) facet_wrap(~ parname + tax, ncol = gridcols) else if ( length(unique(D$partax)) > 1 ) facet_wrap(~ parname + partax, ncol = gridcols, labeller = label_parsed) else facet_wrap(~ parname, ncol = gridcols, labeller = label_parsed) } +
       
       yscale +
       themefun() +
@@ -2669,11 +2699,11 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
 # Environmental <- tar_read(Environmental_env)
 # Binary <- surface_environmental_env[[sapply(surface_environmental_env, function(x) attr(x, "par") == "major_fix") %>% which()]]
 # Waterlevel <- tar_read(Waterlevel)
-# basename <- tar_read(basename_fit_env)
-# path <-  tar_read(dir_publish)
-plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel = NULL,
+# color <- tar_read(twocolors)
+plotPoly <- function(Surfaces, Environmental = NULL, ## Environmental will be used for points coloured by contributions
+                     Binary = NULL, Waterlevel = NULL,
                      basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
-                     color = tar_read(twocolors), ps = tar_read(plotsettings), themefun = theme_fagus) {
+                     color = NULL, ps = tar_read(plotsettings), themefun = theme_fagus) {
 
   name_x <- attr(Surfaces, "name_x")
   name_y <- attr(Surfaces, "name_y")
@@ -2731,9 +2761,17 @@ plotPoly <- function(Surfaces, Environmental = NULL, Binary = NULL, Waterlevel =
     { if(bnotnull) geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
                                 data = Binary, bins = 2, col = "black", linetype = "dotted", size = 0.8, inherit.aes = F) } +
     
-    metR::geom_contour2(data = Surfaces, mapping = aes(z = z, label = round(..level.., 4)), # 
-                        colour = "gray30", global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) +
+    { if (is.null(color)) {
+      metR::geom_contour2(data = Surfaces, mapping = aes(z = z, label = round(..level.., 4)),
+                          colour = "gray30", global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1)
+      } else {
+      metR::geom_contour2(data = Surfaces, mapping = aes(z = z,
+                                                         label = round(..level.., 4),
+                                                         color = taxon),
+                          global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) }
+    } +
     
+    scale_color_manual(values = color, name = "species") +
     yscale +
     facet_grid(rows = vars(parname_formatted),
                cols = vars(taxon),
