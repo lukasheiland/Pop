@@ -667,6 +667,7 @@ generated quantities {
   array[N_locs] vector[N_species] ba_fix_ko_1_env_g_c_j_s    = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_h          = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_h_c_a      = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_1_env_l          = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_r          = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_1_env_s          = J_init;
   
@@ -679,6 +680,7 @@ generated quantities {
   array[N_locs] vector[N_species] ba_fix_ko_2_env_g_c_j_s    = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_2_env_h          = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_2_env_h_c_a      = J_init;
+  array[N_locs] vector[N_species] ba_fix_ko_2_env_l          = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_2_env_r          = J_init;
   array[N_locs] vector[N_species] ba_fix_ko_2_env_s          = J_init;
   
@@ -692,6 +694,7 @@ generated quantities {
   vector[N_locs] ba_frac_fix_ko_1_env_g_c_j_s    = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_fix_ko_1_env_h          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_fix_ko_1_env_h_c_a      = ba_frac_fix_ko_1_env_b;
+  vector[N_locs] ba_frac_fix_ko_1_env_l          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_fix_ko_1_env_r          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_fix_ko_1_env_s          = ba_frac_fix_ko_1_env_b;
   
@@ -704,6 +707,7 @@ generated quantities {
   vector[N_locs] ba_frac_fix_ko_2_env_g_c_j_s    = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_fix_ko_2_env_h          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_fix_ko_2_env_h_c_a      = ba_frac_fix_ko_1_env_b;
+  vector[N_locs] ba_frac_fix_ko_2_env_l          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_fix_ko_2_env_r          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_fix_ko_2_env_s          = ba_frac_fix_ko_1_env_b;
   
@@ -718,6 +722,7 @@ generated quantities {
   vector[N_locs] ba_frac_diff_fix_ko_1_env_g_c_j_s    = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_1_env_h          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_1_env_h_c_a      = ba_frac_fix_ko_1_env_b;
+  vector[N_locs] ba_frac_diff_fix_ko_1_env_l          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_1_env_r          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_1_env_s          = ba_frac_fix_ko_1_env_b;
   
@@ -730,6 +735,7 @@ generated quantities {
   vector[N_locs] ba_frac_diff_fix_ko_2_env_g_c_j_s    = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_2_env_h          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_2_env_h_c_a      = ba_frac_fix_ko_1_env_b;
+  vector[N_locs] ba_frac_diff_fix_ko_2_env_l          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_2_env_r          = ba_frac_fix_ko_1_env_b;
   vector[N_locs] ba_frac_diff_fix_ko_2_env_s          = ba_frac_fix_ko_1_env_b;
   
@@ -743,6 +749,7 @@ generated quantities {
   array[N_locs] int major_fix_ko_1_env_g_c_j_s   = converged_fix;
   array[N_locs] int major_fix_ko_1_env_h         = converged_fix;
   array[N_locs] int major_fix_ko_1_env_h_c_a     = converged_fix;
+  array[N_locs] int major_fix_ko_1_env_l         = converged_fix;
   array[N_locs] int major_fix_ko_1_env_r         = converged_fix;
   array[N_locs] int major_fix_ko_1_env_s         = converged_fix;
    
@@ -755,6 +762,7 @@ generated quantities {
   array[N_locs] int major_fix_ko_2_env_g_c_j_s   = converged_fix;
   array[N_locs] int major_fix_ko_2_env_h         = converged_fix;
   array[N_locs] int major_fix_ko_2_env_h_c_a     = converged_fix;
+  array[N_locs] int major_fix_ko_2_env_l         = converged_fix;
   array[N_locs] int major_fix_ko_2_env_r         = converged_fix;
   array[N_locs] int major_fix_ko_2_env_s         = converged_fix;
 
@@ -882,6 +890,7 @@ generated quantities {
         array[N_fix] vector[N_species] Fix_ko_1_env_g_c_j_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], [ avg_c_j[1], C_j[loc, 2] ]', [ avg_g[1], G[loc, 2] ]', H[loc], L_loc[loc,], R[loc], [ avg_s[1], S[loc, 2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_1_env_h = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], [ avg_h[1], H[loc, 2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);        
         array[N_fix] vector[N_species] Fix_ko_1_env_h_c_a = iterateFix(state_init[loc], B[loc], [ avg_c_a[1], C_a[loc, 2] ]', C_b[loc], C_j[loc], G[loc], [ avg_h[1], H[loc, 2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_1_env_l = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], [ avg_L_loc[1], L_loc[loc, 2] ]', R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_1_env_r = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], [ avg_r[1], R[loc, 2] ]', S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_1_env_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ avg_s[1], S[loc, 2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         
@@ -894,6 +903,7 @@ generated quantities {
         array[N_fix] vector[N_species] Fix_ko_2_env_g_c_j_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], [ C_j[loc, 1], avg_c_j[2] ]', G[loc], H[loc], L_loc[loc,], R[loc], [ S[loc, 1], avg_s[2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_2_env_h = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], [ G[loc, 1], avg_g[2] ]', [ H[loc, 1], avg_h[2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);        
         array[N_fix] vector[N_species] Fix_ko_2_env_h_c_a = iterateFix(state_init[loc], B[loc], [ C_a[loc, 1], avg_c_a[2] ]', C_b[loc], C_j[loc], G[loc], [ H[loc, 1], avg_h[2] ]', L_loc[loc,], R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
+        array[N_fix] vector[N_species] Fix_ko_2_env_l = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], [ L_loc[loc, 1], avg_L_loc[2] ]', R[loc], S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_2_env_r = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], [ R[loc, 1], avg_r[2] ]', S[loc], ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         array[N_fix] vector[N_species] Fix_ko_2_env_s = iterateFix(state_init[loc], B[loc], C_a[loc], C_b[loc], C_j[loc], G[loc], H[loc], L_loc[loc,], R[loc], [ S[loc, 1], avg_s[2] ]', ba_a_avg, ba_a_upper, N_species, i_j, i_a, i_b, tolerance_fix, fixiter_max, 50, N_fix);
         
@@ -906,6 +916,7 @@ generated quantities {
         ba_fix_ko_1_env_g_c_j_s[loc]    = Fix_ko_1_env_g_c_j_s[4];
         ba_fix_ko_1_env_h[loc]          = Fix_ko_1_env_h[4];
         ba_fix_ko_1_env_h_c_a[loc]      = Fix_ko_1_env_h_c_a[4];
+        ba_fix_ko_1_env_l[loc]          = Fix_ko_1_env_l[4];
         ba_fix_ko_1_env_r[loc]          = Fix_ko_1_env_r[4];
         ba_fix_ko_1_env_s[loc]          = Fix_ko_1_env_s[4];
              
@@ -918,6 +929,7 @@ generated quantities {
         ba_fix_ko_2_env_g_c_j_s[loc]    = Fix_ko_2_env_g_c_j_s[4];
         ba_fix_ko_2_env_h[loc]          = Fix_ko_2_env_h[4];
         ba_fix_ko_2_env_h_c_a[loc]      = Fix_ko_2_env_h_c_a[4];
+        ba_fix_ko_2_env_l[loc]          = Fix_ko_2_env_l[4];
         ba_fix_ko_2_env_r[loc]          = Fix_ko_2_env_r[4];
         ba_fix_ko_2_env_s[loc]          = Fix_ko_2_env_s[4];
         
@@ -930,6 +942,7 @@ generated quantities {
         ba_frac_fix_ko_1_env_g_c_j_s[loc]    = ba_fix_ko_1_env_g_c_j_s[loc, 1]    / sum(ba_fix_ko_1_env_g_c_j_s[loc]);
         ba_frac_fix_ko_1_env_h[loc]          = ba_fix_ko_1_env_h[loc, 1]          / sum(ba_fix_ko_1_env_h[loc]);
         ba_frac_fix_ko_1_env_h_c_a[loc]      = ba_fix_ko_1_env_h_c_a[loc, 1]      / sum(ba_fix_ko_1_env_h_c_a[loc]);
+        ba_frac_fix_ko_1_env_l[loc]          = ba_fix_ko_1_env_l[loc, 1]          / sum(ba_fix_ko_1_env_l[loc]);
         ba_frac_fix_ko_1_env_r[loc]          = ba_fix_ko_1_env_r[loc, 1]          / sum(ba_fix_ko_1_env_r[loc]);
         ba_frac_fix_ko_1_env_s[loc]          = ba_fix_ko_1_env_s[loc, 1]          / sum(ba_fix_ko_1_env_s[loc]);
 
@@ -942,6 +955,7 @@ generated quantities {
         ba_frac_fix_ko_2_env_g_c_j_s[loc]    = ba_fix_ko_2_env_g_c_j_s[loc, 1]    / sum(ba_fix_ko_2_env_g_c_j_s[loc]);
         ba_frac_fix_ko_2_env_h[loc]          = ba_fix_ko_2_env_h[loc, 1]          / sum(ba_fix_ko_2_env_h[loc]);
         ba_frac_fix_ko_2_env_h_c_a[loc]      = ba_fix_ko_2_env_h_c_a[loc, 1]      / sum(ba_fix_ko_2_env_h_c_a[loc]);
+        ba_frac_fix_ko_2_env_l[loc]          = ba_fix_ko_2_env_l[loc, 1]          / sum(ba_fix_ko_2_env_l[loc]);
         ba_frac_fix_ko_2_env_r[loc]          = ba_fix_ko_2_env_r[loc, 1]          / sum(ba_fix_ko_2_env_r[loc]);
         ba_frac_fix_ko_2_env_s[loc]          = ba_fix_ko_2_env_s[loc, 1]          / sum(ba_fix_ko_2_env_s[loc]);
         
@@ -956,6 +970,7 @@ generated quantities {
         ba_frac_diff_fix_ko_1_env_g_c_j_s[loc]    =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_g_c_j_s[loc];
         ba_frac_diff_fix_ko_1_env_h[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_h[loc];
         ba_frac_diff_fix_ko_1_env_h_c_a[loc]      =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_h_c_a[loc];
+        ba_frac_diff_fix_ko_1_env_l[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_l[loc];
         ba_frac_diff_fix_ko_1_env_r[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_r[loc];
         ba_frac_diff_fix_ko_1_env_s[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_s[loc];
         
@@ -968,6 +983,7 @@ generated quantities {
         ba_frac_diff_fix_ko_2_env_g_c_j_s[loc]    =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_g_c_j_s[loc];
         ba_frac_diff_fix_ko_2_env_h[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_h[loc];
         ba_frac_diff_fix_ko_2_env_h_c_a[loc]      =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_h_c_a[loc];
+        ba_frac_diff_fix_ko_2_env_l[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_l[loc];
         ba_frac_diff_fix_ko_2_env_r[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_r[loc];
         ba_frac_diff_fix_ko_2_env_s[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_s[loc];
 
@@ -981,6 +997,7 @@ generated quantities {
         major_fix_ko_1_env_g_c_j_s[loc]    = ba_fix_ko_1_env_g_c_j_s[loc,1]  > ba_fix_ko_1_env_g_c_j_s[loc,2];
         major_fix_ko_1_env_h[loc]          = ba_fix_ko_1_env_h[loc,1]        > ba_fix_ko_1_env_h[loc,2];
         major_fix_ko_1_env_h_c_a[loc]      = ba_fix_ko_1_env_h_c_a[loc,1]    > ba_fix_ko_1_env_h_c_a[loc,2];
+        major_fix_ko_1_env_l[loc]          = ba_fix_ko_1_env_l[loc,1]        > ba_fix_ko_1_env_l[loc,2];
         major_fix_ko_1_env_r[loc]          = ba_fix_ko_1_env_r[loc,1]        > ba_fix_ko_1_env_r[loc,2];
         major_fix_ko_1_env_s[loc]          = ba_fix_ko_1_env_s[loc,1]        > ba_fix_ko_1_env_s[loc,2];
         
@@ -993,6 +1010,7 @@ generated quantities {
         major_fix_ko_2_env_g_c_j_s[loc]    = ba_fix_ko_2_env_g_c_j_s[loc,1]  > ba_fix_ko_2_env_g_c_j_s[loc,2];
         major_fix_ko_2_env_h[loc]          = ba_fix_ko_2_env_h[loc,1]        > ba_fix_ko_2_env_h[loc,2];
         major_fix_ko_2_env_h_c_a[loc]      = ba_fix_ko_2_env_h_c_a[loc,1]    > ba_fix_ko_2_env_h_c_a[loc,2];
+        major_fix_ko_2_env_l[loc]          = ba_fix_ko_2_env_l[loc,1]        > ba_fix_ko_2_env_l[loc,2];
         major_fix_ko_2_env_r[loc]          = ba_fix_ko_2_env_r[loc,1]        > ba_fix_ko_2_env_r[loc,2];
         major_fix_ko_2_env_s[loc]          = ba_fix_ko_2_env_s[loc,1]        > ba_fix_ko_2_env_s[loc,2];
 
