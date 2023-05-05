@@ -596,8 +596,8 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   
   allpar <- cmdstanfit$metadata()$stan_variables
   includepar <- setdiff(allpar, exclude)
-  phipar <- includepar[str_starts(includepar, "phi")]
-  sigmapar <- includepar[str_starts(includepar, "sigma_")]
+  nonspecpar <- includepar[str_starts(includepar, "phi") | includepar == "center_hyper" ]
+  sigmapar <- includepar[ str_starts(includepar, "sigma_")]
   publishpar_prior <- c(publishpar, paste0(publishpar, "_prior"))
   publishpar <- intersect(c(sigmapar, publishpar_prior), allpar)
   
@@ -607,19 +607,19 @@ summarizeFit <- function(cmdstanfit, exclude = NULL, publishpar, path) {
   summary_publish <- cmdstanfit$summary(publishpar) %>%
     mutate(p = if_else(str_detect(variable, "_prior"), "prior", "posterior")) %>%
     mutate(tax = if_else(str_detect(variable, "\\[2\\]"), "other", "Fagus")) %>%
-    mutate(var = str_extract(variable, ".*_log(_center_env[1-2]|_spread_env[1-2])?")) %>% # ".*_log" and optionally one of the terms in braces
+    mutate(var = str_extract(variable, ".*_log(_center_env[1-2]|_spread_env[1-2]|_spread_hyper)?")) %>% # ".*_log" and optionally one of the terms in braces
     mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
     dplyr::select(var, p, tax, value, ess_bulk) %>%
     pivot_wider(values_from = c("value", "ess_bulk"), names_from = c("p", "tax"), id_cols = "var") %>%
     dplyr::select(-starts_with("ess_bulk_prior"))
   # write.csv(summary_publish, paste0(path, "/", basename_cmdstanfit, "_summary_parameters.csv"))
   
-  summary_phipar <- cmdstanfit$summary(phipar) %>%
+  summary_nonspecpar <- cmdstanfit$summary(nonspecpar) %>%
     mutate(value = paste0(formatNumber(mean), " ± ", formatNumber(sd))) %>%
     dplyr::select(var = variable, value, ess_bulk)
-  # write.csv(summary_phipar, paste0(path, "/", basename_cmdstanfit, "_summary_phi.csv"))
+  # write.csv(summary_nonspecpar, paste0(path, "/", basename_cmdstanfit, "_summary_phi.csv"))
   
-  summary_publish  <-  dplyr::bind_rows(summary_publish, summary_phipar) %>%
+  summary_publish  <-  dplyr::bind_rows(summary_publish, summary_nonspecpar) %>%
     as.data.frame() %>%
     apply(2, as.character) ## Flattens list columns, that seem to emerge invisibly
   
