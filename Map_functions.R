@@ -15,12 +15,15 @@ theme_map <- function(th = theme_fagus){
 
 
 ## mapLocations --------------------------------
-# Stages_select <- tar_read(Stages_select)
+# Stages_select <- tar_read(Stages_select_env)
 # themefun <- tar_read(themefunction)
 # pack <- c(package, "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist")
 # all(sapply(pack, require, character.only = TRUE))
 
 mapLocations <- function(Stages_select, color = NULL, themefun, path = dir_publish) {
+  
+  pack <- c(package, "eurostat", "elevatr", "terrainr", "rayshader", "ggspatial", "elementalist")
+  all(sapply(pack, require, character.only = TRUE))
   
   if (is.null(color)) color <- c("#00A4DB", "#3EFC38", "#FFEE00", "#FFFFFF") # lighter versions of the twocolors, for shading
   

@@ -36,10 +36,12 @@ tar_make_future(c("summary_env",
                   "plot_environmental_env", ## currently includes *_ba and *_binomial (both init and fix)
                   "plot_triptych_env",
                   "plot_diff_env",
-                  "plot_diff_supp_env",
+                  "plot_diff_lim_env",
+                  "plot_diff_L_env",
                   
                   "plot_poly_env",
                   "plot_environmental_lim_env",
+                  "plot_environmental_L_env",
                   
                   # "plots_pairs_env", ## includes parname_plotorder
                   "plots_pairs_J_env",
@@ -60,7 +62,7 @@ tar_make_future(c("summary_env",
                   # "plots_states_env",
                   # "plot_predominant_env"
                   ),
-                workers = if(onserver) 24 else 3, reporter = "timestamp_positives")
+                workers = if(onserver) 16 else 3, reporter = "timestamp_positives")
 
 ## Simulations parallelized internally
 tar_make(c("plot_trajectories_avg_env"))
@@ -73,7 +75,7 @@ tar_make_future(c("Summary_NFI_env",
 
 
 
-tar_make(c("map_select", "surfaceplots_s")) ## For some reason, future does not work with rasterVis and ggplot addition (some problem with correct overloading of `+`)
+# tar_make(c("map_select", "surfaceplots_s")) ## Make sure to have the development version of rayshader installed! For some reason, future does not work with rasterVis and ggplot addition (some problem with correct overloading of `+`)
 
 
 

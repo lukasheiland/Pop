@@ -16,6 +16,8 @@ theme_fagus <- function(...) {
           panel.spacing = unit(2, "lines"),
           
           panel.grid = element_line(colour = "#444444"), ## only slightly less weight than full black
+          # panel.grid.major.y.right = element_blank(), ## secondary y-axis is not addressable in ggplot as of now, specified via scale_*(sec.axis=*), on the right
+          # panel.grid.minor.y.right = element_blank(),
           axis.ticks = element_line(colour = "black", size = rel(0.8), lineend = "round"),
           axis.ticks.y.right = element_line(colour = "grey40"),
           

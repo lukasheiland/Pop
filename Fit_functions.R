@@ -12,7 +12,8 @@
 # timestep <- 1
 
 formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, predictor_select,
-                           loc = c("plot", "nested", "cluster"), timestep = 1) {
+                           loc = c("plot", "nested", "cluster"), timestep = 1,
+                           smoothmediantax = c("none", "other", "Fagus.sylvatica")) {
   
   predictor_select_s <- paste0(predictor_select, "_s")
   loclevel <- match.arg(loc)
@@ -248,9 +249,12 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   
   
   #### Prepare ldd smooth. Predicted with log-link 
+  smt <- match.arg(smoothmediantax)
   L_smooth_log <- S %>%
     group_by(loc) %>%
     summarize_at(paste("s", taxon_s, sep = "_"), first) %>%
+    ungroup() %>%
+    { if (!smt == "none") mutate_at(., paste("s", smt, sep = "_"), .funs = median)  else . } %>%
     tibble::column_to_rownames(var = "loc") %>%
     as.matrix()
   
@@ -281,9 +285,9 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
     ## Together with the offset, the minimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
-    mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.1,
-                               stage == "A" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.02,
-                               stage == "B" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.01)) %>%
+    mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.05,
+                               stage == "A" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.01,
+                               stage == "B" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.005)) %>%
     
     group_by(loc, pop) %>%
     ## The summaries here are only effectual for loclevel == "nested", because otherwise the grouping group_by(loc, pop) is identical to the original id structure 
@@ -303,9 +307,9 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
                                      ),
               beta_mean = alpha_mean/y_prior_0, ## this is equivalent to beta
               
-              sd_mode = case_when(stage == "J" ~ 100 + 20 * count_obs, ## median 3000, mean 9000, min 200
-                                  stage == "A" ~ 10 + 2 * count_obs, ## min prob around 80, long tail
-                                  stage == "B" ~ 1 + 0.2 * count_obs), ## median 20, mean 22, min 4, short tail
+              sd_mode = case_when(stage == "J" ~ 50 + 30 * count_obs, ## median 3000, mean 9000, min 200
+                                  stage == "A" ~ 5 + 3 * count_obs, ## min prob around 80, long tail
+                                  stage == "B" ~ 0.5 + 0.3 * count_obs), ## median 20, mean 22, min 4, short tail
               alpha_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["alpha"],
               beta_mode = reparameterizeModeGamma(y_prior_0, sd_mode)["beta"],
               ## The priors concern the N/ha
@@ -779,6 +783,12 @@ fitModel <- function(model, data_stan, gpq = FALSE,
   
   ## Write code
   model$code() %>% writeLines(file(file.path(fitpath, paste0(basename, "_code", ".stan"))))
+  
+  ## Write median for L_p
+  l_other_unique <- unique(data_stan$L_smooth[,"s_other"])
+  if( isTRUE(length(l_other_unique) == 1) ) {
+    l_other_unique %>% as.character %>% writeLines(file(file.path(fitpath, paste0(basename, "_median_l_other", ".txt"))))
+  }
   
   ## Write data
   saveRDS(data_stan, file.path(fitpath, paste0(basename, "_data", ".rds")))

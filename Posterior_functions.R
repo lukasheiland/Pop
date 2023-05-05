@@ -240,7 +240,7 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     filter(variable != "major_fix") %>%
     group_by(variable, tax) %>%
     summarize(Par = str_extract(first(variable), "(?<=env_).*$"),
-              Parameter = suppressWarnings( fct_recode(Par, "l" = "l", "r" = "r", "c<sub>J</sub>" = "c_j", "s" = "s",
+              Parameter = suppressWarnings( fct_recode(Par, "L<sub>p</sub>" = "l", "r" = "r", "c<sub>J</sub>" = "c_j", "s" = "s",
                                                             "g" = "g", "g &#38; c<sub>J</sub> &#38; s" = "g_c_j_s",
                                                             "c<sub>A</sub>" = "c_a", "h" = "h", "h &#38; c<sub>A</sub>" = "h_c_a",
                                                             "b" = "b", "c<sub>B</sub>" =  "c_b",
@@ -508,17 +508,22 @@ formatNumber <- function(x, signif.digits = 4) {
 
 ## formatParName --------------------------------
 # factor = TRUE returns correct order 
-formatParName <- function(p, log = FALSE, factor = FALSE) {
+formatParName <- function(p, log = FALSE, factor = FALSE, lreplace = FALSE) {
   p <- stringi::stri_replace_all_fixed(p,
                                   c("b_c_b", "h_c_a", "g_c_j_s", "_a", "_b", "_j"),
                                   c("b~'&'~c[B]", "h~'&'~c[A]", "g~'&'~c[J]~'&'~s", "[A]", "[B]", "[J]"),
                                   vectorize_all = F) ##!!
+  
+  if(isTRUE(lreplace)) {
+    p <- str_replace_all(p, "l", "L[p]")
+  }
+  
   if(isTRUE(log)) {
     p <- paste0("log~", p)
   }
   
   if(isTRUE(factor)) {
-    p <- factor(p, levels = unique(c("l", "r", "c[J]", "s", "g", "c[A]", "h", "b", "c[B]", "g~'&'~c[J]~'&'~s", "h~'&'~c[A]", "b~'&'~c[B]", 
+    p <- factor(p, levels = unique(c("l", "r", "c[J]", "s", "g", "g~'&'~c[J]~'&'~s", "c[A]", "h", "h~'&'~c[A]", "b", "c[B]", "b~'&'~c[B]", 
                                      "log~l", "log~r", "log~c[J]", "log~s", "log~g", "log~c[A]", "log~h", "log~b", "log~c[B]", "log~g~'&'~c[J]~'&'~s", "log~h~'&'~c[A]", "log~b~'&'~c[B]",
                                      as.character(p))))
   }
@@ -2472,7 +2477,7 @@ plotMarginal <- function(Marginal, parname,
 
 ## plotEnvironmental --------------------------------
 # af(plotEnvironmental)
-# surfaces <- tar_read(surface_environmental_env)
+# surfaces <- tar_read(surface_environmental_env) # surfaces <- surface_diff_env[1:2]
 # surfaces <- tar_read(surface_lim_env)
 # surfaces <- c(tar_read(surface_diff_env), list(Binary = tar_read(Surface_binary_env)))
 # Cred <- tar_read(Cred_env)
@@ -2553,8 +2558,8 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
       taxon <- attr(D, "taxon")
       
       plottitle <- stringi::stri_replace_all_fixed(parname,
-                                                   c("B_log", "G_log", "H_log", "B", "G", "H", "_lim_init_log", "_lim_fix_log"),
-                                                   c("B", "G", "H", "log B", "log G", "log H", " dens.-dep. at initial state", " dens.-dep. at equilibrium"),
+                                                   c("L_loc", "B_log", "G_log", "H_log", "B", "G", "H", "_lim_init_log", "_lim_fix_log"),
+                                                   c("L[p]", "b", "g", "h", "log b", "log g", "log h", " dens.-dep. at initial state", " dens.-dep. at equilibrium"),
                                                    vectorize_all = F) ##!!
       plottitle <- paste(case_when(taxon == 1 ~ "Fagus",
                                    taxon == 2 ~ "others",
@@ -2651,7 +2656,7 @@ plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = N
     
     D %<>%
       mutate(partax = fct_recode(str_extract(variable, "\\d"), "Fagus" = "1", "others" = "2"),
-             parname = formatParName(str_remove(variable, "ba_frac_diff_fix_ko_\\d_env_"), factor = T)) %>%
+             parname = formatParName(str_remove(variable, "ba_frac_diff_fix_ko_\\d_env_"), factor = T, lreplace = T)) %>%
       suppressWarnings()
     
     gridcols <- if (is.numeric(gridcols)) gridcols else 2
@@ -2768,7 +2773,7 @@ plotPoly <- function(Surfaces, Environmental = NULL, ## Environmental will be us
       metR::geom_contour2(data = Surfaces, mapping = aes(z = z,
                                                          label = round(..level.., 4),
                                                          color = taxon),
-                          global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) }
+                          label_colour = "gray30", global.breaks = F, margin = unit(rep(4, 4), "pt"), label.placer = label_placer_flattest(), lineend = "round", skip = 1) }
     } +
     
     scale_color_manual(values = color, name = "species") +

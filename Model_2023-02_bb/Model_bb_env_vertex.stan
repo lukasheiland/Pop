@@ -335,14 +335,14 @@ transformed parameters {
   // Spread of the parameters along environmental axes
   vector<upper=0>[N_species] b_log_spread_env1 = b_log_spread_env1_1x .* [1e-1, 1e-2]'; // bell-shaped
   vector<lower=0>[N_species] c_a_log_spread_env1 = c_a_log_spread_env1_10 * 1e-1;  // inverse bell-shaped
-  vector<lower=0>[N_species] c_b_log_spread_env1 = c_b_log_spread_env1_1x .* [1e-2, 1e-1]'; // inverse bell-shaped
+  vector<lower=0>[N_species] c_b_log_spread_env1 = c_b_log_spread_env1_1x .* [1e-1, 1e-0]'; // inverse bell-shaped
   vector<lower=0>[N_species] c_j_log_spread_env1 = c_j_log_spread_env1_10 * 1e-1; // inverse bell-shaped
   vector<upper=0>[N_species] g_log_spread_env1 = g_log_spread_env1_10 * 1e-1; // (inverse?) bell-shaped
   vector<upper=0>[N_species] h_log_spread_env1 = h_log_spread_env1_10 * 1e-1; // (inverse?) bell-shaped
   vector<upper=0>[N_species] r_log_spread_env1 = r_log_spread_env1_10 * 1e-1; // (inverse?) bell-shaped
   vector<lower=0>[N_species] s_log_spread_env1 = s_log_spread_env1_10 * 1e-1; // (inverse?) bell-shaped
   
-  vector<upper=0>[N_species] b_log_spread_env2 = b_log_spread_env2_1x .* [1, 1e-1]';
+  vector<upper=0>[N_species] b_log_spread_env2 = b_log_spread_env2_1x .* [1e-1, 1e-1]';
   vector<lower=0>[N_species] c_a_log_spread_env2  = c_a_log_spread_env2_10 * 1e-1;
   vector<lower=0>[N_species] c_b_log_spread_env2 = c_b_log_spread_env2_10 * 1e-1;
   vector<lower=0>[N_species] c_j_log_spread_env2 = c_j_log_spread_env2_10 * 1e-1;
@@ -452,43 +452,43 @@ model {
   
   //// Priors for optimum value of parameters
   // note that there are no vertex parameters for l in the following, because for l we fit an intercept only:
-  b_log_center_env1   ~ std_normal();
-  c_a_log_center_env1 ~ std_normal();
-  c_b_log_center_env1 ~ std_normal();
-  c_j_log_center_env1 ~ std_normal();
-  g_log_center_env1   ~ std_normal();
-  h_log_center_env1   ~ std_normal();
-  r_log_center_env1   ~ std_normal();
-  s_log_center_env1   ~ std_normal();
+  b_log_center_env1   ~ normal(0, 0.7);
+  c_a_log_center_env1 ~ normal(0, 0.7);
+  c_b_log_center_env1 ~ normal(0, 0.7);
+  c_j_log_center_env1 ~ normal(0, 0.7);
+  g_log_center_env1   ~ normal(0, 0.7);
+  h_log_center_env1   ~ normal(0, 0.7);
+  r_log_center_env1   ~ normal(0, 0.7);
+  s_log_center_env1   ~ normal(0, 0.7);
 
-  b_log_center_env2   ~ std_normal();
-  c_a_log_center_env2 ~ std_normal();
-  c_b_log_center_env2 ~ std_normal();
-  c_j_log_center_env2 ~ std_normal();
-  g_log_center_env2   ~ std_normal();
-  h_log_center_env2   ~ std_normal();
-  r_log_center_env2   ~ std_normal();
-  s_log_center_env2   ~ std_normal();
+  b_log_center_env2   ~ normal(0, 0.7);
+  c_a_log_center_env2 ~ normal(0, 0.7);
+  c_b_log_center_env2 ~ normal(0, 0.7);
+  c_j_log_center_env2 ~ normal(0, 0.7);
+  g_log_center_env2   ~ normal(0, 0.7);
+  h_log_center_env2   ~ normal(0, 0.7);
+  r_log_center_env2   ~ normal(0, 0.7);
+  s_log_center_env2   ~ normal(0, 0.7);
 
   //// Priors for spread of parameters
   // Caution: exponential(rate) while double_exponential(mean, scale == 1/rate)
-  -b_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0); // negative!
-  c_a_log_spread_env1 ~  normal(0, 0.1); // exponential(5.0);
-  c_b_log_spread_env1 ~  normal(0, 0.1); // exponential(5.0);
-  c_j_log_spread_env1 ~  normal(0, 0.1); // exponential(5.0);
-  -g_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
-  -h_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
-  -r_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
-  s_log_spread_env1   ~  normal(0, 0.1); // exponential(5.0);
+  -b_log_spread_env1   ~  normal(0, 0.05); // exponential(5.0); // negative!
+  c_a_log_spread_env1 ~  normal(0, 0.5); // exponential(5.0);
+  c_b_log_spread_env1 ~  normal(0, 0.5); // exponential(5.0);
+  c_j_log_spread_env1 ~  normal(0, 0.5); // exponential(5.0);
+  -g_log_spread_env1   ~  normal(0, 0.5); // exponential(5.0);
+  -h_log_spread_env1   ~  normal(0, 0.05); // exponential(5.0);
+  -r_log_spread_env1   ~  normal(0, 0.005); // exponential(5.0);
+  s_log_spread_env1   ~  normal(0, 0.5); // exponential(5.0);
   
-  -b_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
-  c_a_log_spread_env2 ~  normal(0, 0.1); // exponential(5.0);
-  c_b_log_spread_env2 ~  normal(0, 0.1); // exponential(5.0);
-  c_j_log_spread_env2 ~  normal(0, 0.1); // exponential(5.0);
-  -g_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
-  -h_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
-  -r_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
-  s_log_spread_env2   ~  normal(0, 0.1); // exponential(5.0);
+  -b_log_spread_env2   ~  normal(0, 0.05); // exponential(5.0);
+  c_a_log_spread_env2 ~  normal(0, 0.5); // exponential(5.0);
+  c_b_log_spread_env2 ~  normal(0, 0.5); // exponential(5.0);
+  c_j_log_spread_env2 ~  normal(0, 0.5); // exponential(5.0);
+  -g_log_spread_env2   ~  normal(0, 0.5); // exponential(5.0);
+  -h_log_spread_env2   ~  normal(0, 0.05); // exponential(5.0);
+  -r_log_spread_env2   ~  normal(0, 0.005); // exponential(5.0);
+  s_log_spread_env2   ~  normal(0, 0.5); // exponential(5.0);
   
   
   for(l in 1:N_locs) { 
@@ -959,33 +959,33 @@ generated quantities {
         ba_frac_fix_ko_2_env_r[loc]          = ba_fix_ko_2_env_r[loc, 1]          / sum(ba_fix_ko_2_env_r[loc]);
         ba_frac_fix_ko_2_env_s[loc]          = ba_fix_ko_2_env_s[loc, 1]          / sum(ba_fix_ko_2_env_s[loc]);
         
-        real ba_frac_fix_loc_1 = ba_frac_fix[loc, 1];
-        ba_frac_diff_fix_ko_1_env_b[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_b[loc];
+        real ba_frac_fix_loc_Fagus = ba_frac_fix[loc, 1];
+        ba_frac_diff_fix_ko_1_env_b[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_b[loc];
         // ba_frac_diff_fix_ko_1_env_b_other_s[loc]  =  ba_frac_fix_other_s[loc] - ba_frac_fix_ko_1_env_b_other_s; //#
-        ba_frac_diff_fix_ko_1_env_b_c_b[loc]      =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_b_c_b[loc];
-        ba_frac_diff_fix_ko_1_env_c_a[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_c_a[loc];
-        ba_frac_diff_fix_ko_1_env_c_b[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_c_b[loc];
-        ba_frac_diff_fix_ko_1_env_c_j[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_c_j[loc];
-        ba_frac_diff_fix_ko_1_env_g[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_g[loc];
-        ba_frac_diff_fix_ko_1_env_g_c_j_s[loc]    =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_g_c_j_s[loc];
-        ba_frac_diff_fix_ko_1_env_h[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_h[loc];
-        ba_frac_diff_fix_ko_1_env_h_c_a[loc]      =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_h_c_a[loc];
-        ba_frac_diff_fix_ko_1_env_l[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_l[loc];
-        ba_frac_diff_fix_ko_1_env_r[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_r[loc];
-        ba_frac_diff_fix_ko_1_env_s[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_1_env_s[loc];
+        ba_frac_diff_fix_ko_1_env_b_c_b[loc]      =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_b_c_b[loc];
+        ba_frac_diff_fix_ko_1_env_c_a[loc]        =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_c_a[loc];
+        ba_frac_diff_fix_ko_1_env_c_b[loc]        =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_c_b[loc];
+        ba_frac_diff_fix_ko_1_env_c_j[loc]        =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_c_j[loc];
+        ba_frac_diff_fix_ko_1_env_g[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_g[loc];
+        ba_frac_diff_fix_ko_1_env_g_c_j_s[loc]    =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_g_c_j_s[loc];
+        ba_frac_diff_fix_ko_1_env_h[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_h[loc];
+        ba_frac_diff_fix_ko_1_env_h_c_a[loc]      =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_h_c_a[loc];
+        ba_frac_diff_fix_ko_1_env_l[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_l[loc];
+        ba_frac_diff_fix_ko_1_env_r[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_r[loc];
+        ba_frac_diff_fix_ko_1_env_s[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_1_env_s[loc];
         
-        ba_frac_diff_fix_ko_2_env_b[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_b[loc];
-        ba_frac_diff_fix_ko_2_env_b_c_b[loc]      =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_b_c_b[loc];
-        ba_frac_diff_fix_ko_2_env_c_a[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_c_a[loc];
-        ba_frac_diff_fix_ko_2_env_c_b[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_c_b[loc];
-        ba_frac_diff_fix_ko_2_env_c_j[loc]        =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_c_j[loc];
-        ba_frac_diff_fix_ko_2_env_g[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_g[loc];
-        ba_frac_diff_fix_ko_2_env_g_c_j_s[loc]    =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_g_c_j_s[loc];
-        ba_frac_diff_fix_ko_2_env_h[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_h[loc];
-        ba_frac_diff_fix_ko_2_env_h_c_a[loc]      =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_h_c_a[loc];
-        ba_frac_diff_fix_ko_2_env_l[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_l[loc];
-        ba_frac_diff_fix_ko_2_env_r[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_r[loc];
-        ba_frac_diff_fix_ko_2_env_s[loc]          =  ba_frac_fix_loc_1 - ba_frac_fix_ko_2_env_s[loc];
+        ba_frac_diff_fix_ko_2_env_b[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_b[loc];
+        ba_frac_diff_fix_ko_2_env_b_c_b[loc]      =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_b_c_b[loc];
+        ba_frac_diff_fix_ko_2_env_c_a[loc]        =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_c_a[loc];
+        ba_frac_diff_fix_ko_2_env_c_b[loc]        =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_c_b[loc];
+        ba_frac_diff_fix_ko_2_env_c_j[loc]        =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_c_j[loc];
+        ba_frac_diff_fix_ko_2_env_g[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_g[loc];
+        ba_frac_diff_fix_ko_2_env_g_c_j_s[loc]    =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_g_c_j_s[loc];
+        ba_frac_diff_fix_ko_2_env_h[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_h[loc];
+        ba_frac_diff_fix_ko_2_env_h_c_a[loc]      =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_h_c_a[loc];
+        ba_frac_diff_fix_ko_2_env_l[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_l[loc];
+        ba_frac_diff_fix_ko_2_env_r[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_r[loc];
+        ba_frac_diff_fix_ko_2_env_s[loc]          =  ba_frac_fix_loc_Fagus - ba_frac_fix_ko_2_env_s[loc];
 
         
         major_fix_ko_1_env_b[loc]          = ba_fix_ko_1_env_b[loc,1]        > ba_fix_ko_1_env_b[loc,2];
