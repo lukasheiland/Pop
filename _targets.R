@@ -234,6 +234,9 @@ targets_parname <- list(
              c("phi_obs",
                "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
   
+  tar_target(parname_hyper,
+             c("center_hyper", paste0(setdiff(parname_plotorder, "l_log", "_spread_hyper")))),
+  
   tar_target(parname_lim,
              c("b_lim_init_log", "g_lim_init_log", "h_lim_init_log",
                "b_lim_fix_log", "g_lim_fix_log", "h_lim_fix_log")),
