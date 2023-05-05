@@ -62,7 +62,7 @@ tar_make_future(c("summary_env",
                   # "plots_states_env",
                   # "plot_predominant_env"
                   ),
-                workers = if(onserver) 16 else 3, reporter = "timestamp_positives")
+                workers = if(onserver) 12 else 3, reporter = "timestamp_positives")
 
 ## Simulations parallelized internally
 tar_make(c("plot_trajectories_avg_env"))
