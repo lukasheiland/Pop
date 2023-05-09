@@ -235,7 +235,7 @@ targets_parname <- list(
                "b_log", "c_a_log", "c_b_log", "c_j_log", "g_log", "h_log", "l_log", "r_log", "s_log")),
   
   tar_target(parname_hyper,
-             c("center_hyper", paste0(setdiff(parname_plotorder, "l_log", "_spread_hyper")))),
+             c("center_hyper", paste0(setdiff(parname_plotorder, "l_log"), "_spread_hyper"))),
   
   tar_target(parname_lim,
              c("b_lim_init_log", "g_lim_init_log", "h_lim_init_log",
@@ -869,7 +869,7 @@ targets_posterior_env <- list(
              summarizeNFIs(Data_big, Data_seedlings, Stages_select_env, Seedlings_s, tablepath = dir_publish)),
   tar_target(summary_env,
              summarizeFit(cmdstanfit = fit_env, exclude = exclude,
-                          publishpar = c(parname_plotorder, parname_vertex_env), path = dir_publish)),
+                          publishpar = c(parname_lim_plotorder, parname_vertex_env, parname_hyper), path = dir_publish)),
   tar_target(summary_states_env,
              summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
   tar_target(summary_marginal_env,
