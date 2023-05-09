@@ -443,6 +443,8 @@ plotSurfaces <- function(surfaces, path, themefun) {
   surfaceplots <- lapply(surfaces, function(s) plotRaster(s))
   
   mapply(function(p, n) ggsave(paste0(path, "/", "Surface_", n, ".png"), p, device = "png", width = 8, height = 9), surfaceplots, names(surfaceplots))
+  mapply(function(p, n) ggsave(paste0(path, "/", "Surface_", n, ".eps"), p, device = "eps", width = 8, height = 9), surfaceplots, names(surfaceplots))
+  
   
   return(surfaceplots)
 }

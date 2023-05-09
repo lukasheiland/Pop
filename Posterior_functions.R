@@ -2167,6 +2167,7 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
   
   
   ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".png"), pairsplot, device = "png", height = 26, width = 26)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_conditional", ".pdf"), pairsplot, device = "pdf", height = 26, width = 26)
   
   return(list('pairs' = pairsplot))
 }
