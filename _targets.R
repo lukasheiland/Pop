@@ -63,7 +63,7 @@ targets_settings <- list(
   
   ## No. of locations to subset (currently only for loc == "plot")
   tar_target(n_locations, 1000),
-  tar_target(n_locations_env, 1500),
+  tar_target(n_locations_env, 2000),
   
   ## Threshold to discriminate A and B [mm]
   ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile of pure measured trees, i.e. without area standardization
