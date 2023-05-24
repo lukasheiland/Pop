@@ -63,7 +63,7 @@ targets_settings <- list(
   
   ## No. of locations to subset (currently only for loc == "plot")
   tar_target(n_locations, 1000),
-  tar_target(n_locations_env, 2000),
+  tar_target(n_locations_env, 1400),
   
   ## Threshold to discriminate A and B [mm]
   ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile of pure measured trees, i.e. without area standardization
@@ -106,11 +106,11 @@ targets_settings <- list(
              list(prior_b_log = c(-3, 1),
                   prior_c_a_log = c(-8, 2),
                   prior_c_b_log = c(-7, 2),
-                  prior_c_j_log = c(-10, 2),
-                  prior_g_log = c(-5, 1),
+                  prior_c_j_log = c(-11, 2),
+                  prior_g_log = c(-4, 1),
                   prior_h_log = c(-3, 1),
-                  prior_l_log = c(3, 2),
-                  prior_r_log = c(5, 2),
+                  prior_l_log = c(4, 2),
+                  prior_r_log = c(3, 1),
                   prior_s_log = c(-6, 2)
                   )
   ),
@@ -867,6 +867,8 @@ targets_posterior_env <- list(
   ## Summarize
   tar_target(Summary_NFIs_env,
              summarizeNFIs(Data_big, Data_seedlings, Stages_select_env, Seedlings_s, tablepath = dir_publish)),
+  tar_target(Summary_taxa_env,
+             summarizeTaxa(Data_big, Data_seedlings, Stages_select_env, Seedlings_s, tablepath = dir_publish)),
   tar_target(summary_env,
              summarizeFit(cmdstanfit = fit_env, exclude = exclude,
                           publishpar = c(parname_lim_plotorder, parname_vertex_env, parname_hyper), path = dir_publish)),
@@ -875,7 +877,7 @@ targets_posterior_env <- list(
   tar_target(summary_marginal_env,
              summarizeMarginal(Marginal = Marginal_env, basename = basename_fit_env, path = dir_publish)),
   tar_target(Freq_converged_env,
-           summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
+             summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
 
   ## Generate 
   tar_target(residuals_env,
@@ -1057,11 +1059,11 @@ targets_posterior_env <- list(
   tar_target(plots_pairs_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
   tar_target(plots_pairs_J_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_J_env)),
+             plotPairs(cmdstanfit = fit_env, parname = parname_J_env, formatparname = T)),
   tar_target(plots_pairs_A_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_A_env)),
+             plotPairs(cmdstanfit = fit_env, parname = parname_A_env, formatparname = T)),
   tar_target(plots_pairs_B_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_B_env)),
+             plotPairs(cmdstanfit = fit_env, parname = parname_B_env, formatparname = T)),
   
   tar_target(plots_parameters_env,
              plotParameters(draws = draws_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),

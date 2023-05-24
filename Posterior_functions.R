@@ -508,14 +508,33 @@ formatNumber <- function(x, signif.digits = 4) {
 
 ## formatParName --------------------------------
 # factor = TRUE returns correct order 
-formatParName <- function(p, log = FALSE, factor = FALSE, lreplace = FALSE) {
+formatParName <- function(p, log = FALSE, factor = FALSE, lreplace = FALSE, envreplace = FALSE, logremove = FALSE, taxreplace = FALSE) {
+  
+  if(isTRUE(logremove)) {
+    p <- stringr::str_remove_all(p, "_log")
+  }
+  
   p <- stringi::stri_replace_all_fixed(p,
                                   c("b_c_b", "h_c_a", "g_c_j_s", "_a", "_b", "_j"),
                                   c("b~'&'~c[B]", "h~'&'~c[A]", "g~'&'~c[J]~'&'~s", "[A]", "[B]", "[J]"),
                                   vectorize_all = F) ##!!
   
+  if(isTRUE(envreplace)) {
+    p <- stringi::stri_replace_all_fixed(p,
+                                         c("_center_env1", "_center_env2", "_spread_env1", "_spread_env2"),
+                                         c(":~kappa[B]", ":~kappa[y]", ":~zeta[x]", ":~zeta[y]"),
+                                         vectorize_all = F) ##!!
+  }
+  
   if(isTRUE(lreplace)) {
     p <- str_replace_all(p, "l", "L[p]")
+  }
+  
+  if(isTRUE(taxreplace)) {
+    p <- stringi::stri_replace_all_fixed(p,
+                                         c("[1]", "[2]"),
+                                         c('~italic("Fagus")', '~italic("others")'),
+                                         vectorize_all = F) ##!!
   }
   
   if(isTRUE(log)) {
@@ -2178,10 +2197,8 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
 # parname  <- tar_read("parname_A_env")
 # cmdstanfit  <- tar_read("fit_env")
 # cmdstanfit  <- tar_read("fit")[[1]]
-# path  <- tar_read("dir_publish")
-# color  <- tar_read("twocolors")
-# themefun  <- tar_read("themefunction")
-plotPairs <- function(cmdstanfit, parname,
+# af(plotPairs)
+plotPairs <- function(cmdstanfit, parname, formatparname = FALSE,
                       path = tar_read("dir_publish"), color = tar_read(twocolors), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
@@ -2201,15 +2218,25 @@ plotPairs <- function(cmdstanfit, parname,
   #   mutate(parameter = factor(parameter, levels = parname)) %>%
   #   pivot_wider(id_cols = c(".draw"), names_from = c("parameter", "tax"), values_from = ".value")
   
+  if(isTRUE(formatparname)) {
+    n <- attr(d, "dimnames")$variable
+    n <- formatParName(n, log = T, envreplace = T, logremove = T, taxreplace = T)
+    attr(d, "dimnames")$variable <- n
+  }
+  
+  
   nutsparam <- nuts_params(cmdstanfit)
   # logposterior <- log_posterior(cmdstanfit)
   # mcmc_nuts_divergence(nutsparam, logposterior)
   
+  
   color_scheme_set("viridis")
   pairsplot <- mcmc_pairs(d,
+                          save_gg_objects = T, ## !!! making the default explicit
+                          ## grid_args = list(),
+                          # diag_args = list(),
                           # pars = c("..."), transform = list(sigma = "log"),
                           diag_fun = "dens",
-                          # diag_args = "scatter",
                           off_diag_fun = "hex", # "scatter"
                           off_diag_args = list(size = 0.2, alpha = 0.25), ## for "scatter"
                           # condition = pairs_condition(nuts = "lp__"),
@@ -2224,10 +2251,21 @@ plotPairs <- function(cmdstanfit, parname,
                                                     td_size = 1,
                                                     td_alpha = 1)) # + theme_fagus()
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".png"), pairsplot, device = "png", height = 36, width = 36)
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".pdf"), pairsplot, device = "pdf", height = 36, width = 36)
   
-  return(list('pairs' = pairsplot))
+  
+  if(isTRUE(formatparname)) {
+    ## mcmc_pairs has a list of plots stored for inspection but the actual plots in the grid are not(?) accessible
+    ## therefore extracting the list and just rearranging manually in a grid is a hack for being able to manipulate individual plots
+    bayesplots <- lapply(pairsplot$bayesplots, function(x) { x$labels$subtitle <- parse(text = paste(x$labels$subtitle)); return(x) })
+    pairsplot <- cowplot::plot_grid(plotlist = bayesplots, ncol = length(parname) * 2)
+  }
+  
+  w <- 2 * length(parname) * 2
+  
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".png"), pairsplot, device = "png", height = w, width = w, limitsize = F)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".pdf"), pairsplot, device = "pdf", height = w, width = w, limitsize = F)
+  
+  return(NULL) # return(list('pairs' = pairsplot))
 }
 
 

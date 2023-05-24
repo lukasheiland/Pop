@@ -26,37 +26,29 @@ tar_make_future(c("data_stan_priors_offset_env"), workers = if(onserver) 12 else
 ## Fitting parallelized internally
 tar_make(c("fit_env"))
 
-## Posterior
+## Posterior targets
 tar_make_future(c("summary_env",
                   "summary_states_env",
                   "summary_marginal_env",
+                  
                   "residuals_env",
                   # "plots_trace_env",
-                  
-                  "plot_environmental_env", ## currently includes *_ba and *_binomial (both init and fix)
-                  "plot_triptych_env",
-                  "plot_diff_env",
-                  "plot_diff_lim_env",
-                  "plot_diff_L_env",
-                  
-                  "plot_poly_env",
-                  "plot_environmental_lim_env",
-                  "plot_environmental_L_env",
-                  
-                  # "plots_pairs_env", ## includes parname_plotorder
-                  "plots_pairs_J_env",
-                  "plots_pairs_A_env",
-                  "plots_pairs_B_env",
-                  # "plots_pairs_phi_env",
-                  
-                  # "plot_marginal_env",
-                  "plot_binary_par_env",
 
-                  "plots_parameters_env"
                   
+                  "plots_parameters_env",
+                  "plot_binary_par_env",
+                  "plot_poly_env",
+                  # "plot_marginal_env",
                   # "plot_posterior_center_env",
                   # "plot_posterior_spread_env",
                   # "plot_posterior_phi_env",
+                  
+                  
+                  "plots_pairs_J_env",
+                  "plots_pairs_A_env",
+                  "plots_pairs_B_env" #,
+                  # "plots_pairs_phi_env",
+                  # "plots_pairs_env", ## includes parname_plotorder
                   
                   # "plots_conditional_env",
                   # "plots_states_env",
@@ -64,12 +56,25 @@ tar_make_future(c("summary_env",
                   ),
                 workers = if(onserver) 12 else 3, reporter = "timestamp_positives")
 
-## Simulations parallelized internally
+## Environmental targets
+tar_make_future(c("plot_environmental_env", ## currently includes *_ba and *_binomial (both init and fix)
+                  "plot_triptych_env",
+                  "plot_diff_env",
+                  "plot_diff_lim_env",
+                  "plot_diff_L_env",
+                  "plot_environmental_lim_env",
+                  "plot_environmental_L_env"),
+                workers = if(onserver) 12 else 3, reporter = "timestamp_positives")
+
+
+## Trajectories: simulation parallelized internally
 tar_make(c("plot_trajectories_avg_env"))
 
-## Publishing
+
+## Publishing targets
 tar_make_future(c("Summary_NFI_env",
                   "Summary_range",
+                  "Summary_taxa_env",
                   "plot_range"),
                   workers = if(onserver) 12 else 3, reporter = "verbose_positives")
 

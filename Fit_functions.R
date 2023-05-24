@@ -285,7 +285,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
   Y_init <-  filter(S, isy0) %>%
     group_by(pop) %>%
     ## Together with the offset, the minimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
-    mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.05,
+    mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.02,
                                stage == "A" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.01,
                                stage == "B" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.005)) %>%
     
@@ -697,7 +697,7 @@ fitModel <- function(model, data_stan, gpq = FALSE,
   
   data_stan$generateposteriorq <- as.integer(gpq)
   
-  inits <- 1e-1
+  inits <- 1e-2
   # inits <- list(state_init_raw = apply(data_stan$state_init_data, 2, function(x) scales::rescale(x, to = c(1e-12, 0.7))),
   #               b_log = data_stan$prior_b_log[1], c_a_log = data_stan$prior_c_a_log[1], c_b_log = data_stan$prior_c_b_log[1], c_j_log = data_stan$prior_c_j_log[1],
   #               g_log = unlist(data_stan$prior_g_log[1,], use.names = F), h_log = unlist(data_stan$prior_h_log[1,], use.names = F), l_log = data_stan$prior_l_log[1], r_log = unlist(data_stan$prior_r_log[1,], use.names = F), s_log = data_stan$prior_s_log[1], 
