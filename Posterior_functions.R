@@ -265,22 +265,32 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
   
   Table_cred <- Summary_cred %>%
     dplyr::select(-c("tax", "variable", "order", "Par", "included")) %>%
+    
+    ## Removed variance
+    dplyr::select(-c("Var_tot", "Var_loc")) %>%
+    
     gt() %>%
     
     cols_align(align = "left", columns = any_of("Parameter")) %>%
     
     fmt_markdown(columns = any_of("Parameter")) %>%
-    fmt_number(columns = c("Mean", "Var_loc", "Var_tot"), decimals = 4) %>%
+    fmt_number(columns = c("Mean"), decimals = 4) %>%
+    
+    ## Removed
+    # fmt_number(columns = c("Mean", "Var_loc", "Var_tot"), decimals = 4) %>%
+    
     # gt_theme_538() %>%
     
     gt_duplicate_column(Mean, after = "Mean") %>% ## this is a bugfix: 'keep_column = F' in gt_plt_bar does not work properly with multiple columns
     gt_plt_bar(column = Mean_dupe, color = color[1], keep_column = F, width = 20) %>% 
     
-    gt_duplicate_column(Var_loc, after = "Var_loc") %>%
-    gt_plt_bar(column = Var_loc_dupe, color = color[1], keep_column = F, width = 20) %>%
+    ## Removed variance
+    # gt_duplicate_column(Var_loc, after = "Var_loc") %>%
+    # gt_plt_bar(column = Var_loc_dupe, color = color[1], keep_column = F, width = 20) %>%
     
-    gt_duplicate_column(Var_tot, after = "Var_tot") %>%
-    gt_plt_bar(column = Var_tot_dupe, color = color[1], keep_column = F, width = 20) %>%
+    # gt_duplicate_column(Var_tot, after = "Var_tot") %>%
+    # gt_plt_bar(column = Var_tot_dupe, color = color[1], keep_column = F, width = 20) %>%
+    
     
     ## Removed frequency of credible plots
     # fmt_percent(columns = "Freq", decimals = 1) %>%
@@ -293,8 +303,8 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     data_color(column = Species, palette = color) %>%
     
     cols_label(Mean = "Mean of absolute differences", Mean_dupe = "",
-               Var_loc = "Variance of plot means", Var_loc_dupe = "",
-               Var_tot = "Variance overall", Var_tot_dupe = "",
+               # Var_loc = "Variance of plot means", Var_loc_dupe = "",
+               # Var_tot = "Variance overall", Var_tot_dupe = "",
                # Freq = "Credibly different plots", Freq_dupe = "% _________",
                Included = "Incl.") %>%
     tab_style(style = list(cell_text(style = "italic")), locations = cells_body(columns = Species)) %>%
@@ -2198,7 +2208,7 @@ plotConditional <- function(cmdstanfit, parname, conditional = T, path,
 # cmdstanfit  <- tar_read("fit_env")
 # cmdstanfit  <- tar_read("fit")[[1]]
 # af(plotPairs)
-plotPairs <- function(cmdstanfit, parname, formatparname = FALSE,
+plotPairs <- function(cmdstanfit, parname, formatparname = FALSE, selecttax = NULL,
                       path = tar_read("dir_publish"), color = tar_read(twocolors), themefun = theme_fagus) {
   
   basename_cmdstanfit <- attr(cmdstanfit, "basename")
@@ -2207,6 +2217,12 @@ plotPairs <- function(cmdstanfit, parname, formatparname = FALSE,
   parname <- intersect(parname, varname_draws)
   
   d <- cmdstanfit$draws(variables = parname)
+  
+  if(is.numeric(selecttax)) {
+    drawname <- attr(d, "dimnames")$variable
+    drawname_tax <- str_subset(drawname, paste0("\\[", selecttax, "\\]$"))
+    d <- posterior::subset_draws(d, drawname_tax)
+  }
   
   ## Extract info from variable names
   # D <- d %>%
@@ -2219,10 +2235,15 @@ plotPairs <- function(cmdstanfit, parname, formatparname = FALSE,
   #   pivot_wider(id_cols = c(".draw"), names_from = c("parameter", "tax"), values_from = ".value")
   
   if(isTRUE(formatparname)) {
-    n <- attr(d, "dimnames")$variable
-    n <- formatParName(n, log = T, envreplace = T, logremove = T, taxreplace = T)
-    attr(d, "dimnames")$variable <- n
+    
+    parname_formatted <- attr(d, "dimnames")$variable %>%
+      formatParName(n, log = T, envreplace = T, logremove = T, taxreplace = T)
+    
+    attr(d, "dimnames")$variable <- parname_formatted
   }
+  
+  n_species <- if(is.numeric(selecttax)) 1 else 2
+  n_par <- length(parname) * n_species
   
   
   nutsparam <- nuts_params(cmdstanfit)
@@ -2257,13 +2278,17 @@ plotPairs <- function(cmdstanfit, parname, formatparname = FALSE,
     ## mcmc_pairs has a list of plots stored for inspection but the actual plots in the grid are not(?) accessible
     ## therefore extracting the list and just rearranging manually in a grid is a hack for being able to manipulate individual plots
     bayesplots <- lapply(pairsplot$bayesplots, function(x) { x$labels$subtitle <- parse(text = paste(x$labels$subtitle)); return(x) })
-    pairsplot <- cowplot::plot_grid(plotlist = bayesplots, ncol = length(parname) * 2)
+    ## pairsplot <- do.call("grid.arrange", c(bayesplots, ncol = length(parname) * 2))
+    tryCatch(pairsplot <- cowplot::plot_grid(plotlist = bayesplots, ncol = n_par),
+             error = function(e){ message('Plot list too large!'); print(e)})
   }
   
-  w <- 2 * length(parname) * 2
+  plotwidth <- 2 * n_par
   
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".png"), pairsplot, device = "png", height = w, width = w, limitsize = F)
-  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], ".pdf"), pairsplot, device = "pdf", height = w, width = w, limitsize = F)
+  selecttax <- if(is.numeric(selecttax)) as.character(selecttax) else "0"
+  
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], "_", selecttax, ".png"), pairsplot, device = "png", height = plotwidth, width = plotwidth, limitsize = F)
+  ggsave(paste0(path, "/", basename_cmdstanfit, "_pairs_", parname[1], "_", selecttax, ".pdf"), pairsplot, device = "pdf", height = plotwidth, width = plotwidth, limitsize = F)
   
   return(NULL) # return(list('pairs' = pairsplot))
 }
@@ -2928,10 +2953,11 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary,
     geom_raster(aes(fill = z)) +
     scale_fill_viridis_c(direction = -1, limits = ps$lims_colorscale) +
     
-    geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
-                 data = Binary, bins = 2, col = "black", linetype = "dotted", size = 0.8, inherit.aes = F) +
     
     metR::geom_contour2(mapping = aes(z = z, label = round(..level.., 3)), col = "white") +
+    
+    geom_contour(mapping = aes_string(x = name_x, y = name_y_s, z = "z"),
+                 data = Binary, bins = 2, col = "black", linetype = "dotted", size = 0.8, inherit.aes = F) +
     
     yscale +
     coord_cartesian(ylim = lim_y, x = lim_x) + ## sets limits as zoom, without discarding data

@@ -38,7 +38,7 @@ package <- c("dplyr", "ggplot2", "tidyr", "magrittr", "glue", "forcats", "vctrs"
              "sf", "raster", "rasterVis", ## for correct loading of environmental data
              "MASS", "mgcv", "glmnet", "itsadug", "interp",
              "cmdstanr", "rstan", "brms", "posterior", "bayesplot", "tidybayes", "parallel", "DHARMa", "priorsense", # "chkptstanr",
-             "stargazer", "cowplot", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "ggforce", # "emojifont",
+             "stargazer", "cowplot", "gridExtra", "hrbrthemes", "showtext", "ggallin", "ggridges", "elementalist",  "ggspatial", "GGally", "ggforce", # "emojifont",
              "scales", "gganimate", "metR", "colorspace", "gt", "gtExtras", "svglite",
              "future.apply")
 tar_option_set(packages = package)
@@ -103,15 +103,15 @@ targets_settings <- list(
   ),
   
   tar_target(weakpriors_env,
-             list(prior_b_log = c(-3, 1),
+             list(prior_b_log = c(-3.2, 0.5),
                   prior_c_a_log = c(-7, 2),
                   prior_c_b_log = c(-7, 2),
-                  prior_c_j_log = c(-10, 2),
+                  prior_c_j_log = c(-11, 2),
                   prior_g_log = c(-4, 1),
                   prior_h_log = c(-3, 1),
                   prior_l_log = c(4, 1),
                   prior_r_log = c(4, 1),
-                  prior_s_log = c(-6, 2)
+                  prior_s_log = c(-5, 2)
                   )
   ),
   
@@ -946,7 +946,7 @@ targets_posterior_env <- list(
              iteration = "list"),
 
   tar_target(Surface_binary_env,
-             surface_environmental_env[[ matchAttr(surface_environmental_env, "parname", "major_fix") ]]),
+             surface_environmental_env[[ matchAttr(surface_environmental_env, "parname", "ba_frac_fix") ]]), ## major_fix
   
   tar_target(surface_par_env,
              predictEnvironmental(fit_environmental_par_env, envname = predictor_select, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction),
@@ -1000,7 +1000,7 @@ targets_posterior_env <- list(
                           basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   
   tar_target(plot_environmental_env,
-             plotEnvironmental(surfaces = surface_environmental_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = F, removevar = c("major_init", "major_fix", "ba_frac_fix[2]"),
+             plotEnvironmental(surfaces = surface_environmental_env, binaryname = "ba_frac_fix", Waterlevel = Waterlevel, commonscale = F, removevar = c("major_init", "major_fix", "ba_frac_fix[2]"), ## binaryname = "major_fix"
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   
   tar_target(plot_environmental_lim_env,
@@ -1013,19 +1013,24 @@ targets_posterior_env <- list(
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   
   tar_target(plot_diff_env,
-             plotEnvironmental(surfaces = c(surface_diff_env[3:18], list(Binary = Surface_binary_env)), binaryname = "major_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
+             plotEnvironmental(surfaces = c(surface_diff_env[3:18], list(Binary = Surface_binary_env)), binaryname = "ba_frac_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
+  
+  tar_target(plot_diff_supp_env,
+             plotEnvironmental(surfaces = c(surface_diff_env[3:18], list(Binary = Surface_binary_env)), binaryname = "ba_frac_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
+                               basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
+  
   tar_target(plot_diff_lim_env,
              plotEnvironmental(surfaces = c(surface_diff_env[c(9, 10, 19, 20, 13, 14, 21, 22, 15, 16, 23, 24)], list(Binary = Surface_binary_env)), binaryname = "major_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   tar_target(plot_diff_L_env,
-             plotEnvironmental(surfaces = c(surface_diff_env[1:2], list(Binary = Surface_binary_env)), binaryname = "major_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
+             plotEnvironmental(surfaces = c(surface_diff_env[1:2], list(Binary = Surface_binary_env)), binaryname = "ba_frac_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   tar_target(plot_diff_interp_env,
-             plotEnvironmental(surfaces = surface_diff_interp_env, binaryname = "major_fix", Waterlevel = Waterlevel, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
+             plotEnvironmental(surfaces = surface_diff_interp_env, binaryname = "ba_frac_fix", Waterlevel = Waterlevel, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   tar_target(plot_diff_interp_sd_env,
-             plotEnvironmental(surfaces = surface_diff_interp_sd_env, binaryname = "major_fix", Waterlevel = NULL, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"), ## interpolated surfaces do not have both scaled and unscaled predictors, therefore Waterlevel matching does not work 
+             plotEnvironmental(surfaces = surface_diff_interp_sd_env, binaryname = "ba_frac_fix", Waterlevel = NULL, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"), ## interpolated surfaces do not have both scaled and unscaled predictors, therefore Waterlevel matching does not work 
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
 
   tar_target(plot_predominant_env,
@@ -1058,12 +1063,16 @@ targets_posterior_env <- list(
   
   tar_target(plots_pairs_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_plotorder, path = dir_publish, color = twocolors, themefun = themefunction)),
-  tar_target(plots_pairs_J_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_J_env, formatparname = T)),
+  tar_target(plots_pairs_J_Fagus_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_J_env, formatparname = T, selecttax = 1)),
+  tar_target(plots_pairs_J_others_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_J_env, formatparname = T, selecttax = 2)),
   tar_target(plots_pairs_A_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_A_env, formatparname = T)),
-  tar_target(plots_pairs_B_env,
-             plotPairs(cmdstanfit = fit_env, parname = parname_B_env, formatparname = T)),
+  tar_target(plots_pairs_B_Fagus_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_B_env, formatparname = T, selecttax = 1)),
+  tar_target(plots_pairs_B_others_env,
+             plotPairs(cmdstanfit = fit_env, parname = parname_B_env, formatparname = T, selecttax = 2)),
   
   tar_target(plots_parameters_env,
              plotParameters(draws = draws_env, parname = parname_plotorder, exclude = exclude, path = dir_publish, basename = basename_fit_env, color = twocolors, themefun = themefunction)),

@@ -44,9 +44,11 @@ tar_make_future(c("summary_env",
                   # "plot_posterior_phi_env",
                   
                   
-                  "plots_pairs_J_env",
+                  "plots_pairs_J_Fagus_env",
+                  "plots_pairs_J_others_env",
                   "plots_pairs_A_env",
-                  "plots_pairs_B_env" #,
+                  "plots_pairs_B_Fagus_env",
+                  "plots_pairs_B_others_env"
                   # "plots_pairs_phi_env",
                   # "plots_pairs_env", ## includes parname_plotorder
                   
@@ -60,6 +62,7 @@ tar_make_future(c("summary_env",
 tar_make_future(c("plot_environmental_env", ## currently includes *_ba and *_binomial (both init and fix)
                   "plot_triptych_env",
                   "plot_diff_env",
+                  # "plot_diff_supp_env",
                   "plot_diff_lim_env",
                   "plot_diff_L_env",
                   "plot_environmental_lim_env",

@@ -253,7 +253,7 @@ transformed data {
   //// Data for generated quantities
   int N_fix = 6; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter}
   
-  real targetslope = 0.1;
+  real targetslope = 0.2;
   
   real<lower=0> prior_sigma_b_log_spread = lambert_w0(targetslope * exp(-prior_b_log[1]) / 2);
   real<lower=0> prior_sigma_c_a_log_spread = lambert_w0(targetslope * exp(-prior_c_a_log[1]) / 2);
@@ -527,7 +527,7 @@ generated quantities {
   //—————————————————————————————————————————————————————————————————————//
   // Print for debugging -----------------------------------------------//
   //———————————————————————————————————————————————————————————————————//  
-  print(b_log);
+  print(c_j_log);
   
 
   //—————————————————————————————————————————————————————————————————————//
