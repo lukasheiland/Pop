@@ -2546,7 +2546,9 @@ plotMarginal <- function(Marginal, parname,
 # surfaces <- c(tar_read(surface_diff_env), list(Binary = tar_read(Surface_binary_env)))
 # Cred <- tar_read(Cred_env)
 # Waterlevel <- tar_read(Waterlevel)
-plotEnvironmental <- function(surfaces, binaryname = "major_fix", Waterlevel = NULL, Cred = NULL, commonscale = FALSE, removevar = "",
+plotEnvironmental <- function(surfaces, binaryname = "ba_frac_fix",
+                              # binaryname = "major_fix",
+                              Waterlevel = NULL, Cred = NULL, commonscale = FALSE, removevar = "",
                               gridcols = NULL,
                               basename = tar_read("basename_fit_env"), path = tar_read("dir_publish"),
                               color = tar_read(twocolors), ps = tar_read(plotsettings), themefun = theme_fagus) {
