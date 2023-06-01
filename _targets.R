@@ -110,7 +110,7 @@ targets_settings <- list(
                   prior_g_log = c(-4, 1),
                   prior_h_log = c(-3, 1),
                   prior_l_log = c(5, 2),
-                  prior_r_log = c(3.5, 2),
+                  prior_r_log = c(3.5, 1),
                   prior_s_log = c(-6, 2)
                   )
   ),
@@ -670,7 +670,7 @@ targets_fit_env <- list(
              cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 500, adapt_delta = 0.95, fitpath = dir_fit)
+                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 400, adapt_delta = 0.95, fitpath = dir_fit)
              ),
   tar_target(basename_fit_env,
              getBaseName(fit_env))

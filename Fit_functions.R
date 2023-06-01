@@ -286,7 +286,7 @@ formatStanData <- function(Stages, Stages_transitions, taxon_s, threshold_dbh, p
     group_by(pop) %>%
     ## Together with the offset, the minimum observation is always == 1! This way we construct a prior for the zeroes, that has the most density around zero, but an expected value at 1, assuming that 5% of the zero observations are actually wrong.
     mutate(min_pop = case_when(stage == "J" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.05,
-                               stage == "A" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.02,
+                               stage == "A" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.01,
                                stage == "B" ~ min(y_prior[y_prior != 0], na.rm = T) * 0.005)) %>%
     
     group_by(loc, pop) %>%
