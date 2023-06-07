@@ -12,9 +12,6 @@ sapply(package, require, character.only = TRUE) ## package is a vector of all pa
 ## This is, how the system is determined in _targets.R
 # onserver <- Sys.info()["sysname"] != "Darwin"
 
-## assumed to have run and produced output files:
-# source("Inventory.nosync/Main.R", chdir = T)
-
 
 # Make targets pipeline -----------------------------------------------------------------
 # tar_glimpse()
@@ -31,18 +28,9 @@ tar_make_future(c("summary_env",
                   "summary_states_env",
                   "summary_marginal_env",
                   
-                  "residuals_env",
-                  # "plots_trace_env",
-
-                  
                   "plots_parameters_env",
                   "plot_binary_par_env",
                   "plot_poly_env",
-                  # "plot_marginal_env",
-                  # "plot_posterior_center_env",
-                  # "plot_posterior_spread_env",
-                  # "plot_posterior_phi_env",
-                  
                   
                   "plots_pairs_J_Fagus_env",
                   "plots_pairs_J_others_env",
@@ -50,31 +38,25 @@ tar_make_future(c("summary_env",
                   "plots_pairs_A_env",
                   "plots_pairs_B_Fagus_env",
                   "plots_pairs_B_others_env"
-                  # "plots_pairs_phi_env",
-                  # "plots_pairs_env", ## includes parname_plotorder
-                  
-                  # "plots_conditional_env",
-                  # "plots_states_env",
-                  # "plot_predominant_env"
                   ),
                 workers = if(onserver) 12 else 3, reporter = "timestamp_positives")
 
 ## Environmental targets
-tar_make_future(c("plot_environmental_env", ## currently includes *_ba and *_binomial (both init and fix)
-                  "plot_triptych_env",
+tar_make_future(c("plot_triptych_env",
+                  
                   "plot_diff_env",
-
-                  # "plot_diff_supp_env",
-
+                  "plot_diff_supp_env",
                   "plot_diff_lim_env",
                   "plot_diff_L_env",
+                  
+                  "plot_environmental_env",
                   "plot_environmental_lim_env",
                   "plot_environmental_L_env"),
                 workers = if(onserver) 12 else 3, reporter = "timestamp_positives")
 
 
 ## Trajectories: simulation parallelized internally
-tar_make(c("plot_trajectories_avg_env"))
+# tar_make(c("plot_trajectories_avg_env"))
 
 
 ## Publishing targets
@@ -86,9 +68,7 @@ tar_make_future(c("Summary_NFI_env",
 
 
 
-# tar_make(c("map_select", "surfaceplots_s")) ## Make sure to have the development version of rayshader installed! For some reason, future does not work with rasterVis and ggplot addition (some problem with correct overloading of `+`)
-
-
+tar_make(c("map_select", "surfaceplots_s")) ## Make sure to have the development version of rayshader installed! For some reason, future does not work with rasterVis and ggplot addition (some problem with correct overloading of `+`)
 
 # Inspect pipeline ----------------------------------------------------------------
 network <- tar_visnetwork(targets_only = T,
