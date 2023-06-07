@@ -482,15 +482,14 @@ model {
   s_log_center_env2   ~ std_normal();
 
   //// Priors for spread of parameters
-  // Caution: exponential(rate) while double_exponential(mean, scale == 1/rate)
-  -b_log_spread_env1  ~  normal(0, prior_sigma_b_log_spread); // exponential(5.0); // negative!
-  c_a_log_spread_env1 ~  normal(0, prior_sigma_c_a_log_spread); // exponential(5.0);
-  c_b_log_spread_env1 ~  normal(0, prior_sigma_c_b_log_spread); // exponential(5.0);
-  c_j_log_spread_env1 ~  normal(0, prior_sigma_c_j_log_spread); // exponential(5.0);
-  -g_log_spread_env1  ~  normal(0, prior_sigma_g_log_spread); // exponential(5.0);
-  -h_log_spread_env1  ~  normal(0, prior_sigma_h_log_spread); // exponential(5.0);
-  -r_log_spread_env1  ~  normal(0, prior_sigma_r_log_spread); // exponential(5.0);
-  s_log_spread_env1   ~  normal(0, prior_sigma_s_log_spread); // exponential(5.0);
+  -b_log_spread_env1  ~  normal(0, prior_sigma_b_log_spread);
+  c_a_log_spread_env1 ~  normal(0, prior_sigma_c_a_log_spread);
+  c_b_log_spread_env1 ~  normal(0, prior_sigma_c_b_log_spread);
+  c_j_log_spread_env1 ~  normal(0, prior_sigma_c_j_log_spread);
+  -g_log_spread_env1  ~  normal(0, prior_sigma_g_log_spread);
+  -h_log_spread_env1  ~  normal(0, prior_sigma_h_log_spread);
+  -r_log_spread_env1  ~  normal(0, prior_sigma_r_log_spread);
+  s_log_spread_env1   ~  normal(0, prior_sigma_s_log_spread);
   
   -b_log_spread_env2  ~  normal(0, prior_sigma_b_log_spread);
   c_a_log_spread_env2 ~  normal(0, prior_sigma_c_a_log_spread);
@@ -527,7 +526,7 @@ generated quantities {
   //—————————————————————————————————————————————————————————————————————//
   // Print for debugging -----------------------------------------------//
   //———————————————————————————————————————————————————————————————————//  
-  print(c_j_log);
+  // print( );
   
 
   //—————————————————————————————————————————————————————————————————————//
