@@ -539,6 +539,7 @@ targets_range <- list(
 
 
 
+
 ## Fitting pipelines ------------------------------------------------
 #### general ----------
 targets_fit_general <- list(
@@ -580,6 +581,63 @@ targets_fit_general <- list(
   tar_target(data_stan_priors_offsets_1,
              data_stan_priors_offsets[1], iteration = "list")
 )
+
+
+#### fit_env ----------
+targets_fit_env <- list(
+  
+  ## Prepare data
+  tar_target(Stages_select_env,
+             selectLocs(Stages_s, predictor_select,
+                        selectspec = F, selectpred = T, stratpred = T, selectalt = c(100, 600), n_locations = n_locations_env,
+                        loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
+  
+  tar_target(Stages_scaled_env,
+             scaleData(Stages_select_env, predictor_select)), # After selection, so that scaling includes selected plots 
+  
+  tar_target(Stages_loc_env,
+             setLocLevel(Stages_scaled_env, Env_cluster, loc = c("plot", "nested", "cluster"))),
+  
+  tar_target(Stages_transitions_env,
+             countTransitions(Data_big, Data_big_status, Env_cluster, Stages_select_env,
+                              taxon_select = taxon_select, threshold_dbh = threshold_dbh, radius_max = radius_max,
+                              loc = c("plot", "nested", "cluster"))),
+  
+  tar_target(data_stan_env,
+             formatStanData(Stages_loc_env, Stages_transitions_env, taxon_s, threshold_dbh,  predictor_select,
+                            loc = c("plot", "nested", "cluster"), smoothmediantax = "none")),
+  
+  tar_target(data_stan_transitions_env,
+             formatStanData(Stages_loc, Stages_transitions_env, taxon_s, threshold_dbh, predictor_select,
+                            loc = "plot")),
+  
+  tar_target(fit_g_env,
+             fitTransition(data_stan_transitions_env, which = "g", model_transitions, fitpath = dir_fit)),
+  
+  tar_target(fit_h_env,
+             fitTransition(data_stan_transitions_env, which = "h", model_transitions, fitpath = dir_fit)),
+  
+  tar_target(data_stan_priors_env,
+             formatPriors(data_stan_env, weakpriors_env)),
+  
+  tar_target(data_stan_priors_offset_env,
+             selectOffset(offsetname_select, data_stan_priors_env)),
+  
+  ## Fit
+  tar_target(file_model_env_vertex,
+             "Model_2023-02_bb/Model_bb_env_vertex.stan",
+             format = "file"),
+  tar_target(model_env,
+             cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
+  tar_target(fit_env,
+             fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
+                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, adapt_delta = 0.95, fitpath = dir_fit)
+  ),
+  tar_target(basename_fit_env,
+             getBaseName(fit_env))
+)
+
+
 
 
 ## Posterior pipeline ------------------------------------------------------
