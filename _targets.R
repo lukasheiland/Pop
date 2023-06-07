@@ -106,10 +106,10 @@ targets_settings <- list(
              list(prior_b_log = c(-3, 1),
                   prior_c_a_log = c(-7, 2),
                   prior_c_b_log = c(-7, 2),
-                  prior_c_j_log = c(-11, 3),
+                  prior_c_j_log = c(-12, 2),
                   prior_g_log = c(-4, 1),
                   prior_h_log = c(-3, 1),
-                  prior_l_log = c(5, 2),
+                  prior_l_log = c(4, 2),
                   prior_r_log = c(3.5, 1),
                   prior_s_log = c(-6, 2)
                   )
@@ -1013,7 +1013,7 @@ targets_posterior_env <- list(
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   
   tar_target(plot_diff_env,
-             plotEnvironmental(surfaces = c(surface_diff_env[3:18], list(Binary = Surface_binary_env)), binaryname = "ba_frac_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix[2]", "major_init", "major_fix"),
+             plotEnvironmental(surfaces = c(surface_diff_env[c(r = 3:4, c_J = 5:6, s = 7:8, b = 15:16, c_b = 17:18)], list(Binary = Surface_binary_env)), binaryname = "ba_frac_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix[2]", "major_init", "major_fix"),
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   
   tar_target(plot_diff_supp_env,
@@ -1021,7 +1021,7 @@ targets_posterior_env <- list(
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   
   tar_target(plot_diff_lim_env,
-             plotEnvironmental(surfaces = c(surface_diff_env[c(9, 10, 19, 20, 13, 14, 21, 22, 15, 16, 23, 24)], list(Binary = Surface_binary_env)), binaryname = "major_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix[2]", "major_init", "major_fix"),
+             plotEnvironmental(surfaces = c(surface_diff_env[19:24], list(Binary = Surface_binary_env)), binaryname = "ba_frac_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix[2]", "major_init", "major_fix"),
                                basename = basename_fit_env, path = dir_publish, color = twocolors, ps = plotsettings, themefun = themefunction)),
   tar_target(plot_diff_L_env,
              plotEnvironmental(surfaces = c(surface_diff_env[1:2], list(Binary = Surface_binary_env)), binaryname = "ba_frac_fix", Waterlevel = Waterlevel, Cred = Cred_env, commonscale = T, removevar = c("ba_frac_init", "ba_frac_fix", "major_init"),
@@ -1069,6 +1069,12 @@ targets_posterior_env <- list(
              plotPairs(cmdstanfit = fit_env, parname = parname_J_env, formatparname = T, selecttax = 2)),
   tar_target(plots_pairs_A_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_A_env, formatparname = T)),
+  tar_target(plots_pairs_J_env,
+             plotPairs(cmdstanfit = fit_env,
+                       parname =  c("r_log", "l_log", "s_log",
+                                     "c_j_log", "c_j_center_env1", "c_j_center_env2", "c_j_log_spread_env1", "c_j_log_spread_env2",
+                                     "g_log", "g_log_center_env1", "g_log_center_env2", "g_log_spread_env1", "g_log_spread_env2"),
+                       formatparname = T)),
   tar_target(plots_pairs_B_Fagus_env,
              plotPairs(cmdstanfit = fit_env, parname = parname_B_env, formatparname = T, selecttax = 1)),
   tar_target(plots_pairs_B_others_env,

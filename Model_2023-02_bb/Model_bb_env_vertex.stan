@@ -253,7 +253,7 @@ transformed data {
   //// Data for generated quantities
   int N_fix = 6; // an array of vectors[N_species] { J, A, B, BA, eps, n_iter}
   
-  real targetslope = 0.2;
+  real targetslope = 0.1;
   
   real<lower=0> prior_sigma_b_log_spread = lambert_w0(targetslope * exp(-prior_b_log[1]) / 2);
   real<lower=0> prior_sigma_c_a_log_spread = lambert_w0(targetslope * exp(-prior_c_a_log[1]) / 2);
@@ -344,7 +344,7 @@ transformed parameters {
   array[N_locs] vector<lower=0>[N_pops] state_init;
   
   // Spread of the parameters along environmental axes
-  vector<upper=0>[N_species] b_log_spread_env1 = b_log_spread_env1_x .* [1e-1, 1e-1]';
+  vector<upper=0>[N_species] b_log_spread_env1 = b_log_spread_env1_x .* [1e-1, 1e-2]';
   vector<lower=0>[N_species] c_a_log_spread_env1 = c_a_log_spread_env1_x .* [1e-1, 1e-1]';
   vector<lower=0>[N_species] c_b_log_spread_env1 = c_b_log_spread_env1_x .* [1e-1, 1e-2]';
   vector<lower=0>[N_species] c_j_log_spread_env1 = c_j_log_spread_env1_x * 1e-1;

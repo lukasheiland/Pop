@@ -46,6 +46,7 @@ tar_make_future(c("summary_env",
                   
                   "plots_pairs_J_Fagus_env",
                   "plots_pairs_J_others_env",
+                  "plots_pairs_J_env",
                   "plots_pairs_A_env",
                   "plots_pairs_B_Fagus_env",
                   "plots_pairs_B_others_env"

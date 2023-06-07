@@ -226,8 +226,9 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     mutate(var_mean_loc = var(mean_loc),
            freqdifferentfrom0 = mean(isdifferentfrom0),
            mostlydifferentfrom0 = freqdifferentfrom0 > 0.5,
-           included = !( variable %in% variable_exclude ) &
-                      meanabs_tot %in% meanabs_tot_include) %>%
+           # included = !( variable %in% variable_exclude ) & meanabs_tot %in% meanabs_tot_include,
+           included = !( variable %in% variable_exclude ) & variable %in% c("r", "b", "c_b", "c_j", "s")
+           ) %>%
     ungroup() %>%
     mutate(effect = case_when(iscrediblypositive ~ "pos",
                               iscrediblynegative ~ "neg",
@@ -2994,13 +2995,13 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary,
     mutate(tax = if_else(str_ends(variable, "\\[1\\]"), "Fagus", "others")) %>%
     mutate(par = str_extract(variable, ".*(?=_log)")) %>%
     mutate(par = if_else(str_length(par) > 1,
-                          paste0(str_sub(par, 1, 1), "[", str_sub(par, 3, 3), "]"),
+                          paste0(str_sub(par, 1, 1), "[", str_to_upper(str_sub(par, 3, 3)), "]"),
                           par)) %>%
     dplyr::select(mean, sd, par, tax, ax) %>% 
     pivot_wider(names_from = ax, values_from = c("sd", "mean")) %>%
     mutate(sd_x = sd_x * scaling[name_x], ## y == waterlevel is already scaled in the same way
            mean_x = mean_x + centering[name_x]) %>%
-    filter(par %in% c("r", "g", "h", "b")) ## confine to positive rates
+    filter(par %in% c("r", "c[J]", "s", "b", "c[B]")) ## select rates
   
   
   plot_extrema <- ggplot() +
