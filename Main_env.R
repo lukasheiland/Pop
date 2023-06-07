@@ -62,12 +62,12 @@ tar_make_future(c("summary_env",
 ## Environmental targets
 tar_make_future(c("plot_environmental_env", ## currently includes *_ba and *_binomial (both init and fix)
                   "plot_triptych_env",
+                  
                   "plot_diff_env",
-
-                  # "plot_diff_supp_env",
-
+                  "plot_diff_supp_env",
                   "plot_diff_lim_env",
                   "plot_diff_L_env",
+                  
                   "plot_environmental_lim_env",
                   "plot_environmental_L_env"),
                 workers = if(onserver) 12 else 3, reporter = "timestamp_positives")
