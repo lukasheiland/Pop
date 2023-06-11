@@ -207,8 +207,10 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
     ungroup()
   
   variable_exclude <- c("ba_frac_diff_fix_ko_1_env_b_c_b", "ba_frac_diff_fix_ko_2_env_b_c_b", "ba_frac_diff_fix_ko_1_env_b_other_s", "major_fix")
-  C_ex <- dplyr::filter(C, !variable %in% variable_exclude) ## This is important to include only meanabs_tot values that are within the interesting variables
+  C_ex <- dplyr::filter(C, !(variable %in% variable_exclude)) ## This is important to include only meanabs_tot values that are within the interesting variables
   meanabs_tot_include <- c(head(sort(unique(C_ex$meanabs_tot)), n = 1), tail(sort(unique(C_ex$meanabs_tot)), n = 3))
+  
+  variable_select <- paste0(c("ba_frac_diff_fix_ko_1_env_", "ba_frac_diff_fix_ko_2_env_"), rep(c("r", "b", "c_b", "c_j", "s"), each = 2))
   
   C %<>% 
     group_by_at(c("variable", "tax", "loc", allenvname)) %>%
@@ -227,7 +229,7 @@ formatCred <- function(Environmental, envname = tar_read("predictor_select"), cr
            freqdifferentfrom0 = mean(isdifferentfrom0),
            mostlydifferentfrom0 = freqdifferentfrom0 > 0.5,
            # included = !( variable %in% variable_exclude ) & meanabs_tot %in% meanabs_tot_include,
-           included = !( variable %in% variable_exclude ) & variable %in% c("r", "b", "c_b", "c_j", "s")
+           included = !( variable %in% variable_exclude ) & variable %in% variable_select,
            ) %>%
     ungroup() %>%
     mutate(effect = case_when(iscrediblypositive ~ "pos",
@@ -3001,7 +3003,7 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary,
     pivot_wider(names_from = ax, values_from = c("sd", "mean")) %>%
     mutate(sd_x = sd_x * scaling[name_x], ## y == waterlevel is already scaled in the same way
            mean_x = mean_x + centering[name_x]) %>%
-    filter(par %in% c("r", "c[J]", "s", "b", "c[B]")) ## select rates
+    filter(par %in% c("c[J]", "c[A]", "c[B]")) ## select rates: "r", "s",  "b",
   
   
   plot_extrema <- ggplot() +
@@ -3021,7 +3023,7 @@ plotTriptych <- function(Environmental, Surface_init, Surface_fix, Binary,
     theme(legend.position = c(0.15, 0.85), legend.title = element_blank()) +
     ps$axislabs +
     ps$removeylabs +
-    ggtitle("Optima of demographic rates")
+    ggtitle("Optima given the demographic rates")
   
   
   

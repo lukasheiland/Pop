@@ -109,7 +109,7 @@ targets_settings <- list(
                   prior_c_j_log = c(-12, 2),
                   prior_g_log = c(-4, 1),
                   prior_h_log = c(-3, 1),
-                  prior_l_log = c(4, 2),
+                  prior_l_log = c(5, 2),
                   prior_r_log = c(3.5, 1),
                   prior_s_log = c(-5, 2)
                   )
