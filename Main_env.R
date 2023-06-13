@@ -61,9 +61,12 @@ tar_make_future(c("plot_triptych_env",
 
 ## Publishing targets
 tar_make_future(c("Summary_NFI_env",
-                  "Summary_range",
                   "Summary_taxa_env",
-                  "plot_range"),
+                  
+                  ## range targets need additional EAFTS data
+                  #"Summary_range",
+                  #"plot_range"
+                  ),
                   workers = if(onserver) 12 else 3, reporter = "verbose_positives")
 
 
