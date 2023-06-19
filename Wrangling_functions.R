@@ -465,11 +465,13 @@ saveStages_s <- function(Stages_s) {
 # predictor_select <- tar_read("predictor_select")
 # loclevel <- "plot"
 selectLocs <- function(Stages_s, predictor_select,
-                       selectspec = T, selectpred = F, stratpred = F, selectalt = c(NULL, NULL), n_locations = 1000,
+                       selectspec = T, selectpred = F, stratpred = F, selectalt = c(NULL, NULL), selectseed = NULL, n_locations = 1000,
                        id_select = c("clusterid", "clusterobsid", "methodid", "obsid", "plotid", "plotobsid", "tax", "taxid", "time"),
                        loc = c("plot", "nested", "cluster"),
                        tablepath = "~"
                        ) {
+  
+  if(!is.null(selectseed)) set.seed(selectseed) ## this is here so that one can have the same data, regardless of target name or position in the pipeline (e.g., if some targets are removed this will change the seed that is assigned by targets itself)
   
   loclevel <- match.arg(loc)
   
