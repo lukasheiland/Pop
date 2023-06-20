@@ -63,7 +63,7 @@ targets_settings <- list(
   
   ## No. of locations to subset (currently only for loc == "plot")
   tar_target(n_locations, 1000),
-  tar_target(n_locations_env, 1400),
+  tar_target(n_locations_env, 1200),
   
   ## Threshold to discriminate A and B [mm]
   ## 160 is the 10%tile, 185 is the 15%tile, 207 is the 20%tile, 228 is the 25%tile of pure measured trees, i.e. without area standardization
@@ -106,12 +106,12 @@ targets_settings <- list(
              list(prior_b_log = c(-3, 1),
                   prior_c_a_log = c(-7, 2),
                   prior_c_b_log = c(-7, 2),
-                  prior_c_j_log = c(-12, 2),
+                  prior_c_j_log = c(-11, 2),
                   prior_g_log = c(-4, 1),
                   prior_h_log = c(-3, 1),
                   prior_l_log = c(5, 2),
-                  prior_r_log = c(3.5, 1),
-                  prior_s_log = c(-5, 2)
+                  prior_r_log = c(4, 1),
+                  prior_s_log = c(-6, 2)
                   )
   ),
   
@@ -589,7 +589,7 @@ targets_fit_env <- list(
   ## Prepare data
   tar_target(Stages_select_env,
              selectLocs(Stages_s, predictor_select,
-                        selectspec = F, selectpred = T, stratpred = T, selectalt = c(100, 600), n_locations = n_locations_env,
+                        selectspec = F, selectpred = T, stratpred = T, selectalt = c(100, 600), selectseed = 0, n_locations = n_locations_env,
                         loc = "plot", tablepath = dir_publish)), # Selection based on whether environmental variables are present
   
   tar_target(Stages_scaled_env,
