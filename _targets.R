@@ -633,7 +633,6 @@ targets_fit_env <- list(
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
                       method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, adapt_delta = 0.95, fitpath = dir_fit)
              ),
-
   tar_target(basename_fit_env,
              getBaseName(fit_env))
 )
