@@ -619,10 +619,10 @@ targets_fit_env <- list(
   
   tar_target(data_stan_priors_env,
              formatPriors(data_stan_env, weakpriors_env)),
-  
+
   tar_target(data_stan_priors_offset_env,
              selectOffset(offsetname_select, data_stan_priors_env)),
-  
+
   ## Fit
   tar_target(file_model_env_vertex,
              "Model_2023-02_bb/Model_bb_env_vertex.stan",
@@ -632,7 +632,8 @@ targets_fit_env <- list(
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
                       method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, adapt_delta = 0.95, fitpath = dir_fit)
-  ),
+             ),
+  
   tar_target(basename_fit_env,
              getBaseName(fit_env))
 )
