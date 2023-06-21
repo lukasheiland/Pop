@@ -691,7 +691,14 @@ selectOffset <- function(offsetname, data_stan_priors) {
 # fitpath  <- tar_read("dir_fit")
 fitModel <- function(model, data_stan, gpq = FALSE,
                      method = c("mcmc", "chkptstanr","variational", "sim", "diagnose"), n_chains = 4, iter_warmup = 1000, iter_sampling = 500, # openclid = c(0, 0),
+                     fitseed = tar_seed(),
                      fitpath = dir_fit, ...) {
+  
+  if(!is.null(fitseed)) {
+    ## Setting seed is necessary to reproduce the same targets when the targets pipeline has changed in another place, e.g. after tidying up for publication
+    ## this function can be called within a target with fitseed = tar_seed() to retrieve the seed that is generated based on the name
+    set.seed(fitseed)
+  }
   
   require(cmdstanr)
   
@@ -776,6 +783,12 @@ fitModel <- function(model, data_stan, gpq = FALSE,
     str_replace("-[1-9]-", "-x-")
   
   ### Write out fit data
+  
+  ## Write a txt file with the seed
+  if(!is.null(fitseed)) {
+    as.character(fitseed) %>% writeLines(file(file.path(fitpath, paste0(basename, "_seed", ".txt"))))
+  }
+  
   ## Write an empty file to indicate the used offset
   if ( !is.null(attr(data_stan, "offsetname")) ) {
     file.create(file.path(fitpath, paste0(basename, "_", attr(data_stan, "offsetname"), ".txt")), showWarnings = TRUE)
