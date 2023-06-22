@@ -670,7 +670,7 @@ targets_fit_env <- list(
              cmdstan_model(file_model_env_vertex, stanc_options = list("O1"))),
   tar_target(fit_env,
              fitModel(model = model_env, data_stan = data_stan_priors_offset_env, gpq = TRUE,
-                      method = "mcmc", n_chains = 4, iter_warmup = 1000, iter_sampling = 1000, adapt_delta = 0.95, fitpath = dir_fit)
+                      method = "mcmc", n_chains = 4, iter_warmup = 800, iter_sampling = 1000, adapt_delta = 0.95, fitpath = dir_fit)
              ),
   tar_target(basename_fit_env,
              getBaseName(fit_env))
