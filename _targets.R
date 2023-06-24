@@ -876,6 +876,8 @@ targets_posterior_env <- list(
              summarizeStates(States = States_env, data_stan = data_stan_env, basename = basename_fit_env, path = dir_publish)),
   tar_target(summary_marginal_env,
              summarizeMarginal(Marginal = Marginal_env, basename = basename_fit_env, path = dir_publish)),
+  tar_target(summary_marginal_exp_env,
+             summarizeMarginal(Marginal = Marginal_exp_env, basename = paste0(basename_fit_env, "_exp"), path = dir_publish)),
   tar_target(Freq_converged_env,
              summarizeFreqConverged(cmdstanfit = fit_env, data_stan_priors_env, path = dir_publish)),
 
@@ -904,6 +906,8 @@ targets_posterior_env <- list(
              formatEnvgrid(data_stan_priors_offset_env, envname = predictor_select, res = 500)),
   tar_target(Marginal_env,
              formatMarginal(Environmental_env)),
+  tar_target(Marginal_exp_env,
+             formatMarginal(Environmental_env, exping = T)),
 
   
   ## Post-hoc inference

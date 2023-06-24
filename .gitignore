@@ -11,85 +11,64 @@ Test/
 */Sim_recovery*/
 */Math/
 Range.nosync/*
-
 # Some special files
 */Recovery*.csv
 */Notes*.md
-
 # System files
 *.DS_Store
-
 # Temporary files
 ~$*
-
 # Big data
 *.RData
 *.rds
 *.xls
 *.xlsx
 # *.csv
-
 # Binaries
 *.pdf
-
 # History files
 .Rhistory
 .Rapp.history
-
 # Session Data files
 .RData
-
 # User-specific files
 .Ruserdata
-
 # Example code in package build process
 *-Ex.R
-
 # Output files from R CMD build
 /*.tar.gz
-
 # Output files from R CMD check
 /*.Rcheck/
-
 # RStudio files
 .Rproj.user/
 *.Rproj
-
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
-
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
 .httr-oauth
-
 # knitr and R markdown default cache directories
 *_cache/
 /cache/
-
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
-
 # R Environment Variables
 .Renviron
-
 # pkgdown site
 docs/
-
 # ignore compiled model files and fits but not the stan files
 */Model_*
 !*.stan
 Model_2021-03_ba/Sim_recovery_ba.html
 Inventory.nosync/
 Upload.sh
-
 _targets/meta/meta
 _commit.sh
 Model_2021-03_ba/Model_seedlings_Notes.stan
 Explore.R
-
 Fits.nosync
-
 __MACOSX
 Inventory.nosync_publish.zip
 Inventory.nosync_publish/
+sessionInfo_Pop_*

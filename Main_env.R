@@ -1,3 +1,9 @@
+###--------------------------------------------------------------------------##
+# Main_env.R - main script for running environmental fits of the JAB model
+###--------------------------------------------------------------------------##
+
+# If workers from tar_make_future() fail, this may be due to memory depletion. Use tar_make() instead!
+
 # Library -----------------------------------------------------------------
 library(targets)
 library(visNetwork)
@@ -30,6 +36,7 @@ tar_make(c("fit_env"))
 tar_make_future(c("summary_env",
                   "summary_states_env",
                   "summary_marginal_env",
+                  "summary_marginal_exp_env",
                   
                   "residuals_env",
                   # "plots_trace_env",
