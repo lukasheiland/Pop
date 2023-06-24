@@ -177,7 +177,9 @@ formatEnvironmental <- function(cmdstanfit, parname = tar_read(parname_environme
 
 ## formatMarginal --------------------------------
 # Environmental <- tar_read("Environmental_env")
-formatMarginal <- function(Environmental) {
+formatMarginal <- function(Environmental, exping = FALSE) {
+  
+  if(isTRUE(exping)) Environmental %<>% mutate(.value = exp(.value))
   
   D <- Environmental %>%
     group_by(.chain, .iteration, .draw, .variable, tax) %>%
