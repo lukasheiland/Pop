@@ -85,10 +85,13 @@ tar_make(c("plot_trajectories_avg_env"))
 
 
 ## Publishing targets
-tar_make_future(c("Summary_NFI_env",
-                  "Summary_range",
+tar_make_future(c("Summary_NFIs_env",
                   "Summary_taxa_env",
-                  "plot_range"),
+                  
+                  ## Range targets need additional EAFTS data
+                  "Summary_range",
+                  "plot_range"
+                  ),
                   workers = if(onserver) 12 else 3, reporter = "verbose_positives")
 
 
