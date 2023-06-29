@@ -67,7 +67,7 @@ tar_make_future(c("plot_triptych_env",
 
 
 ## Publishing targets
-tar_make_future(c("Summary_NFI_env",
+tar_make_future(c("Summary_NFIs_env",
                   "Summary_taxa_env",
                   
                   ## range targets need additional EAFTS data
