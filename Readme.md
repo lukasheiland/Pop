@@ -14,7 +14,7 @@ This is a project for developing a forest population model that resulted in the 
 * Files `…_functions.R` contain the actual functions that are called in the targets pipelines.
 * `Inventory.nosync/` contains the main data, including the NFIs and environmental data. The directory is a subset of the data organized in the 'Inventories' project, git branch `pop`.
 * `Data/` contains data processed or downloaded by the pipeline.
-* `Range.nosync` contains only data used in comparing the environmental distributions of the German NFI and Fagus sylvatica in the EAFTS.
+* `Range.nosync/` contains only data used in comparing the environmental distributions of the German NFI and Fagus sylvatica in the EAFTS.
 * `Data model/` contains the data model.
 * `Fits.nosync/`, `Publish.nosync/` contain the **generated results**.
 	* `Fits.nosync/` the MCMC draws plus some infos on the fit including the offset used
